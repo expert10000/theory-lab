@@ -1,0 +1,75 @@
+"""Line-delimited JSON-RPC 2.0. stdout is reserved for protocol messages."""
+import json
+import platform
+import sys
+import traceback
+from jsonschema import ValidationError
+from quantum_worker import __version__
+from quantum_worker.contracts import validate
+
+MAX_MESSAGE = 65536
+
+def capabilities():
+    result = {"schema": "worker-capabilities/v1", "protocol": 1,
+              "worker": {"version": __version__}, "python": {"version": platform.python_version()},
+              "engines": {"qutip": {"available": False, "version": None}}, "operations": []}
+    validate("worker-capabilities", result)
+    return result
+
+def dispatch(method, params):
+    if method == "hello":
+        return {"protocol": 1, "workerVersion": __version__}
+    if method == "capabilities":
+        return capabilities()
+    if method == "health":
+        return {"status": "ok"}
+    if method == "shutdown":
+        return {"status": "stopping"}
+    raise LookupError("Method not found")
+
+def error(request_id, code, message):
+    return {"jsonrpc": "2.0", "id": request_id, "error": {"code": code, "message": message}}
+
+def handle(raw):
+    try:
+        request = json.loads(raw, parse_constant=lambda value: (_ for _ in ()).throw(ValueError(value)))
+    except (ValueError, UnicodeDecodeError):
+        return error(None, -32700, "Parse error"), False
+    if (not isinstance(request, dict) or request.get("jsonrpc") != "2.0"
+            or not isinstance(request.get("method"), str)
+            or ("id" in request and (isinstance(request["id"], bool) or not isinstance(request["id"], (str, int, type(None)))))):
+        return error(None, -32600, "Invalid request"), False
+    request_id = request.get("id")
+    notification = "id" not in request
+    try:
+        params = request.get("params", {})
+        if not isinstance(params, dict):
+            raise ValueError("params must be an object")
+        result = dispatch(request["method"], params)
+        response = {"jsonrpc": "2.0", "id": request_id, "result": result}
+        stop = request["method"] == "shutdown"
+    except (ValidationError, ValueError) as exc:
+        response, stop = error(request_id, -32602, str(exc).splitlines()[0]), False
+    except LookupError:
+        response, stop = error(request_id, -32601, "Method not found"), False
+    except Exception:
+        traceback.print_exc(file=sys.stderr)
+        response, stop = error(request_id, -32603, "Worker calculation failed; inspect worker diagnostics"), False
+    return (None if notification else response), stop
+
+def main():
+    while True:
+        raw = sys.stdin.buffer.readline(MAX_MESSAGE + 1)
+        if not raw:
+            break
+        if len(raw) > MAX_MESSAGE:
+            response, stop = error(None, -32600, "Message exceeds 64 KiB"), True
+        else:
+            response, stop = handle(raw)
+        if response is not None:
+            print(json.dumps(response, allow_nan=False, separators=(",", ":")), flush=True)
+        if stop:
+            break
+
+if __name__ == "__main__":
+    main()
