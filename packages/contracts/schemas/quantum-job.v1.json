@@ -1,0 +1,63 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/quantum-job.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "quantum-job/v1"
+    },
+    "jobId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "operation": {
+      "const": "diagonalize"
+    },
+    "engine": {
+      "const": "qutip"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "two_level"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "delta": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            "omega": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "delta",
+            "omega"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "parameters"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "jobId",
+    "operation",
+    "engine",
+    "model"
+  ]
+}

@@ -1,0 +1,83 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/worker-capabilities.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "worker-capabilities/v1"
+    },
+    "protocol": {
+      "const": 1
+    },
+    "worker": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version"
+      ]
+    },
+    "python": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "version": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "version"
+      ]
+    },
+    "engines": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "qutip": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "required": [
+            "available",
+            "version"
+          ]
+        }
+      },
+      "required": [
+        "qutip"
+      ]
+    },
+    "operations": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "diagonalize"
+        ]
+      },
+      "uniqueItems": true
+    }
+  },
+  "required": [
+    "schema",
+    "protocol",
+    "worker",
+    "python",
+    "engines",
+    "operations"
+  ]
+}

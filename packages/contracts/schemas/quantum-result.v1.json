@@ -1,0 +1,141 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/quantum-result.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "schema": {
+      "const": "quantum-result/v1"
+    },
+    "jobId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "status": {
+      "const": "completed"
+    },
+    "operation": {
+      "const": "diagonalize"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "two_level"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "delta": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            },
+            "omega": {
+              "type": "number",
+              "minimum": -1000000,
+              "maximum": 1000000
+            }
+          },
+          "required": [
+            "delta",
+            "omega"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "parameters"
+      ]
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "const": "qutip"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "required": [
+        "name",
+        "version"
+      ]
+    },
+    "spectrum": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "eigenvalues": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "units": {
+          "const": "normalized"
+        },
+        "hbar": {
+          "const": 1
+        }
+      },
+      "required": [
+        "eigenvalues",
+        "units",
+        "hbar"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "pythonVersion": {
+          "type": "string"
+        },
+        "workerVersion": {
+          "type": "string"
+        },
+        "computedAt": {
+          "type": "string",
+          "minLength": 20
+        },
+        "durationMs": {
+          "type": "number",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "pythonVersion",
+        "workerVersion",
+        "computedAt",
+        "durationMs"
+      ]
+    }
+  },
+  "required": [
+    "schema",
+    "jobId",
+    "runId",
+    "status",
+    "operation",
+    "model",
+    "engine",
+    "spectrum",
+    "provenance"
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "schema": "quantum-job/v1",
+  "jobId": "test-001",
+  "operation": "diagonalize",
+  "engine": "qutip",
+  "model": {
+    "type": "two_level",
+    "parameters": {
+      "delta": 1,
+      "omega": 0.8
+    }
+  }
+}
