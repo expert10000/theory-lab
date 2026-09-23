@@ -41,23 +41,11 @@
               "maximum": 1000000
             }
           },
-          "required": [
-            "delta",
-            "omega"
-          ]
+          "required": ["delta", "omega"]
         }
       },
-      "required": [
-        "type",
-        "parameters"
-      ]
+      "required": ["type", "parameters"]
     }
   },
-  "required": [
-    "schema",
-    "jobId",
-    "operation",
-    "engine",
-    "model"
-  ]
+  "required": ["schema", "jobId", "operation", "engine", "model"]
 }

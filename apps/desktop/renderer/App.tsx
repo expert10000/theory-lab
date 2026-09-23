@@ -1,0 +1,523 @@
+import React, { useEffect, useRef, useState } from "react";
+import type {
+  QuantumBridge,
+  QuantumResult,
+  WorkerStatus,
+} from "../../../packages/contracts";
+import { Spectrum, format } from "./Spectrum";
+declare global {
+  interface Window {
+    quantum: QuantumBridge;
+  }
+}
+const futureLabs = [
+  "Rabi dynamics",
+  "Landau–Zener",
+  "Stückelberg",
+  "Strong drive & Floquet",
+  "Jaynes–Cummings",
+  "Quantum Rabi",
+  "Lindblad dynamics",
+  "Parameter sweeps",
+  "QuTiP / native comparison",
+];
+
+export function App() {
+  const [status, setStatus] = useState<WorkerStatus>({
+    state: "STARTING",
+    detail: "Starting Python worker",
+    capabilities: null,
+  });
+  const [delta, setDelta] = useState("1");
+  const [omega, setOmega] = useState("0.8");
+  const [result, setResult] = useState<QuantumResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [restarting, setRestarting] = useState(false);
+  const [error, setError] = useState("");
+  const [tab, setTab] = useState<"spectrum" | "hamiltonian" | "roadmap">(
+    "spectrum",
+  );
+  const initialRun = useRef(false);
+  const valid = [delta, omega].every(
+    (value) =>
+      value.trim() !== "" &&
+      Number.isFinite(Number(value)) &&
+      Math.abs(Number(value)) <= 1e6,
+  );
+  const ready =
+    status.state === "READY" &&
+    status.capabilities?.engines.qutip.available &&
+    status.capabilities.operations.includes("diagonalize");
+  const stale =
+    result &&
+    (Number(delta) !== result.model.parameters.delta ||
+      Number(omega) !== result.model.parameters.omega ||
+      !valid);
+  const analytic = result
+    ? Math.hypot(result.model.parameters.delta, result.model.parameters.omega) /
+      2
+    : null;
+  const residual =
+    result && analytic !== null
+      ? Math.max(
+          Math.abs(result.spectrum.eigenvalues[0] + analytic),
+          Math.abs(result.spectrum.eigenvalues[1] - analytic),
+        )
+      : null;
+  useEffect(() => {
+    let mounted = true;
+    const update = async () => {
+      try {
+        const next = await window.quantum.getStatus();
+        if (mounted) setStatus(next);
+      } catch (err) {
+        if (mounted) setError(String(err));
+      }
+    };
+    void update();
+    const timer = setInterval(() => void update(), 750);
+    return () => {
+      mounted = false;
+      clearInterval(timer);
+    };
+  }, []);
+  async function run() {
+    if (!valid || !ready || busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      setResult(
+        await window.quantum.run({
+          schema: "quantum-job/v1",
+          jobId: `job-${crypto.randomUUID()}`,
+          operation: "diagonalize",
+          engine: "qutip",
+          model: {
+            type: "two_level",
+            parameters: { delta: Number(delta), omega: Number(omega) },
+          },
+        }),
+      );
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBusy(false);
+    }
+  }
+  useEffect(() => {
+    if (ready && !initialRun.current) {
+      initialRun.current = true;
+      void run();
+    }
+  }, [ready]);
+  async function restart() {
+    setRestarting(true);
+    setError("");
+    try {
+      setStatus(await window.quantum.restart());
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setRestarting(false);
+    }
+  }
+  return (
+    <div className="app">
+      <header className="topbar">
+        <div className="brand">
+          <span className="brand-symbol">ψ</span>
+          <div>
+            QUANTUM <span className="brand-light">HAMILTONIAN LAB</span>
+            <small>
+              THEORY LAB <span>/</span> DESKTOP COMPUTATIONAL LABORATORY
+            </small>
+          </div>
+        </div>
+        <div className="top-actions">
+          <span className="version">V0.1 · QLAB-004</span>
+          <button
+            className="run-button"
+            onClick={() => void run()}
+            disabled={!ready || !valid || busy || restarting}
+          >
+            {busy ? "Calculating…" : "▶  Run spectrum"}
+          </button>
+        </div>
+      </header>
+      <div className="layout">
+        <aside className="sidebar">
+          <p className="eyebrow">
+            LABORATORIES <span>01 / 10</span>
+          </p>
+          <button className="lab-selected" onClick={() => setTab("spectrum")}>
+            <span>◈</span> Two-level system <span className="live-dot" />
+          </button>
+          <p className="sidebar-note">
+            The smallest quantum system.
+            <br />
+            The foundation for everything next.
+          </p>
+          <p className="eyebrow planned-label">PLANNED FOR V1</p>
+          <nav aria-label="Planned laboratories">
+            {futureLabs.map((lab, i) => (
+              <div className="future-lab" key={lab}>
+                <span>{String(i + 2).padStart(2, "0")}</span>
+                {lab}
+              </div>
+            ))}
+          </nav>
+          <div className="sidebar-bottom">
+            <p className="eyebrow">ARCHITECTURE MILESTONE</p>
+            <strong>One complete scientific path.</strong>
+            <p>
+              React → contract → Python
+              <br />→ QuTiP → spectrum
+            </p>
+            <button className="text-button" onClick={() => setTab("roadmap")}>
+              View desktop roadmap ↗
+            </button>
+          </div>
+        </aside>
+        <main className="workspace">
+          <div className="breadcrumb">
+            MODELS <span>/</span> TWO-LEVEL SYSTEM
+          </div>
+          <div className="workspace-title">
+            <div>
+              <p className="eyebrow accent">SMOKE LABORATORY / 001</p>
+              <h1>A two-level universe.</h1>
+              <p>Explore the spectrum of a coupled quantum two-state system.</p>
+            </div>
+            <span className="pill">2 × 2 HILBERT SPACE</span>
+          </div>
+          <div className="tabs" role="tablist" aria-label="Workspace">
+            <button
+              role="tab"
+              aria-selected={tab === "spectrum"}
+              onClick={() => setTab("spectrum")}
+            >
+              Spectrum
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "hamiltonian"}
+              onClick={() => setTab("hamiltonian")}
+            >
+              Hamiltonian
+            </button>
+            <button
+              role="tab"
+              aria-selected={tab === "roadmap"}
+              onClick={() => setTab("roadmap")}
+            >
+              Roadmap
+            </button>
+          </div>
+          {tab === "roadmap" ? (
+            <section className="panel roadmap">
+              <p className="eyebrow">DESKTOP V1 / DELIVERY ROADMAP</p>
+              <h2>Build on a verified foundation.</h2>
+              <p>
+                The full architecture and commit sequence are saved in
+                docs/ROADMAP.md.
+              </p>
+              {[
+                ["000–004", "Foundation & first spectrum", "Implemented"],
+                [
+                  "005–007",
+                  "Evolution, model workspace & Bloch sphere",
+                  "Next",
+                ],
+                ["008–009", "Native engine & numerical comparison", "Planned"],
+                [
+                  "010–014",
+                  "Driven systems, cavity QED, Lindblad & sweeps",
+                  "Planned",
+                ],
+                [
+                  "015–017",
+                  "Book presets, persistence & release validation",
+                  "Planned",
+                ],
+              ].map(([id, title, state]) => (
+                <div className="roadmap-row" key={id}>
+                  <code>{id}</code>
+                  <span>{title}</span>
+                  <small>{state}</small>
+                </div>
+              ))}
+              <p className="scope-note">
+                V1 covers the validated Layer-1 systems. Atoms, molecules and
+                crystals belong to a later phase.
+              </p>
+            </section>
+          ) : (
+            <>
+              <section className="hamiltonian-card">
+                <div>
+                  <p className="eyebrow">
+                    {tab === "hamiltonian"
+                      ? "CURRENT PARAMETER DRAFT"
+                      : "THE MODEL"}
+                  </p>
+                  <div className="formula">
+                    H ={" "}
+                    <span className="fraction">
+                      <span>Δ</span>
+                      <span>2</span>
+                    </span>{" "}
+                    σ<sub>z</sub> +{" "}
+                    <span className="fraction">
+                      <span>Ω</span>
+                      <span>2</span>
+                    </span>{" "}
+                    σ<sub>x</sub>
+                  </div>
+                </div>
+                <div className="model-convention">
+                  <span>TIME-INDEPENDENT</span>
+                  <p>Hermitian · ħ = 1</p>
+                  <small>Ω is a static transverse coupling</small>
+                </div>
+              </section>
+              {tab === "hamiltonian" ? (
+                <section className="panel matrix-panel">
+                  <p className="eyebrow">
+                    MATRIX REPRESENTATION / COMPUTATIONAL BASIS
+                  </p>
+                  <h2>Every term, explicit.</h2>
+                  <div className="matrix">
+                    <span>{valid ? format(Number(delta) / 2) : "—"}</span>
+                    <span>{valid ? format(Number(omega) / 2) : "—"}</span>
+                    <span>{valid ? format(Number(omega) / 2) : "—"}</span>
+                    <span>{valid ? format(-Number(delta) / 2) : "—"}</span>
+                  </div>
+                  <p>
+                    Diagonal terms set the detuning. Off-diagonal terms couple
+                    |0⟩ and |1⟩.
+                  </p>
+                  <div className="analytic">E± = ± ½ √(Δ² + Ω²)</div>
+                  <p>
+                    The spectrum is calculated by QuTiP; this exact formula
+                    provides an independent numerical check.
+                  </p>
+                </section>
+              ) : (
+                <>
+                  <section className="panel spectrum-panel">
+                    <div className="panel-heading">
+                      <div>
+                        <p className="eyebrow">EIGENVALUE PROBLEM</p>
+                        <h2>Energy spectrum</h2>
+                      </div>
+                      <span
+                        className={`result-badge ${stale ? "stale" : ""}`}
+                        data-testid="result-state"
+                      >
+                        {busy
+                          ? "CALCULATING"
+                          : stale
+                            ? "OUT OF DATE"
+                            : result
+                              ? "COMPUTED"
+                              : "AWAITING WORKER"}
+                      </span>
+                    </div>
+                    {result ? (
+                      <Spectrum result={result} />
+                    ) : (
+                      <div className="empty-spectrum">
+                        <span>±</span>
+                        <p>
+                          {ready
+                            ? "Run the model to reveal its energy levels."
+                            : "Connecting to the scientific worker…"}
+                        </p>
+                      </div>
+                    )}
+                    <div className="plot-caption">
+                      <span>H |ψₙ⟩ = Eₙ |ψₙ⟩</span>
+                      <span>
+                        {result
+                          ? `Computed at Δ = ${result.model.parameters.delta}, Ω = ${result.model.parameters.omega}`
+                          : "Two real eigenvalues · ascending order"}
+                      </span>
+                    </div>
+                  </section>
+                  <div className="metrics">
+                    <section>
+                      <p className="eyebrow">LOWER ENERGY / E₋</p>
+                      <strong className="mint" data-testid="energy-low">
+                        {result ? format(result.spectrum.eigenvalues[0]) : "—"}
+                      </strong>
+                      <small>normalized energy</small>
+                    </section>
+                    <section>
+                      <p className="eyebrow">UPPER ENERGY / E₊</p>
+                      <strong className="peach" data-testid="energy-high">
+                        {result ? format(result.spectrum.eigenvalues[1]) : "—"}
+                      </strong>
+                      <small>normalized energy</small>
+                    </section>
+                    <section>
+                      <p className="eyebrow">ANALYTIC RESIDUAL</p>
+                      <strong>
+                        {residual !== null ? residual.toExponential(2) : "—"}
+                      </strong>
+                      <small>max |E − Eexact|</small>
+                    </section>
+                  </div>
+                </>
+              )}
+            </>
+          )}
+          {error && (
+            <div className="error-message" role="alert">
+              {error}
+            </div>
+          )}
+          {status.state === "ERROR" && (
+            <div className="error-message" role="alert">
+              {status.detail}
+            </div>
+          )}
+          {status.state === "READY" && !ready && (
+            <div className="error-message" role="alert">
+              Python is connected, but QuTiP is unavailable. Run npm run
+              setup:python, then restart the worker.
+            </div>
+          )}
+        </main>
+        <aside className="inspector">
+          <p className="eyebrow">MODEL INSPECTOR</p>
+          <h2>Parameters</h2>
+          <p className="inspector-intro">
+            Change the Hamiltonian.
+            <br />
+            Recalculate to see the spectrum.
+          </p>
+          <label htmlFor="delta">
+            <span>
+              Δ <strong>Detuning</strong>
+            </span>
+            <small>σz</small>
+          </label>
+          <input
+            id="delta"
+            type="number"
+            step="0.1"
+            min="-1000000"
+            max="1000000"
+            value={delta}
+            onChange={(e) => setDelta(e.target.value)}
+          />
+          <label htmlFor="omega">
+            <span>
+              Ω <strong>Transverse coupling</strong>
+            </span>
+            <small>σx</small>
+          </label>
+          <input
+            id="omega"
+            type="number"
+            step="0.1"
+            min="-1000000"
+            max="1000000"
+            value={omega}
+            onChange={(e) => setOmega(e.target.value)}
+          />
+          {!valid && (
+            <p className="validation">
+              Enter finite values between −10⁶ and 10⁶.
+            </p>
+          )}
+          <button
+            className="text-button reset"
+            onClick={() => {
+              setDelta("1");
+              setOmega("0.8");
+            }}
+          >
+            ↺ Restore smoke values
+          </button>
+          <div className="inspector-section">
+            <p className="eyebrow">UNITS & CONVENTIONS</p>
+            <div className="key-value">
+              <span>Energy</span>
+              <strong>Normalized</strong>
+            </div>
+            <div className="key-value">
+              <span>Planck constant</span>
+              <strong>ħ = 1</strong>
+            </div>
+          </div>
+          <div className="inspector-section">
+            <p className="eyebrow">COMPUTATION ENGINE</p>
+            <div className="engine-card">
+              <span className={ready ? "live-dot" : "offline-dot"} />
+              <div>
+                <strong>QuTiP</strong>
+                <small>
+                  {status.capabilities?.engines.qutip.version
+                    ? `Version ${status.capabilities.engines.qutip.version}`
+                    : "Waiting for engine"}
+                </small>
+              </div>
+              <span className="engine-mark">Q</span>
+            </div>
+            <p className="engine-note">
+              Exact diagonalization
+              <br />
+              Hermitian 2 × 2 operator
+            </p>
+          </div>
+          <div className="inspector-section provenance">
+            <p className="eyebrow">LATEST RUN</p>
+            {result ? (
+              <>
+                <div className="key-value">
+                  <span>Runtime</span>
+                  <strong>{result.provenance.durationMs.toFixed(2)} ms</strong>
+                </div>
+                <div className="key-value">
+                  <span>Python</span>
+                  <strong>{result.provenance.pythonVersion}</strong>
+                </div>
+                <code title={result.runId}>{result.runId.slice(0, 20)}…</code>
+                <small>
+                  {new Date(result.provenance.computedAt).toLocaleTimeString()}{" "}
+                  · session only
+                </small>
+              </>
+            ) : (
+              <p>No completed run yet.</p>
+            )}
+          </div>
+        </aside>
+      </div>
+      <footer className="statusbar">
+        <div>
+          <span
+            className={status.state === "READY" ? "live-dot" : "offline-dot"}
+          />
+          <span data-testid="worker-status">Python worker: {status.state}</span>
+          <span className="status-separator">|</span>
+          <span>
+            {status.capabilities
+              ? `QuTiP ${status.capabilities.engines.qutip.version ?? "unavailable"}`
+              : "Starting environment"}
+          </span>
+        </div>
+        <div>
+          <span>LOCAL COMPUTE</span>
+          <button
+            onClick={() => void restart()}
+            disabled={busy || restarting || status.state === "STARTING"}
+          >
+            {restarting ? "Restarting…" : "Restart worker"}
+          </button>
+        </div>
+      </footer>
+    </div>
+  );
+}

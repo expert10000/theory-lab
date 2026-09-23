@@ -1,0 +1,11 @@
+# Tested dependency versions on Windows / CPython 3.12.2.
+attrs==26.1.0
+jsonschema==4.26.0
+jsonschema-specifications==2025.9.1
+numpy==2.5.3
+packaging==26.3
+qutip==5.3.1
+referencing==0.37.0
+rpds-py==2026.6.3
+scipy==1.18.1
+typing_extensions==4.16.0

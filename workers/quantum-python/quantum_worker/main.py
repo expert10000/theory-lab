@@ -6,17 +6,21 @@ import traceback
 from jsonschema import ValidationError
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
+from quantum_worker.engines.qutip_engine import availability, diagonalize
 
 MAX_MESSAGE = 65536
 
 def capabilities():
+    qutip = availability()
     result = {"schema": "worker-capabilities/v1", "protocol": 1,
               "worker": {"version": __version__}, "python": {"version": platform.python_version()},
-              "engines": {"qutip": {"available": False, "version": None}}, "operations": []}
+              "engines": {"qutip": qutip}, "operations": ["diagonalize"] if qutip["available"] else []}
     validate("worker-capabilities", result)
     return result
 
 def dispatch(method, params):
+    if method == "quantum.run":
+        return diagonalize(params)
     if method == "hello":
         return {"protocol": 1, "workerVersion": __version__}
     if method == "capabilities":

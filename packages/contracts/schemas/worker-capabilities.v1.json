@@ -18,9 +18,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "version"
-      ]
+      "required": ["version"]
     },
     "python": {
       "type": "object",
@@ -30,9 +28,7 @@
           "type": "string"
         }
       },
-      "required": [
-        "version"
-      ]
+      "required": ["version"]
     },
     "engines": {
       "type": "object",
@@ -46,28 +42,18 @@
               "type": "boolean"
             },
             "version": {
-              "type": [
-                "string",
-                "null"
-              ]
+              "type": ["string", "null"]
             }
           },
-          "required": [
-            "available",
-            "version"
-          ]
+          "required": ["available", "version"]
         }
       },
-      "required": [
-        "qutip"
-      ]
+      "required": ["qutip"]
     },
     "operations": {
       "type": "array",
       "items": {
-        "enum": [
-          "diagonalize"
-        ]
+        "enum": ["diagonalize"]
       },
       "uniqueItems": true
     }
