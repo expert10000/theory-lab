@@ -1,11 +1,17 @@
 import React, { useEffect, useRef, useState } from "react";
 import type {
+  EngineName,
   QuantumBridge,
   SpectrumResult,
   WorkerStatus,
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
 import { DynamicsLab } from "./DynamicsLab";
+import { BackendPanel } from "./BackendPanel";
+import {
+  compareSpectrum,
+  type SpectrumComparison,
+} from "../../../packages/quantum-3d/comparison";
 import {
   MODEL_REGISTRY,
   defaultsFor,
@@ -27,8 +33,8 @@ const futureLabs = [
   "Quantum Rabi",
   "Lindblad dynamics",
   "Parameter sweeps",
-  "QuTiP / native comparison",
 ];
+type EngineMode = EngineName | "compare";
 
 export function App() {
   const [status, setStatus] = useState<WorkerStatus>({
@@ -42,23 +48,30 @@ export function App() {
   const [evolutionModel, setEvolutionModel] =
     useState<EvolutionModelId>("driven_two_level");
   const [result, setResult] = useState<SpectrumResult | null>(null);
+  const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
+  const [resultMode, setResultMode] = useState<EngineMode | null>(null);
+  const [comparison, setComparison] = useState<SpectrumComparison | null>(null);
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<
-    "spectrum" | "hamiltonian" | "dynamics" | "roadmap"
+    "spectrum" | "hamiltonian" | "dynamics" | "roadmap" | "backend"
   >("spectrum");
   const initialRun = useRef(false);
   const valid = parametersFor("two_level", parameters) !== null;
   const ready =
     status.state === "READY" &&
-    status.capabilities?.engines.qutip.available &&
-    status.capabilities.operations.includes("diagonalize");
+    !!status.capabilities?.operations.includes("diagonalize") &&
+    (engineMode === "compare"
+      ? status.capabilities.engines.qutip.available &&
+        status.capabilities.engines.native.available
+      : status.capabilities.engines[engineMode].available);
   const stale =
     result &&
     (Number(delta) !== result.model.parameters.delta ||
       Number(omega) !== result.model.parameters.omega ||
-      !valid);
+      !valid ||
+      engineMode !== resultMode);
   const analytic = result
     ? Math.hypot(result.model.parameters.delta, result.model.parameters.omega) /
       2
@@ -92,11 +105,21 @@ export function App() {
     setBusy(true);
     setError("");
     try {
-      setResult(
-        await window.quantum.run(
-          spectrumJob(`job-${crypto.randomUUID()}`, parameters),
+      const first = await window.quantum.run(
+        spectrumJob(
+          `job-${crypto.randomUUID()}`,
+          parameters,
+          engineMode === "compare" ? "qutip" : engineMode,
         ),
       );
+      if (engineMode === "compare") {
+        const native = await window.quantum.run(
+          spectrumJob(`job-${crypto.randomUUID()}`, parameters, "native"),
+        );
+        setComparison(compareSpectrum(first, native));
+      } else setComparison(null);
+      setResult(first);
+      setResultMode(engineMode);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     } finally {
@@ -133,14 +156,18 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-007</span>
-          {tab !== "dynamics" && (
+          <span className="version">V0.1 · QLAB-009</span>
+          {tab !== "dynamics" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
               disabled={!ready || !valid || busy || restarting}
             >
-              {busy ? "Calculating…" : "▶  Run spectrum"}
+              {busy
+                ? "Calculating…"
+                : engineMode === "compare"
+                  ? "▶  Compare spectrum"
+                  : "▶  Run spectrum"}
             </button>
           )}
         </div>
@@ -148,7 +175,7 @@ export function App() {
       <div className={`layout ${tab === "dynamics" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>03 / 10</span>
+            LABORATORIES <span>03 / 09</span>
           </p>
           {(["two_level", "driven_two_level", "landau_zener"] as const).map(
             (id) => (
@@ -184,7 +211,7 @@ export function App() {
             <strong>One complete scientific path.</strong>
             <p>
               React → contract → Python
-              <br />→ QuTiP → spectrum / evolution
+              <br />→ QuTiP / Native → result
             </p>
             <button className="text-button" onClick={() => setTab("roadmap")}>
               View desktop roadmap ↗
@@ -193,27 +220,35 @@ export function App() {
         </aside>
         <main className="workspace">
           <div className="breadcrumb">
-            MODELS <span>/</span>{" "}
-            {tab === "dynamics"
-              ? MODEL_REGISTRY[evolutionModel].label.toUpperCase()
-              : "TWO-LEVEL SYSTEM"}
+            {tab === "backend" ? "SYSTEM" : "MODELS"} <span>/</span>{" "}
+            {tab === "backend"
+              ? "BACKEND METHODS & FORMATS"
+              : tab === "dynamics"
+                ? MODEL_REGISTRY[evolutionModel].label.toUpperCase()
+                : "TWO-LEVEL SYSTEM"}
           </div>
           <div className="workspace-title">
             <div>
               <p className="eyebrow accent">
-                {tab === "dynamics"
-                  ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : "003"}`
-                  : "SMOKE LABORATORY / 001"}
+                {tab === "backend"
+                  ? "ARCHITECTURE / 008–009"
+                  : tab === "dynamics"
+                    ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : "003"}`
+                    : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
-                {tab === "dynamics"
-                  ? "A system in motion."
-                  : "A two-level universe."}
+                {tab === "backend"
+                  ? "Under the hood."
+                  : tab === "dynamics"
+                    ? "A system in motion."
+                    : "A two-level universe."}
               </h1>
               <p>
-                {tab === "dynamics"
-                  ? MODEL_REGISTRY[evolutionModel].description
-                  : "Explore the spectrum of a coupled quantum two-state system."}
+                {tab === "backend"
+                  ? "Two independent numerical engines, one verified result format."
+                  : tab === "dynamics"
+                    ? MODEL_REGISTRY[evolutionModel].description
+                    : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
             <span className="pill">2 × 2 HILBERT SPACE</span>
@@ -247,6 +282,13 @@ export function App() {
             >
               Roadmap
             </button>
+            <button
+              role="tab"
+              aria-selected={tab === "backend"}
+              onClick={() => setTab("backend")}
+            >
+              Backend
+            </button>
           </div>
           <div hidden={tab !== "dynamics"}>
             <DynamicsLab
@@ -255,7 +297,9 @@ export function App() {
               modelId={evolutionModel}
             />
           </div>
-          {tab === "roadmap" ? (
+          {tab === "backend" ? (
+            <BackendPanel status={status} />
+          ) : tab === "roadmap" ? (
             <section className="panel roadmap">
               <p className="eyebrow">DESKTOP V1 / DELIVERY ROADMAP</p>
               <h2>Build on a verified foundation.</h2>
@@ -276,7 +320,12 @@ export function App() {
                   "Dynamics workspace, Bloch sphere & time cursor",
                   "Implemented",
                 ],
-                ["008–009", "Native engine & numerical comparison", "Next"],
+                ["008", "Native NumPy/SciPy reference engine", "Implemented"],
+                [
+                  "009",
+                  "Engine comparison & numerical diagnostics",
+                  "Implemented",
+                ],
                 [
                   "010–014",
                   "Driven systems, cavity QED, Lindblad & sweeps",
@@ -387,7 +436,7 @@ export function App() {
                       <span>H |ψₙ⟩ = Eₙ |ψₙ⟩</span>
                       <span>
                         {result
-                          ? `Computed at Δ = ${result.model.parameters.delta}, Ω = ${result.model.parameters.omega}`
+                          ? `${result.engine.name === "qutip" ? "QuTiP" : "Native"} · Δ = ${result.model.parameters.delta}, Ω = ${result.model.parameters.omega}`
                           : "Two real eigenvalues · ascending order"}
                       </span>
                     </div>
@@ -415,6 +464,40 @@ export function App() {
                       <small>max |E − Eexact|</small>
                     </section>
                   </div>
+                  {comparison && (
+                    <section
+                      className="spectrum-comparison"
+                      data-testid="spectrum-comparison"
+                    >
+                      <div>
+                        <p className="eyebrow">QUANTUM SOLVER COMPARISON</p>
+                        <h2>Two engines, one Hamiltonian.</h2>
+                      </div>
+                      <div className="comparison-metrics">
+                        <div>
+                          <span>MAX ENERGY Δ</span>
+                          <strong data-testid="max-energy-difference">
+                            {comparison.maxEnergyDifference.toExponential(3)}
+                          </strong>
+                          <small>|E QuTiP − E Native|</small>
+                        </div>
+                        <div>
+                          <span>QUTIP RUNTIME</span>
+                          <strong>
+                            {comparison.qutipRuntimeMs.toFixed(3)} ms
+                          </strong>
+                          <small>diagonalization</small>
+                        </div>
+                        <div>
+                          <span>NATIVE RUNTIME</span>
+                          <strong>
+                            {comparison.nativeRuntimeMs.toFixed(3)} ms
+                          </strong>
+                          <small>NumPy eigvalsh</small>
+                        </div>
+                      </div>
+                    </section>
+                  )}
                 </>
               )}
             </>
@@ -429,12 +512,14 @@ export function App() {
               {status.detail}
             </div>
           )}
-          {status.state === "READY" && !ready && (
-            <div className="error-message" role="alert">
-              Python is connected, but QuTiP is unavailable. Run npm run
-              setup:python, then restart the worker.
-            </div>
-          )}
+          {status.state === "READY" &&
+            !ready &&
+            (tab === "spectrum" || tab === "hamiltonian") && (
+              <div className="error-message" role="alert">
+                The selected engine mode is unavailable. Run npm run
+                setup:python, then restart the worker.
+              </div>
+            )}
         </main>
         <aside className="inspector">
           <p className="eyebrow">MODEL INSPECTOR</p>
@@ -444,6 +529,23 @@ export function App() {
             <br />
             Recalculate to see the spectrum.
           </p>
+          <label htmlFor="spectrum-engine">
+            <span>Engine</span>
+            <small>compute mode</small>
+          </label>
+          <select
+            id="spectrum-engine"
+            aria-label="Spectrum engine"
+            value={engineMode}
+            onChange={(event) =>
+              setEngineMode(event.target.value as EngineMode)
+            }
+            disabled={busy}
+          >
+            <option value="qutip">QuTiP</option>
+            <option value="native">Native · NumPy</option>
+            <option value="compare">Compare both engines</option>
+          </select>
           {MODEL_REGISTRY.two_level.parameters.map((definition) => (
             <React.Fragment key={definition.key}>
               <label htmlFor={definition.key}>
@@ -506,10 +608,28 @@ export function App() {
               </div>
               <span className="engine-mark">Q</span>
             </div>
+            <div className="engine-card native-engine-card">
+              <span
+                className={
+                  status.capabilities?.engines.native.available
+                    ? "live-dot"
+                    : "offline-dot"
+                }
+              />
+              <div>
+                <strong>Native · NumPy/SciPy</strong>
+                <small>
+                  {status.capabilities?.engines.native.version
+                    ? `SciPy ${status.capabilities.engines.native.version}`
+                    : "Waiting for engine"}
+                </small>
+              </div>
+              <span className="engine-mark">N</span>
+            </div>
             <p className="engine-note">
-              Exact diagonalization
+              Hermitian eigenspectrum
               <br />
-              Hermitian 2 × 2 operator
+              Independent validation path
             </p>
           </div>
           <div className="inspector-section provenance">
@@ -545,7 +665,7 @@ export function App() {
           <span className="status-separator">|</span>
           <span>
             {status.capabilities
-              ? `QuTiP ${status.capabilities.engines.qutip.version ?? "unavailable"}`
+              ? `QuTiP ${status.capabilities.engines.qutip.version ?? "off"} · SciPy ${status.capabilities.engines.native.version ?? "off"}`
               : "Starting environment"}
           </span>
         </div>

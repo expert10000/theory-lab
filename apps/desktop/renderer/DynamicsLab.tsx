@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
   EvolutionResult,
   EvolutionProgress,
+  EngineName,
   QuantumBridge,
   WorkerStatus,
 } from "../../../packages/contracts";
@@ -17,6 +18,12 @@ import {
   type ComplexValue,
 } from "../../../packages/quantum-3d/evolution";
 import { BlochSphere } from "../../../packages/quantum-3d/BlochSphere";
+import {
+  compareEvolution,
+  type EvolutionComparison,
+} from "../../../packages/quantum-3d/comparison";
+
+type EngineMode = EngineName | "compare";
 
 const series = [
   { name: "P₀", column: 1, color: "#79d9c1" },
@@ -30,11 +37,13 @@ function DynamicsChart({
   rows,
   selectedIndex,
   onSelect,
+  engine,
 }: {
   data: Float64Array;
   rows: number;
   selectedIndex: number;
   onSelect: (index: number) => void;
+  engine: EngineName;
 }) {
   const path = (column: number) => {
     const step = Math.max(1, Math.ceil(rows / 800));
@@ -55,7 +64,7 @@ function DynamicsChart({
       className="dynamics-chart"
       viewBox="0 0 800 390"
       role="img"
-      aria-label="QuTiP population and Pauli expectation time series"
+      aria-label={`${engine === "qutip" ? "QuTiP" : "Native"} population and Pauli expectation time series`}
       onClick={(event) => {
         const matrix = event.currentTarget.getScreenCTM();
         if (!matrix) return;
@@ -158,6 +167,7 @@ export function DynamicsLab({
   );
   const [samples, setSamples] = useState("401");
   const [basis, setBasis] = useState<0 | 1>(0);
+  const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
   const [progress, setProgress] = useState<EvolutionProgress | null>(null);
   const [running, setRunning] = useState(false);
   const [cancelling, setCancelling] = useState(false);
@@ -165,6 +175,10 @@ export function DynamicsLab({
   const [error, setError] = useState("");
   const [result, setResult] = useState<EvolutionResult | null>(null);
   const [data, setData] = useState<Float64Array | null>(null);
+  const [comparison, setComparison] = useState<EvolutionComparison | null>(
+    null,
+  );
+  const [resultMode, setResultMode] = useState<EngineMode | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const activeJob = useRef<string | null>(null);
   useEffect(() => {
@@ -176,6 +190,8 @@ export function DynamicsLab({
     setBasis(MODEL_REGISTRY[modelId].defaultState.index);
     setResult(null);
     setData(null);
+    setComparison(null);
+    setResultMode(null);
     setSelectedIndex(0);
     setOutcome("READY TO EVOLVE");
   }, [modelId]);
@@ -205,7 +221,11 @@ export function DynamicsLab({
     count <= 50000;
   const ready =
     status.state === "READY" &&
-    !!status.capabilities?.operations.includes("evolve");
+    !!status.capabilities?.operations.includes("evolve") &&
+    (engineMode === "compare"
+      ? status.capabilities.engines.qutip.available &&
+        status.capabilities.engines.native.available
+      : status.capabilities.engines[engineMode].available);
   const stale =
     result &&
     (result.model.type !== modelId ||
@@ -215,15 +235,44 @@ export function DynamicsLab({
       begin !== result.solver.tStart ||
       end !== result.solver.tStop ||
       count !== result.solver.samples ||
-      basis !== result.initialState.index);
+      basis !== result.initialState.index ||
+      engineMode !== resultMode);
   const selected = useMemo(
     () => (result && data ? sampleAt(data, selectedIndex) : null),
     [result, data, selectedIndex],
   );
-  async function run() {
-    if (!valid || !ready || running) return;
+  async function runOne(engine: EngineName) {
     const jobId = `job-${crypto.randomUUID()}`;
     activeJob.current = jobId;
+    setProgress(null);
+    setOutcome(
+      engineMode === "compare" ? `RUNNING ${engine.toUpperCase()}` : "RUNNING",
+    );
+    const completed = await bridge.evolve(
+      evolutionJob(
+        modelId,
+        jobId,
+        parameters,
+        basis,
+        begin,
+        end,
+        count,
+        engine,
+      ),
+    );
+    const bytes = await bridge.readData(jobId);
+    if (bytes.byteLength !== completed.data.bytes)
+      throw new Error("Binary artifact size mismatch");
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    const numbers = new Float64Array(bytes.byteLength / 8);
+    for (let i = 0; i < numbers.length; i++)
+      numbers[i] = view.getFloat64(i * 8, true);
+    if (numbers.length !== completed.data.rows * 10)
+      throw new Error("Evolution artifact shape mismatch");
+    return { completed, numbers };
+  }
+  async function run() {
+    if (!valid || !ready || running) return;
     setRunning(true);
     setCancelling(false);
     setProgress(null);
@@ -231,26 +280,27 @@ export function DynamicsLab({
     setOutcome("RUNNING");
     setResult(null);
     setData(null);
+    setComparison(null);
+    setResultMode(null);
     setSelectedIndex(0);
     try {
-      const completed = await bridge.evolve(
-        evolutionJob(modelId, jobId, parameters, basis, begin, end, count),
+      const first = await runOne(
+        engineMode === "compare" ? "qutip" : engineMode,
       );
-      const bytes = await bridge.readData(jobId);
-      if (bytes.byteLength !== completed.data.bytes)
-        throw new Error("Binary artifact size mismatch");
-      const view = new DataView(
-        bytes.buffer,
-        bytes.byteOffset,
-        bytes.byteLength,
-      );
-      const numbers = new Float64Array(bytes.byteLength / 8);
-      for (let i = 0; i < numbers.length; i++)
-        numbers[i] = view.getFloat64(i * 8, true);
-      if (numbers.length !== completed.data.rows * 10)
-        throw new Error("Evolution artifact shape mismatch");
-      setResult(completed);
-      setData(numbers);
+      if (engineMode === "compare") {
+        const second = await runOne("native");
+        setComparison(
+          compareEvolution(
+            first.completed,
+            first.numbers,
+            second.completed,
+            second.numbers,
+          ),
+        );
+      }
+      setResult(first.completed);
+      setData(first.numbers);
+      setResultMode(engineMode);
       setOutcome("COMPLETE");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
@@ -293,8 +343,9 @@ export function DynamicsLab({
           <p className="eyebrow">EVOLUTION JOB</p>
           <h2>{definition.label}</h2>
           <p>
-            {definition.description}. QuTiP integrates the wavefunction and
-            records five observables and the complex state at every sample.
+            {definition.description}. The selected engine integrates the
+            wavefunction and records five observables and the complex state at
+            every sample.
           </p>
         </div>
         <div className="dynamics-fields">
@@ -367,6 +418,21 @@ export function DynamicsLab({
               <option value={1}>|1⟩</option>
             </select>
           </label>
+          <label>
+            Engine
+            <select
+              aria-label="Dynamics engine"
+              value={engineMode}
+              onChange={(event) =>
+                setEngineMode(event.target.value as EngineMode)
+              }
+              disabled={running}
+            >
+              <option value="qutip">QuTiP</option>
+              <option value="native">Native · NumPy/SciPy</option>
+              <option value="compare">Compare both engines</option>
+            </select>
+          </label>
         </div>
         <div className="dynamics-actions">
           <button
@@ -392,6 +458,12 @@ export function DynamicsLab({
           <p className="validation">
             Check the parameters: 2–50,000 samples, −1000 ≤ start &lt; end ≤
             1000, finite drive values.
+          </p>
+        )}
+        {status.state === "READY" && !ready && (
+          <p className="validation">
+            The selected engine mode is unavailable. Run npm run setup:python,
+            then restart the worker.
           </p>
         )}
         {running && (
@@ -435,10 +507,62 @@ export function DynamicsLab({
                 rows={result.data.rows}
                 selectedIndex={selectedIndex}
                 onSelect={setSelectedIndex}
+                engine={result.engine.name}
               />
             </div>
             {selected && <BlochSphere data={data} sample={selected} />}
           </div>
+          {comparison && (
+            <div
+              className="comparison-report"
+              data-testid="evolution-comparison"
+            >
+              <div className="comparison-report-heading">
+                <div>
+                  <p className="eyebrow">INDEPENDENT ENGINE CHECK</p>
+                  <h3>QuTiP versus Native</h3>
+                </div>
+                <span>same model · same sample grid</span>
+              </div>
+              <div className="comparison-metrics">
+                <div>
+                  <span>MAX OBSERVABLE Δ</span>
+                  <strong data-testid="max-observable-difference">
+                    {comparison.maxObservableDifference.toExponential(3)}
+                  </strong>
+                  <small>P₀, P₁, σx, σy, σz</small>
+                </div>
+                <div>
+                  <span>MAX NORM DRIFT</span>
+                  <strong data-testid="max-norm-drift">
+                    {comparison.maxNormDriftNative.toExponential(3)}
+                  </strong>
+                  <small>
+                    Native · QuTiP{" "}
+                    {comparison.maxNormDriftQutip.toExponential(2)}
+                  </small>
+                </div>
+                <div>
+                  <span>MIN STATE FIDELITY</span>
+                  <strong data-testid="min-state-fidelity">
+                    {comparison.minStateFidelity.toFixed(12)}
+                  </strong>
+                  <small>
+                    phase-independent · final{" "}
+                    {comparison.finalStateFidelity.toFixed(12)}
+                  </small>
+                </div>
+                <div>
+                  <span>RUNTIME</span>
+                  <strong data-testid="comparison-runtime">
+                    {comparison.qutipRuntimeMs.toFixed(1)} /{" "}
+                    {comparison.nativeRuntimeMs.toFixed(1)} ms
+                  </strong>
+                  <small>QuTiP / Native</small>
+                </div>
+              </div>
+            </div>
+          )}
           {selected && (
             <div className="dynamics-timeline">
               <div className="timeline-heading">
@@ -546,7 +670,8 @@ export function DynamicsLab({
           )}
           <div className="plot-caption">
             <span>
-              QuTiP {result.engine.version} ·{" "}
+              {result.engine.name === "qutip" ? "QuTiP" : "Native SciPy"}{" "}
+              {result.engine.version} ·{" "}
               {result.provenance.durationMs.toFixed(1)} ms
             </span>
             <span>

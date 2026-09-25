@@ -104,6 +104,18 @@ try {
       .getByText("Foundation & first spectrum", { exact: true })
       .isVisible(),
   );
+  await page.getByRole("tab", { name: "Backend", exact: true }).click();
+  assert.ok(await page.getByTestId("backend-page").isVisible());
+  assert.ok(
+    await page.getByText("Native NumPy / SciPy", { exact: true }).isVisible(),
+  );
+  assert.ok(
+    await page.getByText("quantum-data/v1", { exact: true }).isVisible(),
+  );
+  await page.screenshot({
+    path: "artifacts/desktop-backend.png",
+    fullPage: true,
+  });
   await page.getByRole("tab", { name: "Spectrum", exact: true }).click();
   await page.getByRole("button", { name: "Restore smoke values" }).click();
   await page.getByRole("button", { name: "Run spectrum" }).click();
@@ -122,6 +134,40 @@ try {
     .getByTestId("worker-status")
     .filter({ hasText: "READY" })
     .waitFor();
+  await page.getByRole("button", { name: "Run spectrum" }).click();
+  await page
+    .getByTestId("result-state")
+    .filter({ hasText: "COMPUTED" })
+    .waitFor();
+  await page
+    .getByRole("combobox", { name: "Spectrum engine" })
+    .selectOption("compare");
+  await page
+    .getByTestId("result-state")
+    .filter({ hasText: "OUT OF DATE" })
+    .waitFor();
+  await page.getByRole("button", { name: "Compare spectrum" }).click();
+  await page.getByTestId("spectrum-comparison").waitFor();
+  assert.ok(
+    Number(await page.getByTestId("max-energy-difference").textContent()) <
+      1e-10,
+  );
+  await page.screenshot({
+    path: "artifacts/desktop-spectrum-compare.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("combobox", { name: "Spectrum engine" })
+    .selectOption("native");
+  await page.getByRole("button", { name: "Run spectrum" }).click();
+  await page
+    .getByTestId("result-state")
+    .filter({ hasText: "COMPUTED" })
+    .waitFor();
+  assert.ok(await page.getByText(/Native · Δ = 1, Ω = 0.8/).isVisible());
+  await page
+    .getByRole("combobox", { name: "Spectrum engine" })
+    .selectOption("qutip");
   await page.getByRole("button", { name: "Run spectrum" }).click();
   await page
     .getByTestId("result-state")
@@ -249,9 +295,46 @@ try {
     path: "artifacts/desktop-landau-zener.png",
     fullPage: true,
   });
+  await page
+    .getByRole("combobox", { name: "Dynamics engine" })
+    .selectOption("compare");
+  await page.getByTestId("run-evolution").click();
+  await page
+    .getByTestId("evolution-state")
+    .filter({ hasText: "COMPLETE" })
+    .waitFor({ timeout: 30000 });
+  await page.getByTestId("evolution-comparison").waitFor();
+  assert.ok(
+    Number(await page.getByTestId("max-observable-difference").textContent()) <
+      1e-3,
+  );
+  assert.ok(
+    Number(await page.getByTestId("min-state-fidelity").textContent()) >
+      0.99999,
+  );
+  assert.ok(
+    Number(await page.getByTestId("max-norm-drift").textContent()) < 1e-5,
+  );
+  await page.screenshot({
+    path: "artifacts/desktop-evolution-compare.png",
+    fullPage: true,
+  });
+  await page
+    .getByRole("combobox", { name: "Dynamics engine" })
+    .selectOption("native");
+  await page.getByTestId("run-evolution").click();
+  await page
+    .getByTestId("evolution-state")
+    .filter({ hasText: "COMPLETE" })
+    .waitFor({ timeout: 30000 });
+  assert.ok(
+    await page
+      .getByRole("img", { name: /Native population and Pauli/ })
+      .isVisible(),
+  );
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → validated IPC → Python → QuTiP → spectrum and evolution; synchronized plot/Bloch/state/density cursor, stale results, cancellation, restart, sandbox and compact layout.",
+    "PASS: Electron → QuTiP/Native/Compare spectrum and evolution, backend tab, verified binary data, synchronized cursor, numerical diagnostics, cancellation, restart and sandbox.",
   );
 } finally {
   await app.close();

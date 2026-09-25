@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python/QuTiP worker. **QLAB-000–007** cover the roadmap, secure workspace, versioned contracts, worker lifecycle, two-level spectrum, driven Rabi and Landau–Zener evolution, and a synchronized dynamics/Bloch workspace.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. **QLAB-000–009** add QuTiP and native NumPy/SciPy engines, the two-level and driven laboratories, a synchronized Bloch workspace, and numerical comparison.
 
 ## Run on Windows
 
@@ -21,24 +21,26 @@ On Linux, create `.venv` with `python3 -m venv .venv`, then `.venv/bin/python -m
 
 The startup example automatically computes the static Hamiltonian **H = (Δ σz + Ω σx)/2**, in normalized energy units with **ħ = 1**. Δ = 1 and Ω = 0.8 give **E± = ±0.640312423743…**. QuTiP builds the operator and computes its eigenenergies. The renderer compares them with the exact formula ±√(Δ² + Ω²)/2.
 
-Edit Δ or Ω, then select **Run spectrum**. Existing results are marked **OUT OF DATE** until recalculated. The Hamiltonian tab shows the draft matrix; the spectrum always identifies the parameters actually used. The Roadmap tab shows the delivery milestones. **Restart worker** recovers a failed Python process.
+Edit Δ or Ω, then select **Run spectrum**. Existing results are marked **OUT OF DATE** until recalculated. Select QuTiP, Native, or Compare in the inspector; Compare runs both engines for the same Hamiltonian and reports the maximum eigenvalue difference and each runtime. The Hamiltonian tab shows the draft matrix; the spectrum always identifies the parameters actually used. Roadmap shows milestones, while Backend explains the methods and formats. **Restart worker** recovers a failed Python process.
 
 ## Rabi evolution
 
-Open **Dynamics**, set detuning Δ, drive amplitude A, frequency ω, phase φ, end time, samples and |0⟩ or |1⟩, then select **Run evolution**. The Hamiltonian is **H(t) = Δ σz/2 + A cos(ωt + φ) σx/2**. The worker steps QuTiP's Schrödinger solver and reports progress after sample batches. **Cancel job** sets a worker-side cancellation flag; no completed data file is published after cancellation.
+Open **Dynamics**, set detuning Δ, drive amplitude A, frequency ω, phase φ, end time, samples and |0⟩ or |1⟩, then select **Run evolution**. The Hamiltonian is **H(t) = Δ σz/2 + A cos(ωt + φ) σx/2**. Select QuTiP, Native, or Compare; the worker reports progress for either engine. **Cancel job** sets a worker-side cancellation flag; no completed data file is published after cancellation.
 
 The result shows P₀(t), P₁(t), ⟨σx⟩, ⟨σy⟩ and ⟨σz⟩ alongside a Three.js Bloch sphere and trajectory. Drag the time cursor or click the plot to inspect one exact saved sample: the plot marker, Bloch vector, populations, complex state amplitudes and derived density matrix update together. The density matrix is ρ = |ψ⟩⟨ψ| for the pure states produced by the current Schrödinger solver. A zero-frequency, zero-detuning, unit-amplitude run provides the exact check P₁(t) = sin²(t/2). Changed inputs mark a completed plot **OUT OF DATE**.
 
+Compare mode runs both engines on the same time grid. It reports the largest absolute difference among the five observables, maximum norm drift for each engine, minimum and final phase-independent state fidelity, and both runtimes. The plot and Bloch sphere show the QuTiP result in Compare mode. Native evolution uses SciPy DOP853 without renormalizing its output, so the norm-drift diagnostic is informative. These runtimes include result generation and are not controlled benchmark measurements.
+
 ## Model registry and Landau–Zener
 
-The shared `packages/models` registry supplies model labels, parameter definitions, defaults, Hamiltonian descriptions, supported operations, observables, initial state, and optional Volume VIII provenance fields. React generates parameter controls from this metadata. QuTiP model builders use the same contract model IDs.
+The shared `packages/models` registry supplies model labels, parameter definitions, defaults, Hamiltonian descriptions, supported operations, observables, initial state, and optional Volume VIII provenance fields. React generates parameter controls from this metadata. Both engines use the same contract model IDs and parameter conventions.
 
 Select **Landau–Zener** in the laboratory list to sweep H(t) = (vt + ε₀)σz/2 + gσx/2 from the default t = −10 to t = +10. Change sweep rate v, coupling gap g and bias ε₀, then run the evolution. A zero-gap reference must preserve the initial diabatic population. The registry's Volume VIII, chapter 58 tags are provisional links from the supplied roadmap; no book example or manifest has been imported.
 
 ## Architecture
 
 ```text
-React renderer → narrow preload API → Electron main → JSON-RPC stdio → Python → QuTiP
+React renderer → narrow preload API → Electron main → JSON-RPC stdio → Python → QuTiP / Native
                                       validates jobs                 validates jobs/results
                                       validates results ← quantum-result/v1
 ```
@@ -59,12 +61,12 @@ npm run build
 npm run test:desktop
 ```
 
-The desktop test starts the actual Electron app and worker; it checks both calculations, synchronized time selection, stale results, invalid input, degeneracy, restart, cancellation, tabs, renderer isolation and compact layout. Screenshots are saved to the ignored `artifacts/` directory. Python and TypeScript tests check analytic Rabi values, norm, binary integrity, density reconstruction, progress and cancellation, as well as the original spectrum and protocol.
+The desktop test starts the actual Electron app and worker; it checks QuTiP/Native/Compare for spectrum and dynamics, the Backend tab, synchronized time selection, stale results, invalid input, degeneracy, restart, cancellation, renderer isolation and compact layout. Screenshots are saved to the ignored `artifacts/` directory. Python and TypeScript tests check analytic Rabi values, norms, phase-independent fidelity, binary integrity, density reconstruction, progress and cancellation, as well as the original spectrum and protocol.
 
 ## Roadmap and scope
 
 The complete supplied plan is preserved in [docs/ROADMAP.md](docs/ROADMAP.md); decisions and validation status are in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
-This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener evolution and the dynamics/Bloch workspace. Stückelberg, strong drive, Floquet, Jaynes–Cummings, Quantum Rabi, Lindblad dynamics, sweeps and QuTiP/native comparison remain subsequent V1 work. Layer-1 source examples were not present in this repository and have not been imported. Atoms, molecules and crystals are outside initial V1 scope.
+This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener evolution, the dynamics/Bloch workspace, and QuTiP/native comparison. Stückelberg, strong drive, Floquet, Jaynes–Cummings, Quantum Rabi, Lindblad dynamics and sweeps remain subsequent V1 work. Layer-1 source examples were not present in this repository and have not been imported. Atoms, molecules and crystals are outside initial V1 scope.
 
 Run IDs, engine versions, timestamps and parameters are returned for each calculation; run history is currently session-only. Durable provenance/workspaces/exports, installers, and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders both plots; a QuTiP warning about Python plotting does not prevent calculation.

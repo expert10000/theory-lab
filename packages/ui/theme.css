@@ -222,6 +222,27 @@ code {
 }
 .dynamics-result {
   margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+}
+.dynamics-result .panel-heading {
+  order: 0;
+}
+.dynamics-result .comparison-report {
+  order: 1;
+  margin-top: 12px;
+}
+.dynamics-result .dynamics-visual-grid {
+  order: 2;
+}
+.dynamics-result .dynamics-timeline {
+  order: 3;
+}
+.dynamics-result .dynamics-readout {
+  order: 4;
+}
+.dynamics-result .plot-caption {
+  order: 5;
 }
 .dynamics-chart {
   display: block;
@@ -392,6 +413,168 @@ code {
     monospace;
   color: #8dcdbb;
 }
+.comparison-report,
+.spectrum-comparison {
+  margin: 0 22px 18px;
+  padding: 18px;
+  border: 1px solid #3b675d;
+  border-radius: 7px;
+  background: linear-gradient(120deg, #17302d, #17212c 72%);
+}
+.comparison-report-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+.comparison-report-heading .eyebrow,
+.spectrum-comparison .eyebrow {
+  margin-bottom: 7px;
+}
+.comparison-report-heading h3,
+.spectrum-comparison h2 {
+  font-size: 17px;
+  font-weight: 550;
+  margin: 0;
+}
+.comparison-report-heading > span {
+  color: #93b8ae;
+  font:
+    9px Consolas,
+    monospace;
+}
+.comparison-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.comparison-metrics > div {
+  border: 1px solid #3d594f;
+  border-radius: 5px;
+  padding: 12px;
+  background: #132722;
+  min-width: 0;
+}
+.comparison-metrics span,
+.comparison-metrics small {
+  display: block;
+  font:
+    9px Consolas,
+    monospace;
+  color: #96b3a9;
+}
+.comparison-metrics strong {
+  display: block;
+  margin: 11px 0 8px;
+  color: #b6ecd8;
+  font:
+    17px Consolas,
+    monospace;
+  overflow-wrap: anywhere;
+}
+.spectrum-comparison {
+  margin: 15px 0 0;
+}
+.spectrum-comparison .comparison-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin-top: 16px;
+}
+.native-engine-card {
+  margin-top: 9px;
+}
+.backend-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.backend-intro,
+.backend-card {
+  padding: 22px;
+}
+.backend-intro h2 {
+  font-size: 23px;
+}
+.backend-intro p:not(.eyebrow),
+.backend-card p:not(.eyebrow) {
+  color: #9badb9;
+  font-size: 11px;
+  line-height: 1.75;
+}
+.backend-flow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  margin-top: 22px;
+}
+.backend-flow span {
+  border: 1px solid #38665b;
+  background: #1a3430;
+  border-radius: 5px;
+  padding: 10px 12px;
+  color: #b6ead9;
+  font:
+    10px Consolas,
+    monospace;
+}
+.backend-flow b {
+  color: #6d978b;
+}
+.backend-card-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+.backend-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+.backend-card h2 {
+  font-size: 18px;
+  margin-bottom: 4px;
+}
+.backend-card .backend-version {
+  color: #8dd6c2 !important;
+  font:
+    10px Consolas,
+    monospace !important;
+  margin-bottom: 15px;
+}
+.backend-card code {
+  color: #c7e1d8;
+}
+.backend-card small {
+  display: block;
+  color: #819aaa;
+  margin-top: 14px;
+  line-height: 1.5;
+}
+.backend-columns {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+  margin: 18px 0;
+}
+.backend-columns > div {
+  border: 1px solid #36534e;
+  border-radius: 4px;
+  background: #172b2b;
+  padding: 9px;
+  display: flex;
+  gap: 10px;
+}
+.backend-columns span {
+  color: #658c84;
+  font:
+    9px Consolas,
+    monospace;
+}
+.backend-columns code {
+  color: #c5dfd7;
+  font-size: 10px;
+}
 @media (max-width: 1200px) {
   .dynamics-layout {
     grid-template-columns: 185px minmax(0, 1fr);
@@ -411,6 +594,12 @@ code {
   }
   .density-readout {
     grid-column: 1 / -1;
+  }
+  .comparison-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .backend-columns {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 .sidebar {
@@ -776,6 +965,15 @@ h1 {
   color: #e0e9f2;
   font-family: Consolas, monospace;
   font-size: 15px;
+}
+.inspector select {
+  width: 100%;
+  border: 1px solid #344352;
+  border-radius: 5px;
+  background: #0f161f;
+  padding: 10px;
+  color: #e0e9f2;
+  font-size: 11px;
 }
 .reset {
   margin-top: 15px;
