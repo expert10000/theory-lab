@@ -180,6 +180,17 @@ try {
     .filter({ hasText: "CANCELLED" })
     .waitFor({ timeout: 30000 });
   assert.match(await page.getByTestId("worker-status").textContent(), /READY/);
+  await page.getByRole("button", { name: "Landau–Zener" }).click();
+  await page.getByLabel("Sweep rate v").waitFor();
+  await page.getByTestId("run-evolution").click();
+  await page
+    .getByTestId("evolution-state")
+    .filter({ hasText: "COMPLETE" })
+    .waitFor({ timeout: 30000 });
+  await page.screenshot({
+    path: "artifacts/desktop-landau-zener.png",
+    fullPage: true,
+  });
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → validated IPC → Python → QuTiP → spectrum and evolution; binary data, stale results, cancellation, restart, sandbox and compact layout.",

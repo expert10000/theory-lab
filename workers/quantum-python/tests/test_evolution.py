@@ -56,5 +56,22 @@ class EvolutionTests(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 evolve(job, directory, threading.Event(), lambda *_: None)
 
+    def test_landau_zener_sweep_and_zero_gap_reference(self):
+        job = json.loads((SCHEMA_DIR.parent / "fixtures" / "landau-zener.job.json").read_text())
+        with tempfile.TemporaryDirectory() as directory:
+            result = evolve(job, directory, threading.Event(), lambda *_: None)
+            validate("quantum-result", result)
+            rows = list(struct.iter_unpack("<10d", (Path(directory) / result["data"]["path"]).read_bytes()))
+            self.assertEqual(rows[0][0], -10)
+            self.assertEqual(rows[-1][0], 10)
+            self.assertTrue(0 < rows[-1][2] < 1)
+            self.assertTrue(all(abs(row[1] + row[2] - 1) < 1e-9 for row in rows))
+        job["jobId"] = "lz-zero-gap"
+        job["model"]["parameters"]["gap"] = 0
+        with tempfile.TemporaryDirectory() as directory:
+            result = evolve(job, directory, threading.Event(), lambda *_: None)
+            rows = list(struct.iter_unpack("<10d", (Path(directory) / result["data"]["path"]).read_bytes()))
+            self.assertTrue(all(abs(row[2]) < 1e-10 and abs(row[5] - 1) < 1e-10 for row in rows))
+
 if __name__ == "__main__":
     unittest.main()

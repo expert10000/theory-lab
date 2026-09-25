@@ -6,6 +6,13 @@ import type {
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
 import { DynamicsLab } from "./DynamicsLab";
+import {
+  MODEL_REGISTRY,
+  defaultsFor,
+  parametersFor,
+  spectrumJob,
+  type EvolutionModelId,
+} from "../../../packages/models";
 declare global {
   interface Window {
     quantum: QuantumBridge;
@@ -29,8 +36,11 @@ export function App() {
     detail: "Starting Python worker",
     capabilities: null,
   });
-  const [delta, setDelta] = useState("1");
-  const [omega, setOmega] = useState("0.8");
+  const [parameters, setParameters] = useState(() => defaultsFor("two_level"));
+  const delta = parameters.delta;
+  const omega = parameters.omega;
+  const [evolutionModel, setEvolutionModel] =
+    useState<EvolutionModelId>("driven_two_level");
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
@@ -39,12 +49,7 @@ export function App() {
     "spectrum" | "hamiltonian" | "dynamics" | "roadmap"
   >("spectrum");
   const initialRun = useRef(false);
-  const valid = [delta, omega].every(
-    (value) =>
-      value.trim() !== "" &&
-      Number.isFinite(Number(value)) &&
-      Math.abs(Number(value)) <= 1e6,
-  );
+  const valid = parametersFor("two_level", parameters) !== null;
   const ready =
     status.state === "READY" &&
     status.capabilities?.engines.qutip.available &&
@@ -88,16 +93,9 @@ export function App() {
     setError("");
     try {
       setResult(
-        await window.quantum.run({
-          schema: "quantum-job/v1",
-          jobId: `job-${crypto.randomUUID()}`,
-          operation: "diagonalize",
-          engine: "qutip",
-          model: {
-            type: "two_level",
-            parameters: { delta: Number(delta), omega: Number(omega) },
-          },
-        }),
+        await window.quantum.run(
+          spectrumJob(`job-${crypto.randomUUID()}`, parameters),
+        ),
       );
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -135,7 +133,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-005</span>
+          <span className="version">V0.1 · QLAB-006</span>
           {tab !== "dynamics" && (
             <button
               className="run-button"
@@ -150,14 +148,23 @@ export function App() {
       <div className={`layout ${tab === "dynamics" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>02 / 10</span>
+            LABORATORIES <span>03 / 10</span>
           </p>
-          <button className="lab-selected" onClick={() => setTab("spectrum")}>
-            <span>◈</span> Two-level system <span className="live-dot" />
-          </button>
-          <button className="lab-selected" onClick={() => setTab("dynamics")}>
-            <span>∿</span> Rabi dynamics <span className="live-dot" />
-          </button>
+          {(["two_level", "driven_two_level", "landau_zener"] as const).map(
+            (id) => (
+              <button
+                key={id}
+                className="lab-selected"
+                onClick={() => {
+                  if (id !== "two_level") setEvolutionModel(id);
+                  setTab(id === "two_level" ? "spectrum" : "dynamics");
+                }}
+              >
+                <span>{id === "two_level" ? "◈" : "∿"}</span>{" "}
+                {MODEL_REGISTRY[id].label} <span className="live-dot" />
+              </button>
+            ),
+          )}
           <p className="sidebar-note">
             The smallest quantum system.
             <br />
@@ -165,9 +172,9 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">PLANNED FOR V1</p>
           <nav aria-label="Planned laboratories">
-            {futureLabs.slice(1).map((lab, i) => (
+            {futureLabs.slice(2).map((lab, i) => (
               <div className="future-lab" key={lab}>
-                <span>{String(i + 3).padStart(2, "0")}</span>
+                <span>{String(i + 4).padStart(2, "0")}</span>
                 {lab}
               </div>
             ))}
@@ -187,13 +194,15 @@ export function App() {
         <main className="workspace">
           <div className="breadcrumb">
             MODELS <span>/</span>{" "}
-            {tab === "dynamics" ? "RABI DYNAMICS" : "TWO-LEVEL SYSTEM"}
+            {tab === "dynamics"
+              ? MODEL_REGISTRY[evolutionModel].label.toUpperCase()
+              : "TWO-LEVEL SYSTEM"}
           </div>
           <div className="workspace-title">
             <div>
               <p className="eyebrow accent">
                 {tab === "dynamics"
-                  ? "EVOLUTION LABORATORY / 002"
+                  ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : "003"}`
                   : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
@@ -203,7 +212,7 @@ export function App() {
               </h1>
               <p>
                 {tab === "dynamics"
-                  ? "Drive a qubit and watch its populations and observables evolve."
+                  ? MODEL_REGISTRY[evolutionModel].description
                   : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
@@ -240,7 +249,11 @@ export function App() {
             </button>
           </div>
           <div hidden={tab !== "dynamics"}>
-            <DynamicsLab bridge={window.quantum} status={status} />
+            <DynamicsLab
+              bridge={window.quantum}
+              status={status}
+              modelId={evolutionModel}
+            />
           </div>
           {tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -430,36 +443,30 @@ export function App() {
             <br />
             Recalculate to see the spectrum.
           </p>
-          <label htmlFor="delta">
-            <span>
-              Δ <strong>Detuning</strong>
-            </span>
-            <small>σz</small>
-          </label>
-          <input
-            id="delta"
-            type="number"
-            step="0.1"
-            min="-1000000"
-            max="1000000"
-            value={delta}
-            onChange={(e) => setDelta(e.target.value)}
-          />
-          <label htmlFor="omega">
-            <span>
-              Ω <strong>Transverse coupling</strong>
-            </span>
-            <small>σx</small>
-          </label>
-          <input
-            id="omega"
-            type="number"
-            step="0.1"
-            min="-1000000"
-            max="1000000"
-            value={omega}
-            onChange={(e) => setOmega(e.target.value)}
-          />
+          {MODEL_REGISTRY.two_level.parameters.map((definition) => (
+            <React.Fragment key={definition.key}>
+              <label htmlFor={definition.key}>
+                <span>
+                  {definition.symbol} <strong>{definition.label}</strong>
+                </span>
+                <small title={definition.description}>normalized</small>
+              </label>
+              <input
+                id={definition.key}
+                type="number"
+                step={definition.step}
+                min={definition.minimum}
+                max={definition.maximum}
+                value={parameters[definition.key]}
+                onChange={(e) =>
+                  setParameters((current) => ({
+                    ...current,
+                    [definition.key]: e.target.value,
+                  }))
+                }
+              />
+            </React.Fragment>
+          ))}
           {!valid && (
             <p className="validation">
               Enter finite values between −10⁶ and 10⁶.
@@ -468,8 +475,7 @@ export function App() {
           <button
             className="text-button reset"
             onClick={() => {
-              setDelta("1");
-              setOmega("0.8");
+              setParameters(defaultsFor("two_level"));
             }}
           >
             ↺ Restore smoke values

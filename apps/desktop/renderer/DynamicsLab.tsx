@@ -5,6 +5,13 @@ import type {
   QuantumBridge,
   WorkerStatus,
 } from "../../../packages/contracts";
+import {
+  MODEL_REGISTRY,
+  defaultsFor,
+  parametersFor,
+  evolutionJob,
+  type EvolutionModelId,
+} from "../../../packages/models";
 
 const series = [
   { name: "P₀", column: 1, color: "#79d9c1" },
@@ -80,15 +87,20 @@ function DynamicsChart({ data, rows }: { data: Float64Array; rows: number }) {
 export function DynamicsLab({
   bridge,
   status,
+  modelId,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
+  modelId: EvolutionModelId;
 }) {
-  const [delta, setDelta] = useState("1");
-  const [amplitude, setAmplitude] = useState("0.8");
-  const [frequency, setFrequency] = useState("1.05");
-  const [phase, setPhase] = useState("0");
-  const [duration, setDuration] = useState("20");
+  const definition = MODEL_REGISTRY[modelId];
+  const [parameters, setParameters] = useState(() => defaultsFor(modelId));
+  const [startTime, setStartTime] = useState(
+    String(definition.solverDefaults!.tStart),
+  );
+  const [duration, setDuration] = useState(
+    String(definition.solverDefaults!.tStop),
+  );
   const [samples, setSamples] = useState("401");
   const [basis, setBasis] = useState<0 | 1>(0);
   const [progress, setProgress] = useState<EvolutionProgress | null>(null);
@@ -99,6 +111,17 @@ export function DynamicsLab({
   const [result, setResult] = useState<EvolutionResult | null>(null);
   const [data, setData] = useState<Float64Array | null>(null);
   const activeJob = useRef<string | null>(null);
+  useEffect(() => {
+    if (activeJob.current) void bridge.cancel(activeJob.current);
+    setParameters(defaultsFor(modelId));
+    setStartTime(String(MODEL_REGISTRY[modelId].solverDefaults!.tStart));
+    setDuration(String(MODEL_REGISTRY[modelId].solverDefaults!.tStop));
+    setSamples(String(MODEL_REGISTRY[modelId].solverDefaults!.samples));
+    setBasis(MODEL_REGISTRY[modelId].defaultState.index);
+    setResult(null);
+    setData(null);
+    setOutcome("READY TO EVOLVE");
+  }, [modelId]);
   useEffect(
     () =>
       bridge.onProgress((update) => {
@@ -106,20 +129,20 @@ export function DynamicsLab({
       }),
     [bridge],
   );
-  const values = [delta, amplitude, frequency, phase, duration].map(Number);
+  const modelValues = parametersFor(modelId, parameters);
+  const begin = Number(startTime);
+  const end = Number(duration);
   const count = Number(samples);
   const valid =
-    [delta, amplitude, frequency, phase, duration, samples].every(
-      (s) => s.trim() !== "",
-    ) &&
-    values.every(Number.isFinite) &&
-    Math.abs(values[0]) <= 1e6 &&
-    Math.abs(values[1]) <= 1e6 &&
-    values[2] >= 0 &&
-    values[2] <= 1e6 &&
-    Math.abs(values[3]) <= 1000 &&
-    values[4] > 0 &&
-    values[4] <= 1000 &&
+    modelValues !== null &&
+    startTime.trim() !== "" &&
+    duration.trim() !== "" &&
+    samples.trim() !== "" &&
+    Number.isFinite(begin) &&
+    Number.isFinite(end) &&
+    begin >= -1000 &&
+    end <= 1000 &&
+    end > begin &&
     Number.isInteger(count) &&
     count >= 2 &&
     count <= 50000;
@@ -128,11 +151,12 @@ export function DynamicsLab({
     !!status.capabilities?.operations.includes("evolve");
   const stale =
     result &&
-    (values[0] !== result.model.parameters.delta ||
-      values[1] !== result.model.parameters.amplitude ||
-      values[2] !== result.model.parameters.frequency ||
-      values[3] !== result.model.parameters.phase ||
-      values[4] !== result.solver.tStop ||
+    (result.model.type !== modelId ||
+      Object.entries(result.model.parameters).some(
+        ([key, value]) => modelValues?.[key] !== value,
+      ) ||
+      begin !== result.solver.tStart ||
+      end !== result.solver.tStop ||
       count !== result.solver.samples ||
       basis !== result.initialState.index);
   async function run() {
@@ -147,29 +171,9 @@ export function DynamicsLab({
     setResult(null);
     setData(null);
     try {
-      const completed = await bridge.evolve({
-        schema: "quantum-job/v1",
-        jobId,
-        operation: "evolve",
-        engine: "qutip",
-        model: {
-          type: "driven_two_level",
-          parameters: {
-            delta: values[0],
-            amplitude: values[1],
-            frequency: values[2],
-            phase: values[3],
-          },
-        },
-        initialState: { type: "basis", index: basis },
-        solver: {
-          type: "schrodinger",
-          tStart: 0,
-          tStop: values[4],
-          samples: count,
-        },
-        observables: ["p0", "p1", "sigma_x", "sigma_y", "sigma_z"],
-      });
+      const completed = await bridge.evolve(
+        evolutionJob(modelId, jobId, parameters, basis, begin, end, count),
+      );
       const bytes = await bridge.readData(jobId);
       if (bytes.byteLength !== completed.data.bytes)
         throw new Error("Binary artifact size mismatch");
@@ -212,10 +216,8 @@ export function DynamicsLab({
     <div className="dynamics-lab">
       <section className="hamiltonian-card">
         <div>
-          <p className="eyebrow">DRIVEN TWO-LEVEL MODEL</p>
-          <div className="formula">
-            H(t) = Δ/2 σ<sub>z</sub> + A/2 cos(ωt + φ) σ<sub>x</sub>
-          </div>
+          <p className="eyebrow">{definition.label.toUpperCase()} MODEL</p>
+          <div className="formula">{definition.hamiltonian}</div>
         </div>
         <div className="model-convention">
           <span>TIME-DEPENDENT</span>
@@ -225,34 +227,70 @@ export function DynamicsLab({
       <section className="panel dynamics-settings">
         <div>
           <p className="eyebrow">EVOLUTION JOB</p>
-          <h2>Rabi dynamics</h2>
+          <h2>{definition.label}</h2>
           <p>
-            Choose a drive and an initial basis state. QuTiP integrates the
-            wavefunction and records five observables.
+            {definition.description}. QuTiP integrates the wavefunction and
+            records five observables.
           </p>
         </div>
         <div className="dynamics-fields">
-          {[
-            ["Detuning Δ", delta, setDelta],
-            ["Amplitude A", amplitude, setAmplitude],
-            ["Frequency ω", frequency, setFrequency],
-            ["Phase φ", phase, setPhase],
-            ["End time T", duration, setDuration],
-            ["Samples", samples, setSamples],
-          ].map(([label, value, setter]) => (
-            <label key={label as string}>
-              {label as string}
+          {definition.parameters.map((parameter) => (
+            <label key={parameter.key}>
+              {parameter.label} {parameter.symbol}
               <input
-                aria-label={label as string}
+                aria-label={`${parameter.label} ${parameter.symbol}`}
                 type="number"
-                value={value as string}
+                value={parameters[parameter.key] ?? ""}
+                min={parameter.minimum}
+                max={parameter.maximum}
+                step={parameter.step}
+                title={parameter.description}
                 onChange={(event) =>
-                  (setter as (value: string) => void)(event.target.value)
+                  setParameters((current) => ({
+                    ...current,
+                    [parameter.key]: event.target.value,
+                  }))
                 }
                 disabled={running}
               />
             </label>
           ))}
+          <label>
+            Start time
+            <input
+              aria-label="Start time"
+              type="number"
+              min="-1000"
+              max="1000"
+              value={startTime}
+              onChange={(e) => setStartTime(e.target.value)}
+              disabled={running}
+            />
+          </label>
+          <label>
+            End time T
+            <input
+              aria-label="End time T"
+              type="number"
+              min="-1000"
+              max="1000"
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
+              disabled={running}
+            />
+          </label>
+          <label>
+            Samples
+            <input
+              aria-label="Samples"
+              type="number"
+              min="2"
+              max="50000"
+              value={samples}
+              onChange={(e) => setSamples(e.target.value)}
+              disabled={running}
+            />
+          </label>
           <label>
             Initial state
             <select
@@ -288,8 +326,8 @@ export function DynamicsLab({
         </div>
         {!valid && (
           <p className="validation">
-            Check the parameters: 2–50,000 samples, 0 &lt; T ≤ 1000, finite
-            drive values.
+            Check the parameters: 2–50,000 samples, −1000 ≤ start &lt; end ≤
+            1000, finite drive values.
           </p>
         )}
         {running && (
@@ -329,9 +367,11 @@ export function DynamicsLab({
               {result.provenance.durationMs.toFixed(1)} ms
             </span>
             <span>
-              Δ {result.model.parameters.delta} · A{" "}
-              {result.model.parameters.amplitude} · ω{" "}
-              {result.model.parameters.frequency} · SHA-256 verified
+              {result.model.type} ·{" "}
+              {Object.entries(result.model.parameters)
+                .map(([key, value]) => `${key}=${value}`)
+                .join(" · ")}{" "}
+              · SHA-256 verified
             </span>
           </div>
         </section>

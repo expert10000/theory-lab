@@ -1,0 +1,10 @@
+{
+  "schema": "quantum-job/v1",
+  "jobId": "test-landau-zener-001",
+  "operation": "evolve",
+  "engine": "qutip",
+  "model": { "type": "landau_zener", "parameters": { "sweepRate": 1, "gap": 0.8, "bias": 0 } },
+  "initialState": { "type": "basis", "index": 0 },
+  "solver": { "type": "schrodinger", "tStart": -10, "tStop": 10, "samples": 401 },
+  "observables": ["p0", "p1", "sigma_x", "sigma_y", "sigma_z"]
+}

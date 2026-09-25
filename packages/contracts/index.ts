@@ -25,6 +25,12 @@ export interface DrivenTwoLevelModel {
   };
   source?: LayerOneSource;
 }
+export interface LandauZenerModel {
+  type: "landau_zener";
+  parameters: { sweepRate: number; gap: number; bias: number };
+  source?: LayerOneSource;
+}
+export type EvolutionModel = DrivenTwoLevelModel | LandauZenerModel;
 export interface BasisState {
   type: "basis";
   index: 0 | 1;
@@ -48,7 +54,7 @@ export interface EvolutionJob {
   jobId: string;
   operation: "evolve";
   engine: "qutip";
-  model: DrivenTwoLevelModel;
+  model: EvolutionModel;
   initialState: BasisState;
   solver: EvolutionSolver;
   observables: Observable[];
@@ -97,7 +103,7 @@ export interface EvolutionResult {
   runId: string;
   status: "completed";
   operation: "evolve";
-  model: DrivenTwoLevelModel;
+  model: EvolutionModel;
   initialState: BasisState;
   solver: EvolutionSolver;
   observables: Observable[];

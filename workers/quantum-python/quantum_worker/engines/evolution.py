@@ -1,6 +1,5 @@
 """Driven two-level QuTiP evolution and little-endian binary artifact."""
 import hashlib
-import math
 import os
 from pathlib import Path
 import platform
@@ -11,6 +10,7 @@ from uuid import uuid4
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.qutip_engine import engine
+from quantum_worker.models import build
 
 COLUMNS = ["time", "p0", "p1", "sigma_x", "sigma_y", "sigma_z", "c0_re", "c0_im", "c1_re", "c1_im"]
 
@@ -23,10 +23,7 @@ def evolve(job, output_dir, cancelled, progress):
         raise ValueError("tStop must exceed tStart")
     started = perf_counter()
     qt = engine()
-    p = job["model"]["parameters"]
-    def coefficient(t):
-        return 0.5 * p["amplitude"] * math.cos(p["frequency"] * t + p["phase"])
-    hamiltonian = qt.QobjEvo([0.5 * p["delta"] * qt.sigmaz(), [qt.sigmax(), coefficient]])
+    hamiltonian = build(qt, job["model"])
     solver = qt.SESolver(hamiltonian, options={"normalize_output": True})
     solver.start(qt.basis(2, job["initialState"]["index"]), settings["tStart"])
     destination = Path(output_dir).resolve()

@@ -1,6 +1,6 @@
 # Desktop implementation
 
-The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–005 follow the supplied commit sequence.
+The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–006 follow the supplied commit sequence.
 
 The smoke laboratory uses normalized units (ħ = 1), H = (Δ σz + Ω σx)/2, and E± = ±hypot(Δ, Ω)/2. Ω is a static transverse coupling here, not a time-dependent drive.
 
@@ -18,7 +18,8 @@ Reference material: [Electron 44](https://www.electronjs.org/blog/electron-44-0)
 - QLAB-003: Python supervision with hello, capabilities, health, shutdown, timeouts, crash diagnostics and explicit restart.
 - QLAB-004: QuTiP 5.3.1 static two-level spectrum, parameter inspector, spectrum/Hamiltonian/roadmap tabs, analytic residual, stale result indicator, Desktop launcher and pinned setup dependencies.
 - QLAB-005: driven two-level Schrödinger evolution, worker job manager, progress notifications, real cancellation, binary Float64 results, SHA-256 verification, React Dynamics preview and optional Layer-1 source IDs.
+- QLAB-006: model registry for static two-level, driven two-level and Landau–Zener systems; metadata-driven controls/defaults, Python model builders, and provisional Volume VIII/chapter 58 tags. Landau–Zener uses H(t) = (vt + ε₀)σz/2 + gσx/2.
 
-Validated on Windows with Node 24.19.0 and Python 3.12.2. Type checking, nine TypeScript tests, nine Python tests, and the real Electron end-to-end smoke test pass. The desktop test exercises both real calculations, cancellation, stale data, restart, security preferences and compact layout. Screenshots are in the ignored artifacts directory.
+Validated on Windows with Node 24.19.0 and Python 3.12.2. Type checking, eleven TypeScript tests, ten Python tests, and the real Electron end-to-end smoke test pass. The desktop test exercises static spectrum, Rabi and Landau–Zener evolution, cancellation, stale data, restart, security preferences and compact layout. Screenshots are in the ignored artifacts directory.
 
 No Layer-1 repository or source manifests were supplied; the smoke model follows the explicit convention above and is validated against its analytic eigenvalues. Importing book models/presets remains QLAB-015. Current provenance is attached to each result but is not yet persisted; durable run directories remain QLAB-016. No standalone installer or Linux acceptance is claimed.

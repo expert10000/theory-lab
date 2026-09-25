@@ -7,6 +7,7 @@ from time import perf_counter
 from uuid import uuid4
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
+from quantum_worker.models import build
 
 @lru_cache(maxsize=1)
 def engine():
@@ -26,8 +27,7 @@ def diagonalize(job):
     validate("quantum-job", job)
     started = perf_counter()
     qt = engine()
-    parameters = job["model"]["parameters"]
-    hamiltonian = 0.5 * parameters["delta"] * qt.sigmaz() + 0.5 * parameters["omega"] * qt.sigmax()
+    hamiltonian = build(qt, job["model"])
     energies = [float(value) for value in hamiltonian.eigenenergies()]
     result = {
         "schema": "quantum-result/v1", "jobId": job["jobId"], "runId": f"run-{uuid4().hex}",
