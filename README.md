@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python/QuTiP worker. **QLAB-000–006** cover the roadmap, secure workspace, versioned contracts, worker lifecycle, two-level spectrum, driven Rabi evolution, and a model registry with Landau–Zener dynamics.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python/QuTiP worker. **QLAB-000–007** cover the roadmap, secure workspace, versioned contracts, worker lifecycle, two-level spectrum, driven Rabi and Landau–Zener evolution, and a synchronized dynamics/Bloch workspace.
 
 ## Run on Windows
 
@@ -27,7 +27,7 @@ Edit Δ or Ω, then select **Run spectrum**. Existing results are marked **OUT O
 
 Open **Dynamics**, set detuning Δ, drive amplitude A, frequency ω, phase φ, end time, samples and |0⟩ or |1⟩, then select **Run evolution**. The Hamiltonian is **H(t) = Δ σz/2 + A cos(ωt + φ) σx/2**. The worker steps QuTiP's Schrödinger solver and reports progress after sample batches. **Cancel job** sets a worker-side cancellation flag; no completed data file is published after cancellation.
 
-The result shows P₀(t), P₁(t), ⟨σx⟩, ⟨σy⟩ and ⟨σz⟩. It also stores the complex state amplitudes for the later Bloch/time-cursor workspace. A zero-frequency, zero-detuning, unit-amplitude run provides the exact check P₁(t) = sin²(t/2). Changed inputs mark a completed plot **OUT OF DATE**.
+The result shows P₀(t), P₁(t), ⟨σx⟩, ⟨σy⟩ and ⟨σz⟩ alongside a Three.js Bloch sphere and trajectory. Drag the time cursor or click the plot to inspect one exact saved sample: the plot marker, Bloch vector, populations, complex state amplitudes and derived density matrix update together. The density matrix is ρ = |ψ⟩⟨ψ| for the pure states produced by the current Schrödinger solver. A zero-frequency, zero-detuning, unit-amplitude run provides the exact check P₁(t) = sin²(t/2). Changed inputs mark a completed plot **OUT OF DATE**.
 
 ## Model registry and Landau–Zener
 
@@ -59,12 +59,12 @@ npm run build
 npm run test:desktop
 ```
 
-The desktop test starts the actual Electron app and worker; it checks both calculations, stale results, invalid input, degeneracy, restart, cancellation, tabs, renderer isolation and compact layout. Screenshots are saved to the ignored `artifacts/` directory. Python and TypeScript tests check analytic Rabi values, norm, binary integrity, progress and cancellation, as well as the original spectrum and protocol.
+The desktop test starts the actual Electron app and worker; it checks both calculations, synchronized time selection, stale results, invalid input, degeneracy, restart, cancellation, tabs, renderer isolation and compact layout. Screenshots are saved to the ignored `artifacts/` directory. Python and TypeScript tests check analytic Rabi values, norm, binary integrity, density reconstruction, progress and cancellation, as well as the original spectrum and protocol.
 
 ## Roadmap and scope
 
 The complete supplied plan is preserved in [docs/ROADMAP.md](docs/ROADMAP.md); decisions and validation status are in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
-This milestone implements a static two-level spectrum, driven two-level Rabi evolution and Landau–Zener evolution. The full Dynamics/Bloch workspace, Stückelberg, strong drive, Floquet, Jaynes–Cummings, Quantum Rabi, Lindblad dynamics, sweeps and QuTiP/native comparison remain subsequent V1 work. Layer-1 source examples were not present in this repository and have not been imported. Atoms, molecules and crystals are outside initial V1 scope.
+This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener evolution and the dynamics/Bloch workspace. Stückelberg, strong drive, Floquet, Jaynes–Cummings, Quantum Rabi, Lindblad dynamics, sweeps and QuTiP/native comparison remain subsequent V1 work. Layer-1 source examples were not present in this repository and have not been imported. Atoms, molecules and crystals are outside initial V1 scope.
 
 Run IDs, engine versions, timestamps and parameters are returned for each calculation; run history is currently session-only. Durable provenance/workspaces/exports, installers, and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders both plots; a QuTiP warning about Python plotting does not prevent calculation.

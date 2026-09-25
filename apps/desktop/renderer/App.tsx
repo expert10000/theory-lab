@@ -133,7 +133,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-006</span>
+          <span className="version">V0.1 · QLAB-007</span>
           {tab !== "dynamics" && (
             <button
               className="run-button"
@@ -270,12 +270,13 @@ export function App() {
                   "Evolution, progress, cancellation & binary artifact",
                   "Implemented",
                 ],
+                ["006", "Model registry & Landau–Zener", "Implemented"],
                 [
-                  "006–007",
-                  "Model registry, dynamics workspace & Bloch sphere",
-                  "Next",
+                  "007",
+                  "Dynamics workspace, Bloch sphere & time cursor",
+                  "Implemented",
                 ],
-                ["008–009", "Native engine & numerical comparison", "Planned"],
+                ["008–009", "Native engine & numerical comparison", "Next"],
                 [
                   "010–014",
                   "Driven systems, cavity QED, Lindblad & sweeps",

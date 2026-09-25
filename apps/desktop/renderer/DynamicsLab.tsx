@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
   EvolutionResult,
   EvolutionProgress,
@@ -12,6 +12,11 @@ import {
   evolutionJob,
   type EvolutionModelId,
 } from "../../../packages/models";
+import {
+  sampleAt,
+  type ComplexValue,
+} from "../../../packages/quantum-3d/evolution";
+import { BlochSphere } from "../../../packages/quantum-3d/BlochSphere";
 
 const series = [
   { name: "P₀", column: 1, color: "#79d9c1" },
@@ -20,7 +25,17 @@ const series = [
   { name: "⟨σy⟩", column: 4, color: "#dd9cc5" },
   { name: "⟨σz⟩", column: 5, color: "#e2e7ef" },
 ];
-function DynamicsChart({ data, rows }: { data: Float64Array; rows: number }) {
+function DynamicsChart({
+  data,
+  rows,
+  selectedIndex,
+  onSelect,
+}: {
+  data: Float64Array;
+  rows: number;
+  selectedIndex: number;
+  onSelect: (index: number) => void;
+}) {
   const path = (column: number) => {
     const step = Math.max(1, Math.ceil(rows / 800));
     const indices = Array.from(
@@ -41,6 +56,20 @@ function DynamicsChart({ data, rows }: { data: Float64Array; rows: number }) {
       viewBox="0 0 800 390"
       role="img"
       aria-label="QuTiP population and Pauli expectation time series"
+      onClick={(event) => {
+        const matrix = event.currentTarget.getScreenCTM();
+        if (!matrix) return;
+        const point = event.currentTarget.createSVGPoint();
+        point.x = event.clientX;
+        point.y = event.clientY;
+        const x = point.matrixTransform(matrix.inverse()).x;
+        onSelect(
+          Math.max(
+            0,
+            Math.min(rows - 1, Math.round(((x - 50) / 700) * (rows - 1))),
+          ),
+        );
+      }}
     >
       <rect x="50" y="60" width="700" height="250" fill="#111a24" />
       {[60, 122.5, 185, 247.5, 310].map((y, index) => (
@@ -67,6 +96,26 @@ function DynamicsChart({ data, rows }: { data: Float64Array; rows: number }) {
           fill="none"
         />
       ))}
+      <line
+        x1={50 + (selectedIndex / (rows - 1)) * 700}
+        x2={50 + (selectedIndex / (rows - 1)) * 700}
+        y1="60"
+        y2="310"
+        stroke="#ffe2ad"
+        strokeWidth="1.5"
+        data-testid="chart-time-cursor"
+      />
+      {series.map((item) => (
+        <circle
+          key={`selected-${item.column}`}
+          cx={50 + (selectedIndex / (rows - 1)) * 700}
+          cy={185 - data[selectedIndex * 10 + item.column] * 125}
+          r="4"
+          fill={item.color}
+          stroke="#10151d"
+          strokeWidth="1.5"
+        />
+      ))}
       <text x="50" y="337" fill="#8798a8" fontSize="11">
         t = {data[0].toFixed(2)}
       </text>
@@ -83,6 +132,12 @@ function DynamicsChart({ data, rows }: { data: Float64Array; rows: number }) {
       ))}
     </svg>
   );
+}
+function signed(value: number) {
+  return `${value < 0 ? "−" : "+"} ${Math.abs(value).toFixed(4)}`;
+}
+function complex(value: ComplexValue) {
+  return `${value.re.toFixed(4)} ${signed(value.im)}i`;
 }
 export function DynamicsLab({
   bridge,
@@ -110,6 +165,7 @@ export function DynamicsLab({
   const [error, setError] = useState("");
   const [result, setResult] = useState<EvolutionResult | null>(null);
   const [data, setData] = useState<Float64Array | null>(null);
+  const [selectedIndex, setSelectedIndex] = useState(0);
   const activeJob = useRef<string | null>(null);
   useEffect(() => {
     if (activeJob.current) void bridge.cancel(activeJob.current);
@@ -120,6 +176,7 @@ export function DynamicsLab({
     setBasis(MODEL_REGISTRY[modelId].defaultState.index);
     setResult(null);
     setData(null);
+    setSelectedIndex(0);
     setOutcome("READY TO EVOLVE");
   }, [modelId]);
   useEffect(
@@ -159,6 +216,10 @@ export function DynamicsLab({
       end !== result.solver.tStop ||
       count !== result.solver.samples ||
       basis !== result.initialState.index);
+  const selected = useMemo(
+    () => (result && data ? sampleAt(data, selectedIndex) : null),
+    [result, data, selectedIndex],
+  );
   async function run() {
     if (!valid || !ready || running) return;
     const jobId = `job-${crypto.randomUUID()}`;
@@ -170,6 +231,7 @@ export function DynamicsLab({
     setOutcome("RUNNING");
     setResult(null);
     setData(null);
+    setSelectedIndex(0);
     try {
       const completed = await bridge.evolve(
         evolutionJob(modelId, jobId, parameters, basis, begin, end, count),
@@ -185,6 +247,8 @@ export function DynamicsLab({
       const numbers = new Float64Array(bytes.byteLength / 8);
       for (let i = 0; i < numbers.length; i++)
         numbers[i] = view.getFloat64(i * 8, true);
+      if (numbers.length !== completed.data.rows * 10)
+        throw new Error("Evolution artifact shape mismatch");
       setResult(completed);
       setData(numbers);
       setOutcome("COMPLETE");
@@ -230,7 +294,7 @@ export function DynamicsLab({
           <h2>{definition.label}</h2>
           <p>
             {definition.description}. QuTiP integrates the wavefunction and
-            records five observables.
+            records five observables and the complex state at every sample.
           </p>
         </div>
         <div className="dynamics-fields">
@@ -351,7 +415,7 @@ export function DynamicsLab({
           <div className="panel-heading">
             <div>
               <p className="eyebrow">BINARY RESULT / QUANTUM-DATA V1</p>
-              <h2>Population & Pauli expectations</h2>
+              <h2>Dynamics workspace</h2>
             </div>
             <span
               className={`result-badge ${stale ? "stale" : ""}`}
@@ -360,7 +424,126 @@ export function DynamicsLab({
               {stale ? "OUT OF DATE" : `${result.data.rows} SAMPLES`}
             </span>
           </div>
-          <DynamicsChart data={data} rows={result.data.rows} />
+          <div className="dynamics-visual-grid">
+            <div className="dynamics-plot">
+              <div className="dynamics-visual-heading">
+                <span>POPULATIONS & PAULI EXPECTATIONS</span>
+                <small>SELECT A TIME ON THE PLOT</small>
+              </div>
+              <DynamicsChart
+                data={data}
+                rows={result.data.rows}
+                selectedIndex={selectedIndex}
+                onSelect={setSelectedIndex}
+              />
+            </div>
+            {selected && <BlochSphere data={data} sample={selected} />}
+          </div>
+          {selected && (
+            <div className="dynamics-timeline">
+              <div className="timeline-heading">
+                <div>
+                  <span className="eyebrow">SYNCHRONIZED TIME CURSOR</span>
+                  <strong data-testid="selected-time">
+                    t = {selected.time.toFixed(4)}
+                  </strong>
+                </div>
+                <span>
+                  sample {selected.index + 1} / {result.data.rows}
+                </span>
+              </div>
+              <input
+                aria-label="Time cursor"
+                type="range"
+                min="0"
+                max={result.data.rows - 1}
+                step="1"
+                value={selectedIndex}
+                onChange={(event) =>
+                  setSelectedIndex(Number(event.target.value))
+                }
+              />
+              <div className="timeline-extents">
+                <span>{data[0].toFixed(2)}</span>
+                <span>{data[(result.data.rows - 1) * 10].toFixed(2)}</span>
+              </div>
+            </div>
+          )}
+          {selected && (
+            <div className="dynamics-readout">
+              <div className="readout-card observable-readout">
+                <p className="eyebrow">OBSERVABLES AT SELECTED TIME</p>
+                <div className="readout-grid">
+                  <div>
+                    <span>P₀</span>
+                    <strong data-testid="population-0">
+                      {selected.populations[0].toFixed(4)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>P₁</span>
+                    <strong data-testid="population-1">
+                      {selected.populations[1].toFixed(4)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>⟨σx⟩</span>
+                    <strong data-testid="bloch-x">
+                      {selected.bloch[0].toFixed(4)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>⟨σy⟩</span>
+                    <strong data-testid="bloch-y">
+                      {selected.bloch[1].toFixed(4)}
+                    </strong>
+                  </div>
+                  <div>
+                    <span>⟨σz⟩</span>
+                    <strong data-testid="bloch-z">
+                      {selected.bloch[2].toFixed(4)}
+                    </strong>
+                  </div>
+                </div>
+              </div>
+              <div className="readout-card state-readout">
+                <p className="eyebrow">STATE VECTOR / COMPUTATIONAL BASIS</p>
+                <div className="state-line">
+                  <span>c₀ |0⟩</span>
+                  <code data-testid="amplitude-0">
+                    {complex(selected.amplitudes[0])}
+                  </code>
+                </div>
+                <div className="state-line">
+                  <span>c₁ |1⟩</span>
+                  <code data-testid="amplitude-1">
+                    {complex(selected.amplitudes[1])}
+                  </code>
+                </div>
+              </div>
+              <div className="readout-card density-readout">
+                <p className="eyebrow">DENSITY MATRIX / ρ = |ψ⟩⟨ψ|</p>
+                <div className="density-grid">
+                  <code data-testid="rho-00">
+                    {complex(selected.density[0][0])}
+                  </code>
+                  <code data-testid="rho-01">
+                    {complex(selected.density[0][1])}
+                  </code>
+                  <code data-testid="rho-10">
+                    {complex(selected.density[1][0])}
+                  </code>
+                  <code data-testid="rho-11">
+                    {complex(selected.density[1][1])}
+                  </code>
+                </div>
+                <div className="density-checks">
+                  <span>Tr ρ = {selected.trace.toFixed(6)}</span>
+                  <span>Tr ρ² = {selected.purity.toFixed(6)}</span>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="plot-caption">
             <span>
               QuTiP {result.engine.version} ·{" "}

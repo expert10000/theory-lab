@@ -151,6 +151,9 @@ try {
     path: "artifacts/desktop-compact.png",
     fullPage: true,
   });
+  await app.evaluate(({ BrowserWindow }) =>
+    BrowserWindow.getAllWindows()[0].setSize(1440, 900),
+  );
   await page.getByRole("tab", { name: "Dynamics", exact: true }).click();
   await page.getByTestId("run-evolution").click();
   await page
@@ -161,6 +164,51 @@ try {
     await page
       .getByRole("img", { name: /QuTiP population and Pauli/ })
       .isVisible(),
+  );
+  const cursor = page.getByRole("slider", { name: "Time cursor" });
+  assert.equal(
+    await page.getByTestId("selected-time").textContent(),
+    "t = 0.0000",
+  );
+  assert.equal(await page.getByTestId("population-0").textContent(), "1.0000");
+  assert.equal(await page.getByTestId("bloch-z").textContent(), "1.0000");
+  assert.equal(
+    await page.getByTestId("rho-00").textContent(),
+    "1.0000 + 0.0000i",
+  );
+  assert.ok(
+    (await page.locator('[data-testid="bloch-canvas"] canvas').count()) +
+      (await page.locator(".bloch-fallback").count()) >
+      0,
+    "Bloch view should render WebGL or its accessible fallback",
+  );
+  await cursor.focus();
+  await cursor.press("End");
+  assert.equal(
+    await page.getByTestId("selected-time").textContent(),
+    "t = 20.0000",
+  );
+  assert.equal(
+    await page.getByTestId("chart-time-cursor").getAttribute("x1"),
+    "750",
+  );
+  const p0 = Number(await page.getByTestId("population-0").textContent());
+  const p1 = Number(await page.getByTestId("population-1").textContent());
+  const z = Number(await page.getByTestId("bloch-z").textContent());
+  assert.ok(Math.abs(p0 + p1 - 1) < 0.001);
+  assert.ok(Math.abs(p0 - p1 - z) < 0.001);
+  const chart = page.getByRole("img", {
+    name: /QuTiP population and Pauli/,
+  });
+  await chart.scrollIntoViewIfNeeded();
+  const chartBox = await chart.boundingBox();
+  await page.mouse.click(
+    chartBox.x + chartBox.width / 2,
+    chartBox.y + chartBox.height / 2,
+  );
+  assert.equal(
+    await page.getByTestId("selected-time").textContent(),
+    "t = 10.0000",
   );
   await page.screenshot({
     path: "artifacts/desktop-dynamics.png",
@@ -187,13 +235,23 @@ try {
     .getByTestId("evolution-state")
     .filter({ hasText: "COMPLETE" })
     .waitFor({ timeout: 30000 });
+  assert.equal(
+    await page.getByTestId("selected-time").textContent(),
+    "t = -10.0000",
+  );
+  await page.getByRole("slider", { name: "Time cursor" }).focus();
+  await page.getByRole("slider", { name: "Time cursor" }).press("End");
+  assert.equal(
+    await page.getByTestId("selected-time").textContent(),
+    "t = 10.0000",
+  );
   await page.screenshot({
     path: "artifacts/desktop-landau-zener.png",
     fullPage: true,
   });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → validated IPC → Python → QuTiP → spectrum and evolution; binary data, stale results, cancellation, restart, sandbox and compact layout.",
+    "PASS: Electron → validated IPC → Python → QuTiP → spectrum and evolution; synchronized plot/Bloch/state/density cursor, stale results, cancellation, restart, sandbox and compact layout.",
   );
 } finally {
   await app.close();
