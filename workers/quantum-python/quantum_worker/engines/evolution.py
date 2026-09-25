@@ -10,6 +10,7 @@ from uuid import uuid4
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.qutip_engine import engine
+from quantum_worker.engines.native_engine import NativeEvolution, libraries
 from quantum_worker.models import build
 
 COLUMNS = ["time", "p0", "p1", "sigma_x", "sigma_y", "sigma_z", "c0_re", "c0_im", "c1_re", "c1_im"]
@@ -22,10 +23,18 @@ def evolve(job, output_dir, cancelled, progress):
     if settings["tStop"] <= settings["tStart"]:
         raise ValueError("tStop must exceed tStart")
     started = perf_counter()
-    qt = engine()
-    hamiltonian = build(qt, job["model"])
-    solver = qt.SESolver(hamiltonian, options={"normalize_output": True})
-    solver.start(qt.basis(2, job["initialState"]["index"]), settings["tStart"])
+    if job["engine"] == "qutip":
+        qt = engine()
+        hamiltonian = build(qt, job["model"])
+        solver = qt.SESolver(hamiltonian, options={"normalize_output": True})
+        solver.start(qt.basis(2, job["initialState"]["index"]), settings["tStart"])
+        engine_version = qt.__version__
+    elif job["engine"] == "native":
+        solver = NativeEvolution(job, cancelled)
+        _, scipy, _ = libraries()
+        engine_version = scipy.__version__
+    else:
+        raise ValueError("Unsupported evolution engine")
     destination = Path(output_dir).resolve()
     destination.mkdir(parents=True, exist_ok=True)
     filename = job["jobId"] + ".f64"
@@ -42,9 +51,11 @@ def evolve(job, output_dir, cancelled, progress):
             for i in range(rows):
                 if cancelled.is_set():
                     return None
-                t = settings["tStart"] + interval * i
+                t = settings["tStop"] if i == rows - 1 else settings["tStart"] + interval * i
                 state = solver.step(t)
-                c0, c1 = state.full().ravel()
+                if state is None:
+                    return None
+                c0, c1 = state.full().ravel() if job["engine"] == "qutip" else state
                 p0, p1 = abs(c0) ** 2, abs(c1) ** 2
                 sx = 2 * (c0.conjugate() * c1).real
                 sy = 2 * (c0.conjugate() * c1).imag
@@ -66,7 +77,7 @@ def evolve(job, output_dir, cancelled, progress):
             "schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,
             "status": "completed", "operation": "evolve", "model": job["model"],
             "initialState": job["initialState"], "solver": settings, "observables": job["observables"],
-            "engine": {"name": "qutip", "version": qt.__version__},
+            "engine": {"name": job["engine"], "version": engine_version},
             "data": {"schema": "quantum-data/v1", "format": "f64le", "path": filename,
                      "rows": rows, "columns": COLUMNS, "bytes": rows * 80, "sha256": digest.hexdigest()},
             "provenance": {"pythonVersion": platform.python_version(), "workerVersion": __version__,

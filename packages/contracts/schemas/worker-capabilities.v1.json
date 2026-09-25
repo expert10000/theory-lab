@@ -46,9 +46,22 @@
             }
           },
           "required": ["available", "version"]
+        },
+        "native": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "available": {
+              "type": "boolean"
+            },
+            "version": {
+              "type": ["string", "null"]
+            }
+          },
+          "required": ["available", "version"]
         }
       },
-      "required": ["qutip"]
+      "required": ["qutip", "native"]
     },
     "operations": {
       "type": "array",

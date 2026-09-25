@@ -19,7 +19,7 @@
           "const": "diagonalize"
         },
         "engine": {
-          "const": "qutip"
+          "enum": ["qutip", "native"]
         },
         "model": {
           "type": "object",
@@ -101,7 +101,7 @@
           "const": "evolve"
         },
         "engine": {
-          "const": "qutip"
+          "enum": ["qutip", "native"]
         },
         "model": {
           "oneOf": [

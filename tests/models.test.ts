@@ -16,6 +16,10 @@ test("model registry generates contract-compatible jobs from its defaults", () =
     ["two_level", "driven_two_level", "landau_zener"],
   );
   assert.ok(isQuantumJob(spectrumJob("static-1", defaultsFor("two_level"))));
+  assert.equal(
+    spectrumJob("native-1", defaultsFor("two_level"), "native").engine,
+    "native",
+  );
   for (const id of ["driven_two_level", "landau_zener"] as const) {
     const definition = MODEL_REGISTRY[id];
     const values = defaultsFor(id);
@@ -30,6 +34,19 @@ test("model registry generates contract-compatible jobs from its defaults", () =
       definition.solverDefaults!.samples,
     );
     assert.ok(isQuantumJob(job));
+    assert.equal(
+      evolutionJob(
+        id,
+        `${id}-native`,
+        values,
+        0,
+        definition.solverDefaults!.tStart,
+        definition.solverDefaults!.tStop,
+        definition.solverDefaults!.samples,
+        "native",
+      ).engine,
+      "native",
+    );
     assert.deepEqual(
       Object.keys(job.model.parameters),
       definition.parameters.map((parameter) => parameter.key),

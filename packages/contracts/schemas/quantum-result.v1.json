@@ -92,7 +92,7 @@
           "additionalProperties": false,
           "properties": {
             "name": {
-              "const": "qutip"
+              "enum": ["qutip", "native"]
             },
             "version": {
               "type": "string",
@@ -378,7 +378,7 @@
           "additionalProperties": false,
           "properties": {
             "name": {
-              "const": "qutip"
+              "enum": ["qutip", "native"]
             },
             "version": {
               "type": "string",

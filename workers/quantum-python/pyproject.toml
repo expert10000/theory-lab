@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "quantum-lab-worker"
 version = "0.1.0"
 requires-python = ">=3.11"
-dependencies = ["jsonschema>=4.23,<5", "qutip>=5.2,<6"]
+dependencies = ["jsonschema>=4.23,<5", "qutip>=5.2,<6", "numpy>=2.2,<3", "scipy>=1.15,<2"]
 
 [tool.setuptools.packages.find]
 include = ["quantum_worker*"]

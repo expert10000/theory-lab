@@ -44,9 +44,10 @@ export class EvolutionCoordinator {
     if (this.active) throw new Error("An evolution job is already running");
     if (
       this.worker.status.state !== "READY" ||
-      !this.worker.status.capabilities?.operations.includes("evolve")
+      !this.worker.status.capabilities?.operations.includes("evolve") ||
+      !this.worker.status.capabilities.engines[job.engine].available
     )
-      throw new Error("QuTiP evolution worker is not ready");
+      throw new Error(`${job.engine} evolution engine is not ready`);
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         void this.worker
@@ -145,6 +146,12 @@ export class EvolutionCoordinator {
         value.data.path !== `${active.job.jobId}.f64` ||
         value.data.rows !== active.job.solver.samples ||
         value.data.bytes !== value.data.rows * 80 ||
+        value.engine.name !== active.job.engine ||
+        JSON.stringify(value.solver) !== JSON.stringify(active.job.solver) ||
+        JSON.stringify(value.initialState) !==
+          JSON.stringify(active.job.initialState) ||
+        JSON.stringify(value.observables) !==
+          JSON.stringify(active.job.observables) ||
         JSON.stringify(value.model) !== JSON.stringify(active.job.model)
       ) {
         this.reject(new Error("Worker returned an invalid evolution result"));

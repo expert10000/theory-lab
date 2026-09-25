@@ -1,6 +1,6 @@
 # Desktop implementation
 
-The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–007 follow the supplied commit sequence.
+The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–008 follow the supplied commit sequence.
 
 The smoke laboratory uses normalized units (ħ = 1), H = (Δ σz + Ω σx)/2, and E± = ±hypot(Δ, Ω)/2. Ω is a static transverse coupling here, not a time-dependent drive.
 
@@ -20,6 +20,7 @@ Reference material: [Electron 44](https://www.electronjs.org/blog/electron-44-0)
 - QLAB-005: driven two-level Schrödinger evolution, worker job manager, progress notifications, real cancellation, binary Float64 results, SHA-256 verification, React Dynamics preview and optional Layer-1 source IDs.
 - QLAB-006: model registry for static two-level, driven two-level and Landau–Zener systems; metadata-driven controls/defaults, Python model builders, and provisional Volume VIII/chapter 58 tags. Landau–Zener uses H(t) = (vt + ε₀)σz/2 + gσx/2.
 - QLAB-007: synchronized dynamics workspace with population/Pauli plot, Three.js Bloch sphere and full trajectory, exact-sample time cursor, state-vector readout and density matrix reconstructed from the same binary result row. A 2D projection remains available if WebGL is unavailable.
+- QLAB-008: independent NumPy Hermitian eigenspectrum and SciPy DOP853 Schrödinger evolution for the existing two-level models. Both engines use the same versioned job/result contracts, artifact columns, SHA-256 verification and worker supervision; the native integrator leaves normalization untouched so drift can be measured.
 
 Validated on Windows with Node 24.19.0 and Python 3.12.2. Type checking, thirteen TypeScript tests, ten Python tests, and the real Electron end-to-end smoke test pass. The desktop test exercises static spectrum, Rabi and Landau–Zener evolution, plot and slider selection, Bloch rendering, cancellation, stale data, restart, security preferences and compact layout. Screenshots are in the ignored artifacts directory.
 

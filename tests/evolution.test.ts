@@ -63,3 +63,32 @@ test("cancellation stops a running QuTiP job and leaves the worker healthy", asy
     await rm(directory, { recursive: true, force: true });
   }
 });
+
+test("supervised native evolution uses the same verified binary contract", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "qlab-native-"));
+  const worker = new WorkerSupervisor(process.cwd());
+  const coordinator = new EvolutionCoordinator(worker, directory, () => {});
+  try {
+    await worker.start();
+    const job = {
+      ...structuredClone(fixture),
+      jobId: `native-${Date.now()}`,
+      engine: "native",
+    } as EvolutionJob;
+    const result = await coordinator.run(job);
+    assert.equal(result.engine.name, "native");
+    const bytes = await coordinator.readData(result.jobId);
+    const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+    assert.equal(view.getFloat64(8, true), 1);
+    assert.ok(
+      Math.abs(
+        view.getFloat64(bytes.byteLength - 72, true) +
+          view.getFloat64(bytes.byteLength - 64, true) -
+          1,
+      ) < 1e-7,
+    );
+  } finally {
+    await worker.stop();
+    await rm(directory, { recursive: true, force: true });
+  }
+});

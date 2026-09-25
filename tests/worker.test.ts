@@ -9,6 +9,7 @@ test("supervised real Python handshake, errors, restart and shutdown", async () 
   const worker = new WorkerSupervisor(process.cwd());
   try {
     assert.equal((await worker.start()).state, "READY");
+    assert.equal(worker.status.capabilities?.engines.native.available, true);
     assert.deepEqual(await worker.request("health"), { status: "ok" });
     const result = await worker.request("quantum.run", fixture);
     assert.ok(
@@ -17,6 +18,18 @@ test("supervised real Python handshake, errors, restart and shutdown", async () 
     );
     assert.ok(
       Math.abs(result.spectrum.eigenvalues[1] - Math.hypot(1, 0.8) / 2) < 1e-12,
+    );
+    const native = await worker.request("quantum.run", {
+      ...fixture,
+      jobId: "native-spectrum-test",
+      engine: "native",
+    });
+    assert.ok(isQuantumResult(native) && native.operation === "diagonalize");
+    assert.equal(native.engine.name, "native");
+    assert.ok(
+      Math.abs(
+        native.spectrum.eigenvalues[1] - result.spectrum.eigenvalues[1],
+      ) < 1e-12,
     );
     await assert.rejects(worker.request("unsupported"), /Method not found/);
     assert.equal(worker.status.state, "READY");

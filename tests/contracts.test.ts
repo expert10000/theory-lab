@@ -39,7 +39,7 @@ test("reject incompatible versions, unknown fields, unsupported operations and i
     { schema: "quantum-job/v2" },
     { extra: true },
     { operation: "evolve" },
-    { engine: "native" },
+    { engine: "unknown" },
     { jobId: "../file" },
   ]) {
     assert.equal(isQuantumJob({ ...fixture, ...change }), false);
@@ -54,13 +54,20 @@ test("reject incompatible versions, unknown fields, unsupported operations and i
     );
   }
 });
+test("native engine is accepted by the existing v1 job and result shapes", () => {
+  assert.ok(isQuantumJob({ ...fixture, engine: "native" }));
+  assert.ok(isQuantumJob({ ...evolutionFixture, engine: "native" }));
+});
 test("capabilities advertise only implemented operations", () => {
   const caps = {
     schema: "worker-capabilities/v1",
     protocol: 1,
     worker: { version: "0.1.0" },
     python: { version: "3.12" },
-    engines: { qutip: { available: false, version: null } },
+    engines: {
+      qutip: { available: false, version: null },
+      native: { available: true, version: "1.18.1" },
+    },
     operations: [],
   };
   assert.ok(isWorkerCapabilities(caps));

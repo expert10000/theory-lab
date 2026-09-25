@@ -25,6 +25,8 @@ def availability():
 
 def diagonalize(job):
     validate("quantum-job", job)
+    if job["operation"] != "diagonalize" or job["engine"] != "qutip":
+        raise ValueError("Expected QuTiP diagonalization job")
     started = perf_counter()
     qt = engine()
     hamiltonian = build(qt, job["model"])

@@ -1,5 +1,6 @@
 import type {
   EvolutionJob,
+  EngineName,
   LayerOneSource,
   Observable,
   SpectrumJob,
@@ -194,6 +195,7 @@ export function parametersFor(
 export function spectrumJob(
   jobId: string,
   values: Record<string, string>,
+  engine: EngineName = "qutip",
 ): SpectrumJob {
   const p = parametersFor("two_level", values);
   if (!p) throw new Error("Invalid two-level parameters");
@@ -201,7 +203,7 @@ export function spectrumJob(
     schema: "quantum-job/v1",
     jobId,
     operation: "diagonalize",
-    engine: "qutip",
+    engine,
     model: {
       type: "two_level",
       parameters: { delta: p.delta, omega: p.omega },
@@ -217,6 +219,7 @@ export function evolutionJob(
   tStart: number,
   tStop: number,
   samples: number,
+  engine: EngineName = "qutip",
 ): EvolutionJob {
   const p = parametersFor(id, values);
   if (
@@ -253,7 +256,7 @@ export function evolutionJob(
     schema: "quantum-job/v1",
     jobId,
     operation: "evolve",
-    engine: "qutip",
+    engine,
     model,
     initialState: { type: "basis", index: initialIndex },
     solver: { type: "schrodinger", tStart, tStop, samples },

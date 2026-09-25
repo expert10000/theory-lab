@@ -7,6 +7,7 @@ from jsonschema import ValidationError
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.qutip_engine import availability, diagonalize
+from quantum_worker.engines.native_engine import availability as native_availability, diagonalize as native_diagonalize
 from quantum_worker.jobs.manager import JobManager
 
 MAX_MESSAGE = 65536
@@ -14,9 +15,11 @@ MANAGER = JobManager()
 
 def capabilities():
     qutip = availability()
+    native = native_availability()
     result = {"schema": "worker-capabilities/v1", "protocol": 1,
               "worker": {"version": __version__}, "python": {"version": platform.python_version()},
-              "engines": {"qutip": qutip}, "operations": ["diagonalize", "evolve"] if qutip["available"] else []}
+              "engines": {"qutip": qutip, "native": native},
+              "operations": ["diagonalize", "evolve"] if qutip["available"] or native["available"] else []}
     validate("worker-capabilities", result)
     return result
 
@@ -26,6 +29,8 @@ def dispatch(method, params):
     if method == "quantum.cancel":
         return MANAGER.cancel(params.get("jobId"))
     if method == "quantum.run":
+        if params.get("engine") == "native":
+            return native_diagonalize(params)
         return diagonalize(params)
     if method == "hello":
         return {"protocol": 1, "workerVersion": __version__}

@@ -42,18 +42,19 @@ export interface EvolutionSolver {
   samples: number;
 }
 export type Observable = "p0" | "p1" | "sigma_x" | "sigma_y" | "sigma_z";
+export type EngineName = "qutip" | "native";
 export interface SpectrumJob {
   schema: "quantum-job/v1";
   jobId: string;
   operation: "diagonalize";
-  engine: "qutip";
+  engine: EngineName;
   model: TwoLevelModel;
 }
 export interface EvolutionJob {
   schema: "quantum-job/v1";
   jobId: string;
   operation: "evolve";
-  engine: "qutip";
+  engine: EngineName;
   model: EvolutionModel;
   initialState: BasisState;
   solver: EvolutionSolver;
@@ -67,7 +68,7 @@ export interface SpectrumResult {
   status: "completed";
   operation: "diagonalize";
   model: TwoLevelModel;
-  engine: { name: "qutip"; version: string };
+  engine: { name: EngineName; version: string };
   spectrum: { eigenvalues: [number, number]; units: "normalized"; hbar: 1 };
   provenance: {
     pythonVersion: string;
@@ -107,7 +108,7 @@ export interface EvolutionResult {
   initialState: BasisState;
   solver: EvolutionSolver;
   observables: Observable[];
-  engine: { name: "qutip"; version: string };
+  engine: { name: EngineName; version: string };
   data: EvolutionData;
   provenance: SpectrumResult["provenance"];
 }
@@ -123,7 +124,10 @@ export interface WorkerCapabilities {
   protocol: 1;
   worker: { version: string };
   python: { version: string };
-  engines: { qutip: { available: boolean; version: string | null } };
+  engines: {
+    qutip: { available: boolean; version: string | null };
+    native: { available: boolean; version: string | null };
+  };
   operations: ("diagonalize" | "evolve")[];
 }
 export interface WorkerStatus {

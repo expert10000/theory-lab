@@ -79,9 +79,10 @@ app.whenReady().then(() => {
       throw new Error("Expected spectrum job");
     if (
       worker.status.state !== "READY" ||
-      !worker.status.capabilities?.operations.includes("diagonalize")
+      !worker.status.capabilities?.operations.includes("diagonalize") ||
+      !worker.status.capabilities.engines[value.engine].available
     )
-      throw new Error("QuTiP worker is not ready");
+      throw new Error(`${value.engine} engine is not ready`);
     if (running || evolution.isRunning)
       throw new Error("A calculation is already running");
     running = true;
@@ -91,6 +92,7 @@ app.whenReady().then(() => {
         !isQuantumResult(result) ||
         result.operation !== "diagonalize" ||
         result.jobId !== value.jobId ||
+        result.engine.name !== value.engine ||
         result.model.parameters.delta !== value.model.parameters.delta ||
         result.model.parameters.omega !== value.model.parameters.omega
       )

@@ -11,7 +11,9 @@ class ProtocolTests(unittest.TestCase):
 
     def test_handshake_and_health(self):
         self.assertEqual(self.call("hello")[0]["result"]["protocol"], 1)
-        validate("worker-capabilities", self.call("capabilities")[0]["result"])
+        caps = self.call("capabilities")[0]["result"]
+        validate("worker-capabilities", caps)
+        self.assertTrue(caps["engines"]["native"]["available"])
         self.assertEqual(self.call("health")[0]["result"]["status"], "ok")
         self.assertTrue(self.call("shutdown")[1])
 
