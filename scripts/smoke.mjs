@@ -26,7 +26,16 @@ try {
   assert.deepEqual(isolation, {
     require: "undefined",
     process: "undefined",
-    keys: ["getCapabilities", "getStatus", "restart", "run"],
+    keys: [
+      "cancel",
+      "evolve",
+      "getCapabilities",
+      "getStatus",
+      "onProgress",
+      "readData",
+      "restart",
+      "run",
+    ],
   });
   const prefs = await app.evaluate(({ BrowserWindow }) => {
     const prefs =
@@ -142,9 +151,38 @@ try {
     path: "artifacts/desktop-compact.png",
     fullPage: true,
   });
+  await page.getByRole("tab", { name: "Dynamics", exact: true }).click();
+  await page.getByTestId("run-evolution").click();
+  await page
+    .getByTestId("evolution-state")
+    .filter({ hasText: "COMPLETE" })
+    .waitFor({ timeout: 30000 });
+  assert.ok(
+    await page
+      .getByRole("img", { name: /QuTiP population and Pauli/ })
+      .isVisible(),
+  );
+  await page.screenshot({
+    path: "artifacts/desktop-dynamics.png",
+    fullPage: true,
+  });
+  await page.getByLabel("Frequency ω").fill("1.1");
+  await page
+    .getByTestId("dynamics-result-state")
+    .filter({ hasText: "OUT OF DATE" })
+    .waitFor();
+  await page.getByLabel("Samples").fill("50000");
+  await page.getByLabel("End time T").fill("1000");
+  await page.getByTestId("run-evolution").click();
+  await page.getByRole("button", { name: "Cancel job" }).click();
+  await page
+    .getByTestId("evolution-state")
+    .filter({ hasText: "CANCELLED" })
+    .waitFor({ timeout: 30000 });
+  assert.match(await page.getByTestId("worker-status").textContent(), /READY/);
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → validated IPC → Python → QuTiP → spectrum; analytic values, stale data, invalid input, degeneracy, restart, navigation, sandbox and compact layout.",
+    "PASS: Electron → validated IPC → Python → QuTiP → spectrum and evolution; binary data, stale results, cancellation, restart, sandbox and compact layout.",
   );
 } finally {
   await app.close();

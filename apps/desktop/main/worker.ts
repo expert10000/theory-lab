@@ -1,5 +1,6 @@
 import { spawn, type ChildProcessWithoutNullStreams } from "node:child_process";
 import { join } from "node:path";
+import { EventEmitter } from "node:events";
 import {
   isWorkerCapabilities,
   type WorkerStatus,
@@ -10,7 +11,7 @@ type Pending = {
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
-export class WorkerSupervisor {
+export class WorkerSupervisor extends EventEmitter {
   status: WorkerStatus = {
     state: "STOPPED",
     detail: "Worker has not started",
@@ -23,10 +24,13 @@ export class WorkerSupervisor {
   private starting?: Promise<WorkerStatus>;
   private stopping = false;
   private stderr = "";
-  constructor(private root: string) {}
+  constructor(private root: string) {
+    super();
+  }
 
   private fail(message: string) {
     this.status = { state: "ERROR", detail: message, capabilities: null };
+    this.emit("unavailable", message);
     if (this.heartbeat) clearInterval(this.heartbeat);
     for (const pending of this.pending.values()) {
       clearTimeout(pending.timer);
@@ -92,16 +96,24 @@ export class WorkerSupervisor {
     child.stdout.on("data", (chunk: string) => {
       if (this.child !== child) return;
       buffer += chunk;
-      if (buffer.length > 65536) {
-        this.fail("Worker response exceeded 64 KiB");
-        return;
-      }
       let end: number;
       while ((end = buffer.indexOf("\n")) >= 0) {
         const line = buffer.slice(0, end);
         buffer = buffer.slice(end + 1);
+        if (line.length > 65536) {
+          this.fail("Worker response exceeded 64 KiB");
+          return;
+        }
         try {
           const message = JSON.parse(line);
+          if (
+            message.jsonrpc === "2.0" &&
+            typeof message.method === "string" &&
+            !("id" in message)
+          ) {
+            this.emit("notification", message.method, message.params);
+            continue;
+          }
           if (
             message.jsonrpc !== "2.0" ||
             typeof message.id !== "string" ||
@@ -120,6 +132,7 @@ export class WorkerSupervisor {
           return;
         }
       }
+      if (buffer.length > 65536) this.fail("Worker response exceeded 64 KiB");
     });
     try {
       const hello = (await this.request("hello")) as { protocol: number };
@@ -174,6 +187,7 @@ export class WorkerSupervisor {
   }
   async stop(): Promise<void> {
     this.stopping = true;
+    this.emit("unavailable", "Worker stopped");
     if (this.heartbeat) clearInterval(this.heartbeat);
     const child = this.child;
     if (child && child.exitCode === null && !child.killed) {

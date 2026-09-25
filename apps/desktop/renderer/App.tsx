@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
 import type {
   QuantumBridge,
-  QuantumResult,
+  SpectrumResult,
   WorkerStatus,
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
+import { DynamicsLab } from "./DynamicsLab";
 declare global {
   interface Window {
     quantum: QuantumBridge;
@@ -30,13 +31,13 @@ export function App() {
   });
   const [delta, setDelta] = useState("1");
   const [omega, setOmega] = useState("0.8");
-  const [result, setResult] = useState<QuantumResult | null>(null);
+  const [result, setResult] = useState<SpectrumResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"spectrum" | "hamiltonian" | "roadmap">(
-    "spectrum",
-  );
+  const [tab, setTab] = useState<
+    "spectrum" | "hamiltonian" | "dynamics" | "roadmap"
+  >("spectrum");
   const initialRun = useRef(false);
   const valid = [delta, omega].every(
     (value) =>
@@ -134,23 +135,28 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-004</span>
-          <button
-            className="run-button"
-            onClick={() => void run()}
-            disabled={!ready || !valid || busy || restarting}
-          >
-            {busy ? "Calculating…" : "▶  Run spectrum"}
-          </button>
+          <span className="version">V0.1 · QLAB-005</span>
+          {tab !== "dynamics" && (
+            <button
+              className="run-button"
+              onClick={() => void run()}
+              disabled={!ready || !valid || busy || restarting}
+            >
+              {busy ? "Calculating…" : "▶  Run spectrum"}
+            </button>
+          )}
         </div>
       </header>
-      <div className="layout">
+      <div className={`layout ${tab === "dynamics" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>01 / 10</span>
+            LABORATORIES <span>02 / 10</span>
           </p>
           <button className="lab-selected" onClick={() => setTab("spectrum")}>
             <span>◈</span> Two-level system <span className="live-dot" />
+          </button>
+          <button className="lab-selected" onClick={() => setTab("dynamics")}>
+            <span>∿</span> Rabi dynamics <span className="live-dot" />
           </button>
           <p className="sidebar-note">
             The smallest quantum system.
@@ -159,9 +165,9 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">PLANNED FOR V1</p>
           <nav aria-label="Planned laboratories">
-            {futureLabs.map((lab, i) => (
+            {futureLabs.slice(1).map((lab, i) => (
               <div className="future-lab" key={lab}>
-                <span>{String(i + 2).padStart(2, "0")}</span>
+                <span>{String(i + 3).padStart(2, "0")}</span>
                 {lab}
               </div>
             ))}
@@ -171,7 +177,7 @@ export function App() {
             <strong>One complete scientific path.</strong>
             <p>
               React → contract → Python
-              <br />→ QuTiP → spectrum
+              <br />→ QuTiP → spectrum / evolution
             </p>
             <button className="text-button" onClick={() => setTab("roadmap")}>
               View desktop roadmap ↗
@@ -180,13 +186,26 @@ export function App() {
         </aside>
         <main className="workspace">
           <div className="breadcrumb">
-            MODELS <span>/</span> TWO-LEVEL SYSTEM
+            MODELS <span>/</span>{" "}
+            {tab === "dynamics" ? "RABI DYNAMICS" : "TWO-LEVEL SYSTEM"}
           </div>
           <div className="workspace-title">
             <div>
-              <p className="eyebrow accent">SMOKE LABORATORY / 001</p>
-              <h1>A two-level universe.</h1>
-              <p>Explore the spectrum of a coupled quantum two-state system.</p>
+              <p className="eyebrow accent">
+                {tab === "dynamics"
+                  ? "EVOLUTION LABORATORY / 002"
+                  : "SMOKE LABORATORY / 001"}
+              </p>
+              <h1>
+                {tab === "dynamics"
+                  ? "A system in motion."
+                  : "A two-level universe."}
+              </h1>
+              <p>
+                {tab === "dynamics"
+                  ? "Drive a qubit and watch its populations and observables evolve."
+                  : "Explore the spectrum of a coupled quantum two-state system."}
+              </p>
             </div>
             <span className="pill">2 × 2 HILBERT SPACE</span>
           </div>
@@ -207,11 +226,21 @@ export function App() {
             </button>
             <button
               role="tab"
+              aria-selected={tab === "dynamics"}
+              onClick={() => setTab("dynamics")}
+            >
+              Dynamics
+            </button>
+            <button
+              role="tab"
               aria-selected={tab === "roadmap"}
               onClick={() => setTab("roadmap")}
             >
               Roadmap
             </button>
+          </div>
+          <div hidden={tab !== "dynamics"}>
+            <DynamicsLab bridge={window.quantum} status={status} />
           </div>
           {tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -224,8 +253,13 @@ export function App() {
               {[
                 ["000–004", "Foundation & first spectrum", "Implemented"],
                 [
-                  "005–007",
-                  "Evolution, model workspace & Bloch sphere",
+                  "005",
+                  "Evolution, progress, cancellation & binary artifact",
+                  "Implemented",
+                ],
+                [
+                  "006–007",
+                  "Model registry, dynamics workspace & Bloch sphere",
                   "Next",
                 ],
                 ["008–009", "Native engine & numerical comparison", "Planned"],
@@ -251,7 +285,7 @@ export function App() {
                 crystals belong to a later phase.
               </p>
             </section>
-          ) : (
+          ) : tab === "dynamics" ? null : (
             <>
               <section className="hamiltonian-card">
                 <div>

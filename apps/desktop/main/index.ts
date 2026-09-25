@@ -8,6 +8,7 @@ import {
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import { WorkerSupervisor } from "./worker";
+import { EvolutionCoordinator } from "./evolution";
 import { assertJob, isQuantumResult } from "../../../packages/contracts";
 
 const worker = new WorkerSupervisor(join(__dirname, ".."));
@@ -44,20 +45,51 @@ function createWindow() {
 }
 app.whenReady().then(() => {
   let running = false;
+  const evolution = new EvolutionCoordinator(
+    worker,
+    join(app.getPath("userData"), "artifacts"),
+    (progress) => {
+      for (const win of BrowserWindow.getAllWindows())
+        win.webContents.send("quantum:progress", progress);
+    },
+  );
+  ipcMain.handle("quantum:evolve", (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if (value.operation !== "evolve") throw new Error("Expected evolution job");
+    if (running) throw new Error("A spectrum calculation is already running");
+    return evolution.run(value);
+  });
+  ipcMain.handle("quantum:cancel", (event, jobId: unknown) => {
+    trusted(event);
+    if (typeof jobId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(jobId))
+      throw new Error("Invalid job ID");
+    return evolution.cancel(jobId);
+  });
+  ipcMain.handle("quantum:read-data", (event, jobId: unknown) => {
+    trusted(event);
+    if (typeof jobId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(jobId))
+      throw new Error("Invalid job ID");
+    return evolution.readData(jobId);
+  });
   ipcMain.handle("quantum:run", async (event, value: unknown) => {
     trusted(event);
     assertJob(value);
+    if (value.operation !== "diagonalize")
+      throw new Error("Expected spectrum job");
     if (
       worker.status.state !== "READY" ||
       !worker.status.capabilities?.operations.includes("diagonalize")
     )
       throw new Error("QuTiP worker is not ready");
-    if (running) throw new Error("A calculation is already running");
+    if (running || evolution.isRunning)
+      throw new Error("A calculation is already running");
     running = true;
     try {
       const result = await worker.request("quantum.run", value);
       if (
         !isQuantumResult(result) ||
+        result.operation !== "diagonalize" ||
         result.jobId !== value.jobId ||
         result.model.parameters.delta !== value.model.parameters.delta ||
         result.model.parameters.omega !== value.model.parameters.omega

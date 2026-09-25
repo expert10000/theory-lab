@@ -7,18 +7,24 @@ from jsonschema import ValidationError
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.qutip_engine import availability, diagonalize
+from quantum_worker.jobs.manager import JobManager
 
 MAX_MESSAGE = 65536
+MANAGER = JobManager()
 
 def capabilities():
     qutip = availability()
     result = {"schema": "worker-capabilities/v1", "protocol": 1,
               "worker": {"version": __version__}, "python": {"version": platform.python_version()},
-              "engines": {"qutip": qutip}, "operations": ["diagonalize"] if qutip["available"] else []}
+              "engines": {"qutip": qutip}, "operations": ["diagonalize", "evolve"] if qutip["available"] else []}
     validate("worker-capabilities", result)
     return result
 
 def dispatch(method, params):
+    if method == "quantum.start":
+        return MANAGER.start(params.get("job"), params.get("outputDir"))
+    if method == "quantum.cancel":
+        return MANAGER.cancel(params.get("jobId"))
     if method == "quantum.run":
         return diagonalize(params)
     if method == "hello":
@@ -28,6 +34,7 @@ def dispatch(method, params):
     if method == "health":
         return {"status": "ok"}
     if method == "shutdown":
+        MANAGER.shutdown()
         return {"status": "stopping"}
     raise LookupError("Method not found")
 
@@ -71,7 +78,7 @@ def main():
         else:
             response, stop = handle(raw)
         if response is not None:
-            print(json.dumps(response, allow_nan=False, separators=(",", ":")), flush=True)
+            MANAGER.write_response(response)
         if stop:
             break
 

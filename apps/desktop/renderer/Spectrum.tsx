@@ -1,10 +1,10 @@
 import React from "react";
-import type { QuantumResult } from "../../../packages/contracts";
+import type { SpectrumResult } from "../../../packages/contracts";
 export const format = (value: number) =>
   Math.abs(value) < 1e-5 && value !== 0
     ? value.toExponential(6)
     : value.toFixed(6);
-export function Spectrum({ result }: { result: QuantumResult }) {
+export function Spectrum({ result }: { result: SpectrumResult }) {
   const [low, high] = result.spectrum.eigenvalues;
   const bound = Math.max(Math.abs(low), Math.abs(high), 0.1) * 1.55;
   const y = (energy: number) => 150 - (energy / bound) * 112;

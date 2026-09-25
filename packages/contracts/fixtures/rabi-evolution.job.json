@@ -1,0 +1,14 @@
+{
+  "schema": "quantum-job/v1",
+  "jobId": "test-rabi-001",
+  "operation": "evolve",
+  "engine": "qutip",
+  "model": {
+    "type": "driven_two_level",
+    "parameters": { "delta": 0, "amplitude": 1, "frequency": 0, "phase": 0 },
+    "source": { "volume": "VIII", "chapter": "58", "exampleId": "rabi-smoke" }
+  },
+  "initialState": { "type": "basis", "index": 0 },
+  "solver": { "type": "schrodinger", "tStart": 0, "tStop": 6.283185307179586, "samples": 101 },
+  "observables": ["p0", "p1", "sigma_x", "sigma_y", "sigma_z"]
+}

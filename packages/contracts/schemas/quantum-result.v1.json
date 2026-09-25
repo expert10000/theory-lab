@@ -1,123 +1,417 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-result.v1.json",
-  "type": "object",
-  "additionalProperties": false,
-  "properties": {
-    "schema": {
-      "const": "quantum-result/v1"
-    },
-    "jobId": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100,
-      "pattern": "^[A-Za-z0-9_-]+$"
-    },
-    "runId": {
-      "type": "string",
-      "minLength": 1,
-      "maxLength": 100,
-      "pattern": "^[A-Za-z0-9_-]+$"
-    },
-    "status": {
-      "const": "completed"
-    },
-    "operation": {
-      "const": "diagonalize"
-    },
-    "model": {
+  "oneOf": [
+    {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "type": {
-          "const": "two_level"
+        "schema": {
+          "const": "quantum-result/v1"
         },
-        "parameters": {
+        "jobId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "status": {
+          "const": "completed"
+        },
+        "operation": {
+          "const": "diagonalize"
+        },
+        "model": {
           "type": "object",
           "additionalProperties": false,
           "properties": {
-            "delta": {
-              "type": "number",
-              "minimum": -1000000,
-              "maximum": 1000000
+            "type": {
+              "const": "two_level"
             },
-            "omega": {
-              "type": "number",
-              "minimum": -1000000,
-              "maximum": 1000000
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "delta": {
+                  "type": "number",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "omega": {
+                  "type": "number",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                }
+              },
+              "required": ["delta", "omega"]
+            },
+            "source": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "sourceRepository": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "sourceModule": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "volume": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "chapter": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "exampleId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                }
+              },
+              "required": [],
+              "minProperties": 1
             }
           },
-          "required": ["delta", "omega"]
-        }
-      },
-      "required": ["type", "parameters"]
-    },
-    "engine": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "name": {
-          "const": "qutip"
+          "required": ["type", "parameters"]
         },
-        "version": {
-          "type": "string",
-          "minLength": 1
+        "engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "const": "qutip"
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["name", "version"]
+        },
+        "spectrum": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "eigenvalues": {
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2
+            },
+            "units": {
+              "const": "normalized"
+            },
+            "hbar": {
+              "const": 1
+            }
+          },
+          "required": ["eigenvalues", "units", "hbar"]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pythonVersion": {
+              "type": "string"
+            },
+            "workerVersion": {
+              "type": "string"
+            },
+            "computedAt": {
+              "type": "string",
+              "minLength": 20
+            },
+            "durationMs": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "pythonVersion",
+            "workerVersion",
+            "computedAt",
+            "durationMs"
+          ]
         }
       },
-      "required": ["name", "version"]
+      "required": [
+        "schema",
+        "jobId",
+        "runId",
+        "status",
+        "operation",
+        "model",
+        "engine",
+        "spectrum",
+        "provenance"
+      ]
     },
-    "spectrum": {
+    {
       "type": "object",
       "additionalProperties": false,
       "properties": {
-        "eigenvalues": {
+        "schema": {
+          "const": "quantum-result/v1"
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "status": {
+          "const": "completed"
+        },
+        "operation": {
+          "const": "evolve"
+        },
+        "model": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "driven_two_level"
+            },
+            "parameters": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "delta": {
+                  "type": "number",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "amplitude": {
+                  "type": "number",
+                  "minimum": -1000000,
+                  "maximum": 1000000
+                },
+                "frequency": {
+                  "type": "number",
+                  "minimum": 0,
+                  "maximum": 1000000
+                },
+                "phase": {
+                  "type": "number",
+                  "minimum": -1000,
+                  "maximum": 1000
+                }
+              },
+              "required": ["delta", "amplitude", "frequency", "phase"]
+            },
+            "source": {
+              "type": "object",
+              "additionalProperties": false,
+              "properties": {
+                "sourceRepository": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "sourceModule": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 300
+                },
+                "volume": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "chapter": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "exampleId": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                }
+              },
+              "required": [],
+              "minProperties": 1
+            }
+          },
+          "required": ["type", "parameters"]
+        },
+        "initialState": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "basis"
+            },
+            "index": {
+              "type": "integer",
+              "enum": [0, 1]
+            }
+          },
+          "required": ["type", "index"]
+        },
+        "solver": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "type": {
+              "const": "schrodinger"
+            },
+            "tStart": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 1000
+            },
+            "tStop": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "maximum": 1000
+            },
+            "samples": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 50000
+            }
+          },
+          "required": ["type", "tStart", "tStop", "samples"]
+        },
+        "observables": {
           "type": "array",
           "items": {
-            "type": "number"
+            "enum": ["p0", "p1", "sigma_x", "sigma_y", "sigma_z"]
           },
-          "minItems": 2,
-          "maxItems": 2
+          "minItems": 1,
+          "maxItems": 5,
+          "uniqueItems": true
         },
-        "units": {
-          "const": "normalized"
+        "engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "const": "qutip"
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": ["name", "version"]
         },
-        "hbar": {
-          "const": 1
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema": {
+              "const": "quantum-data/v1"
+            },
+            "format": {
+              "const": "f64le"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+\\.f64$"
+            },
+            "rows": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 50000
+            },
+            "columns": {
+              "const": [
+                "time",
+                "p0",
+                "p1",
+                "sigma_x",
+                "sigma_y",
+                "sigma_z",
+                "c0_re",
+                "c0_im",
+                "c1_re",
+                "c1_im"
+              ]
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 160,
+              "maximum": 4000000
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "schema",
+            "format",
+            "path",
+            "rows",
+            "columns",
+            "bytes",
+            "sha256"
+          ]
+        },
+        "provenance": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "pythonVersion": {
+              "type": "string"
+            },
+            "workerVersion": {
+              "type": "string"
+            },
+            "computedAt": {
+              "type": "string",
+              "minLength": 20
+            },
+            "durationMs": {
+              "type": "number",
+              "minimum": 0
+            }
+          },
+          "required": [
+            "pythonVersion",
+            "workerVersion",
+            "computedAt",
+            "durationMs"
+          ]
         }
       },
-      "required": ["eigenvalues", "units", "hbar"]
-    },
-    "provenance": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "pythonVersion": {
-          "type": "string"
-        },
-        "workerVersion": {
-          "type": "string"
-        },
-        "computedAt": {
-          "type": "string",
-          "minLength": 20
-        },
-        "durationMs": {
-          "type": "number",
-          "minimum": 0
-        }
-      },
-      "required": ["pythonVersion", "workerVersion", "computedAt", "durationMs"]
+      "required": [
+        "schema",
+        "jobId",
+        "runId",
+        "status",
+        "operation",
+        "model",
+        "initialState",
+        "solver",
+        "observables",
+        "engine",
+        "data",
+        "provenance"
+      ]
     }
-  },
-  "required": [
-    "schema",
-    "jobId",
-    "runId",
-    "status",
-    "operation",
-    "model",
-    "engine",
-    "spectrum",
-    "provenance"
   ]
 }

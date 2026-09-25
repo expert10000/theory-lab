@@ -6,9 +6,16 @@ import {
   isWorkerCapabilities,
 } from "../packages/contracts";
 import fixture from "../packages/contracts/fixtures/two-level.job.json";
+import evolutionFixture from "../packages/contracts/fixtures/rabi-evolution.job.json";
 
 test("canonical job fixture is compatible with v1", () =>
   assert.ok(isQuantumJob(fixture)));
+test("evolution job accepts optional Layer-1 source IDs and rejects unsupported solvers", () => {
+  assert.ok(isQuantumJob(evolutionFixture));
+  assert.equal(isQuantumJob({ ...evolutionFixture, solver: { ...evolutionFixture.solver, type: "lindblad" } }), false);
+  assert.equal(isQuantumJob({ ...evolutionFixture, model: { ...evolutionFixture.model, source: { unknown: "x" } } }), false);
+  assert.equal(isQuantumJob({ ...evolutionFixture, initialState: { type: "basis", index: 2 } }), false);
+});
 test("reject incompatible versions, unknown fields, unsupported operations and invalid numbers", () => {
   for (const change of [
     { schema: "quantum-job/v2" },
@@ -41,7 +48,7 @@ test("capabilities advertise only implemented operations", () => {
   assert.ok(isWorkerCapabilities(caps));
   assert.equal(isWorkerCapabilities({ ...caps, protocol: 2 }), false);
   assert.equal(
-    isWorkerCapabilities({ ...caps, operations: ["evolve"] }),
+    isWorkerCapabilities({ ...caps, operations: ["steady_state"] }),
     false,
   );
 });

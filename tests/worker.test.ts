@@ -12,7 +12,7 @@ test("supervised real Python handshake, errors, restart and shutdown", async () 
     assert.deepEqual(await worker.request("health"), { status: "ok" });
     const result = await worker.request("quantum.run", fixture);
     assert.ok(
-      isQuantumResult(result),
+      isQuantumResult(result) && result.operation === "diagonalize",
       "Python result must match the TypeScript schema",
     );
     assert.ok(
