@@ -101,7 +101,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
         </article>
         <article className="panel backend-card">
           <p className="eyebrow">DATA PLANE</p>
-          <h2>Binary evolution & cavity samples</h2>
+          <h2>Verified binary results</h2>
           <p>
             <code>quantum-data/v1</code> stores each sample as ten little-endian
             Float64 values (80 bytes per row). The JSON result names the
@@ -110,6 +110,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           </p>
           <p><code>quantum-cavity-data/v1</code> stores six Float64 values per row (48 bytes): time, excited population, mean photons, Fock-boundary population, norm, parity.</p>
           <p><code>quantum-lindblad-data/v1</code> stores seven Float64 values per row (56 bytes): time, excited population, photons, purity, coherence, Fock-boundary occupation, trace.</p>
+          <p><code>quantum-sweep-data/v1</code> stores row-major final P₁ values as little-endian Float64 cells. The JSON result specifies X/Y shape, cache key and reuse counts. Completed rows are atomically checkpointed so an interrupted grid can resume.</p>
           <small>Up to 50,000 two-level or 5,000 cavity samples · SHA-256 verified</small>
         </article>
       </div>

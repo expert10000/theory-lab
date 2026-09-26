@@ -37,6 +37,7 @@ try {
       "readData",
       "restart",
       "run",
+      "sweep",
     ],
   });
   const prefs = await app.evaluate(({ BrowserWindow }) => {
@@ -387,9 +388,27 @@ try {
   assert.ok(await page.getByTestId("steady-state").getByText("Steady state").isVisible());
   await page.getByTestId("lindblad-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-lindblad.png", fullPage: true });
+  await page.getByRole("button", { name: "Parameter sweeps" }).click();
+  await page.getByRole("combobox", { name: "Sweep engine" }).selectOption("native");
+  await page.getByRole("spinbutton", { name: "X axis points" }).fill("5");
+  await page.getByTestId("run-sweep").click();
+  await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("sweep-line").waitFor();
+  assert.equal(await page.getByTestId("sweep-reused").textContent(), "0");
+  await page.screenshot({ path: "artifacts/desktop-sweep-line.png", fullPage: true });
+  await page.getByTestId("run-sweep").click();
+  await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  assert.equal(await page.getByTestId("sweep-reused").textContent(), "5");
+  await page.getByRole("combobox", { name: "Sweep dimension" }).selectOption("2d");
+  await page.getByRole("spinbutton", { name: "Y axis points" }).fill("4");
+  await page.getByTestId("run-sweep").click();
+  await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("sweep-heatmap").waitFor();
+  assert.equal(await page.getByTestId("sweep-heatmap").locator(".sweep-heatmap button").count(), 20);
+  await page.screenshot({ path: "artifacts/desktop-sweep-heatmap.png", fullPage: true });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native spectrum, evolution, Floquet and cavity labs; verified binary data, numerical references, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native spectrum, evolution, Floquet, cavity, Lindblad and sweep labs; verified binary data, numerical references, cancellation, restart and sandbox.",
   );
 } finally {
   await app.close();

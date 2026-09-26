@@ -9,6 +9,7 @@ import {
   evolutionJob,
 } from "../packages/models";
 import { isQuantumJob } from "../packages/contracts";
+import { SWEEP_DEFAULTS, sweepJob } from "../packages/models/sweep";
 
 test("model registry generates contract-compatible jobs from its defaults", () => {
   assert.deepEqual(
@@ -96,4 +97,16 @@ test("parameter metadata rejects out-of-range and missing model values", () => {
       401,
     ),
   );
+});
+test("sweep builder validates axis membership, unique dimensions and cell budget", () => {
+  const x = SWEEP_DEFAULTS.driven_two_level.x;
+  const y = SWEEP_DEFAULTS.driven_two_level.y;
+  const make = (xAxis = x, yAxis: typeof y | null = null) =>
+    sweepJob("driven_two_level", "sweep-model", defaultsFor("driven_two_level"),
+      xAxis, yAxis, 0, 20, 0, "native");
+  assert.ok(isQuantumJob(make()));
+  assert.ok(isQuantumJob(make(x, y)));
+  assert.throws(() => make({ ...x, parameter: "gap" }));
+  assert.throws(() => make(x, { ...x }));
+  assert.throws(() => make({ ...x, points: 101 }, { ...y, points: 101 }));
 });

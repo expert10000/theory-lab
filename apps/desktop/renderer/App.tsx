@@ -9,6 +9,7 @@ import { Spectrum, format } from "./Spectrum";
 import { DynamicsLab } from "./DynamicsLab";
 import { CavityLab } from "./CavityLab";
 import { OpenSystemLab } from "./OpenSystemLab";
+import { SweepLab } from "./SweepLab";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import {
@@ -27,9 +28,6 @@ declare global {
     quantum: QuantumBridge;
   }
 }
-const futureLabs = [
-  "Parameter sweeps",
-];
 type EngineMode = EngineName | "compare";
 
 export function App() {
@@ -52,7 +50,7 @@ export function App() {
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<
-    "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "roadmap" | "backend"
+    "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "roadmap" | "backend"
   >("spectrum");
   const initialRun = useRef(false);
   const valid = parametersFor("two_level", parameters) !== null;
@@ -153,8 +151,8 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-013</span>
-          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "backend" && tab !== "roadmap" && (
+          <span className="version">V0.1 · QLAB-014</span>
+          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -169,10 +167,10 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" ? "dynamics-layout" : ""}`}>
+      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>08 / 09</span>
+            LABORATORIES <span>09 / 09</span>
           </p>
           {(
             [
@@ -197,19 +195,15 @@ export function App() {
           ))}
           {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" onClick={() => { setCavityModel(id); setTab("cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
           <button className="lab-selected" onClick={() => setTab("open")}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
+          <button className="lab-selected" onClick={() => setTab("sweep")}><span>▦</span> Parameter sweeps <span className="live-dot" /></button>
           <p className="sidebar-note">
             The smallest quantum system.
             <br />
             The foundation for everything next.
           </p>
-          <p className="eyebrow planned-label">PLANNED FOR V1</p>
+          <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            {futureLabs.map((lab, i) => (
-              <div className="future-lab" key={lab}>
-                <span>{String(i + 9).padStart(2, "0")}</span>
-                {lab}
-              </div>
-            ))}
+            <div className="future-lab"><span>15</span> Volume VIII presets</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -234,6 +228,8 @@ export function App() {
                   ? CAVITY_REGISTRY[cavityModel].label.toUpperCase()
                   : tab === "open"
                     ? "LINDBLAD DYNAMICS"
+                    : tab === "sweep"
+                      ? "PARAMETER SWEEPS"
                 : "TWO-LEVEL SYSTEM"}
           </div>
           <div className="workspace-title">
@@ -247,6 +243,8 @@ export function App() {
                       ? `CAVITY QED LABORATORY / ${cavityModel === "jaynes_cummings" ? "006" : "007"}`
                       : tab === "open"
                         ? "OPEN-SYSTEM LABORATORY / 008"
+                        : tab === "sweep"
+                          ? "SWEEP LABORATORY / 009"
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
@@ -258,6 +256,8 @@ export function App() {
                       ? "Light meets matter."
                       : tab === "open"
                         ? "A system meets its environment."
+                        : tab === "sweep"
+                          ? "The landscape of a model."
                     : "A two-level universe."}
               </h1>
               <p>
@@ -269,6 +269,8 @@ export function App() {
                       ? CAVITY_REGISTRY[cavityModel].description
                       : tab === "open"
                         ? "Explore relaxation, dephasing, cavity loss and stationary states."
+                      : tab === "sweep"
+                        ? "Sweep one or two parameters with checkpoints, cancellation and resume."
                     : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
@@ -298,6 +300,7 @@ export function App() {
             </button>
             <button role="tab" aria-selected={tab === "cavity"} onClick={() => setTab("cavity")}>Cavity QED</button>
             <button role="tab" aria-selected={tab === "open"} onClick={() => setTab("open")}>Open system</button>
+            <button role="tab" aria-selected={tab === "sweep"} onClick={() => setTab("sweep")}>Sweeps</button>
             <button
               role="tab"
               aria-selected={tab === "roadmap"}
@@ -322,6 +325,7 @@ export function App() {
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} /></div>
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} /></div>
+          <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} /></div>
           {tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
@@ -355,7 +359,7 @@ export function App() {
                 ["011", "Floquet modes, quasienergies & strong-drive map", "Implemented"],
                 ["012", "Jaynes–Cummings & quantum Rabi cavity QED", "Implemented"],
                 ["013", "Lindblad dynamics, purity & steady state", "Implemented"],
-                ["014", "Parameter sweeps & heatmap workspace", "Next"],
+                ["014", "Parameter sweeps & heatmap workspace", "Implemented"],
                 [
                   "015–017",
                   "Book presets, persistence & release validation",
@@ -374,7 +378,7 @@ export function App() {
                 crystals belong to a later phase.
               </p>
             </section>
-          ) : tab === "dynamics" || tab === "cavity" || tab === "open" ? null : (
+          ) : tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" ? null : (
             <>
               <section className="hamiltonian-card">
                 <div>

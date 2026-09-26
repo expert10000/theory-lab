@@ -1,6 +1,18 @@
 {
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-job.v1.json",
+  "definitions": {
+    "sweepAxis": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "parameter": { "enum": ["delta", "amplitude", "frequency", "phase", "sweepRate", "gap", "bias", "turnTime"] },
+        "start": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+        "stop": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+        "points": { "type": "integer", "minimum": 2, "maximum": 101 }
+      },
+      "required": ["parameter", "start", "stop", "points"]
+    }
+  },
   "oneOf": [
     {
       "type": "object",
@@ -428,6 +440,29 @@
         }
       },
       "required": ["schema", "jobId", "operation", "engine", "model", "initialState", "solver"]
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "quantum-job/v1" },
+        "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "operation": { "const": "sweep" },
+        "engine": { "enum": ["qutip", "native"] },
+        "model": { "$ref": "#/oneOf/1/properties/model" },
+        "sweep": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "x": { "$ref": "#/definitions/sweepAxis" },
+            "y": { "anyOf": [{ "$ref": "#/definitions/sweepAxis" }, { "type": "null" }] },
+            "metric": { "const": "final_p1" },
+            "tStart": { "type": "number", "minimum": -1000, "maximum": 1000 },
+            "tStop": { "type": "number", "minimum": -1000, "maximum": 1000 },
+            "initialIndex": { "type": "integer", "enum": [0, 1] }
+          },
+          "required": ["x", "y", "metric", "tStart", "tStop", "initialIndex"]
+        }
+      },
+      "required": ["schema", "jobId", "operation", "engine", "model", "sweep"]
     },
     {
       "type": "object", "additionalProperties": false,

@@ -74,6 +74,13 @@ app.whenReady().then(() => {
     if (running) throw new Error("A spectrum calculation is already running");
     return evolution.run(value);
   });
+  ipcMain.handle("quantum:sweep", (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if (value.operation !== "sweep") throw new Error("Expected sweep job");
+    if (running) throw new Error("A spectrum calculation is already running");
+    return evolution.run(value);
+  });
   ipcMain.handle("quantum:cancel", (event, jobId: unknown) => {
     trusted(event);
     if (typeof jobId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(jobId))

@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. **QLAB-000–009** add QuTiP and native NumPy/SciPy engines, the two-level and driven laboratories, a synchronized Bloch workspace, and numerical comparison.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–014 cover two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, and QuTiP/native comparison.
 
 ## Run on Windows
 
@@ -39,7 +39,11 @@ Select **Landau–Zener** in the laboratory list to sweep H(t) = (vt + ε₀)σz
 
 Select **Stückelberg** for a smooth double passage: ε(t) = v(t² − τ²)/(2τ) + ε₀, with H(t) = ε(t)σz/2 + gσx/2. At zero bias the two crossings occur at t = ±τ. The same QuTiP/Native/Compare controls and synchronized dynamics views apply; the result shows the crossing positions and return population. The model's interference comes from phase accumulated between passages. Tests cover zero coupling, normalization and cross-engine agreement.
 
-Select **Floquet / strong drive** to compute the one-period propagator of the periodically driven two-level model. The result includes folded quasienergies, Floquet modes at t = 0, a 9×13 five-cycle transition-probability map, and a clearly marked weak-drive Bloch–Siegert estimate. Both engines are checked against each other; the map is a fixed preview, while general sweeps are planned for QLAB-014.
+Select **Floquet / strong drive** to compute the one-period propagator of the periodically driven two-level model. The result includes folded quasienergies, Floquet modes at t = 0, a 9×13 five-cycle transition-probability map, and a clearly marked weak-drive Bloch–Siegert estimate. Both engines are checked against each other; the map is a fixed preview, separate from general sweeps.
+
+## Parameter sweeps
+
+The **Sweeps** workspace varies one or two parameters of Rabi, Landau–Zener, Stückelberg, or strong-drive evolution and maps final P₁. Select QuTiP or native SciPy, a time window, axes and resolution (up to 10,000 cells), then run. A 1D curve or clickable 2D heatmap displays the result. Completed cells are cached by model, grid and engine version; cancel and rerun unchanged settings to resume. The result reports reused and newly computed cells. A sweep is a separate job, not the fixed Floquet preview map.
 
 ## Cavity QED
 
@@ -63,7 +67,7 @@ React renderer → narrow preload API → Electron main → JSON-RPC stdio → P
 
 Renderer: sandboxed, context isolated, no Node integration, no filesystem/process APIs, restrictive CSP. Electron checks the originating frame of each IPC call, denies permissions, navigation, and popups. Python is local, has no listening port, and reserves stdout for bounded protocol messages. The supervisor checks hello/capabilities/health, applies timeouts, reports crashes, and gracefully shuts down or terminates its child. Recovery is user initiated.
 
-The shared draft-07 JSON Schemas live in `packages/contracts/schemas`. AJV and Python jsonschema use the same files. Unsupported operations and contract versions are rejected. The two-number smoke spectrum travels inline. Evolution samples use a separate little-endian Float64 artifact (`quantum-data/v1`, ten columns per row). Cavity samples use `quantum-cavity-data/v1` with six columns per row; Lindblad density-matrix observables use `quantum-lindblad-data/v1` with seven. JSON carries only the path, shape, SHA-256 hash, run metadata, and progress notifications. Electron verifies the file hash before passing bytes to the renderer. Files are currently retained under Electron's user-data `artifacts` directory; retention and run manifests arrive with QLAB-016.
+The shared draft-07 JSON Schemas live in `packages/contracts/schemas`. AJV and Python jsonschema use the same files. Unsupported operations and contract versions are rejected. The two-number smoke spectrum travels inline. Evolution samples use a separate little-endian Float64 artifact (`quantum-data/v1`, ten columns per row). Cavity samples use `quantum-cavity-data/v1` with six columns per row; Lindblad density-matrix observables use `quantum-lindblad-data/v1` with seven. Parameter grids use `quantum-sweep-data/v1` with row-major little-endian Float64 cells. JSON carries only the path, shape, SHA-256 hash, run metadata, and progress notifications. Electron verifies the file hash before passing bytes to the renderer. Files are currently retained under Electron's user-data `artifacts` directory; retention and run manifests arrive with QLAB-016.
 
 The model contract has optional `sourceRepository`, `sourceModule`, `volume`, `chapter`, and `exampleId` fields so Layer-1 examples can be mapped later. No claim is made that the example IDs in test fixtures correspond to an imported book manifest.
 
@@ -83,6 +87,6 @@ The desktop test starts the actual Electron app and worker; it checks QuTiP/Nati
 
 The complete supplied plan is preserved in [docs/ROADMAP.md](docs/ROADMAP.md); decisions and validation status are in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
-This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener and Stückelberg passages, strong-drive Floquet analysis, Jaynes–Cummings and Quantum Rabi cavity dynamics, Lindblad open-system dynamics, the dynamics/Bloch workspace, and QuTiP/native comparison. General sweeps remain subsequent V1 work. The separate `theory` development branch supplies explicit reference examples where mapped, but is not a runtime dependency. Atoms, molecules and crystals are outside initial V1 scope.
+This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener and Stückelberg passages, strong-drive Floquet analysis, Jaynes–Cummings and Quantum Rabi cavity dynamics, Lindblad open-system dynamics, 1D/2D parameter sweeps, the dynamics/Bloch workspace, and QuTiP/native comparison. The separate `theory` development branch supplies explicit reference examples where mapped, but is not a runtime dependency. Atoms, molecules and crystals are outside initial V1 scope.
 
 Run IDs, engine versions, timestamps and parameters are returned for each calculation; run history is currently session-only. Durable provenance/workspaces/exports, installers, and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders both plots; a QuTiP warning about Python plotting does not prevent calculation.

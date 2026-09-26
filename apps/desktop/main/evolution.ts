@@ -11,20 +11,22 @@ import {
   type CavityResult,
   type LindbladJob,
   type LindbladResult,
+  type SweepJob,
+  type SweepResult,
 } from "../../../packages/contracts";
 import { WorkerSupervisor } from "./worker";
 
 type Active = {
-  job: EvolutionJob | CavityJob | LindbladJob;
+  job: EvolutionJob | CavityJob | LindbladJob | SweepJob;
   acknowledged: boolean;
   cancelRequested: boolean;
-  resolve: (result: EvolutionResult | CavityResult | LindbladResult) => void;
+  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 export class EvolutionCoordinator {
   private active?: Active;
-  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult>();
+  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult>();
   constructor(
     private worker: WorkerSupervisor,
     private artifactDir: string,
@@ -43,10 +45,12 @@ export class EvolutionCoordinator {
   run(job: EvolutionJob): Promise<EvolutionResult>;
   run(job: CavityJob): Promise<CavityResult>;
   run(job: LindbladJob): Promise<LindbladResult>;
-  run(job: EvolutionJob | CavityJob | LindbladJob): Promise<EvolutionResult | CavityResult | LindbladResult> {
+  run(job: SweepJob): Promise<SweepResult>;
+  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult> {
     assertJob(job);
-    if (job.operation !== "evolve" && job.operation !== "cavity" && job.operation !== "lindblad") throw new Error("Expected evolution, cavity, or Lindblad job");
-    if (job.solver.tStop <= job.solver.tStart)
+    if (!["evolve", "cavity", "lindblad", "sweep"].includes(job.operation)) throw new Error("Expected quantum data job");
+    const timing = job.operation === "sweep" ? job.sweep : job.solver;
+    if (timing.tStop <= timing.tStart)
       throw new Error("tStop must exceed tStart");
     if (this.active) throw new Error("A quantum job is already running");
     if (
@@ -61,7 +65,7 @@ export class EvolutionCoordinator {
           .request("quantum.cancel", { jobId: job.jobId })
           .catch(() => {});
         this.reject(new Error("Quantum job timed out"));
-      }, 600000);
+      }, job.operation === "sweep" ? 1800000 : 600000);
       this.active = {
         job,
         resolve,
@@ -134,11 +138,14 @@ export class EvolutionCoordinator {
     const params = value as Record<string, unknown>;
     if (params.jobId !== active.job.jobId) return;
     if (method === "job.progress") {
+      const expectedTotal = active.job.operation === "sweep"
+        ? active.job.sweep.x.points * (active.job.sweep.y?.points ?? 1)
+        : active.job.solver.samples;
       if (
         typeof params.completed !== "number" ||
         typeof params.total !== "number" ||
         !Number.isInteger(params.completed) ||
-        params.total !== active.job.solver.samples ||
+        params.total !== expectedTotal ||
         params.completed < 0 ||
         params.completed > params.total ||
         typeof params.fraction !== "number" ||
@@ -149,19 +156,37 @@ export class EvolutionCoordinator {
     } else if (method === "job.completed") {
       if (
         !isQuantumResult(value) ||
+        value.operation === "diagonalize" ||
         value.operation !== active.job.operation ||
         value.data.path !== `${active.job.jobId}.f64` ||
-        value.data.rows !== active.job.solver.samples ||
-        value.data.bytes !== value.data.rows * (value.operation === "cavity" ? 48 : value.operation === "lindblad" ? 56 : 80) ||
         value.engine.name !== active.job.engine ||
-        JSON.stringify(value.solver) !== JSON.stringify(active.job.solver) ||
-        JSON.stringify(value.initialState) !==
-          JSON.stringify(active.job.initialState) ||
-        (value.operation === "evolve" && active.job.operation === "evolve" &&
-          JSON.stringify(value.observables) !== JSON.stringify(active.job.observables)) ||
         JSON.stringify(value.model) !== JSON.stringify(active.job.model)
       ) {
         this.reject(new Error("Worker returned an invalid quantum result"));
+        return;
+      }
+      if (value.operation === "sweep" && active.job.operation === "sweep") {
+        const expectedX = active.job.sweep.x.points;
+        const expectedY = active.job.sweep.y?.points ?? 1;
+        if (value.data.shape.x !== expectedX || value.data.shape.y !== expectedY ||
+            value.data.bytes !== expectedX * expectedY * 8 ||
+            value.cache.computedPoints + value.cache.reusedPoints !== expectedX * expectedY ||
+            JSON.stringify(value.sweep) !== JSON.stringify(active.job.sweep)) {
+          this.reject(new Error("Worker returned an invalid sweep result"));
+          return;
+        }
+      } else if (value.operation !== "sweep" && active.job.operation !== "sweep") {
+        if (value.data.rows !== active.job.solver.samples ||
+            value.data.bytes !== value.data.rows * (value.operation === "cavity" ? 48 : value.operation === "lindblad" ? 56 : 80) ||
+            JSON.stringify(value.solver) !== JSON.stringify(active.job.solver) ||
+            JSON.stringify(value.initialState) !== JSON.stringify(active.job.initialState) ||
+            (value.operation === "evolve" && active.job.operation === "evolve" &&
+              JSON.stringify(value.observables) !== JSON.stringify(active.job.observables))) {
+          this.reject(new Error("Worker returned an invalid quantum result"));
+          return;
+        }
+      } else {
+        this.reject(new Error("Worker returned a mismatched operation"));
         return;
       }
       if (value.operation === "cavity" && value.dressedSpectrum.length !== 2 * value.model.parameters.cutoff) {
@@ -175,7 +200,7 @@ export class EvolutionCoordinator {
       this.completed.set(value.jobId, value);
       this.resolve(value);
     } else if (method === "job.cancelled")
-      this.reject(new Error(active.job.operation === "cavity" ? "Cavity cancelled" : active.job.operation === "lindblad" ? "Lindblad cancelled" : "Evolution cancelled"));
+      this.reject(new Error(active.job.operation === "cavity" ? "Cavity cancelled" : active.job.operation === "lindblad" ? "Lindblad cancelled" : active.job.operation === "sweep" ? "Sweep cancelled" : "Evolution cancelled"));
     else if (method === "job.failed")
       this.reject(
         new Error(
@@ -185,7 +210,7 @@ export class EvolutionCoordinator {
         ),
       );
   }
-  private resolve(result: EvolutionResult | CavityResult | LindbladResult) {
+  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult) {
     const active = this.active;
     if (!active) return;
     clearTimeout(active.timer);

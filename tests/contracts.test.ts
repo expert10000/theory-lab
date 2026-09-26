@@ -9,6 +9,7 @@ import fixture from "../packages/contracts/fixtures/two-level.job.json";
 import evolutionFixture from "../packages/contracts/fixtures/rabi-evolution.job.json";
 import { cavityDefaults, cavityJob } from "../packages/models/cavity";
 import { lindbladDefaults, lindbladJob } from "../packages/models/lindblad";
+import { SWEEP_DEFAULTS, sweepJob } from "../packages/models/sweep";
 
 test("canonical job fixture is compatible with v1", () =>
   assert.ok(isQuantumJob(fixture)));
@@ -147,4 +148,23 @@ test("Lindblad master-equation contracts reject Schrödinger solvers and invalid
   };
   assert.ok(isQuantumResult(result));
   assert.equal(isQuantumResult({ ...result, steadyState: { ...result.steadyState, unphysical: 1 } }), false);
+});
+test("sweep contracts carry strict axes, cache metadata and binary shape", () => {
+  const job = sweepJob("landau_zener", "sweep-1", { sweepRate: "1", gap: "0.8", bias: "0" },
+    SWEEP_DEFAULTS.landau_zener.x, SWEEP_DEFAULTS.landau_zener.y, -10, 10, 0, "qutip");
+  assert.ok(isQuantumJob(job));
+  assert.equal(isQuantumJob({ ...job, sweep: { ...job.sweep, metric: "energy" } }), false);
+  assert.equal(isQuantumJob({ ...job, sweep: { ...job.sweep, x: { ...job.sweep.x, points: 1 } } }), false);
+  const result = {
+    schema: "quantum-result/v1", jobId: job.jobId, runId: "run-sweep-1", status: "completed",
+    operation: "sweep", model: job.model, sweep: job.sweep,
+    engine: { name: "qutip", version: "5.3.1" },
+    data: { schema: "quantum-sweep-data/v1", format: "f64le", path: "sweep-1.f64",
+      shape: { x: 25, y: 15 }, bytes: 25 * 15 * 8, sha256: "a".repeat(64) },
+    cache: { key: "b".repeat(64), reusedPoints: 0, computedPoints: 375 },
+    provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-26T00:00:00Z", durationMs: 1 },
+  };
+  assert.ok(isQuantumResult(result));
+  assert.equal(isQuantumResult({ ...result, cache: { ...result.cache, extra: true } }), false);
+  assert.equal(isQuantumResult({ ...result, data: { ...result.data, format: "f32le" } }), false);
 });

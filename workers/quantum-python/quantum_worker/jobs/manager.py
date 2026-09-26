@@ -6,6 +6,7 @@ from quantum_worker.contracts import validate
 from quantum_worker.engines.evolution import evolve
 from quantum_worker.engines.cavity import cavity
 from quantum_worker.engines.lindblad import lindblad
+from quantum_worker.engines.sweep import sweep
 
 class JobManager:
     def __init__(self):
@@ -24,9 +25,10 @@ class JobManager:
 
     def start(self, job, output_dir):
         validate("quantum-job", job)
-        if job["operation"] not in ("evolve", "cavity", "lindblad"):
-            raise ValueError("Expected evolution, cavity, or Lindblad job")
-        if job["solver"]["tStop"] <= job["solver"]["tStart"]:
+        if job["operation"] not in ("evolve", "cavity", "lindblad", "sweep"):
+            raise ValueError("Expected evolution, cavity, Lindblad, or sweep job")
+        settings = job["sweep"] if job["operation"] == "sweep" else job["solver"]
+        if settings["tStop"] <= settings["tStart"]:
             raise ValueError("tStop must exceed tStart")
         if not isinstance(output_dir, str) or not output_dir:
             raise ValueError("outputDir is required")
@@ -57,7 +59,7 @@ class JobManager:
     def _run(self, job, output_dir, cancel):
         method, payload = None, None
         try:
-            computation = {"evolve": evolve, "cavity": cavity, "lindblad": lindblad}[job["operation"]]
+            computation = {"evolve": evolve, "cavity": cavity, "lindblad": lindblad, "sweep": sweep}[job["operation"]]
             result = computation(job, output_dir, cancel, lambda completed, total: self.notify(
                 "job.progress", {"jobId": job["jobId"], "completed": completed,
                                  "total": total, "fraction": completed / total}))
