@@ -1,6 +1,6 @@
 # Desktop implementation
 
-The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–010 follow the supplied commit sequence.
+The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–011 follow the supplied commit sequence.
 
 The smoke laboratory uses normalized units (ħ = 1), H = (Δ σz + Ω σx)/2, and E± = ±hypot(Δ, Ω)/2. Ω is a static transverse coupling here, not a time-dependent drive.
 
@@ -23,7 +23,8 @@ Reference material: [Electron 44](https://www.electronjs.org/blog/electron-44-0)
 - QLAB-008: independent NumPy Hermitian eigenspectrum and SciPy DOP853 Schrödinger evolution for the existing two-level models. Both engines use the same versioned job/result contracts, artifact columns, SHA-256 verification and worker supervision; the native integrator leaves normalization untouched so drift can be measured.
 - QLAB-009: QuTiP, Native and Compare controls for spectrum and dynamics; maximum energy/observable differences, norm drift, phase-independent state fidelity and runtime diagnostics; a Backend tab explaining process boundaries, methods, contracts and binary row layout.
 - QLAB-010: Stückelberg double-passage model with smooth parabolic detuning and crossings at ±τ for zero bias, in QuTiP and native engines. Landau–Zener results now show the asymptotic survival formula alongside the finite-window result; both passages have contextual readouts.
+- QLAB-011: strong-drive evolution plus a one-period Floquet propagator. Quasienergies are folded into the drive Brillouin zone, modes are phase-normalized, and a fixed 9×13 five-cycle transition map previews resonance structure. The Bloch–Siegert value A²/(16|Δ|) is expressly a weak-drive estimate, not a quantitative prediction at strong amplitude. The small map travels in JSON; general binary sweep artifacts remain QLAB-014.
 
 Validated on Windows with Node 24.19.0 and Python 3.12.2. Type checking, seventeen TypeScript tests, fourteen Python tests, and the real Electron end-to-end smoke test pass. The desktop test exercises both engines and Compare mode for static spectrum and evolution, the Backend tab, Landau–Zener and Stückelberg passages, plot and slider selection, Bloch rendering, cancellation, stale data, restart, security preferences and compact layout. Screenshots are in the ignored artifacts directory.
 
-The local Volume VIII Chapters 58–59 inspected on 2026-09-26 explicitly identify themselves as architecture-only placeholders, not validated scientific implementations. Their chapter numbers remain provisional tags, not golden-test provenance. Importing validated book models/presets remains QLAB-015. Current provenance is attached to each result but is not yet persisted; durable run directories remain QLAB-016. No standalone installer or Linux acceptance is claimed.
+The local Volume VIII Chapters 58–59 inspected on 2026-09-26 explicitly identify themselves as architecture-only placeholders, not validated scientific implementations. The separate `theory` development-branch QuTiP examples now provide relevant two-level and Jaynes–Cummings reference formulas, but the lab has not imported their code as a runtime dependency. Existing chapter-only tags remain provisional; explicit source IDs/presets are added only where mapped to a specific example. Current provenance is attached to each result but is not yet persisted; durable run directories remain QLAB-016. No standalone installer or Linux acceptance is claimed.

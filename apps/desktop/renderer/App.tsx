@@ -25,10 +25,6 @@ declare global {
   }
 }
 const futureLabs = [
-  "Rabi dynamics",
-  "Landau–Zener",
-  "Stückelberg",
-  "Strong drive & Floquet",
   "Jaynes–Cummings",
   "Quantum Rabi",
   "Lindblad dynamics",
@@ -156,7 +152,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-009</span>
+          <span className="version">V0.1 · QLAB-011</span>
           {tab !== "dynamics" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
@@ -175,7 +171,7 @@ export function App() {
       <div className={`layout ${tab === "dynamics" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>04 / 09</span>
+            LABORATORIES <span>05 / 09</span>
           </p>
           {(
             [
@@ -183,6 +179,7 @@ export function App() {
               "driven_two_level",
               "landau_zener",
               "stuckelberg",
+              "strong_drive",
             ] as const
           ).map((id) => (
             <button
@@ -204,9 +201,9 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">PLANNED FOR V1</p>
           <nav aria-label="Planned laboratories">
-            {futureLabs.slice(3).map((lab, i) => (
+            {futureLabs.map((lab, i) => (
               <div className="future-lab" key={lab}>
-                <span>{String(i + 5).padStart(2, "0")}</span>
+                <span>{String(i + 6).padStart(2, "0")}</span>
                 {lab}
               </div>
             ))}
@@ -238,7 +235,7 @@ export function App() {
                 {tab === "backend"
                   ? "ARCHITECTURE / 008–009"
                   : tab === "dynamics"
-                    ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : "004"}`
+                    ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : evolutionModel === "stuckelberg" ? "004" : "005"}`
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
@@ -332,7 +329,8 @@ export function App() {
                   "Implemented",
                 ],
                 ["010", "Landau–Zener & Stückelberg passages", "Implemented"],
-                ["011–012", "Floquet, strong drive & cavity QED", "Next"],
+                ["011", "Floquet modes, quasienergies & strong-drive map", "Implemented"],
+                ["012", "Jaynes–Cummings & quantum Rabi cavity QED", "Next"],
                 ["013–014", "Lindblad dynamics & sweeps", "Planned"],
                 [
                   "015–017",

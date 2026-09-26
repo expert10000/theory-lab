@@ -563,6 +563,35 @@ export function DynamicsLab({
               </div>
             </div>
           )}
+          {result.analysis?.kind === "floquet" && (
+            <div className="floquet-panel" data-testid="floquet-analysis">
+              <div>
+                <p className="eyebrow">ONE-PERIOD PROPAGATOR / FLOQUET</p>
+                <h3>Quasienergies & modes</h3>
+                <p>Folded into [−ω/2, ω/2]. Modes are eigenvectors at t = 0, with a fixed display phase.</p>
+              </div>
+              <div className="floquet-metrics">
+                {result.analysis.quasienergies.map((energy, i) => (
+                  <div key={i}>
+                    <span>ε{i === 0 ? "−" : "+"}</span>
+                    <strong data-testid={`quasienergy-${i}`}>{energy.toFixed(6)}</strong>
+                    <code>{result.analysis!.modes[i].map((z) => `${z.re.toFixed(3)}${z.im < 0 ? "" : "+"}${z.im.toFixed(3)}i`).join(" · ")}</code>
+                  </div>
+                ))}
+                <div><span>QUASIENERGY GAP</span><strong>{result.analysis.quasienergyGap.toFixed(6)}</strong></div>
+                <div><span>BLOCH–SIEGERT ESTIMATE</span><strong>{result.analysis.blochSiegertEstimate?.toFixed(6) ?? "—"}</strong><small>weak-drive approximation A²/(16|Δ|); unreliable for strong A</small></div>
+              </div>
+              <div className="floquet-map" data-testid="floquet-map">
+                <span>FIVE-CYCLE TRANSITION PROBABILITY · AMPLITUDE ↑ · FREQUENCY →</span>
+                <div className="floquet-map-grid">
+                  {result.analysis.map.transitionProbabilities.map((value, i) => (
+                    <div key={i} title={`A=${result.analysis!.map.amplitudeValues[Math.floor(i / 13)].toFixed(3)}, ω=${result.analysis!.map.frequencyValues[i % 13].toFixed(3)}, P=${value.toFixed(4)}`} style={{ background: `rgba(121, 217, 193, ${0.08 + 0.92 * value})` }} />
+                  ))}
+                </div>
+                <small>13 frequencies × 9 amplitudes · hover a cell for exact coordinates</small>
+              </div>
+            </div>
+          )}
           {selected && (
             <div className="dynamics-timeline">
               <div className="timeline-heading">

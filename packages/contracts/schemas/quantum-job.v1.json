@@ -110,7 +110,7 @@
               "additionalProperties": false,
               "properties": {
                 "type": {
-                  "const": "driven_two_level"
+                  "enum": ["driven_two_level", "strong_drive"]
                 },
                 "parameters": {
                   "type": "object",

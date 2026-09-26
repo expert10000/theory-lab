@@ -350,6 +350,13 @@ try {
     path: "artifacts/desktop-stuckelberg.png",
     fullPage: true,
   });
+  await page.getByRole("button", { name: "Floquet / strong drive" }).click();
+  await page.getByTestId("run-evolution").click();
+  await page.getByTestId("evolution-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("floquet-analysis").waitFor();
+  assert.ok(Number(await page.getByTestId("quasienergy-0").textContent()) <= Number(await page.getByTestId("quasienergy-1").textContent()));
+  assert.equal(await page.getByTestId("floquet-map").locator(".floquet-map-grid > div").count(), 117);
+  await page.screenshot({ path: "artifacts/desktop-floquet.png", fullPage: true });
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → QuTiP/Native/Compare spectrum and evolution, backend tab, verified binary data, synchronized cursor, numerical diagnostics, cancellation, restart and sandbox.",

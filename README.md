@@ -39,6 +39,8 @@ Select **Landau–Zener** in the laboratory list to sweep H(t) = (vt + ε₀)σz
 
 Select **Stückelberg** for a smooth double passage: ε(t) = v(t² − τ²)/(2τ) + ε₀, with H(t) = ε(t)σz/2 + gσx/2. At zero bias the two crossings occur at t = ±τ. The same QuTiP/Native/Compare controls and synchronized dynamics views apply; the result shows the crossing positions and return population. The model's interference comes from phase accumulated between passages. Tests cover zero coupling, normalization and cross-engine agreement.
 
+Select **Floquet / strong drive** to compute the one-period propagator of the periodically driven two-level model. The result includes folded quasienergies, Floquet modes at t = 0, a 9×13 five-cycle transition-probability map, and a clearly marked weak-drive Bloch–Siegert estimate. Both engines are checked against each other; the map is a fixed preview, while general sweeps are planned for QLAB-014.
+
 The registry's Volume VIII, chapter 58 tags are provisional links from the supplied roadmap. The local Chapter 58 file explicitly says it is an architecture-only placeholder; no validated book example or reference manifest has been imported.
 
 ## Architecture
@@ -71,6 +73,6 @@ The desktop test starts the actual Electron app and worker; it checks QuTiP/Nati
 
 The complete supplied plan is preserved in [docs/ROADMAP.md](docs/ROADMAP.md); decisions and validation status are in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
-This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener evolution, the dynamics/Bloch workspace, and QuTiP/native comparison. Stückelberg, strong drive, Floquet, Jaynes–Cummings, Quantum Rabi, Lindblad dynamics and sweeps remain subsequent V1 work. Layer-1 source examples were not present in this repository and have not been imported. Atoms, molecules and crystals are outside initial V1 scope.
+This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener and Stückelberg passages, strong-drive Floquet analysis, the dynamics/Bloch workspace, and QuTiP/native comparison. Jaynes–Cummings, Quantum Rabi, Lindblad dynamics and general sweeps remain subsequent V1 work. The separate `theory` development branch contains relevant QuTiP reference examples; the lab does not import that tree as a runtime dependency. Atoms, molecules and crystals are outside initial V1 scope.
 
 Run IDs, engine versions, timestamps and parameters are returned for each calculation; run history is currently session-only. Durable provenance/workspaces/exports, installers, and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders both plots; a QuTiP warning about Python plotting does not prevent calculation.

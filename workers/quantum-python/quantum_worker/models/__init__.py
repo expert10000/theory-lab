@@ -5,7 +5,8 @@ from quantum_worker.models.landau_zener import hamiltonian as landau_zener
 from quantum_worker.models.stuckelberg import hamiltonian as stuckelberg
 
 BUILDERS = {"two_level": two_level, "driven_two_level": driven_two_level,
-            "landau_zener": landau_zener, "stuckelberg": stuckelberg}
+            "landau_zener": landau_zener, "strong_drive": driven_two_level,
+            "stuckelberg": stuckelberg}
 
 def build(qt, model):
     try:

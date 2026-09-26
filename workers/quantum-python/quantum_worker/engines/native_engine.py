@@ -62,7 +62,7 @@ class NativeEvolution:
         model = job["model"]
         parameters = model["parameters"]
 
-        if model["type"] == "driven_two_level":
+        if model["type"] in ("driven_two_level", "strong_drive"):
             def fields(t):
                 return parameters["delta"], parameters["amplitude"] * math.cos(
                     parameters["frequency"] * t + parameters["phase"])

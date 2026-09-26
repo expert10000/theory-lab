@@ -7,7 +7,7 @@ import type {
 } from "../contracts";
 
 export type ModelId =
-  "two_level" | "driven_two_level" | "landau_zener" | "stuckelberg";
+  "two_level" | "driven_two_level" | "landau_zener" | "stuckelberg" | "strong_drive";
 export type EvolutionModelId = Exclude<ModelId, "two_level">;
 export interface ParameterDefinition {
   key: string;
@@ -213,6 +213,23 @@ export const MODEL_REGISTRY: Record<ModelId, ModelDefinition> = {
     solverDefaults: { tStart: -12, tStop: 12, samples: 601 },
     source: { volume: "VIII", chapter: "58" },
   },
+  strong_drive: {
+    id: "strong_drive",
+    label: "Floquet / strong drive",
+    description: "One-period modes, quasienergies, and a five-cycle resonance map",
+    hamiltonian: "H(t) = Δ/2 σz + A/2 cos(ωt + φ) σx",
+    operations: ["evolve"],
+    parameters: [
+      parameter("delta", "Level splitting", "Δ", 1, -1e6, 1e6, "Undriven level splitting"),
+      parameter("amplitude", "Drive amplitude", "A", 1.6, -1e6, 1e6, "Strong transverse drive"),
+      parameter("frequency", "Drive frequency", "ω", 1, 0.05, 1e6, "Positive angular drive frequency"),
+      parameter("phase", "Drive phase", "φ", 0, -1000, 1000, "Drive phase in radians"),
+    ],
+    observables: ["p0", "p1", "sigma_x", "sigma_y", "sigma_z"],
+    defaultState: { type: "basis", index: 0 },
+    solverDefaults: { tStart: 0, tStop: 30, samples: 601 },
+    source: { volume: "VIII", chapter: "58" },
+  },
 };
 export const MODEL_LIST = Object.values(MODEL_REGISTRY);
 export function defaultsFor(id: ModelId): Record<string, string> {
@@ -286,7 +303,7 @@ export function evolutionJob(
     throw new Error("Invalid evolution parameters");
   const definition = MODEL_REGISTRY[id];
   const model: EvolutionJob["model"] =
-    id === "driven_two_level"
+    id === "driven_two_level" || id === "strong_drive"
       ? {
           type: id,
           parameters: {

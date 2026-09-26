@@ -72,6 +72,12 @@ def evolve(job, output_dir, cancelled, progress):
             os.fsync(stream.fileno())
         if cancelled.is_set():
             return None
+        analysis = None
+        if job["model"]["type"] == "strong_drive":
+            from quantum_worker.engines.floquet import analyze
+            analysis = analyze(job, cancelled)
+            if analysis is None or cancelled.is_set():
+                return None
         os.replace(temporary, final_path)
         result = {
             "schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,
@@ -84,6 +90,8 @@ def evolve(job, output_dir, cancelled, progress):
                            "computedAt": datetime.now(timezone.utc).isoformat(),
                            "durationMs": (perf_counter() - started) * 1000},
         }
+        if analysis is not None:
+            result["analysis"] = analysis
         validate("quantum-result", result)
         return result
     finally:

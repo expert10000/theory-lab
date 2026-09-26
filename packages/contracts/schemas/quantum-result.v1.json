@@ -193,7 +193,7 @@
               "additionalProperties": false,
               "properties": {
                 "type": {
-                  "const": "driven_two_level"
+                  "enum": ["driven_two_level", "strong_drive"]
                 },
                 "parameters": {
                   "type": "object",
@@ -507,6 +507,39 @@
             "bytes",
             "sha256"
           ]
+        },
+        "analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "kind": { "const": "floquet" },
+            "period": { "type": "number", "exclusiveMinimum": 0 },
+            "quasienergies": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+            "modes": {
+              "type": "array", "minItems": 2, "maxItems": 2,
+              "items": {
+                "type": "array", "minItems": 2, "maxItems": 2,
+                "items": {
+                  "type": "object", "additionalProperties": false,
+                  "properties": { "re": { "type": "number" }, "im": { "type": "number" } },
+                  "required": ["re", "im"]
+                }
+              }
+            },
+            "quasienergyGap": { "type": "number", "minimum": 0 },
+            "blochSiegertEstimate": { "type": ["number", "null"] },
+            "map": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "frequencyValues": { "type": "array", "items": { "type": "number" }, "minItems": 13, "maxItems": 13 },
+                "amplitudeValues": { "type": "array", "items": { "type": "number" }, "minItems": 9, "maxItems": 9 },
+                "transitionProbabilities": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 117, "maxItems": 117 },
+                "cycles": { "const": 5 }
+              },
+              "required": ["frequencyValues", "amplitudeValues", "transitionProbabilities", "cycles"]
+            }
+          },
+          "required": ["kind", "period", "quasienergies", "modes", "quasienergyGap", "blochSiegertEstimate", "map"]
         },
         "provenance": {
           "type": "object",

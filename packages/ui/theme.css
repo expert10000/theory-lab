@@ -1316,3 +1316,14 @@ h1 {
     padding-top: 18px;
   }
 }
+.floquet-panel { margin-top: 22px; padding: 24px; border: 1px solid rgba(121,217,193,.25); border-radius: 16px; background: rgba(18,35,45,.8); display: grid; gap: 22px; }
+.floquet-panel h3 { margin: 6px 0; }
+.floquet-panel p { max-width: 850px; }
+.floquet-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 12px; }
+.floquet-metrics > div { display: flex; flex-direction: column; gap: 7px; padding: 14px; border-radius: 10px; background: rgba(255,255,255,.045); }
+.floquet-metrics span, .floquet-map > span { font-size: 11px; letter-spacing: .12em; color: #a9bac4; }
+.floquet-metrics strong { font-size: 19px; color: #79d9c1; }
+.floquet-metrics code { font-size: 11px; overflow-wrap: anywhere; }
+.floquet-metrics small, .floquet-map small { color: #9aafba; }
+.floquet-map-grid { display: grid; grid-template-columns: repeat(13,minmax(0,1fr)); gap: 3px; width: min(100%,650px); margin: 12px 0; }
+.floquet-map-grid > div { aspect-ratio: 1.5; border-radius: 3px; border: 1px solid rgba(255,255,255,.07); }

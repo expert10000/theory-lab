@@ -16,7 +16,7 @@ export interface LayerOneSource {
   exampleId?: string;
 }
 export interface DrivenTwoLevelModel {
-  type: "driven_two_level";
+  type: "driven_two_level" | "strong_drive";
   parameters: {
     delta: number;
     amplitude: number;
@@ -121,7 +121,22 @@ export interface EvolutionResult {
   observables: Observable[];
   engine: { name: EngineName; version: string };
   data: EvolutionData;
+  analysis?: FloquetAnalysis;
   provenance: SpectrumResult["provenance"];
+}
+export interface FloquetAnalysis {
+  kind: "floquet";
+  period: number;
+  quasienergies: [number, number];
+  modes: [[{ re: number; im: number }, { re: number; im: number }], [{ re: number; im: number }, { re: number; im: number }]];
+  quasienergyGap: number;
+  blochSiegertEstimate: number | null;
+  map: {
+    frequencyValues: number[];
+    amplitudeValues: number[];
+    transitionProbabilities: number[];
+    cycles: 5;
+  };
 }
 export type QuantumResult = SpectrumResult | EvolutionResult;
 export interface EvolutionProgress {
