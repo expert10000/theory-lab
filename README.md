@@ -41,7 +41,13 @@ Select **Stückelberg** for a smooth double passage: ε(t) = v(t² − τ²)/(2�
 
 Select **Floquet / strong drive** to compute the one-period propagator of the periodically driven two-level model. The result includes folded quasienergies, Floquet modes at t = 0, a 9×13 five-cycle transition-probability map, and a clearly marked weak-drive Bloch–Siegert estimate. Both engines are checked against each other; the map is a fixed preview, while general sweeps are planned for QLAB-014.
 
-The registry's Volume VIII, chapter 58 tags are provisional links from the supplied roadmap. The local Chapter 58 file explicitly says it is an architecture-only placeholder; no validated book example or reference manifest has been imported.
+## Cavity QED
+
+Select **Jaynes–Cummings** for the excitation-conserving atom–cavity model, or **Quantum Rabi** for the full coupling including counter-rotating terms. Both labs show a sorted dressed spectrum, excited-qubit population, mean photon number, and a synchronized time cursor. The result also reports norm and parity drift plus the maximum occupation at the top Fock level; raise the cutoff if that boundary population grows. Choose QuTiP or native NumPy for either model.
+
+The Jaynes–Cummings default is mapped to [the Volume VIII Commit 691 QuTiP adapter](https://github.com/expert10000/theory/blob/development/examples/python/qutip/adapters/jaynes_cummings.py): atom-first |g⟩=|0⟩, |e⟩=|1⟩, resonant g=0.35. The worker checks the reference's analytic vacuum-Rabi oscillation and dressed-doublet splitting. The reference uses a cavity-rotating frame, while this desktop displays lab-frame energies; the populations and splitting agree without an energy-offset adjustment. [The Commit 687 two-level example](https://github.com/expert10000/theory/blob/development/examples/python/qutip/labs/two_level_dynamics.py) now supplies explicit provenance for the Landau–Zener asymptotic formula. The linked tree has no direct Floquet, Stückelberg, or full quantum-Rabi implementation, so those remain independently implemented and tested here.
+
+The local Chapter 58 file remains an architecture-only placeholder. The Landau–Zener entry now cites the separate Volume VIII Commit 687 QuTiP example for its asymptotic reference; the other chapter-only tags remain provisional. No external example code is imported into the worker at runtime.
 
 ## Architecture
 
@@ -53,7 +59,7 @@ React renderer → narrow preload API → Electron main → JSON-RPC stdio → P
 
 Renderer: sandboxed, context isolated, no Node integration, no filesystem/process APIs, restrictive CSP. Electron checks the originating frame of each IPC call, denies permissions, navigation, and popups. Python is local, has no listening port, and reserves stdout for bounded protocol messages. The supervisor checks hello/capabilities/health, applies timeouts, reports crashes, and gracefully shuts down or terminates its child. Recovery is user initiated.
 
-The shared draft-07 JSON Schemas live in `packages/contracts/schemas`. AJV and Python jsonschema use the same files. Unsupported operations and contract versions are rejected. The two-number smoke spectrum travels inline. Evolution samples use a separate little-endian Float64 artifact (`quantum-data/v1`, ten columns per row). JSON carries only the path, shape, SHA-256 hash, run metadata, and progress notifications. Electron verifies the file hash before passing bytes to the renderer. Files are currently retained under Electron's user-data `artifacts` directory; retention and run manifests arrive with QLAB-016.
+The shared draft-07 JSON Schemas live in `packages/contracts/schemas`. AJV and Python jsonschema use the same files. Unsupported operations and contract versions are rejected. The two-number smoke spectrum travels inline. Evolution samples use a separate little-endian Float64 artifact (`quantum-data/v1`, ten columns per row). Cavity samples use `quantum-cavity-data/v1` with six columns per row. JSON carries only the path, shape, SHA-256 hash, run metadata, and progress notifications. Electron verifies the file hash before passing bytes to the renderer. Files are currently retained under Electron's user-data `artifacts` directory; retention and run manifests arrive with QLAB-016.
 
 The model contract has optional `sourceRepository`, `sourceModule`, `volume`, `chapter`, and `exampleId` fields so Layer-1 examples can be mapped later. No claim is made that the example IDs in test fixtures correspond to an imported book manifest.
 
@@ -73,6 +79,6 @@ The desktop test starts the actual Electron app and worker; it checks QuTiP/Nati
 
 The complete supplied plan is preserved in [docs/ROADMAP.md](docs/ROADMAP.md); decisions and validation status are in [docs/IMPLEMENTATION.md](docs/IMPLEMENTATION.md).
 
-This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener and Stückelberg passages, strong-drive Floquet analysis, the dynamics/Bloch workspace, and QuTiP/native comparison. Jaynes–Cummings, Quantum Rabi, Lindblad dynamics and general sweeps remain subsequent V1 work. The separate `theory` development branch contains relevant QuTiP reference examples; the lab does not import that tree as a runtime dependency. Atoms, molecules and crystals are outside initial V1 scope.
+This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener and Stückelberg passages, strong-drive Floquet analysis, Jaynes–Cummings and Quantum Rabi cavity dynamics, the dynamics/Bloch workspace, and QuTiP/native comparison. Lindblad dynamics and general sweeps remain subsequent V1 work. The separate `theory` development branch supplies explicit reference examples where mapped, but is not a runtime dependency. Atoms, molecules and crystals are outside initial V1 scope.
 
 Run IDs, engine versions, timestamps and parameters are returned for each calculation; run history is currently session-only. Durable provenance/workspaces/exports, installers, and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders both plots; a QuTiP warning about Python plotting does not prevent calculation.

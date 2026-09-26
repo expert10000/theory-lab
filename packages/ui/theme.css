@@ -1327,3 +1327,17 @@ h1 {
 .floquet-metrics small, .floquet-map small { color: #9aafba; }
 .floquet-map-grid { display: grid; grid-template-columns: repeat(13,minmax(0,1fr)); gap: 3px; width: min(100%,650px); margin: 12px 0; }
 .floquet-map-grid > div { aspect-ratio: 1.5; border-radius: 3px; border: 1px solid rgba(255,255,255,.07); }
+.cavity-result { display: grid; gap: 22px; }
+.cavity-metrics { display: grid; grid-template-columns: repeat(auto-fit,minmax(170px,1fr)); gap: 12px; }
+.cavity-metrics > div { display: flex; flex-direction: column; gap: 7px; padding: 16px; border-radius: 10px; background: rgba(255,255,255,.045); }
+.cavity-metrics span, .cavity-spectrum .eyebrow { color: #9cb3bf; font-size: 11px; letter-spacing: .1em; }
+.cavity-metrics strong { font-size: 20px; color: #79d9c1; }
+.cavity-metrics small { color: #a9bac4; }
+.cavity-spectrum > div { display: grid; grid-template-columns: repeat(auto-fill,minmax(78px,1fr)); gap: 6px; margin-top: 11px; }
+.cavity-spectrum > div > span { border-radius: 7px; padding: 9px; background: rgba(121,217,193,.07); color: #cde9e4; text-align: center; font: 12px monospace; }
+.cavity-chart { background: rgba(4,12,18,.33); border-radius: 12px; padding: 16px; }
+.cavity-chart svg { width: 100%; max-height: 280px; cursor: crosshair; }
+.cavity-legend { display: flex; gap: 20px; font-size: 12px; }
+.cavity-readouts { display: grid; grid-template-columns: repeat(auto-fit,minmax(130px,1fr)); gap: 12px; }
+.cavity-readouts span { display: flex; flex-direction: column; gap: 6px; padding: 12px; background: rgba(255,255,255,.04); border-radius: 8px; color: #a9bac4; }
+.cavity-readouts strong { color: #fff; font-size: 18px; }

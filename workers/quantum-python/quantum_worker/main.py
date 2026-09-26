@@ -19,7 +19,7 @@ def capabilities():
     result = {"schema": "worker-capabilities/v1", "protocol": 1,
               "worker": {"version": __version__}, "python": {"version": platform.python_version()},
               "engines": {"qutip": qutip, "native": native},
-              "operations": ["diagonalize", "evolve"] if qutip["available"] or native["available"] else []}
+              "operations": ["diagonalize", "evolve", "cavity"] if qutip["available"] or native["available"] else []}
     validate("worker-capabilities", result)
     return result
 

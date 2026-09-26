@@ -56,7 +56,10 @@ test("model registry generates contract-compatible jobs from its defaults", () =
       Object.keys(job.model.parameters),
       definition.parameters.map((parameter) => parameter.key),
     );
-    assert.deepEqual(job.model.source, { volume: "VIII", chapter: "58" });
+    if (id === "landau_zener") {
+      assert.equal(job.model.source?.sourceModule, "examples/python/qutip/labs/two_level_dynamics.py");
+      assert.equal(job.model.source?.exampleId, "Commit 687");
+    } else assert.deepEqual(job.model.source, { volume: "VIII", chapter: "58" });
   }
 });
 test("parameter metadata rejects out-of-range and missing model values", () => {
@@ -79,6 +82,9 @@ test("parameter metadata rejects out-of-range and missing model values", () => {
     null,
   );
   assert.equal(parametersFor("strong_drive", { ...defaultsFor("strong_drive"), frequency: "0" }), null);
+  const floquet = evolutionJob("strong_drive", "floquet-valid", defaultsFor("strong_drive"), 0, 0, 10, 101);
+  assert.equal(isQuantumJob({ ...floquet, model: { ...floquet.model,
+    parameters: { ...floquet.model.parameters, frequency: 0 } } }), false);
   assert.throws(() =>
     evolutionJob(
       "landau_zener",

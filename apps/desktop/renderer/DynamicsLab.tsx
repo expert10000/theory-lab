@@ -304,7 +304,7 @@ export function DynamicsLab({
       setOutcome("COMPLETE");
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      if (message.includes("Evolution cancelled")) setOutcome("CANCELLED");
+      if (message.toLowerCase().includes("cancelled")) setOutcome("CANCELLED");
       else {
         setOutcome("FAILED");
         setError(message);
@@ -584,9 +584,12 @@ export function DynamicsLab({
               <div className="floquet-map" data-testid="floquet-map">
                 <span>FIVE-CYCLE TRANSITION PROBABILITY · AMPLITUDE ↑ · FREQUENCY →</span>
                 <div className="floquet-map-grid">
-                  {result.analysis.map.transitionProbabilities.map((value, i) => (
-                    <div key={i} title={`A=${result.analysis!.map.amplitudeValues[Math.floor(i / 13)].toFixed(3)}, ω=${result.analysis!.map.frequencyValues[i % 13].toFixed(3)}, P=${value.toFixed(4)}`} style={{ background: `rgba(121, 217, 193, ${0.08 + 0.92 * value})` }} />
-                  ))}
+                  {Array.from({ length: 117 }, (_, i) => {
+                    const row = 8 - Math.floor(i / 13);
+                    const column = i % 13;
+                    const value = result.analysis!.map.transitionProbabilities[row * 13 + column];
+                    return <div key={i} title={`A=${result.analysis!.map.amplitudeValues[row].toFixed(3)}, ω=${result.analysis!.map.frequencyValues[column].toFixed(3)}, P=${value.toFixed(4)}`} style={{ background: `rgba(121, 217, 193, ${0.08 + 0.92 * value})` }} />;
+                  })}
                 </div>
                 <small>13 frequencies × 9 amplitudes · hover a cell for exact coordinates</small>
               </div>

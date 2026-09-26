@@ -66,7 +66,7 @@
     "operations": {
       "type": "array",
       "items": {
-        "enum": ["diagonalize", "evolve"]
+        "enum": ["diagonalize", "evolve", "cavity"]
       },
       "uniqueItems": true
     }

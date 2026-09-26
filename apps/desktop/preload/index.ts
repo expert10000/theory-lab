@@ -3,6 +3,7 @@ import type { QuantumBridge } from "../../../packages/contracts";
 const bridge: QuantumBridge = {
   run: (job) => ipcRenderer.invoke("quantum:run", job),
   evolve: (job) => ipcRenderer.invoke("quantum:evolve", job),
+  cavity: (job) => ipcRenderer.invoke("quantum:cavity", job),
   cancel: (jobId) => ipcRenderer.invoke("quantum:cancel", jobId),
   readData: (jobId) => ipcRenderer.invoke("quantum:read-data", jobId),
   onProgress: (listener) => {

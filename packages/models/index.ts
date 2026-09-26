@@ -162,7 +162,11 @@ export const MODEL_REGISTRY: Record<ModelId, ModelDefinition> = {
     observables: ["p0", "p1", "sigma_x", "sigma_y", "sigma_z"],
     defaultState: { type: "basis", index: 0 },
     solverDefaults: { tStart: -10, tStop: 10, samples: 401 },
-    source: { volume: "VIII", chapter: "58" },
+    source: {
+      sourceRepository: "https://github.com/expert10000/theory",
+      sourceModule: "examples/python/qutip/labs/two_level_dynamics.py",
+      volume: "VIII", chapter: "58", exampleId: "Commit 687",
+    },
   },
   stuckelberg: {
     id: "stuckelberg",

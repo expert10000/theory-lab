@@ -173,7 +173,9 @@
                   "minProperties": 1
                 }
               },
-              "required": ["type", "parameters"]
+              "required": ["type", "parameters"],
+              "if": { "type": "object", "properties": { "type": { "const": "strong_drive" } } },
+              "then": { "type": "object", "properties": { "parameters": { "type": "object", "properties": { "frequency": { "type": "number", "exclusiveMinimum": 0 } } } } }
             },
             {
               "type": "object",
@@ -369,6 +371,63 @@
         "solver",
         "observables"
       ]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "quantum-job/v1" },
+        "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "operation": { "const": "cavity" },
+        "engine": { "enum": ["qutip", "native"] },
+        "model": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "type": { "enum": ["jaynes_cummings", "quantum_rabi"] },
+            "parameters": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "qubitFrequency": { "type": "number", "minimum": 0, "maximum": 1000 },
+                "cavityFrequency": { "type": "number", "minimum": 0, "maximum": 1000 },
+                "coupling": { "type": "number", "minimum": 0, "maximum": 100 },
+                "cutoff": { "type": "integer", "minimum": 3, "maximum": 20 }
+              },
+              "required": ["qubitFrequency", "cavityFrequency", "coupling", "cutoff"]
+            },
+            "source": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "sourceRepository": { "type": "string", "minLength": 1, "maxLength": 300 },
+                "sourceModule": { "type": "string", "minLength": 1, "maxLength": 300 },
+                "volume": { "type": "string", "minLength": 1, "maxLength": 100 },
+                "chapter": { "type": "string", "minLength": 1, "maxLength": 100 },
+                "exampleId": { "type": "string", "minLength": 1, "maxLength": 100 }
+              },
+              "minProperties": 1
+            }
+          },
+          "required": ["type", "parameters"]
+        },
+        "initialState": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "qubit": { "enum": ["ground", "excited"] },
+            "photons": { "type": "integer", "minimum": 0, "maximum": 19 }
+          },
+          "required": ["qubit", "photons"]
+        },
+        "solver": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "type": { "const": "schrodinger" },
+            "tStart": { "type": "number", "minimum": -1000, "maximum": 1000 },
+            "tStop": { "type": "number", "minimum": -1000, "maximum": 1000 },
+            "samples": { "type": "integer", "minimum": 2, "maximum": 5000 }
+          },
+          "required": ["type", "tStart", "tStop", "samples"]
+        }
+      },
+      "required": ["schema", "jobId", "operation", "engine", "model", "initialState", "solver"]
     }
   ]
 }

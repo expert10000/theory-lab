@@ -70,7 +70,8 @@ def analyze(job, cancelled):
     delta = abs(p["delta"])
     return {
         "kind": "floquet", "period": period, "quasienergies": energies,
-        "modes": modes, "quasienergyGap": float(abs(energies[1] - energies[0])),
+        "modes": modes, "quasienergyGap": float(max(0, min(abs(energies[1] - energies[0]),
+                                                         frequency - abs(energies[1] - energies[0])))),
         "blochSiegertEstimate": float(p["amplitude"] ** 2 / (16 * delta)) if delta else None,
         "map": {"frequencyValues": frequencies, "amplitudeValues": amplitudes,
                 "transitionProbabilities": transitions, "cycles": 5},

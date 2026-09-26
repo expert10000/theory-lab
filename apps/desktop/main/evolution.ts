@@ -7,20 +7,22 @@ import {
   type EvolutionJob,
   type EvolutionProgress,
   type EvolutionResult,
+  type CavityJob,
+  type CavityResult,
 } from "../../../packages/contracts";
 import { WorkerSupervisor } from "./worker";
 
 type Active = {
-  job: EvolutionJob;
+  job: EvolutionJob | CavityJob;
   acknowledged: boolean;
   cancelRequested: boolean;
-  resolve: (result: EvolutionResult) => void;
+  resolve: (result: EvolutionResult | CavityResult) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 export class EvolutionCoordinator {
   private active?: Active;
-  private completed = new Map<string, EvolutionResult>();
+  private completed = new Map<string, EvolutionResult | CavityResult>();
   constructor(
     private worker: WorkerSupervisor,
     private artifactDir: string,
@@ -36,24 +38,26 @@ export class EvolutionCoordinator {
   get isRunning() {
     return this.active !== undefined;
   }
-  run(job: EvolutionJob): Promise<EvolutionResult> {
+  run(job: EvolutionJob): Promise<EvolutionResult>;
+  run(job: CavityJob): Promise<CavityResult>;
+  run(job: EvolutionJob | CavityJob): Promise<EvolutionResult | CavityResult> {
     assertJob(job);
-    if (job.operation !== "evolve") throw new Error("Expected evolution job");
+    if (job.operation !== "evolve" && job.operation !== "cavity") throw new Error("Expected evolution or cavity job");
     if (job.solver.tStop <= job.solver.tStart)
       throw new Error("tStop must exceed tStart");
-    if (this.active) throw new Error("An evolution job is already running");
+    if (this.active) throw new Error("A quantum job is already running");
     if (
       this.worker.status.state !== "READY" ||
-      !this.worker.status.capabilities?.operations.includes("evolve") ||
+      !this.worker.status.capabilities?.operations.includes(job.operation) ||
       !this.worker.status.capabilities.engines[job.engine].available
     )
-      throw new Error(`${job.engine} evolution engine is not ready`);
+      throw new Error(`${job.engine} ${job.operation} engine is not ready`);
     return new Promise((resolve, reject) => {
       const timer = setTimeout(() => {
         void this.worker
           .request("quantum.cancel", { jobId: job.jobId })
           .catch(() => {});
-        this.reject(new Error("Evolution job timed out"));
+        this.reject(new Error("Quantum job timed out"));
       }, 600000);
       this.active = {
         job,
@@ -77,7 +81,7 @@ export class EvolutionCoordinator {
             (ack as { jobId?: string }).jobId !== job.jobId ||
             (ack as { status?: string }).status !== "running"
           )
-            throw new Error("Invalid evolution start acknowledgement");
+            throw new Error("Invalid quantum job start acknowledgement");
           if (this.active?.job === job) {
             this.active.acknowledged = true;
             if (this.active.cancelRequested)
@@ -110,7 +114,7 @@ export class EvolutionCoordinator {
   }
   async readData(jobId: string): Promise<Uint8Array> {
     const result = this.completed.get(jobId);
-    if (!result) throw new Error("No completed evolution data for this job");
+    if (!result) throw new Error("No completed quantum data for this job");
     if (result.data.path !== `${jobId}.f64`)
       throw new Error("Invalid artifact path");
     const data = await readFile(join(this.artifactDir, result.data.path));
@@ -118,7 +122,7 @@ export class EvolutionCoordinator {
       data.byteLength !== result.data.bytes ||
       createHash("sha256").update(data).digest("hex") !== result.data.sha256
     )
-      throw new Error("Evolution artifact failed integrity check");
+      throw new Error("Quantum artifact failed integrity check");
     return new Uint8Array(data);
   }
   private notification(method: string, value: unknown) {
@@ -142,25 +146,33 @@ export class EvolutionCoordinator {
     } else if (method === "job.completed") {
       if (
         !isQuantumResult(value) ||
-        value.operation !== "evolve" ||
+        value.operation !== active.job.operation ||
         value.data.path !== `${active.job.jobId}.f64` ||
         value.data.rows !== active.job.solver.samples ||
-        value.data.bytes !== value.data.rows * 80 ||
+        value.data.bytes !== value.data.rows * (value.operation === "cavity" ? 48 : 80) ||
         value.engine.name !== active.job.engine ||
         JSON.stringify(value.solver) !== JSON.stringify(active.job.solver) ||
         JSON.stringify(value.initialState) !==
           JSON.stringify(active.job.initialState) ||
-        JSON.stringify(value.observables) !==
-          JSON.stringify(active.job.observables) ||
+        (value.operation === "evolve" && active.job.operation === "evolve" &&
+          JSON.stringify(value.observables) !== JSON.stringify(active.job.observables)) ||
         JSON.stringify(value.model) !== JSON.stringify(active.job.model)
       ) {
-        this.reject(new Error("Worker returned an invalid evolution result"));
+        this.reject(new Error("Worker returned an invalid quantum result"));
+        return;
+      }
+      if (value.operation === "cavity" && value.dressedSpectrum.length !== 2 * value.model.parameters.cutoff) {
+        this.reject(new Error("Worker returned a mismatched cavity spectrum"));
+        return;
+      }
+      if (value.operation === "evolve" && value.model.type === "strong_drive" && !value.analysis) {
+        this.reject(new Error("Worker omitted Floquet analysis"));
         return;
       }
       this.completed.set(value.jobId, value);
       this.resolve(value);
     } else if (method === "job.cancelled")
-      this.reject(new Error("Evolution cancelled"));
+      this.reject(new Error(active.job.operation === "cavity" ? "Cavity cancelled" : "Evolution cancelled"));
     else if (method === "job.failed")
       this.reject(
         new Error(
@@ -170,7 +182,7 @@ export class EvolutionCoordinator {
         ),
       );
   }
-  private resolve(result: EvolutionResult) {
+  private resolve(result: EvolutionResult | CavityResult) {
     const active = this.active;
     if (!active) return;
     clearTimeout(active.timer);

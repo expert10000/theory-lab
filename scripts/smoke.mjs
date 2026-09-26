@@ -28,6 +28,7 @@ try {
     process: "undefined",
     keys: [
       "cancel",
+      "cavity",
       "evolve",
       "getCapabilities",
       "getStatus",
@@ -260,12 +261,12 @@ try {
     path: "artifacts/desktop-dynamics.png",
     fullPage: true,
   });
-  await page.getByLabel("Frequency ω").fill("1.1");
+  await page.getByLabel("Drive frequency ω", { exact: true }).fill("1.1");
   await page
     .getByTestId("dynamics-result-state")
     .filter({ hasText: "OUT OF DATE" })
     .waitFor();
-  await page.getByLabel("Samples").fill("50000");
+  await page.getByLabel("Samples", { exact: true }).fill("50000");
   await page.getByLabel("End time T").fill("1000");
   await page.getByTestId("run-evolution").click();
   await page.getByRole("button", { name: "Cancel job" }).click();
@@ -356,10 +357,29 @@ try {
   await page.getByTestId("floquet-analysis").waitFor();
   assert.ok(Number(await page.getByTestId("quasienergy-0").textContent()) <= Number(await page.getByTestId("quasienergy-1").textContent()));
   assert.equal(await page.getByTestId("floquet-map").locator(".floquet-map-grid > div").count(), 117);
+  await page.getByTestId("floquet-analysis").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-floquet.png", fullPage: true });
+  await page.getByRole("button", { name: "Jaynes–Cummings" }).click();
+  await page.getByTestId("run-cavity").click();
+  await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("cavity-result").waitFor();
+  assert.ok(Number(await page.getByTestId("jc-reference").textContent()) < 1e-4);
+  assert.ok(Number(await page.getByTestId("cavity-boundary").textContent()) < 1e-5);
+  assert.equal(await page.getByTestId("dressed-spectrum").locator("span").count(), 12);
+  await page.getByTestId("cavity-result").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "artifacts/desktop-jaynes-cummings.png", fullPage: true });
+  await page.getByLabel("Coupling g", { exact: true }).fill("0.4");
+  await page.getByTestId("cavity-result-state").filter({ hasText: "OUT OF DATE" }).waitFor();
+  await page.getByRole("button", { name: "Quantum Rabi" }).click();
+  await page.getByRole("combobox", { name: "Cavity engine" }).selectOption("native");
+  await page.getByTestId("run-cavity").click();
+  await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  assert.ok(Number(await page.getByTestId("cavity-boundary").textContent()) < 0.02);
+  await page.getByTestId("cavity-result").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "artifacts/desktop-quantum-rabi.png", fullPage: true });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native/Compare spectrum and evolution, backend tab, verified binary data, synchronized cursor, numerical diagnostics, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native spectrum, evolution, Floquet and cavity labs; verified binary data, numerical references, cancellation, restart and sandbox.",
   );
 } finally {
   await app.close();

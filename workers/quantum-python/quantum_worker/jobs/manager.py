@@ -4,6 +4,7 @@ import threading
 import traceback
 from quantum_worker.contracts import validate
 from quantum_worker.engines.evolution import evolve
+from quantum_worker.engines.cavity import cavity
 
 class JobManager:
     def __init__(self):
@@ -22,15 +23,15 @@ class JobManager:
 
     def start(self, job, output_dir):
         validate("quantum-job", job)
-        if job["operation"] != "evolve":
-            raise ValueError("Expected evolution job")
+        if job["operation"] not in ("evolve", "cavity"):
+            raise ValueError("Expected evolution or cavity job")
         if job["solver"]["tStop"] <= job["solver"]["tStart"]:
             raise ValueError("tStop must exceed tStart")
         if not isinstance(output_dir, str) or not output_dir:
             raise ValueError("outputDir is required")
         with self._lock:
             if self._active is not None:
-                raise ValueError("Worker already has an active evolution job")
+                raise ValueError("Worker already has an active job")
             cancel = threading.Event()
             thread = threading.Thread(target=self._run, args=(job, output_dir, cancel), daemon=True)
             self._active = (job["jobId"], cancel, thread)
@@ -55,7 +56,8 @@ class JobManager:
     def _run(self, job, output_dir, cancel):
         method, payload = None, None
         try:
-            result = evolve(job, output_dir, cancel, lambda completed, total: self.notify(
+            computation = cavity if job["operation"] == "cavity" else evolve
+            result = computation(job, output_dir, cancel, lambda completed, total: self.notify(
                 "job.progress", {"jobId": job["jobId"], "completed": completed,
                                  "total": total, "fraction": completed / total}))
             if result is None:
@@ -64,7 +66,7 @@ class JobManager:
                 method, payload = "job.completed", result
         except Exception:
             traceback.print_exc(file=sys.stderr)
-            method, payload = "job.failed", {"jobId": job["jobId"], "message": "Evolution failed; inspect worker diagnostics"}
+            method, payload = "job.failed", {"jobId": job["jobId"], "message": "Quantum job failed; inspect worker diagnostics"}
         finally:
             with self._lock:
                 if self._active is not None and self._active[0] == job["jobId"]:

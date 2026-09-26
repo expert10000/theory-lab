@@ -7,6 +7,7 @@ import {
 } from "../packages/contracts";
 import fixture from "../packages/contracts/fixtures/two-level.job.json";
 import evolutionFixture from "../packages/contracts/fixtures/rabi-evolution.job.json";
+import { cavityDefaults, cavityJob } from "../packages/models/cavity";
 
 test("canonical job fixture is compatible with v1", () =>
   assert.ok(isQuantumJob(fixture)));
@@ -103,4 +104,25 @@ test("results require complete provenance and exactly two finite energies", () =
     }),
     false,
   );
+});
+test("cavity jobs and binary results use a strict versioned shape", () => {
+  const job = cavityJob("jaynes_cummings", "cavity-1", cavityDefaults("jaynes_cummings"),
+    { qubit: "excited", photons: 0 },
+    { type: "schrodinger", tStart: 0, tStop: 10, samples: 101 }, "qutip");
+  assert.ok(isQuantumJob(job));
+  assert.equal(isQuantumJob({ ...job, model: { ...job.model, parameters: { ...job.model.parameters, cutoff: 2 } } }), false);
+  assert.equal(isQuantumJob({ ...job, initialState: { qubit: "excited", photons: -1 } }), false);
+  const result = {
+    schema: "quantum-result/v1", jobId: job.jobId, runId: "run-1", status: "completed",
+    operation: "cavity", model: job.model, initialState: job.initialState, solver: job.solver,
+    engine: { name: "qutip", version: "5.3.1" },
+    dressedSpectrum: Array.from({ length: 2 * job.model.parameters.cutoff }, (_, i) => i),
+    data: { schema: "quantum-cavity-data/v1", format: "f64le", path: "cavity-1.f64", rows: 101,
+      columns: ["time", "p_excited", "mean_photon", "boundary_probability", "norm", "parity"],
+      bytes: 101 * 48, sha256: "a".repeat(64) },
+    provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-26T00:00:00Z", durationMs: 1 },
+  };
+  assert.ok(isQuantumResult(result));
+  assert.equal(isQuantumResult({ ...result, data: { ...result.data, columns: ["time"] } }), false);
+  assert.equal(isQuantumResult({ ...result, unexpected: true }), false);
 });

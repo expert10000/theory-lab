@@ -71,7 +71,26 @@ export interface EvolutionJob {
   solver: EvolutionSolver;
   observables: Observable[];
 }
-export type QuantumJob = SpectrumJob | EvolutionJob;
+export interface CavityModel {
+  type: "jaynes_cummings" | "quantum_rabi";
+  parameters: {
+    qubitFrequency: number;
+    cavityFrequency: number;
+    coupling: number;
+    cutoff: number;
+  };
+  source?: LayerOneSource;
+}
+export interface CavityJob {
+  schema: "quantum-job/v1";
+  jobId: string;
+  operation: "cavity";
+  engine: EngineName;
+  model: CavityModel;
+  initialState: { qubit: "ground" | "excited"; photons: number };
+  solver: EvolutionSolver;
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob;
 export interface SpectrumResult {
   schema: "quantum-result/v1";
   jobId: string;
@@ -138,7 +157,30 @@ export interface FloquetAnalysis {
     cycles: 5;
   };
 }
-export type QuantumResult = SpectrumResult | EvolutionResult;
+export const CAVITY_COLUMNS = ["time", "p_excited", "mean_photon", "boundary_probability", "norm", "parity"] as const;
+export interface CavityResult {
+  schema: "quantum-result/v1";
+  jobId: string;
+  runId: string;
+  status: "completed";
+  operation: "cavity";
+  model: CavityModel;
+  initialState: CavityJob["initialState"];
+  solver: EvolutionSolver;
+  engine: { name: EngineName; version: string };
+  dressedSpectrum: number[];
+  data: {
+    schema: "quantum-cavity-data/v1";
+    format: "f64le";
+    path: string;
+    rows: number;
+    columns: typeof CAVITY_COLUMNS;
+    bytes: number;
+    sha256: string;
+  };
+  provenance: SpectrumResult["provenance"];
+}
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -154,7 +196,7 @@ export interface WorkerCapabilities {
     qutip: { available: boolean; version: string | null };
     native: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve")[];
+  operations: ("diagonalize" | "evolve" | "cavity")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -167,6 +209,7 @@ export interface QuantumBridge {
   restart(): Promise<WorkerStatus>;
   run(job: SpectrumJob): Promise<SpectrumResult>;
   evolve(job: EvolutionJob): Promise<EvolutionResult>;
+  cavity(job: CavityJob): Promise<CavityResult>;
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
   onProgress(listener: (progress: EvolutionProgress) => void): () => void;

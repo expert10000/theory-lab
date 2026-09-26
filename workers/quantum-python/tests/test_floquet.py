@@ -29,6 +29,7 @@ class FloquetTests(unittest.TestCase):
             self.assertAlmostEqual(analysis["period"], 2 * math.pi / 1.2)
             self.assertAlmostEqual(analysis["quasienergies"][0], -0.4, delta=1e-7)
             self.assertAlmostEqual(analysis["quasienergies"][1], 0.4, delta=1e-7)
+            self.assertAlmostEqual(analysis["quasienergyGap"], 0.4, delta=1e-7)
             for mode in analysis["modes"]:
                 norm = sum(z["re"] ** 2 + z["im"] ** 2 for z in mode)
                 self.assertAlmostEqual(norm, 1, delta=1e-8)
