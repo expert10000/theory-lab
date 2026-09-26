@@ -8,6 +8,7 @@ import {
 import fixture from "../packages/contracts/fixtures/two-level.job.json";
 import evolutionFixture from "../packages/contracts/fixtures/rabi-evolution.job.json";
 import { cavityDefaults, cavityJob } from "../packages/models/cavity";
+import { lindbladDefaults, lindbladJob } from "../packages/models/lindblad";
 
 test("canonical job fixture is compatible with v1", () =>
   assert.ok(isQuantumJob(fixture)));
@@ -125,4 +126,25 @@ test("cavity jobs and binary results use a strict versioned shape", () => {
   assert.ok(isQuantumResult(result));
   assert.equal(isQuantumResult({ ...result, data: { ...result.data, columns: ["time"] } }), false);
   assert.equal(isQuantumResult({ ...result, unexpected: true }), false);
+});
+test("Lindblad master-equation contracts reject Schrödinger solvers and invalid rates", () => {
+  const job = lindbladJob("open-1", lindbladDefaults(), { qubit: "plus_x", photons: 0 },
+    { type: "master", tStart: 0, tStop: 5, samples: 51 }, "qutip");
+  assert.ok(isQuantumJob(job));
+  assert.equal(isQuantumJob({ ...job, solver: { ...job.solver, type: "schrodinger" } }), false);
+  assert.equal(isQuantumJob({ ...job, model: { ...job.model,
+    parameters: { ...job.model.parameters, dephasing: -1 } } }), false);
+  const result = {
+    schema: "quantum-result/v1", jobId: job.jobId, runId: "run-open-1", status: "completed",
+    operation: "lindblad", model: job.model, initialState: job.initialState, solver: job.solver,
+    engine: { name: "qutip", version: "5.3.1" },
+    steadyState: { pExcited: 0, meanPhoton: .1, purity: .8, coherence: .02,
+      boundaryProbability: 0, trace: 1 },
+    data: { schema: "quantum-lindblad-data/v1", format: "f64le", path: "open-1.f64",
+      rows: 51, columns: ["time", "p_excited", "mean_photon", "purity", "coherence", "boundary_probability", "trace"],
+      bytes: 51 * 56, sha256: "a".repeat(64) },
+    provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-26T00:00:00Z", durationMs: 1 },
+  };
+  assert.ok(isQuantumResult(result));
+  assert.equal(isQuantumResult({ ...result, steadyState: { ...result.steadyState, unphysical: 1 } }), false);
 });

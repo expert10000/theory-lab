@@ -9,20 +9,22 @@ import {
   type EvolutionResult,
   type CavityJob,
   type CavityResult,
+  type LindbladJob,
+  type LindbladResult,
 } from "../../../packages/contracts";
 import { WorkerSupervisor } from "./worker";
 
 type Active = {
-  job: EvolutionJob | CavityJob;
+  job: EvolutionJob | CavityJob | LindbladJob;
   acknowledged: boolean;
   cancelRequested: boolean;
-  resolve: (result: EvolutionResult | CavityResult) => void;
+  resolve: (result: EvolutionResult | CavityResult | LindbladResult) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 export class EvolutionCoordinator {
   private active?: Active;
-  private completed = new Map<string, EvolutionResult | CavityResult>();
+  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult>();
   constructor(
     private worker: WorkerSupervisor,
     private artifactDir: string,
@@ -40,9 +42,10 @@ export class EvolutionCoordinator {
   }
   run(job: EvolutionJob): Promise<EvolutionResult>;
   run(job: CavityJob): Promise<CavityResult>;
-  run(job: EvolutionJob | CavityJob): Promise<EvolutionResult | CavityResult> {
+  run(job: LindbladJob): Promise<LindbladResult>;
+  run(job: EvolutionJob | CavityJob | LindbladJob): Promise<EvolutionResult | CavityResult | LindbladResult> {
     assertJob(job);
-    if (job.operation !== "evolve" && job.operation !== "cavity") throw new Error("Expected evolution or cavity job");
+    if (job.operation !== "evolve" && job.operation !== "cavity" && job.operation !== "lindblad") throw new Error("Expected evolution, cavity, or Lindblad job");
     if (job.solver.tStop <= job.solver.tStart)
       throw new Error("tStop must exceed tStart");
     if (this.active) throw new Error("A quantum job is already running");
@@ -149,7 +152,7 @@ export class EvolutionCoordinator {
         value.operation !== active.job.operation ||
         value.data.path !== `${active.job.jobId}.f64` ||
         value.data.rows !== active.job.solver.samples ||
-        value.data.bytes !== value.data.rows * (value.operation === "cavity" ? 48 : 80) ||
+        value.data.bytes !== value.data.rows * (value.operation === "cavity" ? 48 : value.operation === "lindblad" ? 56 : 80) ||
         value.engine.name !== active.job.engine ||
         JSON.stringify(value.solver) !== JSON.stringify(active.job.solver) ||
         JSON.stringify(value.initialState) !==
@@ -172,7 +175,7 @@ export class EvolutionCoordinator {
       this.completed.set(value.jobId, value);
       this.resolve(value);
     } else if (method === "job.cancelled")
-      this.reject(new Error(active.job.operation === "cavity" ? "Cavity cancelled" : "Evolution cancelled"));
+      this.reject(new Error(active.job.operation === "cavity" ? "Cavity cancelled" : active.job.operation === "lindblad" ? "Lindblad cancelled" : "Evolution cancelled"));
     else if (method === "job.failed")
       this.reject(
         new Error(
@@ -182,7 +185,7 @@ export class EvolutionCoordinator {
         ),
       );
   }
-  private resolve(result: EvolutionResult | CavityResult) {
+  private resolve(result: EvolutionResult | CavityResult | LindbladResult) {
     const active = this.active;
     if (!active) return;
     clearTimeout(active.timer);

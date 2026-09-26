@@ -90,7 +90,29 @@ export interface CavityJob {
   initialState: { qubit: "ground" | "excited"; photons: number };
   solver: EvolutionSolver;
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob;
+export interface LindbladJob {
+  schema: "quantum-job/v1";
+  jobId: string;
+  operation: "lindblad";
+  engine: EngineName;
+  model: {
+    type: "open_jaynes_cummings";
+    parameters: {
+      qubitDetuning: number;
+      cavityDetuning: number;
+      coupling: number;
+      driveAmplitude: number;
+      relaxation: number;
+      dephasing: number;
+      cavityLoss: number;
+      cutoff: number;
+    };
+    source?: LayerOneSource;
+  };
+  initialState: { qubit: "ground" | "excited" | "plus_x"; photons: number };
+  solver: Omit<EvolutionSolver, "type"> & { type: "master" };
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob;
 export interface SpectrumResult {
   schema: "quantum-result/v1";
   jobId: string;
@@ -180,7 +202,38 @@ export interface CavityResult {
   };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult;
+export const LINDBLAD_COLUMNS = ["time", "p_excited", "mean_photon", "purity", "coherence", "boundary_probability", "trace"] as const;
+export interface LindbladReadout {
+  pExcited: number;
+  meanPhoton: number;
+  purity: number;
+  coherence: number;
+  boundaryProbability: number;
+  trace: number;
+}
+export interface LindbladResult {
+  schema: "quantum-result/v1";
+  jobId: string;
+  runId: string;
+  status: "completed";
+  operation: "lindblad";
+  model: LindbladJob["model"];
+  initialState: LindbladJob["initialState"];
+  solver: LindbladJob["solver"];
+  engine: { name: EngineName; version: string };
+  steadyState: LindbladReadout | null;
+  data: {
+    schema: "quantum-lindblad-data/v1";
+    format: "f64le";
+    path: string;
+    rows: number;
+    columns: typeof LINDBLAD_COLUMNS;
+    bytes: number;
+    sha256: string;
+  };
+  provenance: SpectrumResult["provenance"];
+}
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -196,7 +249,7 @@ export interface WorkerCapabilities {
     qutip: { available: boolean; version: string | null };
     native: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -210,6 +263,7 @@ export interface QuantumBridge {
   run(job: SpectrumJob): Promise<SpectrumResult>;
   evolve(job: EvolutionJob): Promise<EvolutionResult>;
   cavity(job: CavityJob): Promise<CavityResult>;
+  lindblad(job: LindbladJob): Promise<LindbladResult>;
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
   onProgress(listener: (progress: EvolutionProgress) => void): () => void;

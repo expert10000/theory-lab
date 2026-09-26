@@ -32,6 +32,7 @@ try {
       "evolve",
       "getCapabilities",
       "getStatus",
+      "lindblad",
       "onProgress",
       "readData",
       "restart",
@@ -377,6 +378,15 @@ try {
   assert.ok(Number(await page.getByTestId("cavity-boundary").textContent()) < 0.02);
   await page.getByTestId("cavity-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-quantum-rabi.png", fullPage: true });
+  await page.getByRole("button", { name: "Lindblad dynamics" }).click();
+  await page.getByTestId("run-lindblad").click();
+  await page.getByTestId("lindblad-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("lindblad-result").waitFor();
+  assert.ok(Number(await page.getByTestId("minimum-purity").textContent()) < 1);
+  assert.ok(Number(await page.getByTestId("open-excited").textContent()) > .99);
+  assert.ok(await page.getByTestId("steady-state").getByText("Steady state").isVisible());
+  await page.getByTestId("lindblad-result").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "artifacts/desktop-lindblad.png", fullPage: true });
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → QuTiP/Native spectrum, evolution, Floquet and cavity labs; verified binary data, numerical references, cancellation, restart and sandbox.",

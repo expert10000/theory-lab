@@ -8,6 +8,7 @@ import type {
 import { Spectrum, format } from "./Spectrum";
 import { DynamicsLab } from "./DynamicsLab";
 import { CavityLab } from "./CavityLab";
+import { OpenSystemLab } from "./OpenSystemLab";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import {
@@ -27,7 +28,6 @@ declare global {
   }
 }
 const futureLabs = [
-  "Lindblad dynamics",
   "Parameter sweeps",
 ];
 type EngineMode = EngineName | "compare";
@@ -52,7 +52,7 @@ export function App() {
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<
-    "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "roadmap" | "backend"
+    "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "roadmap" | "backend"
   >("spectrum");
   const initialRun = useRef(false);
   const valid = parametersFor("two_level", parameters) !== null;
@@ -153,8 +153,8 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-012</span>
-          {tab !== "dynamics" && tab !== "cavity" && tab !== "backend" && tab !== "roadmap" && (
+          <span className="version">V0.1 · QLAB-013</span>
+          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -169,10 +169,10 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "dynamics" || tab === "cavity" ? "dynamics-layout" : ""}`}>
+      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>07 / 09</span>
+            LABORATORIES <span>08 / 09</span>
           </p>
           {(
             [
@@ -196,6 +196,7 @@ export function App() {
             </button>
           ))}
           {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" onClick={() => { setCavityModel(id); setTab("cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
+          <button className="lab-selected" onClick={() => setTab("open")}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
           <p className="sidebar-note">
             The smallest quantum system.
             <br />
@@ -205,7 +206,7 @@ export function App() {
           <nav aria-label="Planned laboratories">
             {futureLabs.map((lab, i) => (
               <div className="future-lab" key={lab}>
-                <span>{String(i + 8).padStart(2, "0")}</span>
+                <span>{String(i + 9).padStart(2, "0")}</span>
                 {lab}
               </div>
             ))}
@@ -231,6 +232,8 @@ export function App() {
                 ? MODEL_REGISTRY[evolutionModel].label.toUpperCase()
                 : tab === "cavity"
                   ? CAVITY_REGISTRY[cavityModel].label.toUpperCase()
+                  : tab === "open"
+                    ? "LINDBLAD DYNAMICS"
                 : "TWO-LEVEL SYSTEM"}
           </div>
           <div className="workspace-title">
@@ -242,6 +245,8 @@ export function App() {
                     ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : evolutionModel === "stuckelberg" ? "004" : "005"}`
                     : tab === "cavity"
                       ? `CAVITY QED LABORATORY / ${cavityModel === "jaynes_cummings" ? "006" : "007"}`
+                      : tab === "open"
+                        ? "OPEN-SYSTEM LABORATORY / 008"
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
@@ -251,6 +256,8 @@ export function App() {
                     ? "A system in motion."
                     : tab === "cavity"
                       ? "Light meets matter."
+                      : tab === "open"
+                        ? "A system meets its environment."
                     : "A two-level universe."}
               </h1>
               <p>
@@ -260,10 +267,12 @@ export function App() {
                     ? MODEL_REGISTRY[evolutionModel].description
                     : tab === "cavity"
                       ? CAVITY_REGISTRY[cavityModel].description
+                      : tab === "open"
+                        ? "Explore relaxation, dephasing, cavity loss and stationary states."
                     : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
-            <span className="pill">{tab === "cavity" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+            <span className="pill">{tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
           </div>
           <div className="tabs" role="tablist" aria-label="Workspace">
             <button
@@ -288,6 +297,7 @@ export function App() {
               Dynamics
             </button>
             <button role="tab" aria-selected={tab === "cavity"} onClick={() => setTab("cavity")}>Cavity QED</button>
+            <button role="tab" aria-selected={tab === "open"} onClick={() => setTab("open")}>Open system</button>
             <button
               role="tab"
               aria-selected={tab === "roadmap"}
@@ -311,6 +321,7 @@ export function App() {
             />
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} /></div>
+          <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} /></div>
           {tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
@@ -343,7 +354,8 @@ export function App() {
                 ["010", "Landau–Zener & Stückelberg passages", "Implemented"],
                 ["011", "Floquet modes, quasienergies & strong-drive map", "Implemented"],
                 ["012", "Jaynes–Cummings & quantum Rabi cavity QED", "Implemented"],
-                ["013–014", "Lindblad dynamics & sweeps", "Planned"],
+                ["013", "Lindblad dynamics, purity & steady state", "Implemented"],
+                ["014", "Parameter sweeps & heatmap workspace", "Next"],
                 [
                   "015–017",
                   "Book presets, persistence & release validation",
@@ -362,7 +374,7 @@ export function App() {
                 crystals belong to a later phase.
               </p>
             </section>
-          ) : tab === "dynamics" || tab === "cavity" ? null : (
+          ) : tab === "dynamics" || tab === "cavity" || tab === "open" ? null : (
             <>
               <section className="hamiltonian-card">
                 <div>

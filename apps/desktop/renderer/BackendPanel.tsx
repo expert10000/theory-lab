@@ -57,7 +57,8 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             Hamiltonian. <code>SESolver.step()</code> advances time-dependent
             Schrödinger evolution at requested sample times. A one-period
             propagator supplies Floquet modes and quasienergies; tensor-product
-            operators define the atom–cavity Hamiltonians.
+            operators define the atom–cavity Hamiltonians. <code>MESolver</code>
+            and <code>steadystate</code> solve the Lindblad laboratory.
           </p>
           <small>Reference engine · per-step output normalized</small>
         </article>
@@ -78,7 +79,8 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             <code>numpy.linalg.eigvalsh()</code> solves the same Hermitian
             matrix. SciPy <code>DOP853</code> integrates i∂ₜψ = H(t)ψ with dense
             output on the shared time grid. Native cavity dynamics uses a
-            Hermitian eigendecomposition and exact spectral phases.
+            Hermitian eigendecomposition and exact spectral phases. The
+            Lindblad reference uses a dense Liouvillian and DOP853.
           </p>
           <small>
             Independent engine · norm left uncorrected for diagnostics
@@ -107,6 +109,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             before releasing bytes to React.
           </p>
           <p><code>quantum-cavity-data/v1</code> stores six Float64 values per row (48 bytes): time, excited population, mean photons, Fock-boundary population, norm, parity.</p>
+          <p><code>quantum-lindblad-data/v1</code> stores seven Float64 values per row (56 bytes): time, excited population, photons, purity, coherence, Fock-boundary occupation, trace.</p>
           <small>Up to 50,000 two-level or 5,000 cavity samples · SHA-256 verified</small>
         </article>
       </div>
@@ -132,7 +135,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
       <article className="panel backend-card backend-wide">
         <p className="eyebrow">SOURCE EXAMPLES / THEORY DEVELOPMENT BRANCH</p>
         <h2>Mapped references, not a runtime import.</h2>
-        <p>Landau–Zener's asymptotic reference is recorded in the Volume VIII two-level QuTiP example (Commit 687). The Jaynes–Cummings lab uses the Commit 691 atom-first basis and checks its vacuum-Rabi population and dressed splitting. That reference uses a cavity-rotating frame; the desktop shows lab-frame energies, so only the splitting and populations are compared directly. The linked tree has no direct Floquet or full quantum-Rabi example yet.</p>
+        <p>Landau–Zener's asymptotic reference is recorded in the Volume VIII two-level QuTiP example (Commit 687). The Jaynes–Cummings lab uses the Commit 691 atom-first basis and checks its vacuum-Rabi population and dressed splitting. The Lindblad laboratory checks relaxation, dephasing and cavity-loss limits against Commit 688/690 analytic examples. These source examples are not imported at runtime. The linked tree has no direct Floquet or full quantum-Rabi example yet.</p>
       </article>
     </section>
   );

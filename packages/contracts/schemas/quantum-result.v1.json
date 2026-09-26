@@ -667,6 +667,102 @@
         }
       },
       "required": ["schema", "jobId", "runId", "status", "operation", "model", "initialState", "solver", "engine", "dressedSpectrum", "data", "provenance"]
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "quantum-result/v1" },
+        "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "runId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "status": { "const": "completed" },
+        "operation": { "const": "lindblad" },
+        "model": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "type": { "const": "open_jaynes_cummings" },
+            "parameters": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "qubitDetuning": { "type": "number", "minimum": -1000, "maximum": 1000 },
+                "cavityDetuning": { "type": "number", "minimum": -1000, "maximum": 1000 },
+                "coupling": { "type": "number", "minimum": 0, "maximum": 100 },
+                "driveAmplitude": { "type": "number", "minimum": -100, "maximum": 100 },
+                "relaxation": { "type": "number", "minimum": 0, "maximum": 100 },
+                "dephasing": { "type": "number", "minimum": 0, "maximum": 100 },
+                "cavityLoss": { "type": "number", "minimum": 0, "maximum": 100 },
+                "cutoff": { "type": "integer", "minimum": 3, "maximum": 12 }
+              },
+              "required": ["qubitDetuning", "cavityDetuning", "coupling", "driveAmplitude", "relaxation", "dephasing", "cavityLoss", "cutoff"]
+            },
+            "source": {
+              "type": "object", "additionalProperties": false, "minProperties": 1,
+              "properties": {
+                "sourceRepository": { "type": "string", "minLength": 1, "maxLength": 300 },
+                "sourceModule": { "type": "string", "minLength": 1, "maxLength": 300 },
+                "volume": { "type": "string", "minLength": 1, "maxLength": 100 },
+                "chapter": { "type": "string", "minLength": 1, "maxLength": 100 },
+                "exampleId": { "type": "string", "minLength": 1, "maxLength": 100 }
+              }
+            }
+          },
+          "required": ["type", "parameters"]
+        },
+        "initialState": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "qubit": { "enum": ["ground", "excited", "plus_x"] },
+            "photons": { "type": "integer", "minimum": 0, "maximum": 11 }
+          },
+          "required": ["qubit", "photons"]
+        },
+        "solver": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "type": { "const": "master" },
+            "tStart": { "type": "number", "minimum": -1000, "maximum": 1000 },
+            "tStop": { "type": "number", "minimum": -1000, "maximum": 1000 },
+            "samples": { "type": "integer", "minimum": 2, "maximum": 5000 }
+          },
+          "required": ["type", "tStart", "tStop", "samples"]
+        },
+        "engine": {
+          "type": "object", "additionalProperties": false,
+          "properties": { "name": { "enum": ["qutip", "native"] }, "version": { "type": "string", "minLength": 1 } },
+          "required": ["name", "version"]
+        },
+        "steadyState": {
+          "type": ["object", "null"], "additionalProperties": false,
+          "properties": {
+            "pExcited": { "type": "number" }, "meanPhoton": { "type": "number" },
+            "purity": { "type": "number" }, "coherence": { "type": "number" },
+            "boundaryProbability": { "type": "number" }, "trace": { "type": "number" }
+          },
+          "required": ["pExcited", "meanPhoton", "purity", "coherence", "boundaryProbability", "trace"]
+        },
+        "data": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "schema": { "const": "quantum-lindblad-data/v1" },
+            "format": { "const": "f64le" },
+            "path": { "type": "string", "pattern": "^[A-Za-z0-9_-]+\\.f64$" },
+            "rows": { "type": "integer", "minimum": 2, "maximum": 5000 },
+            "columns": { "const": ["time", "p_excited", "mean_photon", "purity", "coherence", "boundary_probability", "trace"] },
+            "bytes": { "type": "integer", "minimum": 112, "maximum": 280000 },
+            "sha256": { "type": "string", "pattern": "^[a-f0-9]{64}$" }
+          },
+          "required": ["schema", "format", "path", "rows", "columns", "bytes", "sha256"]
+        },
+        "provenance": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "pythonVersion": { "type": "string" }, "workerVersion": { "type": "string" },
+            "computedAt": { "type": "string", "minLength": 20 },
+            "durationMs": { "type": "number", "minimum": 0 }
+          },
+          "required": ["pythonVersion", "workerVersion", "computedAt", "durationMs"]
+        }
+      },
+      "required": ["schema", "jobId", "runId", "status", "operation", "model", "initialState", "solver", "engine", "steadyState", "data", "provenance"]
     }
   ]
 }
