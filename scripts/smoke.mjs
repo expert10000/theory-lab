@@ -332,6 +332,24 @@ try {
       .getByRole("img", { name: /Native population and Pauli/ })
       .isVisible(),
   );
+  await page.getByRole("button", { name: "Stückelberg" }).click();
+  await page
+    .getByRole("combobox", { name: "Dynamics engine" })
+    .selectOption("qutip");
+  await page.getByTestId("run-evolution").click();
+  await page
+    .getByTestId("evolution-state")
+    .filter({ hasText: "COMPLETE" })
+    .waitFor({ timeout: 30000 });
+  assert.equal(
+    await page.getByTestId("stuckelberg-crossings").textContent(),
+    "±4.000",
+  );
+  assert.ok(Number(await page.getByTestId("final-p0").textContent()) >= 0);
+  await page.screenshot({
+    path: "artifacts/desktop-stuckelberg.png",
+    fullPage: true,
+  });
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → QuTiP/Native/Compare spectrum and evolution, backend tab, verified binary data, synchronized cursor, numerical diagnostics, cancellation, restart and sandbox.",

@@ -6,7 +6,8 @@ import type {
   SpectrumJob,
 } from "../contracts";
 
-export type ModelId = "two_level" | "driven_two_level" | "landau_zener";
+export type ModelId =
+  "two_level" | "driven_two_level" | "landau_zener" | "stuckelberg";
 export type EvolutionModelId = Exclude<ModelId, "two_level">;
 export interface ParameterDefinition {
   key: string;
@@ -163,6 +164,55 @@ export const MODEL_REGISTRY: Record<ModelId, ModelDefinition> = {
     solverDefaults: { tStart: -10, tStop: 10, samples: 401 },
     source: { volume: "VIII", chapter: "58" },
   },
+  stuckelberg: {
+    id: "stuckelberg",
+    label: "Stückelberg",
+    description: "Double passage through an avoided crossing",
+    hamiltonian: "H(t) = [v(t²−τ²)/(2τ)+ε₀]/2 σz + g/2 σx",
+    operations: ["evolve"],
+    parameters: [
+      parameter(
+        "sweepRate",
+        "Crossing rate",
+        "v",
+        1,
+        -1e6,
+        1e6,
+        "Magnitude of the local sweep rate at ±τ",
+      ),
+      parameter(
+        "gap",
+        "Coupling gap",
+        "g",
+        0.8,
+        -1e6,
+        1e6,
+        "Transverse coupling at each crossing",
+      ),
+      parameter(
+        "bias",
+        "Bias",
+        "ε₀",
+        0,
+        -1e6,
+        1e6,
+        "Longitudinal detuning offset",
+      ),
+      parameter(
+        "turnTime",
+        "Crossing time",
+        "τ",
+        4,
+        0.1,
+        1000,
+        "Crossings occur at ±τ when bias is zero",
+      ),
+    ],
+    observables: ["p0", "p1", "sigma_x", "sigma_y", "sigma_z"],
+    defaultState: { type: "basis", index: 0 },
+    solverDefaults: { tStart: -12, tStop: 12, samples: 601 },
+    source: { volume: "VIII", chapter: "58" },
+  },
 };
 export const MODEL_LIST = Object.values(MODEL_REGISTRY);
 export function defaultsFor(id: ModelId): Record<string, string> {
@@ -247,11 +297,22 @@ export function evolutionJob(
           },
           source: definition.source,
         }
-      : {
-          type: id,
-          parameters: { sweepRate: p.sweepRate, gap: p.gap, bias: p.bias },
-          source: definition.source,
-        };
+      : id === "landau_zener"
+        ? {
+            type: id,
+            parameters: { sweepRate: p.sweepRate, gap: p.gap, bias: p.bias },
+            source: definition.source,
+          }
+        : {
+            type: id,
+            parameters: {
+              sweepRate: p.sweepRate,
+              gap: p.gap,
+              bias: p.bias,
+              turnTime: p.turnTime,
+            },
+            source: definition.source,
+          };
   return {
     schema: "quantum-job/v1",
     jobId,

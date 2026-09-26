@@ -175,23 +175,28 @@ export function App() {
       <div className={`layout ${tab === "dynamics" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>03 / 09</span>
+            LABORATORIES <span>04 / 09</span>
           </p>
-          {(["two_level", "driven_two_level", "landau_zener"] as const).map(
-            (id) => (
-              <button
-                key={id}
-                className="lab-selected"
-                onClick={() => {
-                  if (id !== "two_level") setEvolutionModel(id);
-                  setTab(id === "two_level" ? "spectrum" : "dynamics");
-                }}
-              >
-                <span>{id === "two_level" ? "◈" : "∿"}</span>{" "}
-                {MODEL_REGISTRY[id].label} <span className="live-dot" />
-              </button>
-            ),
-          )}
+          {(
+            [
+              "two_level",
+              "driven_two_level",
+              "landau_zener",
+              "stuckelberg",
+            ] as const
+          ).map((id) => (
+            <button
+              key={id}
+              className="lab-selected"
+              onClick={() => {
+                if (id !== "two_level") setEvolutionModel(id);
+                setTab(id === "two_level" ? "spectrum" : "dynamics");
+              }}
+            >
+              <span>{id === "two_level" ? "◈" : "∿"}</span>{" "}
+              {MODEL_REGISTRY[id].label} <span className="live-dot" />
+            </button>
+          ))}
           <p className="sidebar-note">
             The smallest quantum system.
             <br />
@@ -199,9 +204,9 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">PLANNED FOR V1</p>
           <nav aria-label="Planned laboratories">
-            {futureLabs.slice(2).map((lab, i) => (
+            {futureLabs.slice(3).map((lab, i) => (
               <div className="future-lab" key={lab}>
-                <span>{String(i + 4).padStart(2, "0")}</span>
+                <span>{String(i + 5).padStart(2, "0")}</span>
                 {lab}
               </div>
             ))}
@@ -233,7 +238,7 @@ export function App() {
                 {tab === "backend"
                   ? "ARCHITECTURE / 008–009"
                   : tab === "dynamics"
-                    ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : "003"}`
+                    ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : "004"}`
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
@@ -326,11 +331,9 @@ export function App() {
                   "Engine comparison & numerical diagnostics",
                   "Implemented",
                 ],
-                [
-                  "010–014",
-                  "Driven systems, cavity QED, Lindblad & sweeps",
-                  "Planned",
-                ],
+                ["010", "Landau–Zener & Stückelberg passages", "Implemented"],
+                ["011–012", "Floquet, strong drive & cavity QED", "Next"],
+                ["013–014", "Lindblad dynamics & sweeps", "Planned"],
                 [
                   "015–017",
                   "Book presets, persistence & release validation",
@@ -344,7 +347,8 @@ export function App() {
                 </div>
               ))}
               <p className="scope-note">
-                V1 covers the validated Layer-1 systems. Atoms, molecules and
+                Volume VIII chapters 58–59 are still architecture placeholders;
+                book-preset validation remains QLAB-015. Atoms, molecules and
                 crystals belong to a later phase.
               </p>
             </section>

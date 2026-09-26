@@ -35,7 +35,11 @@ Compare mode runs both engines on the same time grid. It reports the largest abs
 
 The shared `packages/models` registry supplies model labels, parameter definitions, defaults, Hamiltonian descriptions, supported operations, observables, initial state, and optional Volume VIII provenance fields. React generates parameter controls from this metadata. Both engines use the same contract model IDs and parameter conventions.
 
-Select **Landau–Zener** in the laboratory list to sweep H(t) = (vt + ε₀)σz/2 + gσx/2 from the default t = −10 to t = +10. Change sweep rate v, coupling gap g and bias ε₀, then run the evolution. A zero-gap reference must preserve the initial diabatic population. The registry's Volume VIII, chapter 58 tags are provisional links from the supplied roadmap; no book example or manifest has been imported.
+Select **Landau–Zener** in the laboratory list to sweep H(t) = (vt + ε₀)σz/2 + gσx/2 from the default t = −10 to t = +10. Change sweep rate v, coupling gap g and bias ε₀, then run the evolution. A zero-gap reference must preserve the initial diabatic population. The result displays the finite-window final population beside the infinite-sweep asymptotic formula exp(−πg²/2|v|), labelled as a reference rather than an exact prediction for this run.
+
+Select **Stückelberg** for a smooth double passage: ε(t) = v(t² − τ²)/(2τ) + ε₀, with H(t) = ε(t)σz/2 + gσx/2. At zero bias the two crossings occur at t = ±τ. The same QuTiP/Native/Compare controls and synchronized dynamics views apply; the result shows the crossing positions and return population. The model's interference comes from phase accumulated between passages. Tests cover zero coupling, normalization and cross-engine agreement.
+
+The registry's Volume VIII, chapter 58 tags are provisional links from the supplied roadmap. The local Chapter 58 file explicitly says it is an architecture-only placeholder; no validated book example or reference manifest has been imported.
 
 ## Architecture
 

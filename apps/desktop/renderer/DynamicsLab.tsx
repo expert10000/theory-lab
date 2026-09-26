@@ -668,6 +668,60 @@ export function DynamicsLab({
               </div>
             </div>
           )}
+          {(result.model.type === "landau_zener" ||
+            result.model.type === "stuckelberg") && (
+            <div className="passage-reference">
+              <div>
+                <p className="eyebrow">AVOIDED-CROSSING REFERENCE</p>
+                <h3>
+                  {result.model.type === "landau_zener"
+                    ? "Single passage"
+                    : "Double passage"}
+                </h3>
+                <p>
+                  {result.model.type === "landau_zener"
+                    ? "The asymptotic Landau–Zener formula is a reference for infinite sweep limits; this run has finite endpoints."
+                    : "Two crossings enclose a phase-accumulation interval; the return population depends on interference."}
+                </p>
+              </div>
+              <div className="passage-values">
+                <div>
+                  <span>FINAL P₀</span>
+                  <strong data-testid="final-p0">
+                    {data[(result.data.rows - 1) * 10 + 1].toFixed(6)}
+                  </strong>
+                </div>
+                {result.model.type === "landau_zener" &&
+                Math.abs(result.model.parameters.sweepRate) > 0 ? (
+                  <div>
+                    <span>ASYMPTOTIC P₀</span>
+                    <strong data-testid="landau-zener-reference">
+                      {Math.exp(
+                        (-Math.PI * result.model.parameters.gap ** 2) /
+                          (2 * Math.abs(result.model.parameters.sweepRate)),
+                      ).toFixed(6)}
+                    </strong>
+                  </div>
+                ) : result.model.type === "stuckelberg" &&
+                  result.model.parameters.sweepRate !== 0 ? (
+                  <div>
+                    <span>CROSSINGS t</span>
+                    <strong data-testid="stuckelberg-crossings">
+                      {(() => {
+                        const p = result.model.parameters;
+                        const root =
+                          p.turnTime ** 2 -
+                          (2 * p.turnTime * p.bias) / p.sweepRate;
+                        return root >= 0
+                          ? `±${Math.sqrt(root).toFixed(3)}`
+                          : "none in real time";
+                      })()}
+                    </strong>
+                  </div>
+                ) : null}
+              </div>
+            </div>
+          )}
           <div className="plot-caption">
             <span>
               {result.engine.name === "qutip" ? "QuTiP" : "Native SciPy"}{" "}

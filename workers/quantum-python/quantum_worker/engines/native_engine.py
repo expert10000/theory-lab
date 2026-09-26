@@ -69,6 +69,11 @@ class NativeEvolution:
         elif model["type"] == "landau_zener":
             def fields(t):
                 return parameters["sweepRate"] * t + parameters["bias"], parameters["gap"]
+        elif model["type"] == "stuckelberg":
+            def fields(t):
+                turn = parameters["turnTime"]
+                return (parameters["sweepRate"] * (t * t - turn * turn) / (2 * turn)
+                        + parameters["bias"], parameters["gap"])
         else:
             raise ValueError("Unsupported native evolution model")
 

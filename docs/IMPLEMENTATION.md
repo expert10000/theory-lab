@@ -1,6 +1,6 @@
 # Desktop implementation
 
-The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–009 follow the supplied commit sequence.
+The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–010 follow the supplied commit sequence.
 
 The smoke laboratory uses normalized units (ħ = 1), H = (Δ σz + Ω σx)/2, and E± = ±hypot(Δ, Ω)/2. Ω is a static transverse coupling here, not a time-dependent drive.
 
@@ -22,7 +22,8 @@ Reference material: [Electron 44](https://www.electronjs.org/blog/electron-44-0)
 - QLAB-007: synchronized dynamics workspace with population/Pauli plot, Three.js Bloch sphere and full trajectory, exact-sample time cursor, state-vector readout and density matrix reconstructed from the same binary result row. A 2D projection remains available if WebGL is unavailable.
 - QLAB-008: independent NumPy Hermitian eigenspectrum and SciPy DOP853 Schrödinger evolution for the existing two-level models. Both engines use the same versioned job/result contracts, artifact columns, SHA-256 verification and worker supervision; the native integrator leaves normalization untouched so drift can be measured.
 - QLAB-009: QuTiP, Native and Compare controls for spectrum and dynamics; maximum energy/observable differences, norm drift, phase-independent state fidelity and runtime diagnostics; a Backend tab explaining process boundaries, methods, contracts and binary row layout.
+- QLAB-010: Stückelberg double-passage model with smooth parabolic detuning and crossings at ±τ for zero bias, in QuTiP and native engines. Landau–Zener results now show the asymptotic survival formula alongside the finite-window result; both passages have contextual readouts.
 
-Validated on Windows with Node 24.19.0 and Python 3.12.2. Type checking, seventeen TypeScript tests, thirteen Python tests, and the real Electron end-to-end smoke test pass. The desktop test exercises both engines and Compare mode for static spectrum and evolution, the Backend tab, plot and slider selection, Bloch rendering, cancellation, stale data, restart, security preferences and compact layout. Screenshots are in the ignored artifacts directory.
+Validated on Windows with Node 24.19.0 and Python 3.12.2. Type checking, seventeen TypeScript tests, fourteen Python tests, and the real Electron end-to-end smoke test pass. The desktop test exercises both engines and Compare mode for static spectrum and evolution, the Backend tab, Landau–Zener and Stückelberg passages, plot and slider selection, Bloch rendering, cancellation, stale data, restart, security preferences and compact layout. Screenshots are in the ignored artifacts directory.
 
-No Layer-1 repository or source manifests were supplied; the smoke model follows the explicit convention above and is validated against its analytic eigenvalues. Importing book models/presets remains QLAB-015. Current provenance is attached to each result but is not yet persisted; durable run directories remain QLAB-016. No standalone installer or Linux acceptance is claimed.
+The local Volume VIII Chapters 58–59 inspected on 2026-09-26 explicitly identify themselves as architecture-only placeholders, not validated scientific implementations. Their chapter numbers remain provisional tags, not golden-test provenance. Importing validated book models/presets remains QLAB-015. Current provenance is attached to each result but is not yet persisted; durable run directories remain QLAB-016. No standalone installer or Linux acceptance is claimed.

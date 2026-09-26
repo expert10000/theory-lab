@@ -30,7 +30,18 @@ export interface LandauZenerModel {
   parameters: { sweepRate: number; gap: number; bias: number };
   source?: LayerOneSource;
 }
-export type EvolutionModel = DrivenTwoLevelModel | LandauZenerModel;
+export interface StuckelbergModel {
+  type: "stuckelberg";
+  parameters: {
+    sweepRate: number;
+    gap: number;
+    bias: number;
+    turnTime: number;
+  };
+  source?: LayerOneSource;
+}
+export type EvolutionModel =
+  DrivenTwoLevelModel | LandauZenerModel | StuckelbergModel;
 export interface BasisState {
   type: "basis";
   index: 0 | 1;

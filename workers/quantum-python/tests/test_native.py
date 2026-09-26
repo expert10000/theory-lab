@@ -64,3 +64,36 @@ class NativeEngineTests(unittest.TestCase):
                             lambda completed, _: cancel.set() if completed >= 20 else None)
             self.assertIsNone(result)
             self.assertEqual(list(Path(directory).iterdir()), [])
+
+    def test_stuckelberg_double_passage_and_engine_agreement(self):
+        job = fixture("landau-zener.job.json")
+        job["jobId"] = "stuckelberg-qutip"
+        job["model"]["type"] = "stuckelberg"
+        job["model"]["parameters"]["turnTime"] = 4
+        job["solver"].update({"tStart": -12, "tStop": 12, "samples": 401})
+        with tempfile.TemporaryDirectory() as directory:
+            qutip = evolve(job, directory, threading.Event(), lambda *_: None)
+            qutip_rows = list(struct.iter_unpack("<10d", (Path(directory) / qutip["data"]["path"]).read_bytes()))
+        native_job = copy.deepcopy(job)
+        native_job["jobId"] = "stuckelberg-native"
+        native_job["engine"] = "native"
+        with tempfile.TemporaryDirectory() as directory:
+            native = evolve(native_job, directory, threading.Event(), lambda *_: None)
+            native_rows = list(struct.iter_unpack("<10d", (Path(directory) / native["data"]["path"]).read_bytes()))
+        self.assertEqual(qutip_rows[0][0], -12)
+        self.assertEqual(qutip_rows[-1][0], 12)
+        self.assertLess(max(abs(a[1] - b[1]) for a, b in zip(qutip_rows, native_rows)), 3e-4)
+        self.assertTrue(all(abs(row[1] + row[2] - 1) < 1e-8 for row in qutip_rows))
+        biased = copy.deepcopy(job)
+        biased["jobId"] = "stuckelberg-biased"
+        biased["model"]["parameters"]["bias"] = 0.5
+        with tempfile.TemporaryDirectory() as directory:
+            shifted = evolve(biased, directory, threading.Event(), lambda *_: None)
+            shifted_rows = list(struct.iter_unpack("<10d", (Path(directory) / shifted["data"]["path"]).read_bytes()))
+        self.assertGreater(abs(qutip_rows[-1][1] - shifted_rows[-1][1]), 0.001)
+        job["jobId"] = "stuckelberg-zero-gap"
+        job["model"]["parameters"]["gap"] = 0
+        with tempfile.TemporaryDirectory() as directory:
+            result = evolve(job, directory, threading.Event(), lambda *_: None)
+            rows = list(struct.iter_unpack("<10d", (Path(directory) / result["data"]["path"]).read_bytes()))
+        self.assertTrue(all(abs(row[2]) < 1e-9 for row in rows))

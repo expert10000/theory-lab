@@ -13,14 +13,18 @@ import { isQuantumJob } from "../packages/contracts";
 test("model registry generates contract-compatible jobs from its defaults", () => {
   assert.deepEqual(
     MODEL_LIST.map((model) => model.id),
-    ["two_level", "driven_two_level", "landau_zener"],
+    ["two_level", "driven_two_level", "landau_zener", "stuckelberg"],
   );
   assert.ok(isQuantumJob(spectrumJob("static-1", defaultsFor("two_level"))));
   assert.equal(
     spectrumJob("native-1", defaultsFor("two_level"), "native").engine,
     "native",
   );
-  for (const id of ["driven_two_level", "landau_zener"] as const) {
+  for (const id of [
+    "driven_two_level",
+    "landau_zener",
+    "stuckelberg",
+  ] as const) {
     const definition = MODEL_REGISTRY[id];
     const values = defaultsFor(id);
     assert.ok(parametersFor(id, values));
@@ -57,6 +61,13 @@ test("model registry generates contract-compatible jobs from its defaults", () =
 test("parameter metadata rejects out-of-range and missing model values", () => {
   assert.equal(
     parametersFor("landau_zener", { sweepRate: "1", gap: "", bias: "0" }),
+    null,
+  );
+  assert.equal(
+    parametersFor("stuckelberg", {
+      ...defaultsFor("stuckelberg"),
+      turnTime: "0",
+    }),
     null,
   );
   assert.equal(
