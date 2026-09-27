@@ -9,6 +9,7 @@ import { RunStore } from "../apps/desktop/main/runs";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
 import type { CircuitJob, CircuitResult, ManyBodyJob, ManyBodyResult } from "../packages/contracts";
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
+import { CIRCUIT_DEFAULTS, circuitJob } from "../packages/models/circuit";
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
@@ -39,6 +40,15 @@ test("many-body job bounds and additive workspace v1 compatibility", () => {
   assert.ok(isWorkspaceSnapshot(workspace), "older v1 snapshots must remain loadable");
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "many_body", manyBody: { ...MANY_BODY_DEFAULTS } }));
   assert.equal(isWorkspaceSnapshot({ ...workspace, manyBody: { ...MANY_BODY_DEFAULTS, sites: "2".repeat(101) } }), false);
+});
+
+test("circuit draft is additive to workspace v1 and builds a bounded job", () => {
+  const job = circuitJob("circuit-test", CIRCUIT_DEFAULTS, "native");
+  assert.equal(job.model.parameters.ncut, 12);
+  assert.throws(() => circuitJob("bad", { ...CIRCUIT_DEFAULTS, EC: "0" }, "native"));
+  assert.ok(isWorkspaceSnapshot(workspace), "older snapshots remain loadable");
+  assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "circuit", circuit: CIRCUIT_DEFAULTS }));
+  assert.equal(isWorkspaceSnapshot({ ...workspace, circuit: { ...CIRCUIT_DEFAULTS, engine: "quspin" } }), false);
 });
 
 test("run store persists provenance and verified data, then exports CSV, SVG and manifest", async () => {

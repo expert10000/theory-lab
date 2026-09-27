@@ -61,7 +61,7 @@ Install the optional Python dependency with `.venv/bin/python -m pip install -r 
 
 ## Optional scqubits adapter (QLAB-022)
 
-Install `workers/quantum-python/requirements-scqubits.txt` into the worker's `.venv`, then restart. The versioned `circuit` job computes a bounded charge-basis Transmon spectrum with scqubits or an independent NumPy matrix. EJ and EC are entered as E/h in GHz; the result includes E₀₁, E₁₂, anharmonicity, |⟨0|n|1⟩|, and the change in E₀₁ when `ncut` increases by two. This is a cutoff diagnostic, not proof of convergence. The interactive circuit workspace follows in QLAB-023.
+Install `workers/quantum-python/requirements-scqubits.txt` into the worker's `.venv`, then restart. The versioned `circuit` job computes a bounded charge-basis Transmon spectrum with scqubits or an independent NumPy matrix. EJ and EC are entered as E/h in GHz; the result includes E₀₁, E₁₂, anharmonicity, |⟨0|n|1⟩|, and the change in E₀₁ when `ncut` increases by two. This is a cutoff diagnostic, not proof of convergence. QLAB-023 exposes these values in a Circuit tab with Native/scqubits/Compare modes, saved drafts, and durable run exports.
 
 ## Volume VIII presets
 

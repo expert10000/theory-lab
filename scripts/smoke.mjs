@@ -468,6 +468,26 @@ try {
   await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("6");
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(() => document.querySelector('input[aria-label="Many-body sites"]')?.value === "5");
+  await page.getByRole("tab", { name: "Circuit" }).click();
+  await page.getByTestId("run-circuit").click();
+  await page.getByTestId("circuit-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("circuit-result").waitFor();
+  assert.ok(Number(await page.getByTestId("circuit-e01").textContent()) > 0);
+  assert.ok(Number(await page.getByTestId("circuit-cutoff").textContent()) >= 0);
+  await page.getByRole("spinbutton", { name: "Circuit ncut" }).fill("13");
+  await page.getByTestId("circuit-result").getByText("OUT OF DATE").waitFor();
+  if (gpu.engines.scqubits?.available) {
+    await page.getByRole("combobox", { name: "Circuit engine" }).selectOption("compare");
+    await page.getByTestId("run-circuit").click();
+    await page.getByTestId("circuit-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+    assert.match(await page.getByTestId("circuit-compare").textContent(), /scqubits versus Native/);
+  }
+  await page.screenshot({ path: "artifacts/desktop-circuit.png", fullPage: true });
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({ hasText: "Workspace saved" }).waitFor();
+  await page.getByRole("spinbutton", { name: "Circuit ncut" }).fill("14");
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(() => document.querySelector('input[aria-label="Circuit ncut"]')?.value === "13");
   await page.getByRole("tab", { name: "Presets" }).click();
   await page.getByTestId("preset-page").waitFor();
   assert.equal(await page.locator(".preset-card").count(), 6);

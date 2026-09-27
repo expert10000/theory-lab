@@ -1,8 +1,9 @@
 import Ajv from "ajv";
 import type { CavityModel, EngineName, EvolutionEngineName, ManyBodyEngineName, SweepEngineName, SweepAxis } from "./index";
 
-export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "many_body" | "presets" | "runs" | "roadmap" | "backend";
+export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend";
 export type ManyBodyWorkspaceEngine = ManyBodyEngineName | "compare";
+export type CircuitWorkspaceEngine = import("./index").CircuitEngineName | "compare";
 export type WorkspaceEngine = EngineName | "compare";
 export type DynamicsWorkspaceEngine = EvolutionEngineName | "compare";
 export interface WorkspaceSnapshot {
@@ -24,6 +25,8 @@ export interface WorkspaceSnapshot {
     start: string; stop: string; initialIndex: 0 | 1; engine: SweepEngineName };
   manyBody?: { sites: string; interaction: string; transverse: string; longitudinal: string;
     boundary: "open" | "periodic"; engine: ManyBodyWorkspaceEngine };
+  circuit?: { EJ: string; EC: string; ng: string; ncut: string; levels: string;
+    engine: CircuitWorkspaceEngine };
 }
 export interface RunSummary {
   schema: "quantum-run-manifest/v1";
@@ -53,7 +56,7 @@ const axis = block(["parameter", "start", "stop", "points"], {
 const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "spectrum", "dynamics", "cavity", "open", "sweep"], {
   schema: { const: "quantum-workspace/v1" },
   savedAt: { type: "string", minLength: 1, maxLength: 50 },
-  tab: { enum: ["spectrum", "hamiltonian", "dynamics", "cavity", "open", "sweep", "many_body", "presets", "runs", "roadmap", "backend"] },
+  tab: { enum: ["spectrum", "hamiltonian", "dynamics", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend"] },
   selectedPresetId: { anyOf: [{ type: "string", maxLength: 100 }, { type: "null" }] },
   spectrum: block(["parameters", "engine"], { parameters: values, engine: { enum: ["qutip", "native", "compare"] } }),
   dynamics: block(["modelId", "parameters", "start", "stop", "samples", "basis", "engine"], {
@@ -76,6 +79,10 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   manyBody: block(["sites", "interaction", "transverse", "longitudinal", "boundary", "engine"], {
     sites: shortText, interaction: shortText, transverse: shortText, longitudinal: shortText,
     boundary: { enum: ["open", "periodic"] }, engine: { enum: ["quspin", "native", "compare"] },
+  }),
+  circuit: block(["EJ", "EC", "ng", "ncut", "levels", "engine"], {
+    EJ: shortText, EC: shortText, ng: shortText, ncut: shortText, levels: shortText,
+    engine: { enum: ["scqubits", "native", "compare"] },
   }),
 });
 const ajv = new Ajv({ strict: true, allErrors: true });
