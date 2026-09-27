@@ -5,6 +5,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { startGateway } from "../apps/gateway/server";
 import { spectrumJob, evolutionJob, defaultsFor } from "../packages/models";
+import { TOPOLOGY_DEFAULTS, topologyJob } from "../packages/models/topology";
 
 const token = "gateway-test-token-0123456789-abcdef";
 
@@ -73,6 +74,43 @@ test("gateway serves verified evolution artifacts and rejects invalid binding", 
     assert.equal(new DataView(artifact).getFloat64(8, true), 1);
     assert.equal((await fetch(`${gateway.origin}/api/artifacts/missing`,
       { headers: { Authorization: `Bearer ${token}` } })).status, 404);
+  } finally {
+    await gateway.close();
+    await rm(dataDir, { recursive: true, force: true });
+  }
+});
+
+test("gateway accepts bounded SSH/QWZ jobs with consistent saved results", async () => {
+  const dataDir = await mkdtemp(join(tmpdir(), "qlab-gateway-topology-"));
+  const gateway = await startGateway({ root: process.cwd(), dataDir, webDir: join(process.cwd(), "dist", "web"), token, port: 0 });
+  const endpoint = `${gateway.origin}/api/jobs`;
+  const headers = { Authorization: `Bearer ${token}`, "Content-Type": "application/json" };
+  try {
+    assert.equal((await fetch(endpoint, { method: "POST", headers: { ...headers, Origin: "https://evil.example" }, body: "{}" })).status, 403);
+    assert.equal((await fetch(endpoint, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" })).status, 401);
+    const ssh = topologyJob("web-ssh-test", TOPOLOGY_DEFAULTS);
+    const sshResponse = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(ssh) });
+    assert.equal(sshResponse.status, 200);
+    const sshResult = await sshResponse.json();
+    assert.equal(sshResult.analysis.kind, "ssh");
+    assert.equal(sshResult.analysis.winding, 1);
+    assert.equal(sshResult.analysis.edgeDensity.length, 32);
+
+    const qwz = topologyJob("web-qwz-test", { ...TOPOLOGY_DEFAULTS, modelId: "qwz" });
+    const qwzResponse = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(qwz) });
+    assert.equal(qwzResponse.status, 200);
+    const qwzResult = await qwzResponse.json();
+    assert.equal(qwzResult.analysis.chern, -1);
+    assert.equal(qwzResult.analysis.berryCurvature.length, 21 * 21);
+    assert.equal(qwzResult.model.source.exampleId, "Atlas qwz");
+    const unresolved = topologyJob("web-qwz-coarse", { ...TOPOLOGY_DEFAULTS, modelId: "qwz", mass: "0.01", grid: "11" });
+    const unresolvedResponse = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(unresolved) });
+    assert.equal(unresolvedResponse.status, 200);
+    assert.equal((await unresolvedResponse.json()).analysis.chern, null);
+    const oversized = { ...qwz, model: { ...qwz.model, parameters: { mass: -1, grid: 1000 } } };
+    assert.equal((await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(oversized) })).status, 400);
+    const saved = await fetch(`${gateway.origin}/api/runs`, { headers: { Authorization: `Bearer ${token}` } }).then(response => response.json());
+    assert.ok(saved.some((run: { jobId: string; operation: string }) => run.jobId === qwz.jobId && run.operation === "topology"));
   } finally {
     await gateway.close();
     await rm(dataDir, { recursive: true, force: true });

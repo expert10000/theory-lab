@@ -7,6 +7,7 @@ import { WorkerSupervisor } from "../desktop/main/worker";
 import { EvolutionCoordinator } from "../desktop/main/evolution";
 import { RunStore } from "../desktop/main/runs";
 import { assertJob, isQuantumResult, type EvolutionJob, type QuantumJob, type QuantumResult } from "../../packages/contracts";
+import { consistentTopologyResult } from "../../packages/models/topology";
 
 export interface GatewayOptions {
   root: string;
@@ -142,11 +143,12 @@ export async function startGateway(options: GatewayOptions) {
     try {
       const raw = await body(request);
       assertJob(raw);
-      if (!["diagonalize", "evolve", "circuit"].includes(raw.operation))
-        throw new Error("Web gateway currently supports spectrum, evolution and circuit jobs");
+      if (!["diagonalize", "evolve", "circuit", "topology"].includes(raw.operation))
+        throw new Error("Web gateway currently supports spectrum, evolution, circuit and topology jobs");
       job = raw;
     } catch (error) { json(response, 400, { error: error instanceof Error ? error.message : "Invalid job" }); return; }
-    if (!worker.status.capabilities?.engines[job.engine]?.available) {
+    if (!worker.status.capabilities?.operations.includes(job.operation) ||
+        !worker.status.capabilities.engines[job.engine]?.available) {
       json(response, 422, { error: "Selected engine unavailable" }); return;
     }
     busy = true;
@@ -157,7 +159,9 @@ export async function startGateway(options: GatewayOptions) {
         const value = await worker.request("quantum.run", job, 60000);
         if (!isQuantumResult(value) || value.operation !== job.operation ||
             value.jobId !== job.jobId || value.engine.name !== job.engine ||
-            JSON.stringify(value.model) !== JSON.stringify(job.model))
+            JSON.stringify(value.model) !== JSON.stringify(job.model) ||
+            (job.operation === "topology" &&
+              (value.operation !== "topology" || !consistentTopologyResult(job, value))))
           throw new Error("Worker returned a mismatched result");
         result = value;
       }
