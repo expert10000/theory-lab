@@ -1,4 +1,4 @@
-import type { EngineName, SweepAxis, SweepJob } from "../contracts";
+import type { SweepEngineName, SweepAxis, SweepJob } from "../contracts";
 import { MODEL_REGISTRY, evolutionJob, type EvolutionModelId } from "./index";
 
 export const SWEEP_DEFAULTS: Record<EvolutionModelId, { x: SweepAxis; y: SweepAxis }> = {
@@ -29,7 +29,7 @@ export function sweepJob(
   tStart: number,
   tStop: number,
   initialIndex: 0 | 1,
-  engine: EngineName,
+  engine: SweepEngineName,
 ): SweepJob {
   const definition = MODEL_REGISTRY[modelId];
   const validateAxis = (axis: SweepAxis) => {

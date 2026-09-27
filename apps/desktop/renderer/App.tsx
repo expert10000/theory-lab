@@ -191,7 +191,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QLAB-018</span>
+          <span className="version">V0.1+ · QLAB-019</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -431,6 +431,7 @@ export function App() {
                 ["016", "Saved workspaces, runs & exports", "Implemented"],
                 ["017", "Desktop v0.1 acceptance", "Implemented"],
                 ["018", "Optional Dynamiqs GPU evolution", "Implemented"],
+                ["019", "GPU-batched sweep scheduler", "Implemented"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>

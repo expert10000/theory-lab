@@ -447,7 +447,7 @@
         "schema": { "const": "quantum-job/v1" },
         "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
         "operation": { "const": "sweep" },
-        "engine": { "enum": ["qutip", "native"] },
+        "engine": { "enum": ["qutip", "native", "dynamiqs"] },
         "model": { "$ref": "#/oneOf/1/properties/model" },
         "sweep": {
           "type": "object", "additionalProperties": false,

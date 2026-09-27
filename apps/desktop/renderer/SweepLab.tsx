@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { EngineName, EvolutionProgress, QuantumBridge, SweepAxis, SweepResult, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
+import type { SweepEngineName, EvolutionProgress, QuantumBridge, SweepAxis, SweepResult, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
 import { MODEL_REGISTRY, defaultsFor, type EvolutionModelId } from "../../../packages/models";
 import { SWEEP_DEFAULTS, sweepJob } from "../../../packages/models/sweep";
 
@@ -42,7 +42,7 @@ export function SweepLab({ bridge, status, restored, restoreEpoch, onSnapshot }:
   const [start, setStart] = useState("0");
   const [stop, setStop] = useState("20");
   const [initialIndex, setInitialIndex] = useState<0 | 1>(0);
-  const [engine, setEngine] = useState<EngineName>("qutip");
+  const [engine, setEngine] = useState<SweepEngineName>("qutip");
   const [result, setResult] = useState<SweepResult | null>(null);
   const [values, setValues] = useState<Float64Array | null>(null);
   const [progress, setProgress] = useState<EvolutionProgress | null>(null);
@@ -69,7 +69,7 @@ export function SweepLab({ bridge, status, restored, restoreEpoch, onSnapshot }:
   try {
     if (start.trim() && stop.trim()) preview = sweepJob(modelId, "preview", parameters, x, twoD ? y : null, Number(start), Number(stop), initialIndex, engine);
   } catch { /* validation is shown below */ }
-  const ready = status.state === "READY" && !!status.capabilities?.operations.includes("sweep") && !!status.capabilities.engines[engine].available;
+  const ready = status.state === "READY" && !!status.capabilities?.operations.includes("sweep") && !!status.capabilities.engines[engine]?.available;
   const stale = result && (!preview || result.engine.name !== engine || JSON.stringify(result.model) !== JSON.stringify(preview.model) || JSON.stringify(result.sweep) !== JSON.stringify(preview.sweep));
   async function run() {
     if (!preview || !ready || running) return;
@@ -92,12 +92,12 @@ export function SweepLab({ bridge, status, restored, restoreEpoch, onSnapshot }:
     } finally { active.current = null; setRunning(false); }
   }
   return <div className="cavity-lab">
-    <section className="hamiltonian-card"><div><p className="eyebrow">CHECKPOINTED PARAMETER SWEEP / QLAB-014</p><div className="formula">Model → parameter grid → final P₁</div></div><div className="model-convention"><span>1D / 2D</span><p>QuTiP or native · ħ = 1</p></div></section>
+    <section className="hamiltonian-card"><div><p className="eyebrow">CHECKPOINTED PARAMETER SWEEP / QLAB-014 + 019</p><div className="formula">Model → parameter grid → final P₁</div></div><div className="model-convention"><span>1D / 2D</span><p>QuTiP / native / GPU batch · ħ = 1</p></div></section>
     <section className="panel dynamics-settings"><div><p className="eyebrow">SWEEP JOB</p><h2>Map a quantum response.</h2><p>Choose a two-level model and vary one or two parameters. Completed cells are cached by model, engine and grid; rerun the same settings to resume after cancellation.</p></div>
       <div className="dynamics-fields"><label>Model<select aria-label="Sweep model" value={modelId} disabled={running} onChange={event => changeModel(event.target.value as EvolutionModelId)}>{(["driven_two_level", "landau_zener", "stuckelberg", "strong_drive"] as const).map(id => <option value={id} key={id}>{MODEL_REGISTRY[id].label}</option>)}</select></label>
         <label>Dimension<select aria-label="Sweep dimension" value={twoD ? "2d" : "1d"} disabled={running} onChange={event => setTwoD(event.target.value === "2d")}><option value="1d">1D curve</option><option value="2d">2D heatmap</option></select></label>
         <label>Initial state<select aria-label="Sweep initial state" value={initialIndex} disabled={running} onChange={event => setInitialIndex(Number(event.target.value) as 0 | 1)}><option value={0}>|0⟩</option><option value={1}>|1⟩</option></select></label>
-        <label>Engine<select aria-label="Sweep engine" value={engine} disabled={running} onChange={event => setEngine(event.target.value as EngineName)}><option value="qutip">QuTiP</option><option value="native">Native · SciPy</option></select></label>
+        <label>Engine<select aria-label="Sweep engine" value={engine} disabled={running} onChange={event => setEngine(event.target.value as SweepEngineName)}><option value="qutip">QuTiP</option><option value="native">Native · SciPy</option><option value="dynamiqs" disabled={!status.capabilities?.engines.dynamiqs?.available}>Dynamiqs · GPU batched</option></select></label>
       </div>
       <div className="sweep-axis-grid"><AxisEditor axis={x} setAxis={setX} modelId={modelId} title="X axis" disabled={running}/>{twoD && <AxisEditor axis={y} setAxis={setY} modelId={modelId} title="Y axis" disabled={running}/>}</div>
       <div className="dynamics-fields">{MODEL_REGISTRY[modelId].parameters.map(parameter => <label key={parameter.key}>Base {parameter.label}<input aria-label={`Base ${parameter.label}`} type="number" value={parameters[parameter.key]} disabled={running} onChange={event => setParameters(current => ({ ...current, [parameter.key]: event.target.value }))}/></label>)}

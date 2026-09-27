@@ -1,5 +1,5 @@
 import Ajv from "ajv";
-import type { CavityModel, EngineName, EvolutionEngineName, SweepAxis } from "./index";
+import type { CavityModel, EngineName, EvolutionEngineName, SweepEngineName, SweepAxis } from "./index";
 
 export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "presets" | "runs" | "roadmap" | "backend";
 export type WorkspaceEngine = EngineName | "compare";
@@ -20,7 +20,7 @@ export interface WorkspaceSnapshot {
     photons: string; start: string; stop: string; samples: string; engine: EngineName };
   sweep: { modelId: "driven_two_level" | "landau_zener" | "stuckelberg" | "strong_drive";
     parameters: Record<string, string>; x: SweepAxis; y: SweepAxis; twoD: boolean;
-    start: string; stop: string; initialIndex: 0 | 1; engine: EngineName };
+    start: string; stop: string; initialIndex: 0 | 1; engine: SweepEngineName };
 }
 export interface RunSummary {
   schema: "quantum-run-manifest/v1";
@@ -68,7 +68,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   }),
   sweep: block(["modelId", "parameters", "x", "y", "twoD", "start", "stop", "initialIndex", "engine"], {
     modelId: evolutionModel, parameters: values, x: axis, y: axis, twoD: { type: "boolean" },
-    start: shortText, stop: shortText, initialIndex: { enum: [0, 1] }, engine,
+    start: shortText, stop: shortText, initialIndex: { enum: [0, 1] }, engine: { enum: ["qutip", "native", "dynamiqs"] },
   }),
 });
 const ajv = new Ajv({ strict: true, allErrors: true });

@@ -57,6 +57,7 @@ export interface EvolutionSolver {
 export type Observable = "p0" | "p1" | "sigma_x" | "sigma_y" | "sigma_z";
 export type EngineName = "qutip" | "native";
 export type EvolutionEngineName = EngineName | "dynamiqs";
+export type SweepEngineName = EvolutionEngineName;
 export interface SpectrumJob {
   schema: "quantum-job/v1";
   jobId: string;
@@ -126,7 +127,7 @@ export interface SweepJob {
   schema: "quantum-job/v1";
   jobId: string;
   operation: "sweep";
-  engine: EngineName;
+  engine: SweepEngineName;
   model: EvolutionModel;
   sweep: {
     x: SweepAxis;
@@ -266,7 +267,7 @@ export interface SweepResult {
   operation: "sweep";
   model: EvolutionModel;
   sweep: SweepJob["sweep"];
-  engine: { name: EngineName; version: string };
+  engine: { name: SweepEngineName; version: string; device?: string };
   data: {
     schema: "quantum-sweep-data/v1";
     format: "f64le";

@@ -61,7 +61,7 @@ test("native engine is accepted by the existing v1 job and result shapes", () =>
   assert.ok(isQuantumJob({ ...fixture, engine: "native" }));
   assert.ok(isQuantumJob({ ...evolutionFixture, engine: "native" }));
 });
-test("Dynamiqs is an additive evolution-only v1 engine", () => {
+test("Dynamiqs v1 engine does not extend static spectrum", () => {
   assert.ok(isQuantumJob({ ...evolutionFixture, engine: "dynamiqs" }));
   assert.equal(isQuantumJob({ ...fixture, engine: "dynamiqs" }), false);
   const caps = {
@@ -76,6 +76,14 @@ test("Dynamiqs is an additive evolution-only v1 engine", () => {
   assert.ok(isWorkerCapabilities(caps));
   assert.equal(isWorkerCapabilities({ ...caps, engines: { ...caps.engines,
     dynamiqs: { available: true, version: "0.3.6" } } }), false);
+});
+test("Dynamiqs sweep uses the existing row-major binary contract", () => {
+  const gpu = sweepJob("driven_two_level", "gpu-sweep", {
+    delta: "1", amplitude: "0.5", frequency: "1", phase: "0",
+  }, { parameter: "amplitude", start: 0, stop: 1, points: 3 }, null,
+  0, 2, 0, "dynamiqs");
+  assert.ok(isQuantumJob(gpu));
+  assert.equal(isQuantumJob({ ...gpu, operation: "cavity" }), false);
 });
 test("capabilities advertise only implemented operations", () => {
   const caps = {

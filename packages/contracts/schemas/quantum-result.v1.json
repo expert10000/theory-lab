@@ -803,7 +803,7 @@
         },
         "engine": {
           "type": "object", "additionalProperties": false,
-          "properties": { "name": { "enum": ["qutip", "native"] }, "version": { "type": "string", "minLength": 1 } },
+          "properties": { "name": { "enum": ["qutip", "native", "dynamiqs"] }, "version": { "type": "string", "minLength": 1 }, "device": { "type": "string", "minLength": 1 } },
           "required": ["name", "version"]
         },
         "data": {

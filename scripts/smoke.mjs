@@ -429,6 +429,13 @@ try {
   await page.getByTestId("sweep-heatmap").waitFor();
   assert.equal(await page.getByTestId("sweep-heatmap").locator(".sweep-heatmap button").count(), 20);
   await page.screenshot({ path: "artifacts/desktop-sweep-heatmap.png", fullPage: true });
+  if (gpu.engines.dynamiqs?.available) {
+    await page.getByRole("combobox", { name: "Sweep engine" }).selectOption("dynamiqs");
+    await page.getByTestId("run-sweep").evaluate(element => element.scrollIntoView({ block: "center" }));
+    await page.getByTestId("run-sweep").click();
+    await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 90000 });
+    assert.equal(await page.getByTestId("sweep-heatmap").locator(".sweep-heatmap button").count(), 20);
+  }
   await page.getByRole("tab", { name: "Presets" }).click();
   await page.getByTestId("preset-page").waitFor();
   assert.equal(await page.locator(".preset-card").count(), 6);

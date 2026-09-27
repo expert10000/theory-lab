@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018 adds an optional Dynamiqs GPU evolution adapter.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018–019 add optional Dynamiqs GPU evolution and batched sweeps.
 
 ## Run on Windows
 
@@ -43,9 +43,9 @@ Select **Floquet / strong drive** to compute the one-period propagator of the pe
 
 ## Parameter sweeps
 
-The **Sweeps** workspace varies one or two parameters of Rabi, Landau–Zener, Stückelberg, or strong-drive evolution and maps final P₁. Select QuTiP or native SciPy, a time window, axes and resolution (up to 10,000 cells), then run. A 1D curve or clickable 2D heatmap displays the result. Completed cells are cached by model, grid and engine version; cancel and rerun unchanged settings to resume. The result reports reused and newly computed cells. A sweep is a separate job, not the fixed Floquet preview map.
+The **Sweeps** workspace varies one or two parameters of Rabi, Landau–Zener, Stückelberg, or strong-drive evolution and maps final P₁. Select QuTiP, native SciPy, or available Dynamiqs GPU, a time window, axes and resolution (up to 10,000 cells), then run. A 1D curve or clickable 2D heatmap displays the result. Completed cells are cached by model, grid, engine version and GPU device; cancel and rerun unchanged settings to resume. The GPU scheduler solves up to 32 Hamiltonians per batch and checkpoints each batch. The result reports reused and newly computed cells. A sweep is a separate job, not the fixed Floquet preview map.
 
-## Optional Dynamiqs GPU evolution (QLAB-018)
+## Optional Dynamiqs GPU evolution and sweeps (QLAB-018–019)
 
 On a Linux or WSL2 CUDA 12 setup with a compatible NVIDIA driver, install the optional stack *after* the base Python worker requirements:
 
@@ -53,7 +53,7 @@ On a Linux or WSL2 CUDA 12 setup with a compatible NVIDIA driver, install the op
 .venv/bin/python -m pip install -r workers/quantum-python/requirements-dynamiqs-gpu.txt
 ```
 
-Restart the worker. The **Backend** tab reports the actual JAX device; **Dynamics** enables Dynamiqs only if the pinned package imports and JAX sees a GPU. This adapter uses Dynamiqs `sesolve` for the four two-level evolution models, produces the same verified ten-column artifact, and checks cancellation between bounded GPU chunks. It does not yet implement sweep batching, cavity QED, Lindblad, a Dynamiqs Floquet analysis, or a Windows-native CUDA worker. The published Dynamiqs 0.3.6 wheel failed import in our Python 3.12/JAX 0.11.2 test; the optional file pins an inspected upstream commit that fixes that issue. The GPU path is an architectural adapter, not a speedup claim for a two-state problem.
+Restart the worker. The **Backend** tab reports the actual JAX device; **Dynamics** and **Sweeps** enable Dynamiqs only if the pinned package imports and JAX sees a GPU. Evolution uses `sesolve` for the four two-level models and produces the verified ten-column artifact. Sweeps batch up to 32 Hamiltonians in one solve and retain the existing verified row-major data and resume cache. Cancellation is checked between GPU chunks/batches. Cavity QED, Lindblad, Dynamiqs Floquet analysis, and a Windows-native CUDA worker remain out of scope. The published Dynamiqs 0.3.6 wheel failed import in our Python 3.12/JAX 0.11.2 test; the optional file pins an inspected upstream commit that fixes that issue. The GPU path is an architectural adapter, not a speedup claim for a two-state problem.
 
 ## Volume VIII presets
 

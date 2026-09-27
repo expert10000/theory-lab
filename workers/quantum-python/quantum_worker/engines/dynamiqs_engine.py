@@ -69,3 +69,48 @@ def states(job, cancelled, chunk_size=128):
             yield last + offset, tuple(complex(value) for value in vector)
         state = result.final_state
         last = end
+
+
+def batched_final_populations(models, initial_index, t_start, t_stop, cancelled):
+    """Evolve independent two-level Hamiltonians in one GPU solver call."""
+    if not availability()["available"]:
+        raise ValueError("Dynamiqs GPU is unavailable")
+    if cancelled.is_set():
+        return None
+    import dynamiqs as dq
+    import jax
+    import jax.numpy as jnp
+
+    jax.config.update("jax_enable_x64", True)
+    dq.set_device("gpu")
+    if not models:
+        raise ValueError("GPU batch must contain models")
+    kind = models[0]["type"]
+    if any(model["type"] != kind for model in models):
+        raise ValueError("GPU batch requires one model type")
+    parameters = {name: jnp.asarray([model["parameters"][name] for model in models], dtype=jnp.float64)
+                  for name in models[0]["parameters"]}
+
+    def matrix(t):
+        if kind in ("driven_two_level", "strong_drive"):
+            z = 0.5 * parameters["delta"]
+            x = 0.5 * parameters["amplitude"] * jnp.cos(parameters["frequency"] * t + parameters["phase"])
+        elif kind == "landau_zener":
+            z = 0.5 * (parameters["sweepRate"] * t + parameters["bias"])
+            x = 0.5 * parameters["gap"]
+        elif kind == "stuckelberg":
+            z = 0.5 * (parameters["sweepRate"] * (t * t - parameters["turnTime"] ** 2)
+                       / (2 * parameters["turnTime"]) + parameters["bias"])
+            x = 0.5 * parameters["gap"]
+        else:
+            raise ValueError("Unsupported GPU batch model")
+        return dq.asqarray(jnp.stack((jnp.stack((z, x), axis=-1),
+                                      jnp.stack((x, -z), axis=-1)), axis=-2))
+
+    result = dq.sesolve(dq.timecallable(matrix), dq.basis(2, initial_index),
+                        jnp.asarray([t_start, t_stop], dtype=jnp.float64),
+                        progress_meter=False, save_states=False)
+    if cancelled.is_set():
+        return None
+    vectors = dq.to_numpy(result.final_state).reshape(len(models), 2)
+    return [float(min(1, max(0, abs(vector[1]) ** 2))) for vector in vectors]

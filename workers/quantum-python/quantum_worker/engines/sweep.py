@@ -14,6 +14,7 @@ from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.native_engine import NativeEvolution, libraries
 from quantum_worker.engines.qutip_engine import engine
+from quantum_worker.engines.dynamiqs_engine import availability as dynamiqs_availability, batched_final_populations
 from quantum_worker.models import build
 
 BOUNDS = {
@@ -80,11 +81,20 @@ def sweep(job, output_dir, cancelled, progress):
     if total > 10000:
         raise ValueError("Sweep exceeds 10,000 cells")
     started = perf_counter()
-    _, scipy, _ = libraries()
     qt = engine() if job["engine"] == "qutip" else None
-    version = qt.__version__ if qt else scipy.__version__
+    gpu = dynamiqs_availability() if job["engine"] == "dynamiqs" else None
+    if gpu and not gpu["available"]:
+        raise ValueError("Dynamiqs GPU is unavailable")
+    if gpu:
+        version = gpu["version"]
+    elif qt:
+        version = qt.__version__
+    else:
+        _, scipy, _ = libraries()
+        version = scipy.__version__
     # A library upgrade can change solver output; never reuse an older engine's cells.
     key_payload = {"engine": job["engine"], "engineVersion": version,
+                   "device": gpu["device"] if gpu else None,
                    "model": job["model"], "sweep": setting}
     key = hashlib.sha256(json.dumps(key_payload, sort_keys=True, separators=(",", ":"),
                                     allow_nan=False).encode("utf-8")).hexdigest()
@@ -106,7 +116,36 @@ def sweep(job, output_dir, cancelled, progress):
     completed = reused
     computed = 0
     progress(completed, total)
+    def model_at(x_value, y_value):
+        model = {"type": job["model"]["type"],
+                 "parameters": dict(job["model"]["parameters"])}
+        model["parameters"][setting["x"]["parameter"]] = x_value
+        if setting["y"]:
+            model["parameters"][setting["y"]["parameter"]] = y_value
+        return model
+
     for y_index, y_value in enumerate(y_values):
+        if gpu:
+            pending = [x_index for x_index in range(len(x_values))
+                       if not math.isfinite(values[y_index * len(x_values) + x_index])]
+            for offset in range(0, len(pending), 32):
+                if cancelled.is_set():
+                    _save_atomic(cache_path, values)
+                    return None
+                indices = pending[offset:offset + 32]
+                models = [model_at(x_values[index], y_value) for index in indices]
+                populations = batched_final_populations(models, setting["initialIndex"],
+                    setting["tStart"], setting["tStop"], cancelled)
+                if populations is None:
+                    _save_atomic(cache_path, values)
+                    return None
+                for x_index, population in zip(indices, populations):
+                    values[y_index * len(x_values) + x_index] = population
+                    computed += 1
+                    completed += 1
+                _save_atomic(cache_path, values)
+                progress(completed, total)
+            continue
         for x_index, x_value in enumerate(x_values):
             index = y_index * len(x_values) + x_index
             if math.isfinite(values[index]):
@@ -114,11 +153,7 @@ def sweep(job, output_dir, cancelled, progress):
             if cancelled.is_set():
                 _save_atomic(cache_path, values)
                 return None
-            model = {"type": job["model"]["type"],
-                     "parameters": dict(job["model"]["parameters"])}
-            model["parameters"][setting["x"]["parameter"]] = x_value
-            if setting["y"]:
-                model["parameters"][setting["y"]["parameter"]] = y_value
+            model = model_at(x_value, y_value)
             population = _final_population(job, model, cancelled, qt)
             if population is None:
                 _save_atomic(cache_path, values)
@@ -149,5 +184,7 @@ def sweep(job, output_dir, cancelled, progress):
                        "computedAt": datetime.now(timezone.utc).isoformat(),
                        "durationMs": (perf_counter() - started) * 1000},
     }
+    if gpu:
+        result["engine"]["device"] = gpu["device"]
     validate("quantum-result", result)
     return result

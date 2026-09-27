@@ -10,6 +10,7 @@ from pathlib import Path
 
 from quantum_worker.contracts import validate
 from quantum_worker.engines.sweep import sweep
+from quantum_worker.engines.dynamiqs_engine import availability as gpu_availability
 
 
 def job(engine="native", two_dimensional=False):
@@ -25,6 +26,32 @@ def job(engine="native", two_dimensional=False):
 
 
 class SweepTests(unittest.TestCase):
+    @unittest.skipUnless(gpu_availability()["available"], "optional Dynamiqs CUDA GPU unavailable")
+    def test_gpu_batch_agreement_and_checkpoint_resume(self):
+        with tempfile.TemporaryDirectory() as directory:
+            gpu_job = job("dynamiqs", True)
+            cancel = threading.Event()
+            progress = []
+            def stop_after_batch(done, total):
+                progress.append((done, total))
+                if done >= 14:
+                    cancel.set()
+            self.assertIsNone(sweep(gpu_job, directory, cancel, stop_after_batch))
+            self.assertFalse((Path(directory) / (gpu_job["jobId"] + ".f64")).exists())
+            resumed_job = copy.deepcopy(gpu_job)
+            resumed_job["jobId"] = "sweep-gpu-resumed"
+            gpu = sweep(resumed_job, directory, threading.Event(), lambda *_: None)
+            reference = sweep(job("qutip", True), directory, threading.Event(), lambda *_: None)
+            validate("quantum-result", gpu)
+            self.assertEqual(gpu["cache"]["reusedPoints"], 14)
+            self.assertEqual(gpu["cache"]["computedPoints"], 21)
+            self.assertEqual(gpu["engine"]["device"], gpu_availability()["device"])
+            def cells(result):
+                raw = (Path(directory) / result["data"]["path"]).read_bytes()
+                self.assertEqual(hashlib.sha256(raw).hexdigest(), result["data"]["sha256"])
+                return struct.unpack("<35d", raw)
+            self.assertLess(max(abs(a-b) for a,b in zip(cells(gpu), cells(reference))), 5e-4)
+
     def test_1d_and_2d_engines_agree(self):
         with tempfile.TemporaryDirectory() as directory:
             native_job = job("native", True)
