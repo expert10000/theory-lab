@@ -48,6 +48,10 @@ class JobManager:
             self._active[1].set()
             return {"jobId": job_id, "accepted": True}
 
+    def active_job_id(self):
+        with self._lock:
+            return self._active[0] if self._active is not None else None
+
     def shutdown(self):
         with self._lock:
             active = self._active

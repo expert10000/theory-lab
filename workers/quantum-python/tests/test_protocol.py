@@ -15,6 +15,10 @@ class ProtocolTests(unittest.TestCase):
         validate("worker-capabilities", caps)
         self.assertTrue(caps["engines"]["native"]["available"])
         self.assertEqual(self.call("health")[0]["result"]["status"], "ok")
+        resources = self.call("resources")[0]["result"]
+        validate("worker-resources", resources)
+        self.assertGreaterEqual(resources["cpu"]["logicalCores"], 1)
+        self.assertIsNone(resources["job"]["activeId"])
         self.assertTrue(self.call("shutdown")[1])
 
     def test_errors_and_notifications(self):

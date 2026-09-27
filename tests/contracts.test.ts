@@ -4,6 +4,7 @@ import {
   isQuantumJob,
   isQuantumResult,
   isWorkerCapabilities,
+  isWorkerResources,
 } from "../packages/contracts";
 import fixture from "../packages/contracts/fixtures/two-level.job.json";
 import evolutionFixture from "../packages/contracts/fixtures/rabi-evolution.job.json";
@@ -23,6 +24,13 @@ test("many-body contract bounds a full-basis Ising-chain job", () => {
 
 test("canonical job fixture is compatible with v1", () =>
   assert.ok(isQuantumJob(fixture)));
+test("worker resource snapshot is bounded and versioned", () => {
+  const snapshot = { schema: "worker-resources/v1", platform: { system: "Linux", machine: "x86_64" },
+    cpu: { logicalCores: 8 }, memory: { totalBytes: 8_000_000_000 }, job: { activeId: null } };
+  assert.ok(isWorkerResources(snapshot));
+  assert.equal(isWorkerResources({ ...snapshot, job: { activeId: "../secret" } }), false);
+  assert.equal(isWorkerResources({ ...snapshot, token: "secret" }), false);
+});
 test("evolution job accepts optional Layer-1 source IDs and rejects unsupported solvers", () => {
   assert.ok(isQuantumJob(evolutionFixture));
   assert.equal(

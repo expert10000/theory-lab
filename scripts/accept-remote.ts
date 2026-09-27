@@ -24,7 +24,11 @@ try {
   const status = await worker.start();
   assert.equal(status.state, "READY", status.detail);
   assert.equal(status.transport, "ssh");
+  assert.equal(status.connection?.target, process.env.QLAB_REMOTE_SSH_TARGET);
   assert.ok(status.capabilities?.engines.native.available);
+  const resources = await worker.resources();
+  assert.equal(resources.schema, "worker-resources/v1");
+  assert.ok(resources.cpu.logicalCores >= 1);
 
   const spectrum = spectrumJob(randomUUID(), { delta: "1", omega: "0.8" }, "native");
   const diagonal = await worker.request("quantum.run", spectrum);

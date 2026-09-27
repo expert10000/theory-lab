@@ -1,5 +1,5 @@
-import React from "react";
-import type { WorkerStatus } from "../../../packages/contracts";
+import React, { useEffect, useState } from "react";
+import type { WorkerResources, WorkerStatus } from "../../../packages/contracts";
 
 const columns = [
   "time",
@@ -16,13 +16,26 @@ const columns = [
 
 export function BackendPanel({ status }: { status: WorkerStatus }) {
   const engines = status.capabilities?.engines;
+  const [resources, setResources] = useState<WorkerResources | null>(null);
+  const [resourceError, setResourceError] = useState("");
+  useEffect(() => {
+    if (status.state !== "READY") { setResources(null); return; }
+    let active = true;
+    const refresh = () => void window.quantum.getResources().then(value => {
+      if (active) { setResources(value); setResourceError(""); }
+    }).catch(() => { if (active) setResourceError("Resource snapshot unavailable"); });
+    refresh();
+    const timer = setInterval(refresh, 5000);
+    return () => { active = false; clearInterval(timer); };
+  }, [status.state, status.connection?.target]);
+  const gib = resources?.memory.totalBytes == null ? "Unavailable" : `${(resources.memory.totalBytes / 2 ** 30).toFixed(1)} GiB`;
   return (
     <section className="backend-page" data-testid="backend-page">
       <div className="backend-intro panel">
         <p className="eyebrow">DESKTOP BACKEND / QLAB-009</p>
         <h2>Methods and formats, in the open.</h2>
         <p>
-          The renderer never imports scientific Python code. A supervised {status.transport === "ssh" ? "SSH remote" : "local"}
+          The renderer never imports scientific Python code. A supervised {status.transport === "ssh" ? "SSH remote" : "local"}{" "}
           worker receives validated jobs and returns results through Electron’s
           narrow preload bridge.
         </p>
@@ -121,12 +134,31 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           </p>
           <small>hello · capabilities · health · run · cancel · shutdown</small>
         </article>
+        <article className="panel backend-card" data-testid="worker-resources">
+          <p className="eyebrow">LIVE WORKER RESOURCES</p>
+          <h2>{status.state === "READY" ? "Ready" : status.state.toLowerCase()}</h2>
+          <dl className="backend-facts">
+            <div><dt>Platform</dt><dd>{resources ? `${resources.platform.system} / ${resources.platform.machine}` : "—"}</dd></div>
+            <div><dt>Logical CPU cores</dt><dd>{resources?.cpu.logicalCores ?? "—"}</dd></div>
+            <div><dt>Physical memory</dt><dd>{gib}</dd></div>
+            <div><dt>Active job</dt><dd>{resources?.job.activeId ?? "None"}</dd></div>
+            <div><dt>GPU adapter</dt><dd>{engines?.dynamiqs?.available ? engines.dynamiqs.device : "Unavailable"}</dd></div>
+          </dl>
+          <small>{resourceError || "Reported by the Python worker, not the renderer machine · refreshes every 5 s"}</small>
+        </article>
         <article className="panel backend-card">
           <p className="eyebrow">WORKER TRANSPORT / QLAB-024</p>
           <h2>{status.transport === "ssh" ? "Remote SSH" : "Local stdio"}</h2>
-          <p>{status.transport === "ssh" ? status.detail : "Python runs on this computer; JSON-RPC stays on child-process pipes."}</p>
-          <p>In SSH mode, numerical artifacts travel separately via SCP/SFTP. Electron verifies their size and SHA-256 before displaying or saving them. Host-key checking and noninteractive authentication are required.</p>
-          <small>Opt-in through QLAB_REMOTE_SSH_TARGET and QLAB_REMOTE_ROOT · no embedded credentials</small>
+          <p>{status.detail}</p>
+          <dl className="backend-facts" data-testid="ssh-connection">
+            <div><dt>Default</dt><dd>Local Python over stdio</dd></div>
+            <div><dt>Selected SSH target</dt><dd>{status.connection?.target ?? "None configured"}</dd></div>
+            <div><dt>Remote checkout</dt><dd>{status.connection?.root ?? "QLAB_REMOTE_ROOT required for SSH"}</dd></div>
+            <div><dt>Python</dt><dd>{status.connection?.python ?? "Local .venv"}</dd></div>
+            <div><dt>Remote artifacts</dt><dd>{status.connection?.artifacts ?? "Not applicable"}</dd></div>
+            <div><dt>Authentication</dt><dd>SSH key · BatchMode · strict host-key check</dd></div>
+          </dl>
+          <small>Set QLAB_REMOTE_SSH_TARGET and QLAB_REMOTE_ROOT before starting the app. SSH artifacts use SCP/SFTP and SHA-256 verification. No private keys or tokens are exposed here.</small>
         </article>
         <article className="panel backend-card">
           <p className="eyebrow">DATA PLANE</p>

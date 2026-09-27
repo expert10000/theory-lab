@@ -2,8 +2,9 @@ import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { defaultsFor, evolutionJob, spectrumJob } from "../../packages/models";
 import type { EvolutionResult, RunSummary, SpectrumResult, WorkerStatus } from "../../packages/contracts";
+import { WorkerDashboard } from "./WorkerDashboard";
 
-type Mode = "spectrum" | "dynamics";
+type Mode = "spectrum" | "dynamics" | "worker";
 type Engine = "qutip" | "native";
 type Reading = { result: SpectrumResult | EvolutionResult; points?: { time: number; p1: number }[] };
 
@@ -103,13 +104,15 @@ function App() {
       <aside><div className="eyebrow">LABORATORIES</div>
         <button className={mode === "spectrum" ? "nav selected" : "nav"} onClick={() => setMode("spectrum")}><span>01</span> Two-level spectrum</button>
         <button className={mode === "dynamics" ? "nav selected" : "nav"} onClick={() => setMode("dynamics")}><span>02</span> Rabi dynamics</button>
+        <button className={mode === "worker" ? "nav selected" : "nav"} onClick={() => setMode("worker")}><span>03</span> Worker &amp; API</button>
         <div className="aside-note">Runs travel through the versioned job contract to the supervised Python worker. Binary dynamics data is checked in this browser before plotting.</div>
         <div className="side-footer">QuTiP / NumPy · ℏ = 1</div>
       </aside>
       <section className="workspace">
-        <div className="page-intro"><div><div className="eyebrow">LIVE COMPUTATION</div><h1>{mode === "spectrum" ? "Two-level spectrum" : "Rabi dynamics"}</h1><p>{mode === "spectrum" ? "Diagonalize a coupled two-state Hamiltonian and inspect its eigenenergies." : "Evolve a driven qubit and inspect its excited-state population."}</p></div><div className="model-badge">{mode === "spectrum" ? "H = ½(Δσz + Ωσx)" : "H(t) = ½Δσz + ½A cos(ωt)σx"}</div></div>
+        {mode !== "worker" && <div className="page-intro"><div><div className="eyebrow">LIVE COMPUTATION</div><h1>{mode === "spectrum" ? "Two-level spectrum" : "Rabi dynamics"}</h1><p>{mode === "spectrum" ? "Diagonalize a coupled two-state Hamiltonian and inspect its eigenenergies." : "Evolve a driven qubit and inspect its excited-state population."}</p></div><div className="model-badge">{mode === "spectrum" ? "H = ½(Δσz + Ωσx)" : "H(t) = ½Δσz + ½A cos(ωt)σx"}</div></div>}
         {!token ? <form className="connect card" onSubmit={connect}><div className="eyebrow">CONNECT TO GATEWAY</div><h2>Enter access token</h2><p>The token is held in memory only. Refreshing the page clears it. Use HTTPS for access beyond this computer.</p>
           <div className="connect-row"><input aria-label="Gateway access token" type="password" autoComplete="off" value={tokenDraft} onChange={event => setTokenDraft(event.target.value)} placeholder="Gateway access token" required/><button className="primary">Connect</button></div></form> :
+          mode === "worker" ? <WorkerDashboard token={token} onStatus={setStatus}/> :
           <div className="grid"><form className="card controls" onSubmit={run}><div className="eyebrow">01 / CONFIGURE</div><h2>Experiment controls</h2>
             <div className="field"><label htmlFor="engine">Numerical engine</label><select id="engine" value={engine} onChange={event => setEngine(event.target.value as Engine)}><option value="qutip" disabled={!status?.capabilities?.engines.qutip.available}>QuTiP</option><option value="native" disabled={!status?.capabilities?.engines.native.available}>Native NumPy / SciPy</option></select></div>
             <div className="field"><label htmlFor="delta">Detuning Δ</label><input id="delta" type="number" step="any" value={delta} onChange={event => setDelta(event.target.value)} required/></div>

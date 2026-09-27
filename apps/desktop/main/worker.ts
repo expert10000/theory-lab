@@ -3,7 +3,9 @@ import { join } from "node:path";
 import { EventEmitter } from "node:events";
 import {
   isWorkerCapabilities,
+  isWorkerResources,
   type WorkerStatus,
+  type WorkerResources,
 } from "../../../packages/contracts";
 import { fetchRemoteArtifact, remoteConfig, sshLaunch, type RemoteConfig } from "./remote";
 
@@ -33,6 +35,7 @@ export class WorkerSupervisor extends EventEmitter {
   private fail(message: string) {
     this.status = { state: "ERROR", detail: message, capabilities: null,
       transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local" };
+    if (this.remote) this.status.connection = { ...this.remote };
     this.emit("unavailable", message);
     if (this.heartbeat) clearInterval(this.heartbeat);
     for (const pending of this.pending.values()) {
@@ -60,6 +63,7 @@ export class WorkerSupervisor extends EventEmitter {
       capabilities: null,
       transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local",
     };
+    this.remote = null;
     try { this.remote = remoteConfig(process.env); }
     catch (error) {
       this.fail(error instanceof Error ? error.message : String(error));
@@ -158,6 +162,7 @@ export class WorkerSupervisor extends EventEmitter {
         detail: this.remote ? `Remote SSH worker connected: ${this.remote.target}` : "Worker connected",
         capabilities,
         transport: this.remote ? "ssh" : "local",
+        connection: this.remote ? { ...this.remote } : undefined,
       };
       this.heartbeat = setInterval(() => {
         if (!this.pending.size)
@@ -173,6 +178,12 @@ export class WorkerSupervisor extends EventEmitter {
       status: string;
     };
     if (health.status !== "ok") throw new Error("Worker health check failed");
+  }
+  async resources(): Promise<WorkerResources> {
+    if (this.status.state !== "READY") throw new Error("Worker not ready");
+    const value = await this.request("resources", {}, 5000);
+    if (!isWorkerResources(value)) throw new Error("Invalid worker resource snapshot");
+    return value;
   }
   artifactDirectory(localDir: string): string {
     return this.remote?.artifacts ?? localDir;
@@ -239,6 +250,7 @@ export class WorkerSupervisor extends EventEmitter {
       detail: "Worker stopped",
       capabilities: null,
       transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local",
+      connection: this.remote ? { ...this.remote } : undefined,
     };
   }
 }

@@ -41,6 +41,7 @@ try {
       "evolve",
       "exportRun",
       "getCapabilities",
+      "getResources",
       "getStatus",
       "lindblad",
       "listRuns",
@@ -135,6 +136,8 @@ try {
   assert.ok(
     await page.getByText("quantum-data/v1", { exact: true }).isVisible(),
   );
+  await page.getByTestId("worker-resources").getByText("Logical CPU cores").waitFor();
+  assert.match(await page.getByTestId("ssh-connection").innerText(), /Default\s+Local Python over stdio/);
   await page.screenshot({
     path: "artifacts/desktop-backend.png",
     fullPage: true,

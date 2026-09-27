@@ -1,5 +1,6 @@
 """Line-delimited JSON-RPC 2.0. stdout is reserved for protocol messages."""
 import json
+import os
 import platform
 import sys
 import traceback
@@ -27,6 +28,33 @@ def capabilities():
     validate("worker-capabilities", result)
     return result
 
+def resources():
+    total_memory = None
+    try:
+        if hasattr(os, "sysconf"):
+            total_memory = os.sysconf("SC_PHYS_PAGES") * os.sysconf("SC_PAGE_SIZE")
+        elif sys.platform == "win32":
+            import ctypes
+            class MemoryStatus(ctypes.Structure):
+                _fields_ = [("length", ctypes.c_ulong), ("memoryLoad", ctypes.c_ulong),
+                            ("totalPhysical", ctypes.c_ulonglong), ("availablePhysical", ctypes.c_ulonglong),
+                            ("totalPageFile", ctypes.c_ulonglong), ("availablePageFile", ctypes.c_ulonglong),
+                            ("totalVirtual", ctypes.c_ulonglong), ("availableVirtual", ctypes.c_ulonglong),
+                            ("availableExtendedVirtual", ctypes.c_ulonglong)]
+            memory = MemoryStatus()
+            memory.length = ctypes.sizeof(MemoryStatus)
+            if ctypes.windll.kernel32.GlobalMemoryStatusEx(ctypes.byref(memory)):
+                total_memory = memory.totalPhysical
+    except (OSError, ValueError, AttributeError):
+        pass
+    result = {"schema": "worker-resources/v1",
+              "platform": {"system": platform.system(), "machine": platform.machine()},
+              "cpu": {"logicalCores": os.cpu_count() or 1},
+              "memory": {"totalBytes": total_memory},
+              "job": {"activeId": MANAGER.active_job_id()}}
+    validate("worker-resources", result)
+    return result
+
 def dispatch(method, params):
     if method == "quantum.start":
         return MANAGER.start(params.get("job"), params.get("outputDir"))
@@ -44,6 +72,8 @@ def dispatch(method, params):
         return {"protocol": 1, "workerVersion": __version__}
     if method == "capabilities":
         return capabilities()
+    if method == "resources":
+        return resources()
     if method == "health":
         return {"status": "ok"}
     if method == "shutdown":

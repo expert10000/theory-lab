@@ -19,6 +19,9 @@ test("gateway enforces authentication and origin before running versioned jobs",
     const status = await fetch(url, { headers: { Authorization: `Bearer ${token}` } });
     assert.equal(status.status, 200);
     assert.equal((await status.json()).state, "READY");
+    const resources = await fetch(`${gateway.origin}/api/resources`, { headers: { Authorization: `Bearer ${token}` } });
+    assert.equal(resources.status, 200);
+    assert.equal((await resources.json()).schema, "worker-resources/v1");
 
     const job = spectrumJob("gateway-spectrum", defaultsFor("two_level"), "native");
     const resultResponse = await fetch(`${gateway.origin}/api/jobs`, { method: "POST",
@@ -36,6 +39,10 @@ test("gateway enforces authentication and origin before running versioned jobs",
     const runs = await fetch(`${gateway.origin}/api/runs`, { headers: { Authorization: `Bearer ${token}` } });
     assert.equal(runs.status, 200);
     assert.equal((await runs.json())[0].jobId, job.jobId);
+    const activity = await fetch(`${gateway.origin}/api/activity`, { headers: { Authorization: `Bearer ${token}` } });
+    const calls = await activity.json();
+    assert.equal(calls.schema, "gateway-activity/v1");
+    assert.ok(calls.recent.some((call: { route: string; status: number }) => call.route === "/api/jobs" && call.status === 200));
   } finally {
     await gateway.close();
     await rm(dataDir, { recursive: true, force: true });

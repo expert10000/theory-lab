@@ -799,7 +799,7 @@ export function App() {
           </span>
         </div>
         <div>
-          <span>LOCAL COMPUTE</span>
+          <span>{status.transport === "ssh" ? "SSH COMPUTE" : "LOCAL COMPUTE"}</span>
           <button
             onClick={() => void restart()}
             disabled={busy || restarting || status.state === "STARTING"}

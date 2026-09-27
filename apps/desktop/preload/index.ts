@@ -18,6 +18,7 @@ const bridge: QuantumBridge = {
   },
   getStatus: () => ipcRenderer.invoke("quantum:status"),
   getCapabilities: () => ipcRenderer.invoke("quantum:capabilities"),
+  getResources: () => ipcRenderer.invoke("quantum:resources"),
   restart: () => ipcRenderer.invoke("quantum:restart"),
   saveWorkspace: (snapshot) => ipcRenderer.invoke("quantum:save-workspace", snapshot),
   loadWorkspace: () => ipcRenderer.invoke("quantum:load-workspace"),

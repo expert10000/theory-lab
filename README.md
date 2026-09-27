@@ -108,6 +108,8 @@ Open `http://127.0.0.1:8765` and paste the token. The browser retains it only in
 
 `npm run test:web` builds the client and runs a real headless Chrome → gateway → Python → browser smoke test. It requires Google Chrome on the machine and saves a screenshot under ignored `artifacts/`.
 
+Open **Worker & API** in the web client for live worker state, CPU/RAM, engine inventory, methods, endpoint descriptions and recent sanitized calls. The Electron **Backend** tab shows the active SSH target and its resolved worker paths, or states that local stdio is the default. Both views use the versioned `worker-resources/v1` snapshot; see [worker API and connection guide](docs/WORKER_API.md). No key material is sent to the renderer or browser.
+
 The local Chapter 58 file remains an architecture-only placeholder. The Landau–Zener entry now cites the separate Volume VIII Commit 687 QuTiP example for its asymptotic reference; the other chapter-only tags remain provisional. No external example code is imported into the worker at runtime.
 
 ## Architecture

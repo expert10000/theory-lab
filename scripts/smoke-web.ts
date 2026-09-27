@@ -30,9 +30,22 @@ try {
   await page.getByRole("button", { name: "Run calculation" }).click();
   await page.getByText("Population dynamics").waitFor();
   assert.ok((await page.locator(".chart polyline").getAttribute("points"))!.length > 100);
+  await page.getByRole("button", { name: /Worker & API/ }).click();
+  await page.getByTestId("worker-dashboard").waitFor();
+  await page.getByText("worker-resources/v1").waitFor();
+  await page.getByText("Installed engines").waitFor();
+  assert.match(await page.locator(".worker-dashboard").innerText(), /GET \/api\/resources/);
+  assert.match(await page.locator(".worker-dashboard").innerText(), /POST \/api\/jobs/);
+  const callCount = /Activity (\d+) authenticated calls/.exec(await page.locator(".worker-dashboard").innerText());
+  assert.ok(callCount && Number(callCount[1]) >= 2);
+  if (process.env.QLAB_REMOTE_SSH_TARGET)
+    assert.ok((await page.locator(".worker-dashboard").innerText()).includes(process.env.QLAB_REMOTE_SSH_TARGET));
   assert.equal(errors.length, 0, errors.join("\n"));
   await mkdir(join(root, "artifacts"), { recursive: true });
   await page.screenshot({ path: join(root, "artifacts", "web-smoke.png"), fullPage: true });
+  await gateway.worker.stop();
+  await page.getByRole("button", { name: "Refresh snapshot" }).click();
+  await page.locator(".metric").first().getByText("STOPPED", { exact: true }).waitFor();
   console.log("Web smoke passed: authenticated React → gateway → worker → verified result → UI");
 } finally {
   await browser?.close();

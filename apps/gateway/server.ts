@@ -74,6 +74,8 @@ export async function startGateway(options: GatewayOptions) {
   const digest = createHash("sha256").update(options.token).digest();
   let busy = false;
   let allowedOrigin = options.origin ?? "";
+  let totalCalls = 0;
+  const recentCalls: { at: string; method: string; route: string; status: number; durationMs: number }[] = [];
   const handler = async (request: IncomingMessage, response: ServerResponse) => {
     security(response);
     const method = request.method ?? "";
@@ -82,7 +84,7 @@ export async function startGateway(options: GatewayOptions) {
         (request.headers.origin && request.headers.origin !== allowedOrigin)) {
       json(response, 403, { error: "Origin rejected" }); return;
     }
-    if ((path === "/" || path === "/web.js" || path === "/web.css") && method === "GET") {
+    if ((path === "/" || path === "/web.js" || path === "/web.css" || path === "/dashboard.css") && method === "GET") {
       const file = path === "/" ? "index.html" : path.slice(1);
       try {
         const bytes = await readFile(join(options.webDir, file));
@@ -98,7 +100,27 @@ export async function startGateway(options: GatewayOptions) {
       response.setHeader("WWW-Authenticate", "Bearer realm=\"quantum-lab\"");
       json(response, 401, { error: "Authentication required" }); return;
     }
+    if (!new Set(["/api/status", "/api/resources", "/api/activity"]).has(path)) {
+      const started = performance.now();
+      const route = path === "/api/jobs" || path === "/api/runs" ? path :
+        /^\/api\/artifacts\/[^/]+$/.test(path) ? "/api/artifacts/:jobId" :
+        /^\/api\/jobs\/[^/]+\/cancel$/.test(path) ? "/api/jobs/:jobId/cancel" : "/api/other";
+      response.once("finish", () => {
+        totalCalls++;
+        recentCalls.unshift({ at: new Date().toISOString(), method, route, status: response.statusCode,
+          durationMs: Math.round(performance.now() - started) });
+        recentCalls.length = Math.min(recentCalls.length, 20);
+      });
+    }
     if (method === "GET" && path === "/api/status") { json(response, 200, worker.status); return; }
+    if (method === "GET" && path === "/api/resources") {
+      try { json(response, 200, await worker.resources()); }
+      catch { json(response, 503, { error: "Worker resources unavailable" }); }
+      return;
+    }
+    if (method === "GET" && path === "/api/activity") {
+      json(response, 200, { schema: "gateway-activity/v1", totalCalls, recent: recentCalls }); return;
+    }
     if (method === "GET" && path === "/api/runs") { json(response, 200, await runs.list()); return; }
     const artifactMatch = /^\/api\/artifacts\/([A-Za-z0-9_-]{1,100})$/.exec(path);
     if (method === "GET" && artifactMatch) {

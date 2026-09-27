@@ -2,6 +2,7 @@ import Ajv from "ajv";
 import jobSchema from "./schemas/quantum-job.v1.json";
 import resultSchema from "./schemas/quantum-result.v1.json";
 import capabilitiesSchema from "./schemas/worker-capabilities.v1.json";
+import resourcesSchema from "./schemas/worker-resources.v1.json";
 export { assertWorkspaceSnapshot, isWorkspaceSnapshot } from "./workspace";
 export type { WorkspaceSnapshot, WorkspaceTab, RunSummary, RunExportFormat } from "./workspace";
 
@@ -349,10 +350,19 @@ export interface WorkerStatus {
   detail: string;
   capabilities: WorkerCapabilities | null;
   transport?: "local" | "ssh";
+  connection?: { target: string; root: string; python: string; artifacts: string };
+}
+export interface WorkerResources {
+  schema: "worker-resources/v1";
+  platform: { system: string; machine: string };
+  cpu: { logicalCores: number };
+  memory: { totalBytes: number | null };
+  job: { activeId: string | null };
 }
 export interface QuantumBridge {
   getStatus(): Promise<WorkerStatus>;
   getCapabilities(): Promise<WorkerCapabilities>;
+  getResources(): Promise<WorkerResources>;
   restart(): Promise<WorkerStatus>;
   run(job: SpectrumJob): Promise<SpectrumResult>;
   evolve(job: EvolutionJob): Promise<EvolutionResult>;
@@ -374,6 +384,7 @@ export const isQuantumJob = ajv.compile<QuantumJob>(jobSchema);
 export const isQuantumResult = ajv.compile<QuantumResult>(resultSchema);
 export const isWorkerCapabilities =
   ajv.compile<WorkerCapabilities>(capabilitiesSchema);
+export const isWorkerResources = ajv.compile<WorkerResources>(resourcesSchema);
 export function assertJob(value: unknown): asserts value is QuantumJob {
   if (!isQuantumJob(value))
     throw new Error(

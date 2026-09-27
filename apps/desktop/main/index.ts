@@ -189,6 +189,10 @@ app.whenReady().then(() => {
     if (!worker.status.capabilities) throw new Error("Worker not ready");
     return worker.status.capabilities;
   });
+  ipcMain.handle("quantum:resources", (event) => {
+    trusted(event);
+    return worker.resources();
+  });
   ipcMain.handle("quantum:restart", (event) => {
     trusted(event);
     return worker.restart();

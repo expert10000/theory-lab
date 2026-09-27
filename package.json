@@ -17,6 +17,7 @@
     "test:worker": "node scripts/python.mjs -m unittest discover -s workers/quantum-python/tests -v",
     "test:desktop": "node scripts/smoke.mjs",
     "test:web": "npm run build && tsx scripts/smoke-web.ts",
+    "test:ssh-ui": "npm run build && node scripts/smoke-ssh-ui.mjs",
     "accept:remote": "tsx scripts/accept-remote.ts",
     "start:gateway": "npm run build && node dist/gateway.cjs",
     "setup:python": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-python.ps1",
