@@ -1,0 +1,72 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { createHash } from "node:crypto";
+import { EVOLUTION_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot } from "../packages/contracts";
+import { RunStore } from "../apps/desktop/main/runs";
+import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
+
+const workspace: WorkspaceSnapshot = {
+  schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
+  spectrum: { parameters: { delta: "1", omega: "0.8" }, engine: "compare" },
+  dynamics: { modelId: "landau_zener", parameters: { sweepRate: ".5", gap: ".5", bias: "0" },
+    start: "-10", stop: "10", samples: "401", basis: 0, engine: "qutip" },
+  cavity: { modelId: "jaynes_cummings", parameters: { qubitFrequency: "1", cavityFrequency: "1", coupling: ".35", cutoff: "6" },
+    qubit: "excited", photons: "0", start: "0", stop: "20", samples: "401", engine: "native" },
+  open: { parameters: { relaxation: ".3", cutoff: "4" }, qubit: "plus_x", photons: "0", start: "0", stop: "20", samples: "401", engine: "qutip" },
+  sweep: { modelId: "driven_two_level", parameters: { delta: "1", amplitude: ".8", frequency: "1", phase: "0" },
+    x: { parameter: "amplitude", start: 0, stop: 2, points: 5 },
+    y: { parameter: "frequency", start: .6, stop: 1.4, points: 4 }, twoD: true,
+    start: "0", stop: "20", initialIndex: 0, engine: "native" },
+};
+test("workspace v1 accepts all lab drafts and rejects unknown or unsafe fields", () => {
+  assert.ok(isWorkspaceSnapshot(workspace));
+  assert.equal(isWorkspaceSnapshot({ ...workspace, schema: "quantum-workspace/v2" }), false);
+  assert.equal(isWorkspaceSnapshot({ ...workspace, extra: true }), false);
+  assert.equal(isWorkspaceSnapshot({ ...workspace, sweep: { ...workspace.sweep, x: { ...workspace.sweep.x, points: 20000 } } }), false);
+  assert.equal(isWorkspaceSnapshot({ ...workspace, spectrum: { ...workspace.spectrum, parameters: { delta: "x".repeat(200) } } }), false);
+});
+
+test("run store persists provenance and verified data, then exports CSV, SVG and manifest", async () => {
+  const root = await mkdtemp(join(tmpdir(), "qlab-run-test-"));
+  const artifacts = join(root, "artifacts");
+  await mkdir(artifacts);
+  try {
+    const store = new RunStore(join(root, "runs"), artifacts);
+    const spectrumInput = spectrumJob("job-spectrum-test", { delta: "1", omega: "0.8" });
+    const spectrum = { schema: "quantum-result/v1" as const, jobId: spectrumInput.jobId,
+      runId: "run-spectrum-test", status: "completed" as const, operation: "diagonalize" as const,
+      model: spectrumInput.model, engine: { name: "qutip" as const, version: "5.3" },
+      spectrum: { eigenvalues: [-.64, .64] as [number, number], units: "normalized" as const, hbar: 1 as const },
+      provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:00Z", durationMs: 1 } };
+    await store.record(spectrumInput, spectrum);
+    const job = evolutionJob("driven_two_level", "job-data-test", defaultsFor("driven_two_level"), 0, 0, 2, 3);
+    const binary = Buffer.alloc(3 * 10 * 8);
+    const view = new DataView(binary.buffer, binary.byteOffset, binary.byteLength);
+    for (let row = 0; row < 3; row++) { view.setFloat64(row * 80, row, true); view.setFloat64(row * 80 + 8, 1 - row / 2, true); view.setFloat64(row * 80 + 16, row / 2, true); }
+    await writeFile(join(artifacts, `${job.jobId}.f64`), binary);
+    const digest = createHash("sha256").update(binary).digest("hex");
+    const result = { schema: "quantum-result/v1" as const, jobId: job.jobId, runId: "run-data-test",
+      status: "completed" as const, operation: "evolve" as const, model: job.model, initialState: job.initialState,
+      solver: job.solver, observables: job.observables, engine: { name: "qutip" as const, version: "5.3" },
+      data: { schema: "quantum-data/v1" as const, format: "f64le" as const, path: `${job.jobId}.f64`,
+        rows: 3, columns: EVOLUTION_COLUMNS, bytes: binary.byteLength, sha256: digest },
+      provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:01Z", durationMs: 2 } };
+    await store.record(job, result);
+    assert.deepEqual((await store.list()).map(item => item.runId), ["run-data-test", "run-spectrum-test"]);
+    const csv = join(root, "data.csv"), svg = join(root, "figure.svg"), manifest = join(root, "manifest.json");
+    await store.export(result.runId, "csv", csv);
+    await store.export(result.runId, "svg", svg);
+    await store.export(result.runId, "manifest", manifest);
+    assert.match(await readFile(csv, "utf8"), /^time,p0,p1,/);
+    assert.match(await readFile(csv, "utf8"), /\n2,0,1,/);
+    assert.match(await readFile(svg, "utf8"), /<svg xmlns=/);
+    assert.equal(JSON.parse(await readFile(manifest, "utf8")).job.jobId, job.jobId);
+    await store.export(spectrum.runId, "csv", join(root, "spectrum.csv"));
+    assert.match(await readFile(join(root, "spectrum.csv"), "utf8"), /E\+,0.64/);
+    await writeFile(join(root, "runs", result.runId, "data.f64"), Buffer.alloc(binary.byteLength));
+    await assert.rejects(store.export(result.runId, "csv", join(root, "bad.csv")), /integrity check/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});

@@ -138,6 +138,11 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
         <h2>Mapped references, not a runtime import.</h2>
         <p>Six Presets cards are mapped to an inspected, pinned Volume VIII QuTiP revision: Commit 687 Rabi/Landau–Zener, Commit 691 Jaynes–Cummings, Commit 688 relaxation/dephasing, and Commit 690's bosonic number-decay limit. Analytic checks apply only to exact configurations. The example code is not imported at runtime. The linked tree has no direct Floquet or full quantum-Rabi example yet.</p>
       </article>
+      <article className="panel backend-card backend-wide">
+        <p className="eyebrow">DURABLE RUNS / WORKSPACE</p>
+        <h2>Provenance that survives a restart.</h2>
+        <p>Electron main saves each completed job and result with a `quantum-run-manifest/v1` record under application user data, plus a verified copy of any Float64 artifact. A `quantum-workspace/v1` snapshot stores all laboratory controls and the selected tab. The Runs tab rechecks saved hashes before exporting numerical CSV, an SVG figure, or a JSON provenance bundle. The renderer still has no direct file-system access.</p>
+      </article>
     </section>
   );
 }

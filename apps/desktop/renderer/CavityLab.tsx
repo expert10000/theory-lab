@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { CavityResult, EngineName, EvolutionProgress, QuantumBridge, WorkerStatus } from "../../../packages/contracts";
+import type { CavityResult, EngineName, EvolutionProgress, QuantumBridge, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
 import { CAVITY_REGISTRY, cavityDefaults, cavityJob, type CavityModelId } from "../../../packages/models/cavity";
 import type { CavityPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
@@ -35,7 +35,7 @@ function CavityPlot({ data, rows, selected, onSelect }: { data: Float64Array; ro
   </div>;
 }
 
-export function CavityLab({ bridge, status, modelId, preset }: { bridge: QuantumBridge; status: WorkerStatus; modelId: CavityModelId; preset?: CavityPreset | null }) {
+export function CavityLab({ bridge, status, modelId, preset, restored, restoreEpoch, onSnapshot }: { bridge: QuantumBridge; status: WorkerStatus; modelId: CavityModelId; preset?: CavityPreset | null; restored?: WorkspaceSnapshot["cavity"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["cavity"]) => void }) {
   const definition = CAVITY_REGISTRY[modelId];
   const [parameters, setParameters] = useState(() => cavityDefaults(modelId));
   const [qubit, setQubit] = useState<"ground" | "excited">("excited");
@@ -64,6 +64,14 @@ export function CavityLab({ bridge, status, modelId, preset }: { bridge: Quantum
     setStart(String(preset.solver.tStart)); setStop(String(preset.solver.tStop)); setSamples(String(preset.solver.samples));
     setEngine("qutip"); setResult(null); setData(null); setSelected(0); setOutcome("PRESET LOADED");
   }, [preset, modelId]);
+  useEffect(() => {
+    if (!restored || !restoreEpoch) return;
+    setParameters(restored.parameters); setQubit(restored.qubit); setPhotons(restored.photons);
+    setStart(restored.start); setStop(restored.stop); setSamples(restored.samples); setEngine(restored.engine);
+    setResult(null); setData(null); setSelected(0); setOutcome("WORKSPACE RESTORED");
+  }, [restoreEpoch]);
+  useEffect(() => onSnapshot?.({ modelId, parameters, qubit, photons, start, stop, samples, engine }),
+    [modelId, parameters, qubit, photons, start, stop, samples, engine, onSnapshot]);
   useEffect(() => bridge.onProgress(update => { if (update.jobId === activeJob.current) setProgress(update); }), [bridge]);
   const solver = { type: "schrodinger" as const, tStart: Number(start), tStop: Number(stop), samples: Number(samples) };
   let valid = Boolean(photons.trim() && start.trim() && stop.trim() && samples.trim());

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { EngineName, EvolutionProgress, QuantumBridge, SweepAxis, SweepResult, WorkerStatus } from "../../../packages/contracts";
+import type { EngineName, EvolutionProgress, QuantumBridge, SweepAxis, SweepResult, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
 import { MODEL_REGISTRY, defaultsFor, type EvolutionModelId } from "../../../packages/models";
 import { SWEEP_DEFAULTS, sweepJob } from "../../../packages/models/sweep";
 
@@ -33,7 +33,7 @@ function SweepView({ result, values }: { result: SweepResult; values: Float64Arr
   </div><div className="sweep-selection"><span>{result.sweep.x.parameter} = {xValue(selected[0]).toFixed(4)}</span><span>{result.sweep.y?.parameter} = {yValue(selected[1]).toFixed(4)}</span><strong data-testid="sweep-selected-value">P₁ = {values[selected[1] * xCount + selected[0]].toFixed(6)}</strong></div><div className="plot-caption"><span>{xCount} × {yCount} parameter grid</span><span>Click a cell for exact coordinates</span></div></div>;
 }
 
-export function SweepLab({ bridge, status }: { bridge: QuantumBridge; status: WorkerStatus }) {
+export function SweepLab({ bridge, status, restored, restoreEpoch, onSnapshot }: { bridge: QuantumBridge; status: WorkerStatus; restored?: WorkspaceSnapshot["sweep"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["sweep"]) => void }) {
   const [modelId, setModelId] = useState<EvolutionModelId>("driven_two_level");
   const [parameters, setParameters] = useState(() => defaultsFor("driven_two_level"));
   const [x, setX] = useState<SweepAxis>(SWEEP_DEFAULTS.driven_two_level.x);
@@ -51,6 +51,15 @@ export function SweepLab({ bridge, status }: { bridge: QuantumBridge; status: Wo
   const [running, setRunning] = useState(false);
   const active = useRef<string | null>(null);
   useEffect(() => bridge.onProgress(value => { if (value.jobId === active.current) setProgress(value); }), [bridge]);
+  useEffect(() => {
+    if (!restored || !restoreEpoch) return;
+    setModelId(restored.modelId); setParameters(restored.parameters); setX(restored.x); setY(restored.y);
+    setTwoD(restored.twoD); setStart(restored.start); setStop(restored.stop);
+    setInitialIndex(restored.initialIndex); setEngine(restored.engine);
+    setResult(null); setValues(null); setOutcome("WORKSPACE RESTORED");
+  }, [restoreEpoch]);
+  useEffect(() => onSnapshot?.({ modelId, parameters, x, y, twoD, start, stop, initialIndex, engine }),
+    [modelId, parameters, x, y, twoD, start, stop, initialIndex, engine, onSnapshot]);
   function changeModel(id: EvolutionModelId) {
     setModelId(id); setParameters(defaultsFor(id)); setX(SWEEP_DEFAULTS[id].x); setY(SWEEP_DEFAULTS[id].y);
     const solver = MODEL_REGISTRY[id].solverDefaults!; setStart(String(solver.tStart)); setStop(String(solver.tStop));

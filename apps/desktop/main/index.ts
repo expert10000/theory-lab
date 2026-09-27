@@ -1,15 +1,20 @@
 import {
   app,
   BrowserWindow,
+  dialog,
   ipcMain,
   session,
   type IpcMainInvokeEvent,
 } from "electron";
 import { join } from "node:path";
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { randomUUID } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
-import { assertJob, isQuantumResult } from "../../../packages/contracts";
+import { RunStore } from "./runs";
+import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
+  type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
 
 const worker = new WorkerSupervisor(join(__dirname, ".."));
 function trusted(event: IpcMainInvokeEvent) {
@@ -45,41 +50,52 @@ function createWindow() {
 }
 app.whenReady().then(() => {
   let running = false;
+  const artifactDir = join(app.getPath("userData"), "artifacts");
+  const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir);
+  const workspaceFile = join(app.getPath("userData"), "workspace.json");
   const evolution = new EvolutionCoordinator(
     worker,
-    join(app.getPath("userData"), "artifacts"),
+    artifactDir,
     (progress) => {
       for (const win of BrowserWindow.getAllWindows())
         win.webContents.send("quantum:progress", progress);
     },
   );
-  ipcMain.handle("quantum:evolve", (event, value: unknown) => {
+  ipcMain.handle("quantum:evolve", async (event, value: unknown) => {
     trusted(event);
     assertJob(value);
     if (value.operation !== "evolve") throw new Error("Expected evolution job");
     if (running) throw new Error("A spectrum calculation is already running");
-    return evolution.run(value);
+    const result = await evolution.run(value);
+    await runs.record(value, result);
+    return result;
   });
-  ipcMain.handle("quantum:cavity", (event, value: unknown) => {
+  ipcMain.handle("quantum:cavity", async (event, value: unknown) => {
     trusted(event);
     assertJob(value);
     if (value.operation !== "cavity") throw new Error("Expected cavity job");
     if (running) throw new Error("A spectrum calculation is already running");
-    return evolution.run(value);
+    const result = await evolution.run(value);
+    await runs.record(value, result);
+    return result;
   });
-  ipcMain.handle("quantum:lindblad", (event, value: unknown) => {
+  ipcMain.handle("quantum:lindblad", async (event, value: unknown) => {
     trusted(event);
     assertJob(value);
     if (value.operation !== "lindblad") throw new Error("Expected Lindblad job");
     if (running) throw new Error("A spectrum calculation is already running");
-    return evolution.run(value);
+    const result = await evolution.run(value);
+    await runs.record(value, result);
+    return result;
   });
-  ipcMain.handle("quantum:sweep", (event, value: unknown) => {
+  ipcMain.handle("quantum:sweep", async (event, value: unknown) => {
     trusted(event);
     assertJob(value);
     if (value.operation !== "sweep") throw new Error("Expected sweep job");
     if (running) throw new Error("A spectrum calculation is already running");
-    return evolution.run(value);
+    const result = await evolution.run(value);
+    await runs.record(value, result);
+    return result;
   });
   ipcMain.handle("quantum:cancel", (event, jobId: unknown) => {
     trusted(event);
@@ -118,6 +134,7 @@ app.whenReady().then(() => {
         result.model.parameters.omega !== value.model.parameters.omega
       )
         throw new Error("Worker returned an invalid or mismatched result");
+      await runs.record(value, result);
       return result;
     } finally {
       running = false;
@@ -135,6 +152,41 @@ app.whenReady().then(() => {
   ipcMain.handle("quantum:restart", (event) => {
     trusted(event);
     return worker.restart();
+  });
+  ipcMain.handle("quantum:save-workspace", async (event, value: unknown) => {
+    trusted(event);
+    assertWorkspaceSnapshot(value);
+    const snapshot: WorkspaceSnapshot = { ...value, savedAt: new Date().toISOString() };
+    await mkdir(app.getPath("userData"), { recursive: true });
+    const temporary = `${workspaceFile}.${randomUUID()}.tmp`;
+    await writeFile(temporary, JSON.stringify(snapshot, null, 2) + "\n", { flag: "wx" });
+    await rename(temporary, workspaceFile);
+  });
+  ipcMain.handle("quantum:load-workspace", async (event) => {
+    trusted(event);
+    let text: string;
+    try { text = await readFile(workspaceFile, "utf8"); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === "ENOENT") return null; throw error; }
+    const value: unknown = JSON.parse(text);
+    assertWorkspaceSnapshot(value);
+    return value;
+  });
+  ipcMain.handle("quantum:list-runs", (event) => {
+    trusted(event);
+    return runs.list();
+  });
+  ipcMain.handle("quantum:export-run", async (event, runId: unknown, format: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId) ||
+        typeof format !== "string" || !["csv", "svg", "manifest"].includes(format)) throw new Error("Invalid run export request");
+    const kind = format as RunExportFormat;
+    const extension = kind === "manifest" ? "json" : kind;
+    const selection = await dialog.showSaveDialog({ title: `Export ${kind.toUpperCase()} run`,
+      defaultPath: join(app.getPath("documents"), `${runId}.${extension}`),
+      filters: [{ name: extension.toUpperCase(), extensions: [extension] }] });
+    if (selection.canceled || !selection.filePath) return null;
+    await runs.export(runId, kind, selection.filePath);
+    return selection.filePath;
   });
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, _permission, callback) => callback(false),

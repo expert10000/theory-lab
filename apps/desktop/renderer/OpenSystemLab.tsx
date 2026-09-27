@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import type { EngineName, EvolutionProgress, LindbladJob, LindbladResult, QuantumBridge, WorkerStatus } from "../../../packages/contracts";
+import type { EngineName, EvolutionProgress, LindbladJob, LindbladResult, QuantumBridge, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
 import { LINDBLAD_FIELDS, lindbladDefaults, lindbladJob } from "../../../packages/models/lindblad";
 import type { OpenPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
@@ -33,7 +33,7 @@ function OpenChart({ data, rows, cutoff, selected, onSelect }: { data: Float64Ar
   </div>;
 }
 
-export function OpenSystemLab({ bridge, status, preset }: { bridge: QuantumBridge; status: WorkerStatus; preset?: OpenPreset | null }) {
+export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, onSnapshot }: { bridge: QuantumBridge; status: WorkerStatus; preset?: OpenPreset | null; restored?: WorkspaceSnapshot["open"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["open"]) => void }) {
   const [parameters, setParameters] = useState(lindbladDefaults);
   const [qubit, setQubit] = useState<LindbladJob["initialState"]["qubit"]>("excited");
   const [photons, setPhotons] = useState("0");
@@ -57,6 +57,14 @@ export function OpenSystemLab({ bridge, status, preset }: { bridge: QuantumBridg
     setStart(String(preset.solver.tStart)); setStop(String(preset.solver.tStop)); setSamples(String(preset.solver.samples));
     setEngine("qutip"); setResult(null); setData(null); setSelected(0); setOutcome("PRESET LOADED");
   }, [preset]);
+  useEffect(() => {
+    if (!restored || !restoreEpoch) return;
+    setParameters(restored.parameters); setQubit(restored.qubit); setPhotons(restored.photons);
+    setStart(restored.start); setStop(restored.stop); setSamples(restored.samples); setEngine(restored.engine);
+    setResult(null); setData(null); setSelected(0); setOutcome("WORKSPACE RESTORED");
+  }, [restoreEpoch]);
+  useEffect(() => onSnapshot?.({ parameters, qubit, photons, start, stop, samples, engine }),
+    [parameters, qubit, photons, start, stop, samples, engine, onSnapshot]);
   useEffect(() => bridge.onProgress(value => { if (value.jobId === active.current) setProgress(value); }), [bridge]);
   const solver = { type: "master" as const, tStart: Number(start), tStop: Number(stop), samples: Number(samples) };
   let valid = Boolean(photons.trim() && start.trim() && stop.trim() && samples.trim());

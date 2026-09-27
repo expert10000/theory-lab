@@ -5,6 +5,7 @@ import type {
   EngineName,
   QuantumBridge,
   WorkerStatus,
+  WorkspaceSnapshot,
 } from "../../../packages/contracts";
 import {
   MODEL_REGISTRY,
@@ -155,11 +156,17 @@ export function DynamicsLab({
   status,
   modelId,
   preset,
+  restored,
+  restoreEpoch,
+  onSnapshot,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
   modelId: EvolutionModelId;
   preset?: EvolutionPreset | null;
+  restored?: WorkspaceSnapshot["dynamics"] | null;
+  restoreEpoch?: number;
+  onSnapshot?: (value: WorkspaceSnapshot["dynamics"]) => void;
 }) {
   const definition = MODEL_REGISTRY[modelId];
   const [parameters, setParameters] = useState(() => defaultsFor(modelId));
@@ -207,6 +214,15 @@ export function DynamicsLab({
     setSamples(String(preset.solver.samples)); setBasis(preset.initialIndex); setEngineMode("qutip");
     setResult(null); setData(null); setComparison(null); setSelectedIndex(0); setOutcome("PRESET LOADED");
   }, [preset, modelId]);
+  useEffect(() => {
+    if (!restored || !restoreEpoch) return;
+    setParameters(restored.parameters); setStartTime(restored.start); setDuration(restored.stop);
+    setSamples(restored.samples); setBasis(restored.basis); setEngineMode(restored.engine);
+    setResult(null); setData(null); setComparison(null); setSelectedIndex(0); setOutcome("WORKSPACE RESTORED");
+  }, [restoreEpoch]);
+  useEffect(() => onSnapshot?.({ modelId, parameters, start: startTime, stop: duration,
+    samples, basis, engine: engineMode }),
+    [modelId, parameters, startTime, duration, samples, basis, engineMode, onSnapshot]);
   useEffect(
     () =>
       bridge.onProgress((update) => {

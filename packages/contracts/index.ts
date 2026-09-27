@@ -2,6 +2,8 @@ import Ajv from "ajv";
 import jobSchema from "./schemas/quantum-job.v1.json";
 import resultSchema from "./schemas/quantum-result.v1.json";
 import capabilitiesSchema from "./schemas/worker-capabilities.v1.json";
+export { assertWorkspaceSnapshot, isWorkspaceSnapshot } from "./workspace";
+export type { WorkspaceSnapshot, WorkspaceTab, RunSummary, RunExportFormat } from "./workspace";
 
 export interface TwoLevelModel {
   type: "two_level";
@@ -310,6 +312,10 @@ export interface QuantumBridge {
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
   onProgress(listener: (progress: EvolutionProgress) => void): () => void;
+  saveWorkspace(snapshot: import("./workspace").WorkspaceSnapshot): Promise<void>;
+  loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
+  listRuns(): Promise<import("./workspace").RunSummary[]>;
+  exportRun(runId: string, format: import("./workspace").RunExportFormat): Promise<string | null>;
 }
 const ajv = new Ajv({ allErrors: true, strict: true });
 export const isQuantumJob = ajv.compile<QuantumJob>(jobSchema);

@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–015 cover two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, and QuTiP/native comparison.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–016 cover two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs.
 
 ## Run on Windows
 
@@ -49,6 +49,10 @@ The **Sweeps** workspace varies one or two parameters of Rabi, Landau–Zener, S
 
 Open **Presets** for six source-pinned configurations from the inspected `theory` QuTiP examples: resonant Rabi, Landau–Zener, Jaynes–Cummings vacuum Rabi, T₁ relaxation, pure dephasing, and damped cavity occupation. A card loads the existing lab; review its values, choose QuTiP or native, and run. Five presets show a full-trajectory analytic error and a pass/fail threshold; Landau–Zener shows only the asymptotic reference because its run has finite endpoints. Source revision, basis/frame mappings, and exclusions are detailed in [docs/PRESETS.md](docs/PRESETS.md). Editing a loaded preset creates a variant and disables the exact-preset analytic check.
 
+## Saved workspaces and runs
+
+**Save workspace** records the selected tab, preset and all laboratory controls; **Restore** reopens that snapshot after edits or an app restart. Every completed calculation also creates a durable job/result/manifest record under Electron's application user-data directory, with a hash-verified copy of any binary data. Open **Runs** to inspect provenance and export a numerical CSV, an SVG figure, or a JSON manifest using a native save dialog. Stored artifacts are checked again before export. These are development-checkout files; back up the app's user-data directory if you need long-term archival.
+
 ## Cavity QED
 
 Select **Jaynes–Cummings** for the excitation-conserving atom–cavity model, or **Quantum Rabi** for the full coupling including counter-rotating terms. Both labs show a sorted dressed spectrum, excited-qubit population, mean photon number, and a synchronized time cursor. The result also reports norm and parity drift plus the maximum occupation at the top Fock level; raise the cutoff if that boundary population grows. Choose QuTiP or native NumPy for either model.
@@ -71,7 +75,7 @@ React renderer → narrow preload API → Electron main → JSON-RPC stdio → P
 
 Renderer: sandboxed, context isolated, no Node integration, no filesystem/process APIs, restrictive CSP. Electron checks the originating frame of each IPC call, denies permissions, navigation, and popups. Python is local, has no listening port, and reserves stdout for bounded protocol messages. The supervisor checks hello/capabilities/health, applies timeouts, reports crashes, and gracefully shuts down or terminates its child. Recovery is user initiated.
 
-The shared draft-07 JSON Schemas live in `packages/contracts/schemas`. AJV and Python jsonschema use the same files. Unsupported operations and contract versions are rejected. The two-number smoke spectrum travels inline. Evolution samples use a separate little-endian Float64 artifact (`quantum-data/v1`, ten columns per row). Cavity samples use `quantum-cavity-data/v1` with six columns per row; Lindblad density-matrix observables use `quantum-lindblad-data/v1` with seven. Parameter grids use `quantum-sweep-data/v1` with row-major little-endian Float64 cells. JSON carries only the path, shape, SHA-256 hash, run metadata, and progress notifications. Electron verifies the file hash before passing bytes to the renderer. Files are currently retained under Electron's user-data `artifacts` directory; retention and run manifests arrive with QLAB-016.
+The shared draft-07 JSON Schemas for Python-bound jobs/results live in `packages/contracts/schemas`; AJV and Python jsonschema use the same files. The desktop also validates versioned workspace snapshots before saving/restoring. Unsupported operations and contract versions are rejected. The two-number smoke spectrum travels inline. Evolution samples use a separate little-endian Float64 artifact (`quantum-data/v1`, ten columns per row). Cavity samples use `quantum-cavity-data/v1` with six columns per row; Lindblad density-matrix observables use `quantum-lindblad-data/v1` with seven. Parameter grids use `quantum-sweep-data/v1` with row-major little-endian Float64 cells. JSON carries only the path, shape, SHA-256 hash, run metadata, and progress notifications. Electron verifies file hashes before passing bytes to React or exporting a run. Completed records live under Electron user data; automatic retention is not yet implemented.
 
 The model contract has optional `sourceRepository`, `sourceModule`, `volume`, `chapter`, and `exampleId` fields so Layer-1 examples can be mapped later. No claim is made that the example IDs in test fixtures correspond to an imported book manifest.
 
@@ -93,4 +97,4 @@ The complete supplied plan is preserved in [docs/ROADMAP.md](docs/ROADMAP.md); d
 
 This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener and Stückelberg passages, strong-drive Floquet analysis, Jaynes–Cummings and Quantum Rabi cavity dynamics, Lindblad open-system dynamics, 1D/2D parameter sweeps, the dynamics/Bloch workspace, and QuTiP/native comparison. The separate `theory` development branch supplies explicit reference examples where mapped, but is not a runtime dependency. Atoms, molecules and crystals are outside initial V1 scope.
 
-Run IDs, engine versions, timestamps and parameters are returned for each calculation; run history is currently session-only. Durable provenance/workspaces/exports, installers, and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders both plots; a QuTiP warning about Python plotting does not prevent calculation.
+Run IDs, engine versions, timestamps and parameters are retained with each calculation. Standalone installers and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders the plots; a QuTiP warning about Python plotting does not prevent calculation.

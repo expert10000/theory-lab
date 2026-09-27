@@ -1,9 +1,11 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import type {
   EngineName,
   QuantumBridge,
   SpectrumResult,
   WorkerStatus,
+  WorkspaceSnapshot,
+  WorkspaceTab,
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
 import { DynamicsLab } from "./DynamicsLab";
@@ -11,7 +13,8 @@ import { CavityLab } from "./CavityLab";
 import { OpenSystemLab } from "./OpenSystemLab";
 import { SweepLab } from "./SweepLab";
 import { PresetPanel } from "./PresetPanel";
-import { type LaboratoryPreset } from "../../../packages/models/presets";
+import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets";
+import { RunHistory } from "./RunHistory";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import {
@@ -45,6 +48,15 @@ export function App() {
     useState<EvolutionModelId>("driven_two_level");
   const [cavityModel, setCavityModel] = useState<CavityModelId>("jaynes_cummings");
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep">>>({});
+  const [workspaceReady, setWorkspaceReady] = useState(false);
+  const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
+  const [workspaceMessage, setWorkspaceMessage] = useState("");
+  const collectDynamics = useCallback((value: WorkspaceSnapshot["dynamics"]) => { workspaceParts.current.dynamics = value; checkParts(); }, []);
+  const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
+  const collectOpen = useCallback((value: WorkspaceSnapshot["open"]) => { workspaceParts.current.open = value; checkParts(); }, []);
+  const collectSweep = useCallback((value: WorkspaceSnapshot["sweep"]) => { workspaceParts.current.sweep = value; checkParts(); }, []);
+  function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
   const [resultMode, setResultMode] = useState<EngineMode | null>(null);
@@ -52,9 +64,7 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<
-    "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "presets" | "roadmap" | "backend"
-  >("spectrum");
+  const [tab, setTab] = useState<WorkspaceTab>("spectrum");
   const initialRun = useRef(false);
   const valid = parametersFor("two_level", parameters) !== null;
   const ready =
@@ -147,6 +157,27 @@ export function App() {
     else if (preset.kind === "cavity") { setCavityModel(preset.modelId); setTab("cavity"); }
     else setTab("open");
   }
+  async function saveWorkspace() {
+    const parts = workspaceParts.current;
+    if (!parts.dynamics || !parts.cavity || !parts.open || !parts.sweep) return;
+    const snapshot: WorkspaceSnapshot = { schema: "quantum-workspace/v1", savedAt: new Date().toISOString(),
+      tab, selectedPresetId: selectedPreset?.id ?? null,
+      spectrum: { parameters, engine: engineMode }, dynamics: parts.dynamics,
+      cavity: parts.cavity, open: parts.open, sweep: parts.sweep };
+    try { await window.quantum.saveWorkspace(snapshot); setWorkspaceMessage("Workspace saved"); }
+    catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
+  }
+  async function restoreWorkspace() {
+    try {
+      const snapshot = await window.quantum.loadWorkspace();
+      if (!snapshot) { setWorkspaceMessage("No saved workspace yet"); return; }
+      setParameters(snapshot.spectrum.parameters); setEngineMode(snapshot.spectrum.engine);
+      setEvolutionModel(snapshot.dynamics.modelId); setCavityModel(snapshot.cavity.modelId);
+      setSelectedPreset(PRESETS.find(item => item.id === snapshot.selectedPresetId) ?? null);
+      setTab(snapshot.tab); setRestored(current => ({ epoch: (current?.epoch ?? 0) + 1, snapshot }));
+      setWorkspaceMessage(`Workspace restored · ${new Date(snapshot.savedAt).toLocaleString()}`);
+    } catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
+  }
   return (
     <div className="app">
       <header className="topbar">
@@ -160,8 +191,10 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-015</span>
-          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "presets" && tab !== "backend" && tab !== "roadmap" && (
+          <span className="version">V0.1 · QLAB-016</span>
+          <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
+          <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
+          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -176,7 +209,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "presets" ? "dynamics-layout" : ""}`}>
+      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
             LABORATORIES <span>09 / 09</span>
@@ -207,6 +240,7 @@ export function App() {
           <button className="lab-selected" onClick={() => { setSelectedPreset(null); setTab("open"); }}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("sweep")}><span>▦</span> Parameter sweeps <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("presets")}><span>▣</span> Volume VIII presets <span className="live-dot" /></button>
+          <button className="lab-selected" onClick={() => setTab("runs")}><span>◷</span> Saved runs <span className="live-dot" /></button>
           <p className="sidebar-note">
             The smallest quantum system.
             <br />
@@ -214,7 +248,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>16</span> Durable runs & exports</div>
+            <div className="future-lab"><span>17</span> Release acceptance</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -243,6 +277,8 @@ export function App() {
                       ? "PARAMETER SWEEPS"
                     : tab === "presets"
                       ? "VOLUME VIII PRESETS"
+                    : tab === "runs"
+                      ? "SAVED RUNS"
                 : "TWO-LEVEL SYSTEM"}
           </div>
           <div className="workspace-title">
@@ -260,6 +296,8 @@ export function App() {
                           ? "SWEEP LABORATORY / 009"
                         : tab === "presets"
                           ? "REFERENCE PRESETS / 010"
+                        : tab === "runs"
+                          ? "RUN HISTORY / 011"
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
@@ -275,6 +313,8 @@ export function App() {
                           ? "The landscape of a model."
                         : tab === "presets"
                           ? "From reference to experiment."
+                        : tab === "runs"
+                          ? "A durable record of discovery."
                     : "A two-level universe."}
               </h1>
               <p>
@@ -290,10 +330,12 @@ export function App() {
                         ? "Sweep one or two parameters with checkpoints, cancellation and resume."
                       : tab === "presets"
                         ? "Reproducible configurations from validated Volume VIII examples."
+                      : tab === "runs"
+                        ? "Inspect provenance and export data, figures, or manifests."
                     : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
-            <span className="pill">{tab === "presets" ? "6 PINNED PRESETS" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+            <span className="pill">{tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
           </div>
           <div className="tabs" role="tablist" aria-label="Workspace">
             <button
@@ -321,6 +363,7 @@ export function App() {
             <button role="tab" aria-selected={tab === "open"} onClick={() => setTab("open")}>Open system</button>
             <button role="tab" aria-selected={tab === "sweep"} onClick={() => setTab("sweep")}>Sweeps</button>
             <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>Presets</button>
+            <button role="tab" aria-selected={tab === "runs"} onClick={() => setTab("runs")}>Runs</button>
             <button
               role="tab"
               aria-selected={tab === "roadmap"}
@@ -342,12 +385,15 @@ export function App() {
               status={status}
               modelId={evolutionModel}
               preset={selectedPreset?.kind === "evolution" ? selectedPreset : null}
+              restored={restored?.snapshot.dynamics}
+              restoreEpoch={restored?.epoch}
+              onSnapshot={collectDynamics}
             />
           </div>
-          <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} /></div>
-          <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} /></div>
-          <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} /></div>
-          {tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "backend" ? (
+          <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} /></div>
+          <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} /></div>
+          <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
+          {tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -382,11 +428,8 @@ export function App() {
                 ["013", "Lindblad dynamics, purity & steady state", "Implemented"],
                 ["014", "Parameter sweeps & heatmap workspace", "Implemented"],
                 ["015", "Volume VIII reproducible presets", "Implemented"],
-                [
-                  "016–017",
-                  "Persistence & release validation",
-                  "Planned",
-                ],
+                ["016", "Saved workspaces, runs & exports", "Implemented"],
+                ["017", "Desktop v0.1 acceptance", "Planned"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>
@@ -699,7 +742,7 @@ export function App() {
                 <code title={result.runId}>{result.runId.slice(0, 20)}…</code>
                 <small>
                   {new Date(result.provenance.computedAt).toLocaleTimeString()}{" "}
-                  · session only
+                  · saved to run history
                 </small>
               </>
             ) : (
@@ -708,6 +751,7 @@ export function App() {
           </div>
         </aside>
       </div>
+      {workspaceMessage && <div className="workspace-notice" role="status" data-testid="workspace-message">{workspaceMessage}</div>}
       <footer className="statusbar">
         <div>
           <span

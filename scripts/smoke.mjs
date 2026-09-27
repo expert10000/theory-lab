@@ -1,9 +1,12 @@
 import { _electron as electron } from "playwright";
 import assert from "node:assert/strict";
 import { mkdir } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
 const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
+let preservedRunId = null;
 try {
   const page = await app.firstWindow();
   const errors = [];
@@ -30,13 +33,17 @@ try {
       "cancel",
       "cavity",
       "evolve",
+      "exportRun",
       "getCapabilities",
       "getStatus",
       "lindblad",
+      "listRuns",
+      "loadWorkspace",
       "onProgress",
       "readData",
       "restart",
       "run",
+      "saveWorkspace",
       "sweep",
     ],
   });
@@ -440,10 +447,50 @@ try {
   }
   await page.getByTestId("lindblad-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-preset-cavity-loss.png", fullPage: true });
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({ hasText: "Workspace saved" }).waitFor();
+  await page.getByLabel("Open initial photons").fill("1");
+  await page.getByRole("tab", { name: "Spectrum", exact: true }).click();
+  await page.getByTestId("restore-workspace").click();
+  await page.getByLabel("Open initial photons").waitFor();
+  await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
+  assert.ok(await page.getByTestId("preset-loaded").getByText(/Damped cavity occupation/).isVisible());
+  await page.getByRole("tab", { name: "Runs" }).click();
+  await page.getByTestId("saved-run").first().waitFor();
+  const savedRuns = await page.evaluate(() => window.quantum.listRuns());
+  assert.ok(savedRuns.length >= 6);
+  const latest = savedRuns[0].runId;
+  preservedRunId = latest;
+  await mkdir("artifacts/exports", { recursive: true });
+  for (const [format, extension] of [["csv", "csv"], ["svg", "svg"], ["manifest", "json"]]) {
+    const destination = resolve(`artifacts/exports/smoke-${format}.${extension}`);
+    await app.evaluate(({ dialog }, output) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: output }); }, destination);
+    await page.getByRole("button", { name: `Export ${format.toUpperCase()} ${latest}` }).click();
+    await page.getByRole("status").filter({ hasText: `Exported ${format.toUpperCase()}` }).waitFor();
+    const exported = await readFile(destination, "utf8");
+    assert.ok(exported.length > 50);
+    if (format === "svg") assert.match(exported, /<svg xmlns=/);
+    if (format === "manifest") assert.equal(JSON.parse(exported).result.runId, latest);
+  }
+  await page.screenshot({ path: "artifacts/desktop-runs.png", fullPage: true });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native spectrum, evolution, Floquet, cavity, Lindblad, sweeps and six Volume VIII presets; verified binary data, numerical references, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native labs, sweeps and six Volume VIII presets; durable runs, workspace restore, CSV/SVG/manifest exports, integrity, cancellation, restart and sandbox.",
   );
 } finally {
   await app.close();
+}
+const reopened = await electron.launch({ args: ["."], env });
+try {
+  const page = await reopened.firstWindow();
+  await page.getByTestId("worker-status").filter({ hasText: "READY" }).waitFor({ timeout: 45000 });
+  await page.getByRole("tab", { name: "Runs" }).click();
+  const runIds = await page.evaluate(() => window.quantum.listRuns().then(runs => runs.map(run => run.runId)));
+  assert.ok(runIds.includes(preservedRunId), "saved run must survive app restart");
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
+  assert.ok(await page.getByTestId("preset-loaded").getByText(/Damped cavity occupation/).isVisible());
+  console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
+} finally {
+  await reopened.close();
 }
