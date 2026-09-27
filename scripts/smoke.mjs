@@ -9,6 +9,11 @@ const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
 try {
   const page = await app.firstWindow();
+  // Some headless Xvfb renderers reject Page.captureScreenshot while DOM and
+  // Electron interactions still work. Keep captures for local visual review.
+  if (process.env.QLAB_SKIP_SCREENSHOTS === "1") {
+    page.screenshot = async () => {};
+  }
   const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page
