@@ -85,7 +85,7 @@ export async function startGateway(options: GatewayOptions) {
         (request.headers.origin && request.headers.origin !== allowedOrigin)) {
       json(response, 403, { error: "Origin rejected" }); return;
     }
-    if ((path === "/" || path === "/web.js" || path === "/web.css" || path === "/dashboard.css") && method === "GET") {
+    if ((path === "/" || path === "/web.js" || path === "/web.css" || path === "/dashboard.css" || path === "/atlas.css") && method === "GET") {
       const file = path === "/" ? "index.html" : path.slice(1);
       try {
         const bytes = await readFile(join(options.webDir, file));

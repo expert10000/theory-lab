@@ -3,8 +3,10 @@ import { createRoot } from "react-dom/client";
 import { defaultsFor, evolutionJob, spectrumJob } from "../../packages/models";
 import type { EvolutionResult, RunSummary, SpectrumResult, WorkerStatus } from "../../packages/contracts";
 import { WorkerDashboard } from "./WorkerDashboard";
+import { AtlasBrowser } from "./AtlasBrowser";
+import type { AtlasBinding } from "../../packages/atlas/bindings";
 
-type Mode = "spectrum" | "dynamics" | "worker";
+type Mode = "spectrum" | "dynamics" | "worker" | "atlas";
 type Engine = "qutip" | "native";
 type Reading = { result: SpectrumResult | EvolutionResult; points?: { time: number; p1: number }[] };
 
@@ -91,6 +93,17 @@ function App() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Calculation failed"); }
     finally { setBusy(false); }
   }
+  function atlasSupported(binding: AtlasBinding) {
+    return binding.kind === "spectrum" || (binding.kind === "dynamics" && binding.modelId === "driven_two_level");
+  }
+  function loadAtlas(binding: AtlasBinding) {
+    if (binding.kind === "spectrum") {
+      setDelta(String(binding.parameters.delta)); setOmega(String(binding.parameters.omega)); setReading(null); setMode("spectrum");
+    } else if (binding.kind === "dynamics" && binding.modelId === "driven_two_level") {
+      setDelta(String(binding.parameters.delta)); setAmplitude(String(binding.parameters.amplitude));
+      setFrequency(String(binding.parameters.frequency)); setReading(null); setMode("dynamics");
+    }
+  }
 
   const spectrum = reading?.result.operation === "diagonalize" ? reading.result : null;
   const evolution = reading?.result.operation === "evolve" ? reading.result : null;
@@ -105,12 +118,13 @@ function App() {
         <button className={mode === "spectrum" ? "nav selected" : "nav"} onClick={() => setMode("spectrum")}><span>01</span> Two-level spectrum</button>
         <button className={mode === "dynamics" ? "nav selected" : "nav"} onClick={() => setMode("dynamics")}><span>02</span> Rabi dynamics</button>
         <button className={mode === "worker" ? "nav selected" : "nav"} onClick={() => setMode("worker")}><span>03</span> Worker &amp; API</button>
+        <button className={mode === "atlas" ? "nav selected" : "nav"} onClick={() => setMode("atlas")}><span>04</span> Hamiltonian Atlas</button>
         <div className="aside-note">Runs travel through the versioned job contract to the supervised Python worker. Binary dynamics data is checked in this browser before plotting.</div>
         <div className="side-footer">QuTiP / NumPy · ℏ = 1</div>
       </aside>
       <section className="workspace">
-        {mode !== "worker" && <div className="page-intro"><div><div className="eyebrow">LIVE COMPUTATION</div><h1>{mode === "spectrum" ? "Two-level spectrum" : "Rabi dynamics"}</h1><p>{mode === "spectrum" ? "Diagonalize a coupled two-state Hamiltonian and inspect its eigenenergies." : "Evolve a driven qubit and inspect its excited-state population."}</p></div><div className="model-badge">{mode === "spectrum" ? "H = ½(Δσz + Ωσx)" : "H(t) = ½Δσz + ½A cos(ωt)σx"}</div></div>}
-        {!token ? <form className="connect card" onSubmit={connect}><div className="eyebrow">CONNECT TO GATEWAY</div><h2>Enter access token</h2><p>The token is held in memory only. Refreshing the page clears it. Use HTTPS for access beyond this computer.</p>
+        {mode !== "worker" && mode !== "atlas" && <div className="page-intro"><div><div className="eyebrow">LIVE COMPUTATION</div><h1>{mode === "spectrum" ? "Two-level spectrum" : "Rabi dynamics"}</h1><p>{mode === "spectrum" ? "Diagonalize a coupled two-state Hamiltonian and inspect its eigenenergies." : "Evolve a driven qubit and inspect its excited-state population."}</p></div><div className="model-badge">{mode === "spectrum" ? "H = ½(Δσz + Ωσx)" : "H(t) = ½Δσz + ½A cos(ωt)σx"}</div></div>}
+        {mode === "atlas" ? <AtlasBrowser onLoad={loadAtlas} supported={atlasSupported}/> : !token ? <form className="connect card" onSubmit={connect}><div className="eyebrow">CONNECT TO GATEWAY</div><h2>Enter access token</h2><p>The token is held in memory only. Refreshing the page clears it. Use HTTPS for access beyond this computer.</p>
           <div className="connect-row"><input aria-label="Gateway access token" type="password" autoComplete="off" value={tokenDraft} onChange={event => setTokenDraft(event.target.value)} placeholder="Gateway access token" required/><button className="primary">Connect</button></div></form> :
           mode === "worker" ? <WorkerDashboard token={token} onStatus={setStatus}/> :
           <div className="grid"><form className="card controls" onSubmit={run}><div className="eyebrow">01 / CONFIGURE</div><h2>Experiment controls</h2>

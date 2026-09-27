@@ -1,0 +1,24 @@
+.atlas-filters { display: flex; gap: 12px; margin-bottom: 20px; }
+.atlas-filters input, .atlas-filters select { background: #0e1b2a; border: 1px solid #3a5067; border-radius: 7px; color: #edf4fc; padding: 11px 12px; }
+.atlas-filters input { flex: 1; min-width: 0; }
+.atlas-grid { display: grid; grid-template-columns: minmax(210px, .8fr) minmax(0, 1.5fr); gap: 24px; }
+.atlas-items { max-height: 620px; overflow: auto; border: 1px solid #304258; border-radius: 8px; }
+.atlas-item { display: flex; flex-direction: column; gap: 5px; width: 100%; padding: 13px; text-align: left; color: #dce9ef; background: transparent; border: 0; border-bottom: 1px solid #304258; }
+.atlas-item.active { background: #1d3b48; color: #91e2d8; }
+.atlas-item small, .atlas-inspect small { color: #8ca2b6; }
+.atlas-inspect { min-width: 0; }
+.atlas-inspect h2 { font-size: 25px; margin: 12px 0; }
+.atlas-inspect h3 { font-size: 14px; color: #8de0d5; margin: 22px 0 9px; }
+.atlas-inspect p { color: #abc0d0; line-height: 1.6; }
+.atlas-math { display: block; background: #0e1b2a; border: 1px solid #385068; border-radius: 8px; color: #91e2d8; padding: 14px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.atlas-param-list > div { display: flex; gap: 10px; align-items: center; border-bottom: 1px solid #304258; padding: 9px 0; }
+.atlas-param-list code { min-width: 70px; }
+.atlas-param-list small { margin-left: auto; }
+.atlas-links { display: flex; flex-wrap: wrap; gap: 8px; }
+.atlas-links button { background: #1d3b48; border: 1px solid #497982; border-radius: 5px; color: #9de9e0; padding: 7px 10px; }
+.atlas-source { display: inline-block; color: #91e2d8; margin-top: 18px; overflow-wrap: anywhere; }
+.atlas-bridge { border: 1px solid #457c76; background: #162e38; border-radius: 8px; padding: 18px; margin-top: 20px; }
+.atlas-bridge .primary { margin-top: 8px; }
+.atlas-unbound { border-top: 1px solid #304258; padding-top: 12px; }
+@media (max-width: 950px) { .atlas-grid { grid-template-columns: 1fr; } .atlas-items { max-height: 240px; } }
+@media (max-width: 550px) { .atlas-filters { flex-direction: column; } .atlas-param-list > div { flex-wrap: wrap; } }
