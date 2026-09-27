@@ -1403,3 +1403,22 @@ h1 {
 .run-row small, .run-row code { display: block; color: #94a8b4; margin-top: 4px; font-size: 11px; }
 .run-exports { display: flex; gap: 7px; flex-shrink: 0; }
 .run-exports button { border: 1px solid #49645f; border-radius: 5px; background: #1d3535; color: #c7ebe1; padding: 7px 10px; font: 10px Consolas,monospace; }
+.atlas-controls { display: flex; gap: 12px; margin: 22px 0; }
+.atlas-controls input, .atlas-controls select { background: #101b25; color: #e5f4f1; border: 1px solid #34505a; border-radius: 6px; padding: 10px 12px; }
+.atlas-controls input { flex: 1; }
+.atlas-browser { display: grid; grid-template-columns: minmax(220px, 0.75fr) minmax(360px, 1.5fr); gap: 20px; }
+.atlas-list { display: flex; flex-direction: column; max-height: 620px; overflow: auto; border: 1px solid #28404b; border-radius: 6px; }
+.atlas-list button { display: flex; flex-direction: column; gap: 4px; padding: 12px; text-align: left; color: #d4e5e3; background: transparent; border: 0; border-bottom: 1px solid #253b46; cursor: pointer; }
+.atlas-list button.atlas-active { background: #1b3938; color: #83dbc6; }
+.atlas-list small { color: #819da6; }
+.atlas-detail { min-width: 0; }
+.atlas-detail h3 { font-size: 24px; margin: 5px 0 10px; }
+.atlas-detail h4 { color: #a6d8ce; margin: 22px 0 8px; }
+.atlas-detail p { line-height: 1.55; }
+.atlas-formula { display: block; white-space: pre-wrap; overflow-wrap: anywhere; padding: 15px; border: 1px solid #315050; border-radius: 6px; background: #101d25; color: #82d9c4; }
+.atlas-parameters > div { display: flex; gap: 12px; padding: 7px 0; border-bottom: 1px solid #263d47; }
+.atlas-parameters code { min-width: 72px; }
+.atlas-parameters small { margin-left: auto; color: #819da6; }
+.atlas-relations { display: flex; gap: 8px; flex-wrap: wrap; }
+.atlas-relations button { background: #1b3938; border: 1px solid #315f59; border-radius: 5px; padding: 7px 10px; color: #9fe7d5; cursor: pointer; }
+@media (max-width: 980px) { .atlas-browser { grid-template-columns: 1fr; } .atlas-list { max-height: 240px; } }

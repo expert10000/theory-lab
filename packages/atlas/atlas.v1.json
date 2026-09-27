@@ -1,0 +1,3688 @@
+{
+  "schema": "theory-atlas-snapshot/v1",
+  "sourceRepository": "https://github.com/expert10000/theory",
+  "sourceRevision": "61791aff00c0f35a82ec6f2271deded5cc5e99d6",
+  "atlasVersion": "1.0",
+  "entries": [
+    {
+      "schema_version": "1.0",
+      "id": "harmonic_oscillator",
+      "name": "Quantum harmonic oscillator",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\hbar\\omega(a^\\dagger a+\\tfrac12)"
+      },
+      "basis": {
+        "description": "Fock basis |n>"
+      },
+      "parameters": [
+        {
+          "symbol": "omega",
+          "name": "angular frequency",
+          "unit_convention": "angular_frequency",
+          "description": "oscillator frequency",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "quadratic confinement"
+      ],
+      "symmetries": [
+        "time translation"
+      ],
+      "conserved_quantities": [
+        "number operator"
+      ],
+      "important_limits": [
+        {
+          "condition": "high occupation",
+          "result": "classical oscillator limit"
+        }
+      ],
+      "observables": [
+        "spectrum",
+        "occupation",
+        "quadratures"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": "oscillator_default"
+      },
+      "presentation": {
+        "summary": "Exactly solvable bosonic reference model.",
+        "tags": [
+          "oscillator"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "rabi",
+      "name": "Quantum Rabi model",
+      "family": "light_matter",
+      "formula": {
+        "latex": "H=\\hbar\\omega_c a^\\dagger a+\\frac{\\hbar\\omega_q}{2}\\sigma_z+\\hbar g(a+a^\\dagger)\\sigma_x"
+      },
+      "basis": {
+        "description": "Fock x two-level basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_c",
+          "name": "cavity frequency",
+          "unit_convention": "angular_frequency",
+          "description": "mode frequency",
+          "default": 1
+        },
+        {
+          "symbol": "omega_q",
+          "name": "qubit frequency",
+          "unit_convention": "angular_frequency",
+          "description": "level splitting",
+          "default": 1
+        },
+        {
+          "symbol": "g",
+          "name": "coupling",
+          "unit_convention": "angular_frequency",
+          "description": "coupling",
+          "default": 0.05
+        }
+      ],
+      "assumptions": [
+        "single mode",
+        "two-level matter"
+      ],
+      "symmetries": [
+        "Z2 parity"
+      ],
+      "conserved_quantities": [
+        "parity"
+      ],
+      "important_limits": [
+        {
+          "condition": "RWA",
+          "result": "jaynes_cummings"
+        }
+      ],
+      "observables": [
+        "spectrum",
+        "population inversion"
+      ],
+      "relations": [
+        {
+          "type": "limit",
+          "target": "jaynes_cummings",
+          "condition": "rotating-wave approximation"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": "rabi_default"
+      },
+      "presentation": {
+        "summary": "Full single-mode light-matter model.",
+        "tags": [
+          "rabi"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "jaynes_cummings",
+      "name": "Jaynes-Cummings model",
+      "family": "light_matter",
+      "formula": {
+        "latex": "H=\\hbar\\omega_c a^\\dagger a+\\frac{\\hbar\\omega_q}{2}\\sigma_z+\\hbar g(a^\\dagger\\sigma_-+a\\sigma_+)"
+      },
+      "basis": {
+        "description": "Fock x two-level basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_c",
+          "name": "cavity frequency",
+          "unit_convention": "angular_frequency",
+          "description": "mode frequency",
+          "default": 1
+        },
+        {
+          "symbol": "omega_q",
+          "name": "qubit frequency",
+          "unit_convention": "angular_frequency",
+          "description": "level splitting",
+          "default": 1
+        },
+        {
+          "symbol": "g",
+          "name": "coupling",
+          "unit_convention": "angular_frequency",
+          "description": "RWA coupling",
+          "default": 0.05
+        }
+      ],
+      "assumptions": [
+        "rotating-wave approximation"
+      ],
+      "symmetries": [
+        "U(1) excitation symmetry"
+      ],
+      "conserved_quantities": [
+        "total excitation number"
+      ],
+      "important_limits": [],
+      "observables": [
+        "dressed spectrum",
+        "Rabi oscillations"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "rabi",
+          "condition": "RWA reduction"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": "jc_default"
+      },
+      "presentation": {
+        "summary": "Excitation-conserving light-matter model.",
+        "tags": [
+          "jaynes-cummings"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "ssh",
+      "name": "Su-Schrieffer-Heeger model",
+      "family": "topological",
+      "formula": {
+        "latex": "H=\\sum_n[t_1a_n^\\dagger b_n+t_2a_{n+1}^\\dagger b_n+\\mathrm{h.c.}]"
+      },
+      "basis": {
+        "description": "|n,A>, |n,B>"
+      },
+      "parameters": [
+        {
+          "symbol": "t_1",
+          "name": "intracell hopping",
+          "unit_convention": "energy",
+          "description": "intracell hopping",
+          "default": 0.6
+        },
+        {
+          "symbol": "t_2",
+          "name": "intercell hopping",
+          "unit_convention": "energy",
+          "description": "intercell hopping",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "nearest-neighbor bipartite hopping"
+      ],
+      "symmetries": [
+        "chiral",
+        "time reversal"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "t_1=t_2",
+          "result": "bulk gap closing"
+        }
+      ],
+      "observables": [
+        "bands",
+        "edge states",
+        "winding number"
+      ],
+      "relations": [
+        {
+          "type": "extension",
+          "target": "rice_mele",
+          "condition": "add staggered onsite term"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII topological Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": "ssh_topological"
+      },
+      "presentation": {
+        "summary": "Minimal 1D chiral topological model.",
+        "tags": [
+          "ssh",
+          "topological"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "rice_mele",
+      "name": "Rice-Mele model",
+      "family": "topological",
+      "formula": {
+        "latex": "H=H_{\\rm SSH}+\\Delta\\sum_n(a_n^\\dagger a_n-b_n^\\dagger b_n)"
+      },
+      "basis": {
+        "description": "|n,A>, |n,B>"
+      },
+      "parameters": [
+        {
+          "symbol": "t_1",
+          "name": "intracell hopping",
+          "unit_convention": "energy",
+          "description": "intracell hopping",
+          "default": 0.6
+        },
+        {
+          "symbol": "t_2",
+          "name": "intercell hopping",
+          "unit_convention": "energy",
+          "description": "intercell hopping",
+          "default": 1
+        },
+        {
+          "symbol": "Delta",
+          "name": "staggered potential",
+          "unit_convention": "energy",
+          "description": "sublattice offset",
+          "default": 0.2
+        }
+      ],
+      "assumptions": [
+        "nearest-neighbor hopping"
+      ],
+      "symmetries": [
+        "charge conservation"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "Delta=0",
+          "result": "ssh"
+        }
+      ],
+      "observables": [
+        "spectrum",
+        "polarization",
+        "pumped charge"
+      ],
+      "relations": [
+        {
+          "type": "limit",
+          "target": "ssh",
+          "condition": "Delta=0"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII topological Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "SSH extension and pumping model.",
+        "tags": [
+          "rice-mele",
+          "pump"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "hubbard",
+      "name": "Fermi-Hubbard model",
+      "family": "many_body",
+      "formula": {
+        "latex": "H=-t\\sum_{\\langle i,j\\rangle,\\sigma}(c_{i\\sigma}^\\dagger c_{j\\sigma}+\\mathrm{h.c.})+U\\sum_i n_{i\\uparrow}n_{i\\downarrow}"
+      },
+      "basis": {
+        "description": "fermionic occupation basis"
+      },
+      "parameters": [
+        {
+          "symbol": "t",
+          "name": "hopping",
+          "unit_convention": "energy",
+          "description": "nearest-neighbor hopping",
+          "default": 1
+        },
+        {
+          "symbol": "U",
+          "name": "onsite interaction",
+          "unit_convention": "energy",
+          "description": "onsite repulsion",
+          "default": 4
+        }
+      ],
+      "assumptions": [
+        "single-band lattice"
+      ],
+      "symmetries": [
+        "particle number"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "U=0",
+          "result": "noninteracting tight binding"
+        }
+      ],
+      "observables": [
+        "double occupancy",
+        "correlations",
+        "spectrum"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII many-body Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": "hubbard_small"
+      },
+      "presentation": {
+        "summary": "Canonical interacting lattice-fermion model.",
+        "tags": [
+          "hubbard",
+          "many-body"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "kitaev_chain",
+      "name": "Kitaev chain",
+      "family": "superconducting",
+      "formula": {
+        "latex": "H=-\\mu\\sum_jc_j^\\dagger c_j-t\\sum_j(c_j^\\dagger c_{j+1}+\\mathrm{h.c.})+\\Delta\\sum_j(c_jc_{j+1}+\\mathrm{h.c.})"
+      },
+      "basis": {
+        "description": "fermionic Fock or Nambu/BdG basis"
+      },
+      "parameters": [
+        {
+          "symbol": "mu",
+          "name": "chemical potential",
+          "unit_convention": "energy",
+          "description": "chemical potential",
+          "default": 0
+        },
+        {
+          "symbol": "t",
+          "name": "hopping",
+          "unit_convention": "energy",
+          "description": "hopping",
+          "default": 1
+        },
+        {
+          "symbol": "Delta",
+          "name": "pairing",
+          "unit_convention": "energy",
+          "description": "p-wave pairing",
+          "default": 0.8
+        }
+      ],
+      "assumptions": [
+        "spinless effective fermions"
+      ],
+      "symmetries": [
+        "fermion parity"
+      ],
+      "conserved_quantities": [
+        "fermion parity"
+      ],
+      "important_limits": [
+        {
+          "condition": "|mu|<2|t|",
+          "result": "topological regime"
+        }
+      ],
+      "observables": [
+        "BdG spectrum",
+        "Majorana localization"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": "kitaev_topological"
+      },
+      "presentation": {
+        "summary": "Minimal 1D topological superconductor.",
+        "tags": [
+          "kitaev",
+          "majorana"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "surface_code_stabilizer",
+      "name": "Surface-code stabilizer Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H=-J_s\\sum_sA_s-J_p\\sum_pB_p"
+      },
+      "basis": {
+        "description": "qubit tensor-product basis"
+      },
+      "parameters": [
+        {
+          "symbol": "J_s",
+          "name": "star coupling",
+          "unit_convention": "energy",
+          "description": "X-stabilizer weight",
+          "default": 1
+        },
+        {
+          "symbol": "J_p",
+          "name": "plaquette coupling",
+          "unit_convention": "energy",
+          "description": "Z-stabilizer weight",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "ideal commuting stabilizers"
+      ],
+      "symmetries": [
+        "stabilizer symmetries"
+      ],
+      "conserved_quantities": [
+        "ideal stabilizers"
+      ],
+      "important_limits": [
+        {
+          "condition": "J_s,J_p>0",
+          "result": "code space is common +1 sector"
+        }
+      ],
+      "observables": [
+        "stabilizers",
+        "syndrome energy"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": "surface_code_default"
+      },
+      "presentation": {
+        "summary": "Effective ideal surface-code stabilizer model.",
+        "tags": [
+          "qec",
+          "surface-code"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/a1_fixtures.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "landau_zener",
+      "name": "Landau-Zener sweep",
+      "family": "driven",
+      "formula": {
+        "latex": "H(t)=\\frac{vt}{2}\\sigma_z+\\frac{\\Delta}{2}\\sigma_x"
+      },
+      "basis": {
+        "description": "diabatic two-state basis"
+      },
+      "parameters": [
+        {
+          "symbol": "v",
+          "name": "sweep rate",
+          "unit_convention": "energy_per_time",
+          "description": "linear detuning sweep rate",
+          "default": 1
+        },
+        {
+          "symbol": "Delta",
+          "name": "minimum gap",
+          "unit_convention": "energy",
+          "description": "avoided-crossing coupling",
+          "default": 0.2
+        }
+      ],
+      "assumptions": [
+        "linear sweep through one avoided crossing"
+      ],
+      "symmetries": [],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "slow sweep",
+          "result": "adiabatic passage"
+        },
+        {
+          "condition": "fast sweep",
+          "result": "diabatic passage"
+        }
+      ],
+      "observables": [
+        "transition probability",
+        "instantaneous populations",
+        "adiabatic fidelity"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "two_level_pauli",
+          "condition": "time-dependent d-vector"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical nonadiabatic avoided-crossing model.",
+        "tags": [
+          "landau-zener",
+          "adiabatic",
+          "two-level"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "semiclassical_rabi_drive",
+      "name": "Semiclassically driven two-level system",
+      "family": "driven",
+      "formula": {
+        "latex": "H(t)=\\frac{\\hbar\\omega_0}{2}\\sigma_z+\\hbar\\Omega\\cos(\\omega_d t+\\phi)\\sigma_x"
+      },
+      "basis": {
+        "description": "two-level basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_0",
+          "name": "transition frequency",
+          "unit_convention": "angular_frequency",
+          "description": "bare splitting",
+          "default": 1
+        },
+        {
+          "symbol": "Omega",
+          "name": "drive amplitude",
+          "unit_convention": "angular_frequency",
+          "description": "drive strength",
+          "default": 0.1
+        },
+        {
+          "symbol": "omega_d",
+          "name": "drive frequency",
+          "unit_convention": "angular_frequency",
+          "description": "classical drive frequency",
+          "default": 1
+        },
+        {
+          "symbol": "phi",
+          "name": "drive phase",
+          "unit_convention": "angle",
+          "description": "drive phase",
+          "default": 0
+        }
+      ],
+      "assumptions": [
+        "classical coherent drive",
+        "two-level approximation"
+      ],
+      "symmetries": [
+        "periodic time translation for monochromatic drive"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "near resonance and weak drive",
+          "result": "rotating-wave driven-qubit model"
+        }
+      ],
+      "observables": [
+        "excited-state population",
+        "Bloch vector",
+        "Rabi oscillations"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "two_level_pauli",
+          "condition": "periodic transverse d-vector"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Laboratory-frame Hamiltonian for coherent two-level control.",
+        "tags": [
+          "rabi-drive",
+          "control",
+          "two-level"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "rotating_frame_qubit",
+      "name": "Rotating-frame driven qubit",
+      "family": "driven",
+      "formula": {
+        "latex": "H_{\\rm rot}=\\frac{\\hbar\\delta}{2}\\sigma_z+\\frac{\\hbar\\Omega}{2}(\\cos\\phi\\,\\sigma_x+\\sin\\phi\\,\\sigma_y)"
+      },
+      "basis": {
+        "description": "two-level rotating-frame basis"
+      },
+      "parameters": [
+        {
+          "symbol": "delta",
+          "name": "detuning",
+          "unit_convention": "angular_frequency",
+          "description": "omega_0-omega_d",
+          "default": 0
+        },
+        {
+          "symbol": "Omega",
+          "name": "Rabi rate",
+          "unit_convention": "angular_frequency",
+          "description": "effective transverse drive",
+          "default": 0.1
+        },
+        {
+          "symbol": "phi",
+          "name": "phase",
+          "unit_convention": "angle",
+          "description": "control phase",
+          "default": 0
+        }
+      ],
+      "assumptions": [
+        "rotating-wave approximation",
+        "near-resonant drive"
+      ],
+      "symmetries": [
+        "time translation for constant controls"
+      ],
+      "conserved_quantities": [
+        "energy in constant effective frame"
+      ],
+      "important_limits": [
+        {
+          "condition": "delta=0",
+          "result": "resonant equatorial Bloch rotation"
+        }
+      ],
+      "observables": [
+        "Bloch vector",
+        "gate fidelity",
+        "population"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "semiclassical_rabi_drive",
+          "condition": "rotating-frame plus RWA reduction"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Standard effective Hamiltonian for qubit pulse control.",
+        "tags": [
+          "rotating-frame",
+          "rwa",
+          "qubit-control"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "ramsey_sequence_effective",
+      "name": "Ramsey free-precession Hamiltonian",
+      "family": "driven",
+      "formula": {
+        "latex": "H_{\\rm free}=\\frac{\\hbar\\delta}{2}\\sigma_z"
+      },
+      "basis": {
+        "description": "two-level rotating-frame basis"
+      },
+      "parameters": [
+        {
+          "symbol": "delta",
+          "name": "detuning",
+          "unit_convention": "angular_frequency",
+          "description": "signal/reference detuning",
+          "default": 0.05
+        },
+        {
+          "symbol": "T",
+          "name": "free evolution time",
+          "unit_convention": "time",
+          "description": "Ramsey interrogation time",
+          "default": 10
+        }
+      ],
+      "assumptions": [
+        "idealized pi/2 preparation and readout pulses",
+        "coherent free evolution"
+      ],
+      "symmetries": [
+        "z-axis rotations"
+      ],
+      "conserved_quantities": [
+        "sigma_z during free segment"
+      ],
+      "important_limits": [
+        {
+          "condition": "delta=0",
+          "result": "no relative phase accumulation"
+        }
+      ],
+      "observables": [
+        "Ramsey fringe",
+        "phase",
+        "population"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "rotating_frame_qubit",
+          "condition": "drive off during free-precession segment"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Effective free-evolution core of Ramsey interferometry.",
+        "tags": [
+          "ramsey",
+          "interferometry",
+          "control"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "floquet_two_level",
+      "name": "Periodically driven Floquet two-level model",
+      "family": "driven",
+      "formula": {
+        "latex": "H(t)=\\frac{\\Delta}{2}\\sigma_z+A\\cos(\\omega t)\\sigma_x"
+      },
+      "basis": {
+        "description": "two-level basis with Floquet/Sambe extension when used"
+      },
+      "parameters": [
+        {
+          "symbol": "Delta",
+          "name": "static splitting",
+          "unit_convention": "energy",
+          "description": "bare level splitting",
+          "default": 1
+        },
+        {
+          "symbol": "A",
+          "name": "drive amplitude",
+          "unit_convention": "energy",
+          "description": "periodic coupling amplitude",
+          "default": 0.5
+        },
+        {
+          "symbol": "omega",
+          "name": "drive frequency",
+          "unit_convention": "angular_frequency",
+          "description": "periodic drive frequency",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "strictly periodic drive"
+      ],
+      "symmetries": [
+        "discrete time-translation by one period"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "A=0",
+          "result": "static two-level Hamiltonian"
+        }
+      ],
+      "observables": [
+        "quasienergies",
+        "stroboscopic populations",
+        "Floquet modes"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "two_level_pauli",
+          "condition": "periodic d-vector"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Minimal Floquet benchmark for quasienergy and multiphoton physics.",
+        "tags": [
+          "floquet",
+          "periodic-drive",
+          "two-level"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "driven_harmonic_oscillator",
+      "name": "Linearly driven harmonic oscillator",
+      "family": "driven",
+      "formula": {
+        "latex": "H(t)=\\hbar\\omega a^\\dagger a+\\hbar[\\epsilon(t)a^\\dagger+\\epsilon^*(t)a]"
+      },
+      "basis": {
+        "description": "oscillator Fock basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega",
+          "name": "mode frequency",
+          "unit_convention": "angular_frequency",
+          "description": "oscillator frequency",
+          "default": 1
+        },
+        {
+          "symbol": "epsilon",
+          "name": "drive envelope",
+          "unit_convention": "angular_frequency",
+          "description": "complex coherent-drive envelope",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "single bosonic mode",
+        "linear coherent forcing"
+      ],
+      "symmetries": [],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "epsilon=0",
+          "result": "harmonic_oscillator"
+        }
+      ],
+      "observables": [
+        "occupation",
+        "quadratures",
+        "phase-space displacement"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "harmonic_oscillator",
+          "condition": "drive switched off"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical coherent forcing of a bosonic mode.",
+        "tags": [
+          "oscillator",
+          "coherent-drive",
+          "bosonic"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "parametric_oscillator",
+      "name": "Degenerate parametric oscillator",
+      "family": "driven",
+      "formula": {
+        "latex": "H=\\hbar\\omega a^\\dagger a+\\frac{\\hbar}{2}(\\lambda a^{\\dagger2}+\\lambda^*a^2)"
+      },
+      "basis": {
+        "description": "oscillator Fock basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega",
+          "name": "mode frequency",
+          "unit_convention": "angular_frequency",
+          "description": "oscillator frequency",
+          "default": 1
+        },
+        {
+          "symbol": "lambda",
+          "name": "parametric coupling",
+          "unit_convention": "angular_frequency",
+          "description": "two-quantum drive/coupling",
+          "default": 0.1
+        }
+      ],
+      "assumptions": [
+        "single-mode quadratic bosonic Hamiltonian"
+      ],
+      "symmetries": [
+        "bosonic parity"
+      ],
+      "conserved_quantities": [
+        "parity"
+      ],
+      "important_limits": [
+        {
+          "condition": "lambda=0",
+          "result": "harmonic_oscillator"
+        }
+      ],
+      "observables": [
+        "quadrature variance",
+        "squeezing",
+        "occupation"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "harmonic_oscillator",
+          "condition": "parametric term removed"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Quadratic bosonic model for squeezing and parametric amplification.",
+        "tags": [
+          "parametric",
+          "squeezing",
+          "bosonic"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "tavis_cummings",
+      "name": "Tavis-Cummings model",
+      "family": "light_matter",
+      "formula": {
+        "latex": "H=\\hbar\\omega_c a^\\dagger a+\\hbar\\omega_q J_z+\\hbar g(a^\\dagger J_-+aJ_+)"
+      },
+      "basis": {
+        "description": "cavity Fock basis x collective-spin basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_c",
+          "name": "cavity frequency",
+          "unit_convention": "angular_frequency",
+          "description": "mode frequency",
+          "default": 1
+        },
+        {
+          "symbol": "omega_q",
+          "name": "matter frequency",
+          "unit_convention": "angular_frequency",
+          "description": "collective transition frequency",
+          "default": 1
+        },
+        {
+          "symbol": "g",
+          "name": "coupling",
+          "unit_convention": "angular_frequency",
+          "description": "collective light-matter coupling scale",
+          "default": 0.05
+        }
+      ],
+      "assumptions": [
+        "identical two-level emitters",
+        "rotating-wave approximation",
+        "single cavity mode"
+      ],
+      "symmetries": [
+        "U(1) excitation symmetry",
+        "permutation symmetry for identical emitters"
+      ],
+      "conserved_quantities": [
+        "total excitation number"
+      ],
+      "important_limits": [
+        {
+          "condition": "one emitter",
+          "result": "jaynes_cummings"
+        }
+      ],
+      "observables": [
+        "collective inversion",
+        "photon number",
+        "dressed spectrum"
+      ],
+      "relations": [
+        {
+          "type": "limit",
+          "target": "jaynes_cummings",
+          "condition": "single emitter"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Collective multi-emitter extension of Jaynes-Cummings cavity QED.",
+        "tags": [
+          "cavity-qed",
+          "collective",
+          "light-matter"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "dicke",
+      "name": "Dicke model",
+      "family": "light_matter",
+      "formula": {
+        "latex": "H=\\hbar\\omega_c a^\\dagger a+\\hbar\\omega_q J_z+\\frac{2\\hbar g}{\\sqrt N}(a+a^\\dagger)J_x"
+      },
+      "basis": {
+        "description": "cavity Fock basis x collective-spin basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_c",
+          "name": "cavity frequency",
+          "unit_convention": "angular_frequency",
+          "description": "mode frequency",
+          "default": 1
+        },
+        {
+          "symbol": "omega_q",
+          "name": "matter frequency",
+          "unit_convention": "angular_frequency",
+          "description": "atomic transition frequency",
+          "default": 1
+        },
+        {
+          "symbol": "g",
+          "name": "collective coupling",
+          "unit_convention": "angular_frequency",
+          "description": "collective coupling scale",
+          "default": 0.2
+        },
+        {
+          "symbol": "N",
+          "name": "emitter count",
+          "unit_convention": "dimensionless",
+          "description": "number of two-level emitters",
+          "default": 10
+        }
+      ],
+      "assumptions": [
+        "collective identical emitters",
+        "single bosonic mode"
+      ],
+      "symmetries": [
+        "Z2 parity"
+      ],
+      "conserved_quantities": [
+        "parity"
+      ],
+      "important_limits": [
+        {
+          "condition": "N=1 with convention adjustment",
+          "result": "Rabi-type single-emitter model"
+        }
+      ],
+      "observables": [
+        "photon number",
+        "collective spin",
+        "spectrum",
+        "parity"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "rabi",
+          "condition": "single-emitter reduction"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Collective light-matter model retaining counter-rotating coupling.",
+        "tags": [
+          "dicke",
+          "collective",
+          "cavity-qed"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "dispersive_jc",
+      "name": "Dispersive Jaynes-Cummings effective Hamiltonian",
+      "family": "light_matter",
+      "formula": {
+        "latex": "H_{\\rm disp}\\simeq\\hbar(\\omega_c+\\chi\\sigma_z)a^\\dagger a+\\frac{\\hbar}{2}(\\omega_q+\\chi)\\sigma_z"
+      },
+      "basis": {
+        "description": "cavity Fock x two-level basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_c",
+          "name": "cavity frequency",
+          "unit_convention": "angular_frequency",
+          "description": "bare cavity frequency",
+          "default": 1
+        },
+        {
+          "symbol": "omega_q",
+          "name": "qubit frequency",
+          "unit_convention": "angular_frequency",
+          "description": "bare qubit frequency",
+          "default": 1.2
+        },
+        {
+          "symbol": "chi",
+          "name": "dispersive shift",
+          "unit_convention": "angular_frequency",
+          "description": "state-dependent frequency shift",
+          "default": 0.01
+        }
+      ],
+      "assumptions": [
+        "large qubit-cavity detuning relative to coupling",
+        "second-order dispersive approximation"
+      ],
+      "symmetries": [
+        "excitation-number-compatible effective structure"
+      ],
+      "conserved_quantities": [
+        "photon number",
+        "sigma_z"
+      ],
+      "important_limits": [
+        {
+          "condition": "chi=0",
+          "result": "uncoupled effective cavity and qubit"
+        }
+      ],
+      "observables": [
+        "state-dependent cavity shift",
+        "ac Stark shift",
+        "photon number"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "jaynes_cummings",
+          "condition": "large-detuning effective limit"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII driven and light-matter Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Effective cavity-QED Hamiltonian used for dispersive readout and conditional phase evolution.",
+        "tags": [
+          "dispersive",
+          "cavity-qed",
+          "effective"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/driven_light_matter.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "free_particle",
+      "name": "Free particle",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{\\mathbf p^2}{2m}"
+      },
+      "basis": {
+        "description": "momentum basis |p> or position basis |x>"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "nonrelativistic particle",
+        "no external potential"
+      ],
+      "symmetries": [
+        "spatial translations",
+        "rotations in isotropic space",
+        "time translation"
+      ],
+      "conserved_quantities": [
+        "momentum",
+        "energy"
+      ],
+      "important_limits": [
+        {
+          "condition": "V=0",
+          "result": "plane-wave eigenstates"
+        }
+      ],
+      "observables": [
+        "momentum",
+        "position distribution",
+        "probability current"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Baseline translationally invariant single-particle Hamiltonian.",
+        "tags": [
+          "free-particle",
+          "single-particle"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "particle_in_box",
+      "name": "Infinite square well",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{p^2}{2m},\\quad 0<x<L,\\qquad \\psi(0)=\\psi(L)=0"
+      },
+      "basis": {
+        "description": "position basis on [0,L]"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "L",
+          "name": "box length",
+          "unit_convention": "length",
+          "description": "well width",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "infinite hard walls",
+        "one spatial dimension"
+      ],
+      "symmetries": [
+        "parity about box center"
+      ],
+      "conserved_quantities": [
+        "energy"
+      ],
+      "important_limits": [
+        {
+          "condition": "L increases",
+          "result": "level spacing decreases as L^{-2}"
+        }
+      ],
+      "observables": [
+        "energy spectrum",
+        "position density",
+        "momentum density"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical confinement model with discrete quadratic spectrum.",
+        "tags": [
+          "well",
+          "confinement"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "finite_square_well",
+      "name": "Finite square well",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{p^2}{2m}+V(x),\\quad V(x)=0\\ (|x|<a),\\ V_0\\ (|x|\\ge a)"
+      },
+      "basis": {
+        "description": "position basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "a",
+          "name": "half width",
+          "unit_convention": "length",
+          "description": "well half-width",
+          "default": 1
+        },
+        {
+          "symbol": "V_0",
+          "name": "barrier height",
+          "unit_convention": "energy",
+          "description": "outside potential",
+          "default": 10
+        }
+      ],
+      "assumptions": [
+        "one-dimensional symmetric well"
+      ],
+      "symmetries": [
+        "parity"
+      ],
+      "conserved_quantities": [
+        "energy"
+      ],
+      "important_limits": [
+        {
+          "condition": "V_0 -> infinity",
+          "result": "infinite-well limit"
+        }
+      ],
+      "observables": [
+        "bound-state energies",
+        "wavefunction leakage",
+        "transmission"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Finite confinement model exhibiting evanescent tails.",
+        "tags": [
+          "well",
+          "tunneling"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "delta_potential",
+      "name": "Delta-function potential",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{p^2}{2m}+g\\,\\delta(x)"
+      },
+      "basis": {
+        "description": "position basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "g",
+          "name": "delta strength",
+          "unit_convention": "energy_length",
+          "description": "contact-potential strength",
+          "default": -1
+        }
+      ],
+      "assumptions": [
+        "one-dimensional contact interaction"
+      ],
+      "symmetries": [
+        "parity"
+      ],
+      "conserved_quantities": [
+        "energy"
+      ],
+      "important_limits": [
+        {
+          "condition": "g<0",
+          "result": "one bound state"
+        },
+        {
+          "condition": "g>0",
+          "result": "repulsive scattering center"
+        }
+      ],
+      "observables": [
+        "bound-state energy",
+        "reflection",
+        "transmission"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Exactly solvable contact-potential benchmark.",
+        "tags": [
+          "delta",
+          "scattering"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "harmonic_oscillator_nd",
+      "name": "Anisotropic multidimensional harmonic oscillator",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\sum_i\\hbar\\omega_i(a_i^\\dagger a_i+\\tfrac12)"
+      },
+      "basis": {
+        "description": "tensor product of oscillator Fock bases"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_i",
+          "name": "mode frequencies",
+          "unit_convention": "angular_frequency",
+          "description": "per-axis angular frequencies",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "independent quadratic modes"
+      ],
+      "symmetries": [
+        "mode parities"
+      ],
+      "conserved_quantities": [
+        "occupation number of each uncoupled mode"
+      ],
+      "important_limits": [
+        {
+          "condition": "all omega_i equal",
+          "result": "isotropic oscillator with enhanced degeneracy"
+        }
+      ],
+      "observables": [
+        "energy spectrum",
+        "mode occupations",
+        "quadratures"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Multimode extension of the canonical oscillator.",
+        "tags": [
+          "oscillator",
+          "multimode"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "anharmonic_oscillator",
+      "name": "Quartic anharmonic oscillator",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{p^2}{2m}+\\frac12m\\omega^2x^2+\\lambda x^4"
+      },
+      "basis": {
+        "description": "position or truncated oscillator basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "omega",
+          "name": "frequency",
+          "unit_convention": "angular_frequency",
+          "description": "harmonic frequency",
+          "default": 1
+        },
+        {
+          "symbol": "lambda",
+          "name": "quartic coupling",
+          "unit_convention": "energy_per_length4",
+          "description": "anharmonic strength",
+          "default": 0.05
+        }
+      ],
+      "assumptions": [
+        "confining quartic correction"
+      ],
+      "symmetries": [
+        "parity"
+      ],
+      "conserved_quantities": [
+        "energy"
+      ],
+      "important_limits": [
+        {
+          "condition": "lambda=0",
+          "result": "harmonic oscillator"
+        }
+      ],
+      "observables": [
+        "energy shifts",
+        "level spacing",
+        "position moments"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Standard perturbative and numerical benchmark beyond exact harmonic motion.",
+        "tags": [
+          "oscillator",
+          "anharmonic"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "double_well",
+      "name": "Symmetric quartic double well",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{p^2}{2m}+\\lambda(x^2-a^2)^2"
+      },
+      "basis": {
+        "description": "position basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "lambda",
+          "name": "quartic scale",
+          "unit_convention": "energy_per_length4",
+          "description": "barrier scale",
+          "default": 1
+        },
+        {
+          "symbol": "a",
+          "name": "well displacement",
+          "unit_convention": "length",
+          "description": "minima at ±a",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "symmetric one-dimensional potential"
+      ],
+      "symmetries": [
+        "parity"
+      ],
+      "conserved_quantities": [
+        "energy"
+      ],
+      "important_limits": [
+        {
+          "condition": "high barrier",
+          "result": "near-degenerate tunneling doublets"
+        }
+      ],
+      "observables": [
+        "tunnel splitting",
+        "position density",
+        "parity"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical tunneling and symmetry-breaking precursor model.",
+        "tags": [
+          "double-well",
+          "tunneling"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "linear_potential",
+      "name": "Uniform-force Hamiltonian",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{p^2}{2m}+Fx"
+      },
+      "basis": {
+        "description": "position basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "F",
+          "name": "force coefficient",
+          "unit_convention": "force",
+          "description": "linear-potential slope",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "uniform force in one dimension"
+      ],
+      "symmetries": [
+        "time translation"
+      ],
+      "conserved_quantities": [
+        "energy"
+      ],
+      "important_limits": [],
+      "observables": [
+        "position",
+        "momentum",
+        "probability current"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Airy-function model for motion in a uniform force field.",
+        "tags": [
+          "airy",
+          "uniform-force"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "central_potential",
+      "name": "Generic central-potential Hamiltonian",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{\\mathbf p^2}{2m}+V(r)"
+      },
+      "basis": {
+        "description": "|r,l,m> or radial-angular decomposition"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "spherically symmetric scalar potential"
+      ],
+      "symmetries": [
+        "SO(3) rotations"
+      ],
+      "conserved_quantities": [
+        "energy",
+        "L^2",
+        "L_z"
+      ],
+      "important_limits": [
+        {
+          "condition": "V(r)=-k/r",
+          "result": "Coulomb/hydrogenic family"
+        }
+      ],
+      "observables": [
+        "radial density",
+        "angular momentum",
+        "spectrum"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Parent form for spherically symmetric single-particle models.",
+        "tags": [
+          "central-potential",
+          "angular-momentum"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "coulomb_one_body",
+      "name": "One-body Coulomb Hamiltonian",
+      "family": "foundational",
+      "formula": {
+        "latex": "H=\\frac{\\mathbf p^2}{2m}-\\frac{\\kappa}{r}"
+      },
+      "basis": {
+        "description": "hydrogenic |n,l,m> basis or position basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "reduced mass",
+          "unit_convention": "mass",
+          "description": "effective reduced mass",
+          "default": 1
+        },
+        {
+          "symbol": "kappa",
+          "name": "Coulomb coupling",
+          "unit_convention": "energy_length",
+          "description": "attractive 1/r strength",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "nonrelativistic one-body reduction",
+        "attractive central interaction"
+      ],
+      "symmetries": [
+        "SO(3) rotations"
+      ],
+      "conserved_quantities": [
+        "energy",
+        "L^2",
+        "L_z"
+      ],
+      "important_limits": [
+        {
+          "condition": "hydrogenic charge convention",
+          "result": "hydrogen spectrum"
+        }
+      ],
+      "observables": [
+        "energy spectrum",
+        "radial density",
+        "angular momentum"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII foundational Schrödinger/Hamiltonian treatment"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical attractive inverse-radius Hamiltonian underlying hydrogenic models.",
+        "tags": [
+          "coulomb",
+          "hydrogenic"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/foundational.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "tight_binding_generic",
+      "name": "Generic tight-binding Hamiltonian",
+      "family": "lattice",
+      "formula": {
+        "latex": "H=\\sum_i\\epsilon_i c_i^\\dagger c_i+\\sum_{i\\ne j}(t_{ij}c_i^\\dagger c_j+\\mathrm{h.c.})"
+      },
+      "basis": {
+        "description": "localized orbital/Wannier basis"
+      },
+      "parameters": [
+        {
+          "symbol": "epsilon_i",
+          "name": "onsite energies",
+          "unit_convention": "energy",
+          "description": "site/orbital energies",
+          "default": "model-defined"
+        },
+        {
+          "symbol": "t_ij",
+          "name": "hopping amplitudes",
+          "unit_convention": "energy",
+          "description": "inter-site hopping matrix elements",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "single-particle lattice description or quadratic many-body reduction"
+      ],
+      "symmetries": [
+        "model-dependent lattice symmetries"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "translation invariant hopping",
+          "result": "Bloch-band representation"
+        }
+      ],
+      "observables": [
+        "band structure",
+        "density of states",
+        "local density",
+        "currents"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Parent quadratic lattice Hamiltonian for band and topological models.",
+        "tags": [
+          "tight-binding",
+          "lattice",
+          "bloch"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "bloch_two_band",
+      "name": "Generic two-band Bloch Hamiltonian",
+      "family": "lattice",
+      "formula": {
+        "latex": "H(\\mathbf k)=d_0(\\mathbf k)I+\\mathbf d(\\mathbf k)\\cdot\\boldsymbol{\\sigma}"
+      },
+      "basis": {
+        "description": "two orbital/sublattice/band basis at crystal momentum k"
+      },
+      "parameters": [
+        {
+          "symbol": "d_0",
+          "name": "scalar Bloch term",
+          "unit_convention": "energy",
+          "description": "identity coefficient",
+          "default": "model-defined"
+        },
+        {
+          "symbol": "d",
+          "name": "Bloch pseudospin vector",
+          "unit_convention": "energy",
+          "description": "three-component coefficient vector",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "translation-invariant two-band reduction"
+      ],
+      "symmetries": [
+        "model-dependent"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "|d(k)|=0",
+          "result": "band touching"
+        }
+      ],
+      "observables": [
+        "band energies",
+        "Berry curvature",
+        "pseudospin texture",
+        "topological invariants"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "two_level_pauli",
+          "condition": "momentum-dependent Pauli coefficients"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Universal two-band Bloch form underlying many Chern and Dirac models.",
+        "tags": [
+          "two-band",
+          "bloch",
+          "pauli"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "graphene_nn",
+      "name": "Nearest-neighbor graphene Hamiltonian",
+      "family": "lattice",
+      "formula": {
+        "latex": "H(\\mathbf k)=-t\\begin{pmatrix}0&f(\\mathbf k)\\\\f^*(\\mathbf k)&0\\end{pmatrix}"
+      },
+      "basis": {
+        "description": "A/B honeycomb sublattice basis"
+      },
+      "parameters": [
+        {
+          "symbol": "t",
+          "name": "nearest-neighbor hopping",
+          "unit_convention": "energy",
+          "description": "honeycomb hopping amplitude",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "ideal honeycomb lattice",
+        "nearest-neighbor hopping",
+        "spin neglected"
+      ],
+      "symmetries": [
+        "chiral/sublattice",
+        "time reversal",
+        "lattice point group"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "k near K or K'",
+          "result": "massless Dirac Hamiltonian"
+        }
+      ],
+      "observables": [
+        "band structure",
+        "Dirac cones",
+        "sublattice pseudospin",
+        "Berry phase"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "dirac_2d",
+          "condition": "low-energy expansion near K/K'"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical honeycomb tight-binding model with Dirac points.",
+        "tags": [
+          "graphene",
+          "honeycomb",
+          "dirac"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "dirac_2d",
+      "name": "Massive 2D Dirac Hamiltonian",
+      "family": "topological",
+      "formula": {
+        "latex": "H(\\mathbf k)=v(k_x\\sigma_x+k_y\\sigma_y)+m\\sigma_z"
+      },
+      "basis": {
+        "description": "two-component pseudospin basis"
+      },
+      "parameters": [
+        {
+          "symbol": "v",
+          "name": "Dirac velocity",
+          "unit_convention": "energy_length",
+          "description": "linear dispersion coefficient",
+          "default": 1
+        },
+        {
+          "symbol": "m",
+          "name": "Dirac mass",
+          "unit_convention": "energy",
+          "description": "gap-opening mass",
+          "default": 0.2
+        }
+      ],
+      "assumptions": [
+        "low-energy two-band continuum approximation"
+      ],
+      "symmetries": [
+        "rotational continuum symmetry in isotropic form"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "m=0",
+          "result": "massless Dirac cone"
+        }
+      ],
+      "observables": [
+        "spectrum",
+        "Berry curvature",
+        "pseudospin texture"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "bloch_two_band",
+          "condition": "continuum two-band specialization"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Minimal gapped two-dimensional Dirac model.",
+        "tags": [
+          "dirac",
+          "continuum",
+          "topological"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "qwz",
+      "name": "Qi-Wu-Zhang Chern-insulator model",
+      "family": "topological",
+      "formula": {
+        "latex": "H(\\mathbf k)=\\sin k_x\\,\\sigma_x+\\sin k_y\\,\\sigma_y+(m+\\cos k_x+\\cos k_y)\\sigma_z"
+      },
+      "basis": {
+        "description": "two-orbital Bloch basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass parameter",
+          "unit_convention": "energy",
+          "description": "topological control parameter",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "two-dimensional square lattice",
+        "two-band Bloch model"
+      ],
+      "symmetries": [
+        "lattice translations"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "bulk gap closes at critical m",
+          "result": "Chern phase transition"
+        }
+      ],
+      "observables": [
+        "band spectrum",
+        "Berry curvature",
+        "Chern number",
+        "edge spectrum"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "bloch_two_band",
+          "condition": "specific lattice d-vector"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Minimal lattice Chern-insulator benchmark.",
+        "tags": [
+          "qwz",
+          "chern",
+          "topological"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "haldane",
+      "name": "Haldane honeycomb model",
+      "family": "topological",
+      "formula": {
+        "latex": "H=t_1\\sum_{\\langle ij\\rangle}c_i^\\dagger c_j+t_2\\sum_{\\langle\\langle ij\\rangle\\rangle}e^{i\\nu_{ij}\\phi}c_i^\\dagger c_j+M\\sum_i\\xi_i c_i^\\dagger c_i"
+      },
+      "basis": {
+        "description": "A/B honeycomb sublattice basis"
+      },
+      "parameters": [
+        {
+          "symbol": "t_1",
+          "name": "nearest-neighbor hopping",
+          "unit_convention": "energy",
+          "description": "real nearest-neighbor hopping",
+          "default": 1
+        },
+        {
+          "symbol": "t_2",
+          "name": "next-neighbor hopping",
+          "unit_convention": "energy",
+          "description": "complex next-neighbor hopping magnitude",
+          "default": 0.1
+        },
+        {
+          "symbol": "phi",
+          "name": "flux phase",
+          "unit_convention": "angle",
+          "description": "complex hopping phase",
+          "default": 1.5707963268
+        },
+        {
+          "symbol": "M",
+          "name": "sublattice mass",
+          "unit_convention": "energy",
+          "description": "staggered onsite potential",
+          "default": 0
+        }
+      ],
+      "assumptions": [
+        "spinless honeycomb lattice",
+        "zero net magnetic flux per unit cell"
+      ],
+      "symmetries": [
+        "lattice translations"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "t_2 sin(phi)=0",
+          "result": "time-reversal-breaking topological mass vanishes"
+        }
+      ],
+      "observables": [
+        "Chern number",
+        "Berry curvature",
+        "edge states",
+        "band gap"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "graphene_nn",
+          "condition": "t_2=0 and M=0"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical anomalous quantum Hall model without net magnetic field.",
+        "tags": [
+          "haldane",
+          "chern",
+          "honeycomb"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "bhz",
+      "name": "Bernevig-Hughes-Zhang model",
+      "family": "topological",
+      "formula": {
+        "latex": "H(\\mathbf k)=\\mathrm{diag}[h(\\mathbf k),h^*(-\\mathbf k)],\\quad h=\\epsilon(\\mathbf k)I+A k_x\\sigma_x-A k_y\\sigma_y+M(\\mathbf k)\\sigma_z"
+      },
+      "basis": {
+        "description": "orbital x Kramers/spin block basis"
+      },
+      "parameters": [
+        {
+          "symbol": "A",
+          "name": "Dirac coupling",
+          "unit_convention": "energy_length",
+          "description": "linear inter-orbital coupling",
+          "default": 1
+        },
+        {
+          "symbol": "B",
+          "name": "quadratic mass coefficient",
+          "unit_convention": "energy_length2",
+          "description": "momentum-dependent mass coefficient",
+          "default": 1
+        },
+        {
+          "symbol": "M",
+          "name": "Dirac mass",
+          "unit_convention": "energy",
+          "description": "band-inversion parameter",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "effective low-energy quantum-well model",
+        "time-reversal paired blocks"
+      ],
+      "symmetries": [
+        "time reversal"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "mass/band ordering changes sign relative to regularization",
+          "result": "topological transition"
+        }
+      ],
+      "observables": [
+        "bulk bands",
+        "helical edge states",
+        "Z2 invariant",
+        "spin-resolved texture"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "dirac_2d",
+          "condition": "single-block continuum structure"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical two-dimensional time-reversal-invariant topological-insulator model.",
+        "tags": [
+          "bhz",
+          "z2",
+          "quantum-spin-hall"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "bbh",
+      "name": "Benalcazar-Bernevig-Hughes quadrupole model",
+      "family": "topological",
+      "formula": {
+        "latex": "H(\\mathbf k)=(\\gamma_x+\\lambda_x\\cos k_x)\\Gamma_4+\\lambda_x\\sin k_x\\Gamma_3+(\\gamma_y+\\lambda_y\\cos k_y)\\Gamma_2+\\lambda_y\\sin k_y\\Gamma_1"
+      },
+      "basis": {
+        "description": "four-orbital unit-cell basis"
+      },
+      "parameters": [
+        {
+          "symbol": "gamma_x",
+          "name": "x intracell coupling",
+          "unit_convention": "energy",
+          "description": "x-direction intracell coupling",
+          "default": 0.5
+        },
+        {
+          "symbol": "lambda_x",
+          "name": "x intercell coupling",
+          "unit_convention": "energy",
+          "description": "x-direction intercell coupling",
+          "default": 1
+        },
+        {
+          "symbol": "gamma_y",
+          "name": "y intracell coupling",
+          "unit_convention": "energy",
+          "description": "y-direction intracell coupling",
+          "default": 0.5
+        },
+        {
+          "symbol": "lambda_y",
+          "name": "y intercell coupling",
+          "unit_convention": "energy",
+          "description": "y-direction intercell coupling",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "four-site unit cell",
+        "pi-flux/sign structure according to convention"
+      ],
+      "symmetries": [
+        "reflection symmetries in ideal form",
+        "chiral in common minimal representation"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "|gamma_x/lambda_x|<1 and |gamma_y/lambda_y|<1 in canonical regime",
+          "result": "quadrupole/corner-state phase"
+        }
+      ],
+      "observables": [
+        "corner modes",
+        "nested Wilson loops",
+        "quadrupole moment",
+        "edge polarization"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical higher-order topological-insulator Hamiltonian.",
+        "tags": [
+          "bbh",
+          "higher-order",
+          "quadrupole"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "weyl_minimal",
+      "name": "Minimal Weyl Hamiltonian",
+      "family": "topological",
+      "formula": {
+        "latex": "H_\\chi(\\mathbf q)=\\chi v\\,\\mathbf q\\cdot\\boldsymbol{\\sigma}"
+      },
+      "basis": {
+        "description": "two-band basis near a Weyl node"
+      },
+      "parameters": [
+        {
+          "symbol": "v",
+          "name": "Weyl velocity",
+          "unit_convention": "energy_length",
+          "description": "isotropic cone velocity",
+          "default": 1
+        },
+        {
+          "symbol": "chi",
+          "name": "chirality",
+          "unit_convention": "dimensionless",
+          "description": "Weyl-node chirality",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "linearized spectrum near isolated node"
+      ],
+      "symmetries": [
+        "continuous rotations only in isotropic idealization"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "q=0",
+          "result": "Weyl node"
+        }
+      ],
+      "observables": [
+        "Berry curvature",
+        "chirality",
+        "surface Fermi arcs in lattice completion",
+        "spectrum"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "bloch_two_band",
+          "condition": "3D linearized two-band crossing"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Universal low-energy Hamiltonian near an isolated Weyl node.",
+        "tags": [
+          "weyl",
+          "semimetal",
+          "chirality"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "nodal_line_two_band",
+      "name": "Minimal nodal-line semimetal model",
+      "family": "topological",
+      "formula": {
+        "latex": "H(\\mathbf k)=[m-B(k_x^2+k_y^2)]\\sigma_x+v k_z\\sigma_z"
+      },
+      "basis": {
+        "description": "two-band pseudospin basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass scale",
+          "unit_convention": "energy",
+          "description": "nodal-ring control parameter",
+          "default": 1
+        },
+        {
+          "symbol": "B",
+          "name": "radial curvature",
+          "unit_convention": "energy_length2",
+          "description": "in-plane quadratic coefficient",
+          "default": 1
+        },
+        {
+          "symbol": "v",
+          "name": "z velocity",
+          "unit_convention": "energy_length",
+          "description": "out-of-plane linear coefficient",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "continuum two-band approximation"
+      ],
+      "symmetries": [
+        "model-dependent PT-like protection"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "k_z=0 and k_x^2+k_y^2=m/B",
+          "result": "nodal ring when m/B>0"
+        }
+      ],
+      "observables": [
+        "nodal locus",
+        "Berry phase",
+        "surface drumhead states in lattice completion"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII geometric, topological, and designed Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Minimal continuum model for a symmetry-protected nodal ring.",
+        "tags": [
+          "nodal-line",
+          "semimetal",
+          "topological"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/lattice_topological.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "two_level_pauli",
+      "name": "Generic two-level Pauli Hamiltonian",
+      "family": "spin",
+      "formula": {
+        "latex": "H=d_0 I+\\mathbf d\\cdot\\boldsymbol{\\sigma}"
+      },
+      "basis": {
+        "description": "two-state basis {|0>,|1>}"
+      },
+      "parameters": [
+        {
+          "symbol": "d_0",
+          "name": "scalar offset",
+          "unit_convention": "energy",
+          "description": "identity-term energy offset",
+          "default": 0
+        },
+        {
+          "symbol": "d_x",
+          "name": "x coefficient",
+          "unit_convention": "energy",
+          "description": "sigma_x coefficient",
+          "default": 0
+        },
+        {
+          "symbol": "d_y",
+          "name": "y coefficient",
+          "unit_convention": "energy",
+          "description": "sigma_y coefficient",
+          "default": 0
+        },
+        {
+          "symbol": "d_z",
+          "name": "z coefficient",
+          "unit_convention": "energy",
+          "description": "sigma_z coefficient",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "effective two-dimensional Hilbert space"
+      ],
+      "symmetries": [
+        "model-dependent; encoded by d"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "d_x=d_y=0",
+          "result": "diagonal two-level splitting"
+        }
+      ],
+      "observables": [
+        "eigenenergies",
+        "Bloch vector",
+        "transition probabilities"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Universal 2x2 Hamiltonian form for qubits, pseudospins, and two-band reductions.",
+        "tags": [
+          "two-level",
+          "pauli",
+          "qubit"
+        ],
+        "difficulty": "introductory"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "spin_half_zeeman",
+      "name": "Spin-1/2 Zeeman Hamiltonian",
+      "family": "spin",
+      "formula": {
+        "latex": "H=-\\boldsymbol{\\mu}\\cdot\\mathbf B=-\\frac{\\hbar\\gamma}{2}\\mathbf B\\cdot\\boldsymbol{\\sigma}"
+      },
+      "basis": {
+        "description": "spin basis {|up>,|down>} along a chosen quantization axis"
+      },
+      "parameters": [
+        {
+          "symbol": "gamma",
+          "name": "gyromagnetic ratio",
+          "unit_convention": "angular_frequency_per_field",
+          "description": "spin gyromagnetic ratio",
+          "default": 1
+        },
+        {
+          "symbol": "B",
+          "name": "magnetic field",
+          "unit_convention": "field",
+          "description": "applied magnetic-field vector",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "spin-1/2 degree of freedom",
+        "externally prescribed static field"
+      ],
+      "symmetries": [
+        "axial rotation when field selects a fixed axis"
+      ],
+      "conserved_quantities": [
+        "spin projection along static field"
+      ],
+      "important_limits": [
+        {
+          "condition": "B=0",
+          "result": "Zeeman splitting vanishes"
+        }
+      ],
+      "observables": [
+        "spin polarization",
+        "precession",
+        "level splitting"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "two_level_pauli",
+          "condition": "identify d proportional to B"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical magnetic coupling of a spin-1/2 system.",
+        "tags": [
+          "spin",
+          "zeeman",
+          "magnetic-field"
+        ],
+        "difficulty": "introductory"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "pauli_particle_em",
+      "name": "Pauli Hamiltonian",
+      "family": "atomic",
+      "formula": {
+        "latex": "H=\\frac{1}{2m}(\\mathbf p-q\\mathbf A)^2+q\\phi-\\boldsymbol{\\mu}\\cdot\\mathbf B"
+      },
+      "basis": {
+        "description": "spatial wavefunction tensor spin-1/2 basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "q",
+          "name": "charge",
+          "unit_convention": "charge",
+          "description": "particle charge",
+          "default": -1
+        },
+        {
+          "symbol": "mu",
+          "name": "magnetic moment",
+          "unit_convention": "energy_per_field",
+          "description": "spin magnetic-moment scale",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "nonrelativistic spin-1/2 particle",
+        "external electromagnetic potentials"
+      ],
+      "symmetries": [
+        "gauge covariance",
+        "spatial symmetries inherited from fields"
+      ],
+      "conserved_quantities": [
+        "energy for static fields"
+      ],
+      "important_limits": [
+        {
+          "condition": "spin coupling omitted",
+          "result": "minimal-coupling Schrödinger Hamiltonian"
+        }
+      ],
+      "observables": [
+        "probability density",
+        "current",
+        "spin polarization",
+        "energy spectrum"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "spin_half_zeeman",
+          "condition": "retain only spin-field coupling"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Nonrelativistic spin-1/2 particle with minimal electromagnetic and magnetic-moment coupling.",
+        "tags": [
+          "pauli",
+          "electromagnetic",
+          "spin"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "linear_stark",
+      "name": "Linear Stark Hamiltonian",
+      "family": "atomic",
+      "formula": {
+        "latex": "H=H_0-q\\,\\mathbf E\\cdot\\mathbf r"
+      },
+      "basis": {
+        "description": "eigenbasis of H_0 or position basis"
+      },
+      "parameters": [
+        {
+          "symbol": "q",
+          "name": "charge",
+          "unit_convention": "charge",
+          "description": "particle charge",
+          "default": -1
+        },
+        {
+          "symbol": "E",
+          "name": "electric field",
+          "unit_convention": "field",
+          "description": "static electric-field vector",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "electric-dipole approximation",
+        "uniform static electric field"
+      ],
+      "symmetries": [
+        "reduced by field direction"
+      ],
+      "conserved_quantities": [
+        "energy for time-independent field"
+      ],
+      "important_limits": [
+        {
+          "condition": "E=0",
+          "result": "unperturbed Hamiltonian H_0"
+        }
+      ],
+      "observables": [
+        "energy shifts",
+        "dipole moment",
+        "state mixing"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Static electric-field coupling used for Stark shifts and level mixing.",
+        "tags": [
+          "stark",
+          "electric-field",
+          "atomic"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "spin_orbit_ls",
+      "name": "LS spin-orbit coupling",
+      "family": "atomic",
+      "formula": {
+        "latex": "H_{\\mathrm{SO}}=\\xi(r)\\,\\mathbf L\\cdot\\mathbf S"
+      },
+      "basis": {
+        "description": "|l,s;j,m_j> or uncoupled |l,m_l;s,m_s> basis"
+      },
+      "parameters": [
+        {
+          "symbol": "xi",
+          "name": "spin-orbit coefficient",
+          "unit_convention": "energy",
+          "description": "effective radial spin-orbit coupling",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "effective nonrelativistic fine-structure interaction"
+      ],
+      "symmetries": [
+        "total angular momentum rotations"
+      ],
+      "conserved_quantities": [
+        "J^2",
+        "J_z",
+        "L^2",
+        "S^2"
+      ],
+      "important_limits": [
+        {
+          "condition": "xi -> 0",
+          "result": "orbital and spin angular momenta decouple"
+        }
+      ],
+      "observables": [
+        "fine-structure splitting",
+        "angular-momentum expectation values"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Effective LS spin-orbit term underlying atomic fine structure.",
+        "tags": [
+          "atomic",
+          "spin-orbit",
+          "fine-structure"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "hyperfine_dipole",
+      "name": "Magnetic-dipole hyperfine Hamiltonian",
+      "family": "atomic",
+      "formula": {
+        "latex": "H_{\\mathrm{hfs}}=A\\,\\mathbf I\\cdot\\mathbf J"
+      },
+      "basis": {
+        "description": "|I,J;F,m_F> coupled angular-momentum basis"
+      },
+      "parameters": [
+        {
+          "symbol": "A",
+          "name": "hyperfine constant",
+          "unit_convention": "energy",
+          "description": "magnetic-dipole hyperfine coupling",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "dominant magnetic-dipole hyperfine interaction"
+      ],
+      "symmetries": [
+        "total F rotations in absence of external fields"
+      ],
+      "conserved_quantities": [
+        "F^2",
+        "F_z"
+      ],
+      "important_limits": [
+        {
+          "condition": "A=0",
+          "result": "nuclear and electronic angular momenta decouple"
+        }
+      ],
+      "observables": [
+        "hyperfine splittings",
+        "F populations"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Leading effective hyperfine interaction between nuclear and electronic angular momentum.",
+        "tags": [
+          "atomic",
+          "hyperfine",
+          "angular-momentum"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "ising_chain",
+      "name": "Transverse-field Ising chain",
+      "family": "spin",
+      "formula": {
+        "latex": "H=-J\\sum_i\\sigma_i^z\\sigma_{i+1}^z-h\\sum_i\\sigma_i^x"
+      },
+      "basis": {
+        "description": "tensor product of local spin-1/2 bases"
+      },
+      "parameters": [
+        {
+          "symbol": "J",
+          "name": "exchange coupling",
+          "unit_convention": "energy",
+          "description": "nearest-neighbor Ising exchange",
+          "default": 1
+        },
+        {
+          "symbol": "h",
+          "name": "transverse field",
+          "unit_convention": "energy",
+          "description": "transverse-field energy scale",
+          "default": 0.5
+        }
+      ],
+      "assumptions": [
+        "spin-1/2 chain",
+        "nearest-neighbor coupling"
+      ],
+      "symmetries": [
+        "global Z2 spin-flip symmetry"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "h=0",
+          "result": "classical Ising limit"
+        },
+        {
+          "condition": "J=0",
+          "result": "independent spins in transverse field"
+        }
+      ],
+      "observables": [
+        "magnetization",
+        "correlations",
+        "gap",
+        "entanglement"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical interacting quantum-spin chain and quantum criticality benchmark.",
+        "tags": [
+          "spin-chain",
+          "ising",
+          "many-body"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "xy_chain",
+      "name": "XY spin chain",
+      "family": "spin",
+      "formula": {
+        "latex": "H=-\\sum_i[J_x\\sigma_i^x\\sigma_{i+1}^x+J_y\\sigma_i^y\\sigma_{i+1}^y]-h\\sum_i\\sigma_i^z"
+      },
+      "basis": {
+        "description": "tensor product of local spin-1/2 bases"
+      },
+      "parameters": [
+        {
+          "symbol": "J_x",
+          "name": "x exchange",
+          "unit_convention": "energy",
+          "description": "x-axis exchange coupling",
+          "default": 1
+        },
+        {
+          "symbol": "J_y",
+          "name": "y exchange",
+          "unit_convention": "energy",
+          "description": "y-axis exchange coupling",
+          "default": 1
+        },
+        {
+          "symbol": "h",
+          "name": "longitudinal field",
+          "unit_convention": "energy",
+          "description": "field energy scale",
+          "default": 0
+        }
+      ],
+      "assumptions": [
+        "spin-1/2 chain",
+        "nearest-neighbor exchange"
+      ],
+      "symmetries": [
+        "U(1) in isotropic XY limit",
+        "discrete symmetries otherwise"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "J_x=J_y",
+          "result": "XX chain"
+        },
+        {
+          "condition": "one transverse exchange component vanishes",
+          "result": "Ising-like limit after axis convention"
+        }
+      ],
+      "observables": [
+        "magnetization",
+        "spin correlations",
+        "spectrum"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Anisotropic planar spin chain interpolating between XX and Ising-like regimes.",
+        "tags": [
+          "spin-chain",
+          "xy",
+          "exchange"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "heisenberg_chain",
+      "name": "Heisenberg spin chain",
+      "family": "spin",
+      "formula": {
+        "latex": "H=J\\sum_i\\mathbf S_i\\cdot\\mathbf S_{i+1}-h\\sum_i S_i^z"
+      },
+      "basis": {
+        "description": "tensor product of local spin bases"
+      },
+      "parameters": [
+        {
+          "symbol": "J",
+          "name": "exchange coupling",
+          "unit_convention": "energy",
+          "description": "isotropic nearest-neighbor exchange",
+          "default": 1
+        },
+        {
+          "symbol": "h",
+          "name": "field scale",
+          "unit_convention": "energy",
+          "description": "Zeeman energy coefficient",
+          "default": 0
+        }
+      ],
+      "assumptions": [
+        "nearest-neighbor isotropic exchange"
+      ],
+      "symmetries": [
+        "SU(2) at h=0",
+        "U(1) about z for finite h"
+      ],
+      "conserved_quantities": [
+        "total S_z for z field"
+      ],
+      "important_limits": [
+        {
+          "condition": "h=0",
+          "result": "isotropic SU(2)-symmetric chain"
+        }
+      ],
+      "observables": [
+        "spin correlations",
+        "structure factor",
+        "magnetization",
+        "spectrum"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical isotropic exchange model for quantum magnetism.",
+        "tags": [
+          "spin-chain",
+          "heisenberg",
+          "exchange"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "spin_one_zfs",
+      "name": "Spin-1 zero-field-splitting Hamiltonian",
+      "family": "spin",
+      "formula": {
+        "latex": "H=D S_z^2+E(S_x^2-S_y^2)+g\\mu_B\\mathbf B\\cdot\\mathbf S"
+      },
+      "basis": {
+        "description": "spin-1 basis {|m_s=-1,0,+1>}"
+      },
+      "parameters": [
+        {
+          "symbol": "D",
+          "name": "axial splitting",
+          "unit_convention": "energy",
+          "description": "axial zero-field splitting",
+          "default": 1
+        },
+        {
+          "symbol": "E",
+          "name": "rhombic splitting",
+          "unit_convention": "energy",
+          "description": "transverse anisotropy",
+          "default": 0
+        },
+        {
+          "symbol": "g",
+          "name": "g factor",
+          "unit_convention": "dimensionless",
+          "description": "effective g factor",
+          "default": 2
+        },
+        {
+          "symbol": "B",
+          "name": "magnetic field",
+          "unit_convention": "field",
+          "description": "external magnetic field",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "effective spin-1 manifold"
+      ],
+      "symmetries": [
+        "axial symmetry when E=0 and B aligned with z"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "E=0,B=0",
+          "result": "pure axial zero-field splitting"
+        }
+      ],
+      "observables": [
+        "level spectrum",
+        "spin populations",
+        "transition frequencies"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII atomic, spin, and field-coupled Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Effective spin-1 Hamiltonian for anisotropy and magnetic-field spectroscopy.",
+        "tags": [
+          "spin-1",
+          "zfs",
+          "spectroscopy"
+        ],
+        "difficulty": "intermediate"
+      },
+      "sourceFile": "registry/spin_atomic_fields.yaml"
+    }
+  ],
+  "presets": {
+    "oscillator_default": {
+      "model": "harmonic_oscillator",
+      "parameters": {
+        "omega": 1
+      }
+    },
+    "rabi_default": {
+      "model": "rabi",
+      "parameters": {
+        "omega_c": 1,
+        "omega_q": 1,
+        "g": 0.05
+      }
+    },
+    "jc_default": {
+      "model": "jaynes_cummings",
+      "parameters": {
+        "omega_c": 1,
+        "omega_q": 1,
+        "g": 0.05
+      }
+    },
+    "ssh_topological": {
+      "model": "ssh",
+      "parameters": {
+        "t_1": 0.6,
+        "t_2": 1
+      }
+    },
+    "hubbard_small": {
+      "model": "hubbard",
+      "parameters": {
+        "t": 1,
+        "U": 4
+      }
+    },
+    "kitaev_topological": {
+      "model": "kitaev_chain",
+      "parameters": {
+        "mu": 0,
+        "t": 1,
+        "Delta": 0.8
+      }
+    },
+    "surface_code_default": {
+      "model": "surface_code_stabilizer",
+      "parameters": {
+        "J_s": 1,
+        "J_p": 1
+      }
+    }
+  }
+}

@@ -19,6 +19,7 @@ import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets
 import { RunHistory } from "./RunHistory";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
+import { AtlasPanel } from "./AtlasPanel";
 import {
   compareSpectrum,
   type SpectrumComparison,
@@ -247,6 +248,7 @@ export function App() {
           <button className="lab-selected" onClick={() => setTab("circuit")}><span>◈</span> Transmon circuit <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("presets")}><span>▣</span> Volume VIII presets <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("runs")}><span>◷</span> Saved runs <span className="live-dot" /></button>
+          <button className="lab-selected" data-testid="open-atlas" onClick={() => setTab("atlas")}><span>◇</span> Hamiltonian Atlas <span className="live-dot" /></button>
           <p className="sidebar-note">
             From two levels to finite chains.
             <br />
@@ -270,9 +272,10 @@ export function App() {
         </aside>
         <main className="workspace">
           <div className="breadcrumb">
-            {tab === "backend" ? "SYSTEM" : "MODELS"} <span>/</span>{" "}
+            {tab === "backend" ? "SYSTEM" : tab === "atlas" ? "REFERENCE" : "MODELS"} <span>/</span>{" "}
             {tab === "backend"
               ? "BACKEND METHODS & FORMATS"
+              : tab === "atlas" ? "HAMILTONIAN ATLAS"
               : tab === "dynamics"
                 ? MODEL_REGISTRY[evolutionModel].label.toUpperCase()
                 : tab === "cavity"
@@ -296,6 +299,7 @@ export function App() {
               <p className="eyebrow accent">
                 {tab === "backend"
                   ? "ARCHITECTURE / 008–009"
+                  : tab === "atlas" ? "PINNED THEORY REFERENCE / 025"
                   : tab === "dynamics"
                     ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : evolutionModel === "stuckelberg" ? "004" : "005"}`
                     : tab === "cavity"
@@ -317,6 +321,7 @@ export function App() {
               <h1>
                 {tab === "backend"
                   ? "Under the hood."
+                  : tab === "atlas" ? "The map of Hamiltonians."
                   : tab === "dynamics"
                     ? "A system in motion."
                     : tab === "cavity"
@@ -338,6 +343,7 @@ export function App() {
               <p>
                 {tab === "backend"
                   ? "Independent numerical engines behind versioned, verified results."
+                  : tab === "atlas" ? "Browse source-pinned definitions and explicit laboratory bindings."
                   : tab === "dynamics"
                     ? MODEL_REGISTRY[evolutionModel].description
                     : tab === "cavity"
@@ -388,6 +394,7 @@ export function App() {
             <button role="tab" aria-selected={tab === "circuit"} onClick={() => setTab("circuit")}>Circuit</button>
             <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>Presets</button>
             <button role="tab" aria-selected={tab === "runs"} onClick={() => setTab("runs")}>Runs</button>
+            <button role="tab" aria-selected={tab === "atlas"} onClick={() => setTab("atlas")}>Atlas</button>
             <button
               role="tab"
               aria-selected={tab === "roadmap"}
@@ -419,7 +426,7 @@ export function App() {
           <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} onSnapshot={collectManyBody} /></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
-          {tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
+          {tab === "atlas" ? <AtlasPanel /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
