@@ -78,7 +78,7 @@ export class EvolutionCoordinator {
         .then(() =>
           this.worker.request("quantum.start", {
             job,
-            outputDir: this.artifactDir,
+            outputDir: this.worker.artifactDirectory(this.artifactDir),
           }),
         )
         .then((ack) => {
@@ -197,8 +197,9 @@ export class EvolutionCoordinator {
         this.reject(new Error("Worker omitted Floquet analysis"));
         return;
       }
-      this.completed.set(value.jobId, value);
-      this.resolve(value);
+      void this.worker.fetchArtifact(value.jobId, value.data, this.artifactDir)
+        .then(() => { this.completed.set(value.jobId, value); this.resolve(value); })
+        .catch(error => this.reject(error instanceof Error ? error : new Error(String(error))));
     } else if (method === "job.cancelled")
       this.reject(new Error(active.job.operation === "cavity" ? "Cavity cancelled" : active.job.operation === "lindblad" ? "Lindblad cancelled" : active.job.operation === "sweep" ? "Sweep cancelled" : "Evolution cancelled"));
     else if (method === "job.failed")

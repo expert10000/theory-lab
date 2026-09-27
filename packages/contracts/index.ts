@@ -348,6 +348,7 @@ export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
   detail: string;
   capabilities: WorkerCapabilities | null;
+  transport?: "local" | "ssh";
 }
 export interface QuantumBridge {
   getStatus(): Promise<WorkerStatus>;

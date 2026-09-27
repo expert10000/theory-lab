@@ -5,6 +5,7 @@ import {
   isWorkerCapabilities,
   type WorkerStatus,
 } from "../../../packages/contracts";
+import { fetchRemoteArtifact, remoteConfig, sshLaunch, type RemoteConfig } from "./remote";
 
 type Pending = {
   resolve: (value: unknown) => void;
@@ -24,12 +25,14 @@ export class WorkerSupervisor extends EventEmitter {
   private starting?: Promise<WorkerStatus>;
   private stopping = false;
   private stderr = "";
+  private remote: RemoteConfig | null = null;
   constructor(private root: string) {
     super();
   }
 
   private fail(message: string) {
-    this.status = { state: "ERROR", detail: message, capabilities: null };
+    this.status = { state: "ERROR", detail: message, capabilities: null,
+      transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local" };
     this.emit("unavailable", message);
     if (this.heartbeat) clearInterval(this.heartbeat);
     for (const pending of this.pending.values()) {
@@ -55,7 +58,13 @@ export class WorkerSupervisor extends EventEmitter {
       state: "STARTING",
       detail: "Connecting to Python",
       capabilities: null,
+      transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local",
     };
+    try { this.remote = remoteConfig(process.env); }
+    catch (error) {
+      this.fail(error instanceof Error ? error.message : String(error));
+      return this.status;
+    }
     const executable =
       process.env.QLAB_PYTHON ||
       join(
@@ -63,7 +72,9 @@ export class WorkerSupervisor extends EventEmitter {
         ".venv",
         process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
       );
-    const child = spawn(executable, ["-u", "-m", "quantum_worker.main"], {
+    const launch = this.remote ? sshLaunch(this.remote) :
+      { command: executable, args: ["-u", "-m", "quantum_worker.main"] };
+    const child = spawn(launch.command, launch.args, {
       cwd: this.root,
       windowsHide: true,
       stdio: "pipe",
@@ -81,7 +92,8 @@ export class WorkerSupervisor extends EventEmitter {
     });
     child.on("error", (error) => {
       if (this.child === child)
-        this.fail(`Python worker: ${error.message}. Run npm run setup:python.`);
+        this.fail(this.remote ? `SSH worker: ${error.message}. Check OpenSSH and remote settings.` :
+          `Python worker: ${error.message}. Run npm run setup:python.`);
     });
     child.stdin.on("error", (error) => {
       if (this.child === child && !this.stopping) this.fail(error.message);
@@ -143,8 +155,9 @@ export class WorkerSupervisor extends EventEmitter {
       await this.checkHealth();
       this.status = {
         state: "READY",
-        detail: "Worker connected",
+        detail: this.remote ? `Remote SSH worker connected: ${this.remote.target}` : "Worker connected",
         capabilities,
+        transport: this.remote ? "ssh" : "local",
       };
       this.heartbeat = setInterval(() => {
         if (!this.pending.size)
@@ -160,6 +173,12 @@ export class WorkerSupervisor extends EventEmitter {
       status: string;
     };
     if (health.status !== "ok") throw new Error("Worker health check failed");
+  }
+  artifactDirectory(localDir: string): string {
+    return this.remote?.artifacts ?? localDir;
+  }
+  async fetchArtifact(jobId: string, data: { path: string; bytes: number; sha256: string }, localDir: string): Promise<void> {
+    if (this.remote) await fetchRemoteArtifact(this.remote, jobId, data, localDir);
   }
   request(
     method: string,
@@ -219,6 +238,7 @@ export class WorkerSupervisor extends EventEmitter {
       state: "STOPPED",
       detail: "Worker stopped",
       capabilities: null,
+      transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local",
     };
   }
 }

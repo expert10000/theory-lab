@@ -195,7 +195,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QLAB-023</span>
+          <span className="version">V0.1+ · QLAB-024</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -254,7 +254,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>24</span> Remote worker transport</div>
+            <div className="future-lab"><span>25</span> Web client</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -462,6 +462,7 @@ export function App() {
                 ["021", "Many-body Ising-chain workspace", "Implemented"],
                 ["022", "Optional scqubits transmon adapter", "Implemented"],
                 ["023", "Superconducting-circuit workspace", "Implemented"],
+                ["024", "Opt-in SSH worker transport", "Implemented"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>
@@ -789,7 +790,7 @@ export function App() {
           <span
             className={status.state === "READY" ? "live-dot" : "offline-dot"}
           />
-          <span data-testid="worker-status">Python worker: {status.state}</span>
+          <span data-testid="worker-status">Python worker: {status.state}{status.transport === "ssh" ? " · SSH" : ""}</span>
           <span className="status-separator">|</span>
           <span>
             {status.capabilities

@@ -22,7 +22,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
         <p className="eyebrow">DESKTOP BACKEND / QLAB-009</p>
         <h2>Methods and formats, in the open.</h2>
         <p>
-          The renderer never imports scientific Python code. A supervised local
+          The renderer never imports scientific Python code. A supervised {status.transport === "ssh" ? "SSH remote" : "local"}
           worker receives validated jobs and returns results through Electron’s
           narrow preload bridge.
         </p>
@@ -116,9 +116,17 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             <code>quantum-job/v1</code>, <code>quantum-result/v1</code>, and{" "}
             <code>worker-capabilities/v1</code> are checked on both sides of the
             Python boundary. Worker commands use newline-delimited JSON-RPC 2.0
-            over stdio; there is no network server.
+            over stdio. Local mode has no network server; opt-in SSH mode carries
+            that stream over an authenticated, host-key-verified connection.
           </p>
           <small>hello · capabilities · health · run · cancel · shutdown</small>
+        </article>
+        <article className="panel backend-card">
+          <p className="eyebrow">WORKER TRANSPORT / QLAB-024</p>
+          <h2>{status.transport === "ssh" ? "Remote SSH" : "Local stdio"}</h2>
+          <p>{status.transport === "ssh" ? status.detail : "Python runs on this computer; JSON-RPC stays on child-process pipes."}</p>
+          <p>In SSH mode, numerical artifacts travel separately via SCP/SFTP. Electron verifies their size and SHA-256 before displaying or saving them. Host-key checking and noninteractive authentication are required.</p>
+          <small>Opt-in through QLAB_REMOTE_SSH_TARGET and QLAB_REMOTE_ROOT · no embedded credentials</small>
         </article>
         <article className="panel backend-card">
           <p className="eyebrow">DATA PLANE</p>

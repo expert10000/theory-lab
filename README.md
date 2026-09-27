@@ -83,6 +83,12 @@ The **Open system** tab solves a rotating-frame atom–cavity Lindblad master eq
 
 The **Many-body** tab solves a bounded 2–8-spin Ising chain with open or periodic boundary conditions. It shows low-lying energies, the finite-size gap, ground-state site magnetizations and half-chain entanglement entropy. Native NumPy is always available; optional QuSpin can be selected or compared against Native when installed. Draft controls are included in workspace snapshots, while completed calculations join run history and CSV/SVG exports. This is a finite full-basis laboratory, not a claim about a thermodynamic phase transition.
 
+## Opt-in SSH worker transport (QLAB-024)
+
+Local supervised stdio remains the default. To use a remote Linux worker, install this repository and its Python environment on a trusted SSH host, ensure noninteractive key-based login and a verified `known_hosts` entry, then set `QLAB_REMOTE_SSH_TARGET` (a host alias or `user@host`) and `QLAB_REMOTE_ROOT` (absolute POSIX checkout path) before launching Electron. `QLAB_REMOTE_PYTHON` and `QLAB_REMOTE_ARTIFACTS` optionally override the Python executable and remote artifact directory. Restart the app after changing them. The Backend tab reports the selected transport.
+
+Electron supervises `ssh -T` with `BatchMode=yes` and `StrictHostKeyChecking=yes`, carrying the same JSON-RPC stream. Completed binary artifacts are copied through SCP/SFTP into the local artifact directory and checked against the worker's byte count and SHA-256 before they reach React or durable run storage. No credentials are stored in the app. Remote artifacts remain on the SSH host for administrator-managed cleanup; this phase does not claim automatic remote garbage collection, a browser-accessible server, or a live remote-host acceptance run.
+
 The local Chapter 58 file remains an architecture-only placeholder. The Landau–Zener entry now cites the separate Volume VIII Commit 687 QuTiP example for its asymptotic reference; the other chapter-only tags remain provisional. No external example code is imported into the worker at runtime.
 
 ## Architecture
