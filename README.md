@@ -89,6 +89,8 @@ Local supervised stdio remains the default. To use a remote Linux worker, instal
 
 Electron supervises `ssh -T` with `BatchMode=yes` and `StrictHostKeyChecking=yes`, carrying the same JSON-RPC stream. Completed binary artifacts are copied through SCP/SFTP into the local artifact directory and checked against the worker's byte count and SHA-256 before they reach React or durable run storage. No credentials are stored in the app. Remote artifacts remain on the SSH host for administrator-managed cleanup; this phase does not claim automatic remote garbage collection, a browser-accessible server, or a live remote-host acceptance run.
 
+With a configured host, run `npm run accept:remote` from the local checkout. It checks the live handshake, native spectrum, separately copied evolution artifact, SHA-256 tamper rejection, cancellation, health and restart. It only removes its own temporary local files; the remote artifact directory still needs administrator-managed retention. This check is not run by CI because CI has no trusted SSH host.
+
 The local Chapter 58 file remains an architecture-only placeholder. The Landau–Zener entry now cites the separate Volume VIII Commit 687 QuTiP example for its asymptotic reference; the other chapter-only tags remain provisional. No external example code is imported into the worker at runtime.
 
 ## Architecture
