@@ -1,0 +1,47 @@
+name: Desktop v0.1 acceptance
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2025, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - name: Install Node dependencies
+        run: npm ci
+      - name: Create Python environment
+        run: python -m venv .venv
+      - name: Install pinned Python dependencies (Windows)
+        if: runner.os == 'Windows'
+        run: .\.venv\Scripts\python.exe -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python
+      - name: Install pinned Python dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: .venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run test:worker
+      - run: npm run build
+      - name: Electron desktop smoke (Windows)
+        if: runner.os == 'Windows'
+        run: npm run test:desktop
+      - name: Electron desktop smoke (Linux/Xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s '-screen 0 1600x1000x24' npm run test:desktop

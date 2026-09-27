@@ -46,7 +46,8 @@ code {
   font-family: Consolas, monospace;
 }
 .app {
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -133,7 +134,7 @@ code {
 .dynamics-layout .workspace {
   max-width: 1500px;
   width: 100%;
-  margin: auto;
+  margin: 0 auto;
 }
 .sidebar .lab-selected + .lab-selected {
   margin-top: 8px;

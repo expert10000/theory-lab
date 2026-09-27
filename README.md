@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–016 cover two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs.
 
 ## Run on Windows
 
@@ -15,7 +15,7 @@ npm start
 
 `npm run desktop:shortcut` creates **Quantum Hamiltonian Lab** on your Windows Desktop. It launches the built app directly, without a terminal. Keep the repository in place; this is a development checkout, not a standalone installer. Rebuild after source changes. `npm run dev` builds and launches; it does not hot reload.
 
-On Linux, create `.venv` with `python3 -m venv .venv`, then `.venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python`, followed by `npm ci`, `npm run build`, and `npm start`. Linux support is not yet verified. `QLAB_PYTHON` may specify an alternate interpreter.
+On Linux, create `.venv` with `python3.12 -m venv .venv`, then `.venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python`, followed by `npm ci`, `npm run build`, and `npm start`. Ubuntu 22.04 under WSL2/WSLg passed the v0.1 desktop acceptance suite; see [the release record](docs/RELEASE_V0.1.md) for the tested environment and caveats. `QLAB_PYTHON` may specify an alternate interpreter.
 
 ## First experiment
 
@@ -97,4 +97,4 @@ The complete supplied plan is preserved in [docs/ROADMAP.md](docs/ROADMAP.md); d
 
 This milestone implements a static two-level spectrum, driven two-level Rabi evolution, Landau–Zener and Stückelberg passages, strong-drive Floquet analysis, Jaynes–Cummings and Quantum Rabi cavity dynamics, Lindblad open-system dynamics, 1D/2D parameter sweeps, the dynamics/Bloch workspace, and QuTiP/native comparison. The separate `theory` development branch supplies explicit reference examples where mapped, but is not a runtime dependency. Atoms, molecules and crystals are outside initial V1 scope.
 
-Run IDs, engine versions, timestamps and parameters are retained with each calculation. Standalone installers and Linux release acceptance remain later milestones. Optional Matplotlib is intentionally absent: React renders the plots; a QuTiP warning about Python plotting does not prevent calculation.
+Run IDs, engine versions, timestamps and parameters are retained with each calculation. Standalone installers remain a later milestone; Windows and WSLg acceptance results are recorded in [the v0.1 release record](docs/RELEASE_V0.1.md). Optional Matplotlib is intentionally absent: React renders the plots; a QuTiP warning about Python plotting does not prevent calculation.
