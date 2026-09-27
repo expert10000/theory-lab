@@ -1421,4 +1421,5 @@ h1 {
 .atlas-parameters small { margin-left: auto; color: #819da6; }
 .atlas-relations { display: flex; gap: 8px; flex-wrap: wrap; }
 .atlas-relations button { background: #1b3938; border: 1px solid #315f59; border-radius: 5px; padding: 7px 10px; color: #9fe7d5; cursor: pointer; }
+.atlas-binding { margin-top: 22px; padding: 16px; border: 1px solid #3c7268; background: #142c2c; border-radius: 6px; }
 @media (max-width: 980px) { .atlas-browser { grid-template-columns: 1fr; } .atlas-list { max-height: 240px; } }

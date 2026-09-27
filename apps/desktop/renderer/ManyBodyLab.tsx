@@ -28,8 +28,9 @@ function ManyBodyFigure({ result }: { result: ManyBodyResult }) {
   </div>;
 }
 
-export function ManyBodyLab({ bridge, status, restored, restoreEpoch, onSnapshot }: {
+export function ManyBodyLab({ bridge, status, restored, restoreEpoch, atlasDraft, atlasEpoch, onSnapshot }: {
   bridge: QuantumBridge; status: WorkerStatus; restored?: Draft | null; restoreEpoch?: number;
+  atlasDraft?: Draft | null; atlasEpoch?: number;
   onSnapshot?: (value: Draft) => void;
 }) {
   const [draft, setDraft] = useState<Draft>(MANY_BODY_DEFAULTS);
@@ -44,6 +45,10 @@ export function ManyBodyLab({ bridge, status, restored, restoreEpoch, onSnapshot
     setDraft(restored ?? MANY_BODY_DEFAULTS);
     setResult(null); setReference(null); setOutcome("WORKSPACE RESTORED");
   }, [restoreEpoch]);
+  useEffect(() => {
+    if (!atlasEpoch || !atlasDraft) return;
+    setDraft(atlasDraft); setResult(null); setReference(null); setOutcome("ATLAS BINDING LOADED");
+  }, [atlasEpoch]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
   function change<K extends keyof Draft>(key: K, value: Draft[K]) { setDraft(current => ({ ...current, [key]: value })); }
   let preview: ReturnType<typeof manyBodyJob> | null = null;

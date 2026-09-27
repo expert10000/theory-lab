@@ -20,6 +20,8 @@ import { RunHistory } from "./RunHistory";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
+import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../../../packages/atlas";
+import { atlasBinding } from "../../../packages/atlas/bindings";
 import {
   compareSpectrum,
   type SpectrumComparison,
@@ -54,6 +56,7 @@ export function App() {
   const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
+  const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const collectDynamics = useCallback((value: WorkspaceSnapshot["dynamics"]) => { workspaceParts.current.dynamics = value; checkParts(); }, []);
   const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
@@ -161,6 +164,34 @@ export function App() {
     if (preset.kind === "evolution") { setEvolutionModel(preset.modelId); setTab("dynamics"); }
     else if (preset.kind === "cavity") { setCavityModel(preset.modelId); setTab("cavity"); }
     else setTab("open");
+  }
+  function openAtlasBinding(id: string) {
+    const binding = atlasBinding(id);
+    const entry = atlasEntry(id);
+    if (!binding || !entry) return;
+    const source = { sourceRepository: `${ATLAS_SOURCE}/tree/${ATLAS_REVISION}`,
+      sourceModule: `data/hamiltonian_atlas/${entry.sourceFile}`, volume: "VIII", exampleId: `Atlas ${id}` };
+    if (binding.kind === "spectrum") {
+      setSelectedPreset(null);
+      setParameters(Object.fromEntries(Object.entries(binding.parameters).map(([key, value]) => [key, String(value)])));
+      setTab("spectrum");
+    } else if (binding.kind === "dynamics") {
+      const defaults = MODEL_REGISTRY[binding.modelId].solverDefaults!;
+      openPreset({ id: `atlas-${id}`, kind: "evolution", title: entry.name, description: entry.presentation.summary,
+        reference: "Pinned Hamiltonian Atlas entry", convention: binding.convention, source,
+        modelId: binding.modelId, parameters: binding.parameters, initialIndex: 0, solver: defaults });
+    } else if (binding.kind === "cavity") {
+      openPreset({ id: `atlas-${id}`, kind: "cavity", title: entry.name, description: entry.presentation.summary,
+        reference: "Pinned Hamiltonian Atlas entry", convention: binding.convention, source,
+        modelId: binding.modelId, parameters: binding.parameters, initialState: { qubit: "excited", photons: 0 },
+        solver: { tStart: 0, tStop: 25, samples: 401 } });
+    } else {
+      const p = binding.parameters;
+      setAtlasManyBody(current => ({ epoch: (current?.epoch ?? 0) + 1,
+        draft: { sites: String(p.sites), interaction: String(p.interaction), transverse: String(p.transverse),
+          longitudinal: String(p.longitudinal), boundary: p.boundary, engine: "native" } }));
+      setTab("many_body");
+    }
   }
   async function saveWorkspace() {
     const parts = workspaceParts.current;
@@ -424,9 +455,9 @@ export function App() {
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} /></div>
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} /></div>
           <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
-          <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} onSnapshot={collectManyBody} /></div>
+          <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} /></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
-          {tab === "atlas" ? <AtlasPanel /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
+          {tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">

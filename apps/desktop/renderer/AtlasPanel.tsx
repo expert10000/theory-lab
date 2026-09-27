@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { ATLAS_ENTRIES, ATLAS_REVISION, atlasEntry, atlasUrl } from "../../../packages/atlas";
+import { atlasBinding } from "../../../packages/atlas/bindings";
 
 export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
   const [query, setQuery] = useState("");
@@ -8,6 +9,7 @@ export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
   const filtered = useMemo(() => ATLAS_ENTRIES.filter(entry => (family === "all" || entry.family === family) &&
     `${entry.id} ${entry.name} ${entry.presentation.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase())), [query, family]);
   const selected = atlasEntry(selectedId);
+  const binding = atlasBinding(selectedId);
   return <div className="atlas-panel" data-testid="atlas-panel">
     <section className="panel"><p className="eyebrow">THEORY ATLAS / PINNED SOURCE</p><h2>48 Hamiltonians, one inspected revision.</h2>
       <p>Source revision <code>{ATLAS_REVISION.slice(0, 12)}</code>. These are reference definitions. The source registry marks no entry runnable; a Theory Lab binding is listed separately when implemented and tested.</p>
@@ -21,7 +23,7 @@ export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
           <h4>Observables</h4><p>{selected.observables.join(" · ")}</p>
           {selected.relations.length > 0 && <><h4>Related entries</h4><div className="atlas-relations">{selected.relations.map((relation, index) => <button key={index} onClick={() => { setSelectedId(relation.target); setFamily("all"); setQuery(""); }}>{relation.target} ↗</button>)}</div></>}
           <p><a href={atlasUrl(selected)} target="_blank" rel="noopener noreferrer">View pinned source ↗</a></p>
-          {openLab && <button className="workspace-button" disabled>Binding pending</button>}
+          {binding ? <div className="atlas-binding"><p className="eyebrow">THEORY LAB BINDING / TESTED SUBSPACE</p><p>{binding.convention}</p><button className="run-button" data-testid="open-atlas-binding" onClick={() => openLab?.(selectedId)}>Load in {binding.modelId.replaceAll("_", " ")} lab ↗</button></div> : <p className="scope-note">No tested Theory Lab binding for this entry yet.</p>}
         </article>}</div>
     </section>
   </div>;
