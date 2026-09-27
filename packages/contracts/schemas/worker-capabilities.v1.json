@@ -74,6 +74,11 @@
           "type": "object", "additionalProperties": false,
           "properties": { "available": { "type": "boolean" }, "version": { "type": ["string", "null"] } },
           "required": ["available", "version"]
+        },
+        "scqubits": {
+          "type": "object", "additionalProperties": false,
+          "properties": { "available": { "type": "boolean" }, "version": { "type": ["string", "null"] } },
+          "required": ["available", "version"]
         }
       },
       "required": ["qutip", "native"]
@@ -81,7 +86,7 @@
     "operations": {
       "type": "array",
       "items": {
-        "enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body"]
+        "enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit"]
       },
       "uniqueItems": true
     }

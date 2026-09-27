@@ -1,0 +1,2 @@
+# Optional QLAB-022 transmon adapter. Base desktop remains usable without it.
+scqubits==4.3.1

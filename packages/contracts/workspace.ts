@@ -29,9 +29,9 @@ export interface RunSummary {
   schema: "quantum-run-manifest/v1";
   runId: string;
   jobId: string;
-  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body";
+  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit";
   model: string;
-  engine: EvolutionEngineName | ManyBodyEngineName;
+  engine: EvolutionEngineName | ManyBodyEngineName | import("./index").CircuitEngineName;
   engineVersion: string;
   computedAt: string;
   durationMs: number;

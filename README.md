@@ -59,6 +59,10 @@ Restart the worker. The **Backend** tab reports the actual JAX device; **Dynamic
 
 Install the optional Python dependency with `.venv/bin/python -m pip install -r workers/quantum-python/requirements-quspin.txt` on Linux (or the corresponding `.venv\Scripts\python.exe` on Windows), then restart the worker. The Backend tab reports QuSpin availability. The versioned `many_body` job solves an open or periodic spin-½ Ising chain of 2–8 sites with QuSpin or an independent dense NumPy reference. It returns up to the lowest eight energies, finite-size gap, ground-state site magnetizations, and half-chain von Neumann entropy. The full basis avoids assumptions about symmetry sectors; no thermodynamic-limit claim is made. QLAB-021 exposes the job in the interactive Many-body workspace.
 
+## Optional scqubits adapter (QLAB-022)
+
+Install `workers/quantum-python/requirements-scqubits.txt` into the worker's `.venv`, then restart. The versioned `circuit` job computes a bounded charge-basis Transmon spectrum with scqubits or an independent NumPy matrix. EJ and EC are entered as E/h in GHz; the result includes E₀₁, E₁₂, anharmonicity, |⟨0|n|1⟩|, and the change in E₀₁ when `ncut` increases by two. This is a cutoff diagnostic, not proof of convergence. The interactive circuit workspace follows in QLAB-023.
+
 ## Volume VIII presets
 
 Open **Presets** for six source-pinned configurations from the inspected `theory` QuTiP examples: resonant Rabi, Landau–Zener, Jaynes–Cummings vacuum Rabi, T₁ relaxation, pure dephasing, and damped cavity occupation. A card loads the existing lab; review its values, choose QuTiP or native, and run. Five presets show a full-trajectory analytic error and a pass/fail threshold; Landau–Zener shows only the asymptotic reference because its run has finite endpoints. Source revision, basis/frame mappings, and exclusions are detailed in [docs/PRESETS.md](docs/PRESETS.md). Editing a loaded preset creates a variant and disables the exact-preset analytic check.

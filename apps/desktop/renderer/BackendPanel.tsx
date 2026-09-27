@@ -35,7 +35,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <b>→</b>
           <span>JSON-RPC worker</span>
           <b>→</b>
-          <span>QuTiP / Native / optional Dynamiqs GPU / QuSpin</span>
+          <span>QuTiP / Native / optional Dynamiqs GPU / QuSpin / scqubits</span>
         </div>
       </div>
       <div className="backend-card-grid">
@@ -99,6 +99,13 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <p className="backend-version">{engines?.quspin?.available ? `Version ${engines.quspin.version}` : "Unavailable on this worker"}</p>
           <p>A full spin-½ basis constructs the finite Ising-chain Hamiltonian from Pauli <code>zz</code>, <code>x</code>, and <code>z</code> terms. Its low spectrum, site magnetizations, and half-chain entropy are checked against an independent dense NumPy construction.</p>
           <small>Optional finite-chain adapter · no symmetry-sector reduction yet</small>
+        </article>
+        <article className="panel backend-card">
+          <div className="backend-card-title"><p className="eyebrow">ENGINE 05 · OPTIONAL</p><span className={engines?.scqubits?.available ? "live-dot" : "offline-dot"}/></div>
+          <h2>scqubits</h2>
+          <p className="backend-version">{engines?.scqubits?.available ? `Version ${engines.scqubits.version}` : "Unavailable on this worker"}</p>
+          <p>A bounded Transmon charge-basis eigensystem reports E₀₁, anharmonicity, charge matrix element and cutoff drift. Native NumPy builds the same Hamiltonian independently; cutoff convergence remains the user’s responsibility.</p>
+          <small>Optional circuit adapter · energies E/h in GHz</small>
         </article>
       </div>
       <div className="backend-card-grid">

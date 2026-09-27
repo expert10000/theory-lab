@@ -37,6 +37,7 @@ try {
     keys: [
       "cancel",
       "cavity",
+      "circuit",
       "evolve",
       "exportRun",
       "getCapabilities",
@@ -69,6 +70,12 @@ try {
     nodeIntegration: false,
     webSecurity: true,
   });
+  const circuit = await page.evaluate(() => window.quantum.circuit({
+    schema: "quantum-job/v1", jobId: `circuit-${crypto.randomUUID()}`, operation: "circuit", engine: "native",
+    model: { type: "transmon", parameters: { EJ: 20, EC: 0.25, ng: 0.2, ncut: 12, levels: 5 } },
+  }));
+  assert.equal(circuit.operation, "circuit");
+  assert.ok(circuit.spectrum.e01 > 0 && circuit.spectrum.cutoffDriftE01 < 1e-4);
   const rejected = await page.evaluate(async () => {
     try {
       await window.quantum.run({ schema: "quantum-job/v2" });

@@ -202,3 +202,17 @@ test("sweep contracts carry strict axes, cache metadata and binary shape", () =>
   assert.equal(isQuantumResult({ ...result, cache: { ...result.cache, extra: true } }), false);
   assert.equal(isQuantumResult({ ...result, data: { ...result.data, format: "f32le" } }), false);
 });
+test("transmon circuit contracts bound charge-basis work and result", () => {
+  const model = { type: "transmon", parameters: { EJ: 20, EC: .25, ng: .2, ncut: 12, levels: 5 } };
+  const job = { schema: "quantum-job/v1", jobId: "circuit-1", operation: "circuit", engine: "native", model };
+  assert.ok(isQuantumJob(job));
+  assert.equal(isQuantumJob({ ...job, model: { ...model, parameters: { ...model.parameters, ncut: 100 } } }), false);
+  assert.equal(isQuantumJob({ ...job, engine: "quspin" }), false);
+  const result = { schema: "quantum-result/v1", jobId: job.jobId, runId: "run-circuit-1",
+    status: "completed", operation: "circuit", engine: { name: "native", version: "1.18" }, model,
+    spectrum: { energies: [-16, -11, -6.3], e01: 5, e12: 4.7, anharmonicity: -.3,
+      chargeMatrixElement01: 1.1, cutoffDriftE01: 1e-8, units: "GHz" },
+    provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:00Z", durationMs: 1 } };
+  assert.ok(isQuantumResult(result));
+  assert.equal(isQuantumResult({ ...result, spectrum: { ...result.spectrum, units: "normalized" } }), false);
+});

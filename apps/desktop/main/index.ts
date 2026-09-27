@@ -160,6 +160,26 @@ app.whenReady().then(() => {
       return result;
     } finally { running = false; }
   });
+  ipcMain.handle("quantum:circuit", async (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if (value.operation !== "circuit") throw new Error("Expected circuit job");
+    if (worker.status.state !== "READY" ||
+        !worker.status.capabilities?.operations.includes("circuit") ||
+        !worker.status.capabilities.engines[value.engine]?.available)
+      throw new Error(`${value.engine} circuit engine is not ready`);
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const result = await worker.request("quantum.run", value, 60000);
+      if (!isQuantumResult(result) || result.operation !== "circuit" ||
+          result.jobId !== value.jobId || result.engine.name !== value.engine ||
+          JSON.stringify(result.model) !== JSON.stringify(value.model))
+        throw new Error("Worker returned an invalid or mismatched circuit result");
+      await runs.record(value, result);
+      return result;
+    } finally { running = false; }
+  });
   ipcMain.handle("quantum:status", (event) => {
     trusted(event);
     return worker.status;

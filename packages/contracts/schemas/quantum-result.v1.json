@@ -902,6 +902,39 @@
         }
       },
       "required": ["schema", "jobId", "runId", "status", "operation", "model", "engine", "spectrum", "groundState", "provenance"]
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "quantum-result/v1" },
+        "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "runId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "status": { "const": "completed" }, "operation": { "const": "circuit" },
+        "model": { "type": "object", "additionalProperties": false,
+          "properties": { "type": { "const": "transmon" },
+            "parameters": { "type": "object", "additionalProperties": false,
+              "properties": {
+                "EJ": { "type": "number", "minimum": 0, "maximum": 100 },
+                "EC": { "type": "number", "exclusiveMinimum": 0, "maximum": 10 },
+                "ng": { "type": "number", "minimum": -1, "maximum": 1 },
+                "ncut": { "type": "integer", "minimum": 3, "maximum": 40 },
+                "levels": { "type": "integer", "minimum": 3, "maximum": 8 }
+              }, "required": ["EJ", "EC", "ng", "ncut", "levels"] }
+          }, "required": ["type", "parameters"] },
+        "engine": { "type": "object", "additionalProperties": false,
+          "properties": { "name": { "enum": ["scqubits", "native"] }, "version": { "type": "string", "minLength": 1 } },
+          "required": ["name", "version"] },
+        "spectrum": { "type": "object", "additionalProperties": false,
+          "properties": {
+            "energies": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 8 },
+            "e01": { "type": "number", "minimum": 0 }, "e12": { "type": "number", "minimum": 0 },
+            "anharmonicity": { "type": "number" },
+            "chargeMatrixElement01": { "type": "number", "minimum": 0 },
+            "cutoffDriftE01": { "type": "number", "minimum": 0 },
+            "units": { "const": "GHz" }
+          }, "required": ["energies", "e01", "e12", "anharmonicity", "chargeMatrixElement01", "cutoffDriftE01", "units"] },
+        "provenance": { "$ref": "#/oneOf/5/properties/provenance" }
+      }, "required": ["schema", "jobId", "runId", "status", "operation", "model", "engine", "spectrum", "provenance"]
     }
   ]
 }

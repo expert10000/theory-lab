@@ -7,7 +7,7 @@ import { createHash } from "node:crypto";
 import { EVOLUTION_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot } from "../packages/contracts";
 import { RunStore } from "../apps/desktop/main/runs";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
-import type { ManyBodyJob, ManyBodyResult } from "../packages/contracts";
+import type { CircuitJob, CircuitResult, ManyBodyJob, ManyBodyResult } from "../packages/contracts";
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 
 const workspace: WorkspaceSnapshot = {
@@ -103,5 +103,26 @@ test("run store persists inline many-body results and exports spectra", async ()
     await store.export(result.runId, "svg", svg);
     assert.match(await readFile(csv, "utf8"), /site_magnetization,0,0.7/);
     assert.match(await readFile(svg, "utf8"), /E0 -1.200/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("run store persists and exports bounded transmon spectra", async () => {
+  const root = await mkdtemp(join(tmpdir(), "qlab-transmon-test-"));
+  try {
+    const store = new RunStore(join(root, "runs"), join(root, "artifacts"));
+    const job: CircuitJob = { schema: "quantum-job/v1", jobId: "transmon-run", operation: "circuit",
+      engine: "native", model: { type: "transmon", parameters: { EJ: 20, EC: .25, ng: .2, ncut: 12, levels: 3 } } };
+    const result: CircuitResult = { schema: "quantum-result/v1", jobId: job.jobId, runId: "run-transmon-test",
+      status: "completed", operation: "circuit", model: job.model, engine: { name: "native", version: "1.18" },
+      spectrum: { energies: [-16, -11, -6.3], e01: 5, e12: 4.7, anharmonicity: -.3,
+        chargeMatrixElement01: 1.1, cutoffDriftE01: 1e-8, units: "GHz" },
+      provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:02Z", durationMs: 3 } };
+    await store.record(job, result);
+    assert.equal((await store.list())[0].operation, "circuit");
+    const csv = join(root, "transmon.csv"), svg = join(root, "transmon.svg");
+    await store.export(result.runId, "csv", csv);
+    await store.export(result.runId, "svg", svg);
+    assert.match(await readFile(csv, "utf8"), /anharmonicity,0,-0.3,GHz/);
+    assert.match(await readFile(svg, "utf8"), /E0 -16.000/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

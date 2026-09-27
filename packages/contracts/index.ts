@@ -138,7 +138,24 @@ export interface SweepJob {
     initialIndex: 0 | 1;
   };
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob;
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob;
+export type CircuitEngineName = "scqubits" | "native";
+export interface CircuitModel {
+  type: "transmon";
+  parameters: { EJ: number; EC: number; ng: number; ncut: number; levels: number };
+}
+export interface CircuitJob {
+  schema: "quantum-job/v1"; jobId: string; operation: "circuit";
+  engine: CircuitEngineName; model: CircuitModel;
+}
+export interface CircuitResult {
+  schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
+  operation: "circuit"; model: CircuitModel;
+  engine: { name: CircuitEngineName; version: string };
+  spectrum: { energies: number[]; e01: number; e12: number; anharmonicity: number;
+    chargeMatrixElement01: number; cutoffDriftE01: number; units: "GHz" };
+  provenance: SpectrumResult["provenance"];
+}
 export type ManyBodyEngineName = "quspin" | "native";
 export interface ManyBodyModel {
   type: "ising_chain";
@@ -306,7 +323,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -323,8 +340,9 @@ export interface WorkerCapabilities {
     native: { available: boolean; version: string | null };
     dynamiqs?: { available: boolean; version: string | null; device: string | null };
     quspin?: { available: boolean; version: string | null };
+    scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -341,6 +359,7 @@ export interface QuantumBridge {
   lindblad(job: LindbladJob): Promise<LindbladResult>;
   sweep(job: SweepJob): Promise<SweepResult>;
   manyBody(job: ManyBodyJob): Promise<ManyBodyResult>;
+  circuit(job: CircuitJob): Promise<CircuitResult>;
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
   onProgress(listener: (progress: EvolutionProgress) => void): () => void;
