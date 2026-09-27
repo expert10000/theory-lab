@@ -44,6 +44,7 @@ try {
       "lindblad",
       "listRuns",
       "loadWorkspace",
+      "manyBody",
       "onProgress",
       "readData",
       "restart",
@@ -292,10 +293,14 @@ try {
   await page.getByLabel("End time T").fill("1000");
   await page.getByTestId("run-evolution").click();
   await page.getByRole("button", { name: "Cancel job" }).click();
-  await page
-    .getByTestId("evolution-state")
-    .filter({ hasText: "CANCELLED" })
-    .waitFor({ timeout: 30000 });
+  try {
+    await page.getByTestId("evolution-state").filter({ hasText: "CANCELLED" }).waitFor({ timeout: 30000 });
+  } catch (error) {
+    console.error("Cancel diagnostic", await page.getByTestId("evolution-state").textContent(),
+      await page.locator(".error-message").allTextContents(),
+      await page.getByTestId("worker-status").textContent());
+    throw error;
+  }
   assert.match(await page.getByTestId("worker-status").textContent(), /READY/);
   await page.getByRole("button", { name: "Landau–Zener" }).click();
   await page.getByLabel("Sweep rate v").waitFor();
@@ -436,6 +441,26 @@ try {
     await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 90000 });
     assert.equal(await page.getByTestId("sweep-heatmap").locator(".sweep-heatmap button").count(), 20);
   }
+  await page.getByRole("tab", { name: "Many-body" }).click();
+  await page.getByTestId("run-many-body").click();
+  await page.getByTestId("many-body-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("many-body-result").waitFor();
+  assert.ok(Number(await page.getByTestId("many-body-gap").textContent()) >= 0);
+  assert.ok(Number(await page.getByTestId("many-body-entropy").textContent()) >= 0);
+  await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("5");
+  await page.getByTestId("many-body-result").getByText("OUT OF DATE").waitFor();
+  if (gpu.engines.quspin?.available) {
+    await page.getByRole("combobox", { name: "Many-body engine" }).selectOption("compare");
+    await page.getByTestId("run-many-body").click();
+    await page.getByTestId("many-body-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+    assert.match(await page.getByTestId("many-body-compare").textContent(), /QuSpin versus Native/);
+  }
+  await page.screenshot({ path: "artifacts/desktop-many-body.png", fullPage: true });
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({ hasText: "Workspace saved" }).waitFor();
+  await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("6");
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(() => document.querySelector('input[aria-label="Many-body sites"]')?.value === "5");
   await page.getByRole("tab", { name: "Presets" }).click();
   await page.getByTestId("preset-page").waitFor();
   assert.equal(await page.locator(".preset-card").count(), 6);

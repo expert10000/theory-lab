@@ -12,6 +12,7 @@ import { DynamicsLab } from "./DynamicsLab";
 import { CavityLab } from "./CavityLab";
 import { OpenSystemLab } from "./OpenSystemLab";
 import { SweepLab } from "./SweepLab";
+import { ManyBodyLab } from "./ManyBodyLab";
 import { PresetPanel } from "./PresetPanel";
 import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets";
 import { RunHistory } from "./RunHistory";
@@ -48,7 +49,7 @@ export function App() {
     useState<EvolutionModelId>("driven_two_level");
   const [cavityModel, setCavityModel] = useState<CavityModelId>("jaynes_cummings");
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
-  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep">>>({});
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
@@ -56,7 +57,8 @@ export function App() {
   const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
   const collectOpen = useCallback((value: WorkspaceSnapshot["open"]) => { workspaceParts.current.open = value; checkParts(); }, []);
   const collectSweep = useCallback((value: WorkspaceSnapshot["sweep"]) => { workspaceParts.current.sweep = value; checkParts(); }, []);
-  function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep) setWorkspaceReady(true); }
+  const collectManyBody = useCallback((value: NonNullable<WorkspaceSnapshot["manyBody"]>) => { workspaceParts.current.manyBody = value; checkParts(); }, []);
+  function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
   const [resultMode, setResultMode] = useState<EngineMode | null>(null);
@@ -159,11 +161,11 @@ export function App() {
   }
   async function saveWorkspace() {
     const parts = workspaceParts.current;
-    if (!parts.dynamics || !parts.cavity || !parts.open || !parts.sweep) return;
+    if (!parts.dynamics || !parts.cavity || !parts.open || !parts.sweep || !parts.manyBody) return;
     const snapshot: WorkspaceSnapshot = { schema: "quantum-workspace/v1", savedAt: new Date().toISOString(),
       tab, selectedPresetId: selectedPreset?.id ?? null,
       spectrum: { parameters, engine: engineMode }, dynamics: parts.dynamics,
-      cavity: parts.cavity, open: parts.open, sweep: parts.sweep };
+      cavity: parts.cavity, open: parts.open, sweep: parts.sweep, manyBody: parts.manyBody };
     try { await window.quantum.saveWorkspace(snapshot); setWorkspaceMessage("Workspace saved"); }
     catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
   }
@@ -191,10 +193,10 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QLAB-020</span>
+          <span className="version">V0.1+ · QLAB-021</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
-          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
+          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -209,10 +211,10 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
+      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>09 / 09</span>
+            LABORATORIES <span>10 / 10</span>
           </p>
           {(
             [
@@ -239,16 +241,17 @@ export function App() {
           {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" onClick={() => { setSelectedPreset(null); setCavityModel(id); setTab("cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
           <button className="lab-selected" onClick={() => { setSelectedPreset(null); setTab("open"); }}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("sweep")}><span>▦</span> Parameter sweeps <span className="live-dot" /></button>
+          <button className="lab-selected" onClick={() => setTab("many_body")}><span>⋈</span> Ising chain <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("presets")}><span>▣</span> Volume VIII presets <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("runs")}><span>◷</span> Saved runs <span className="live-dot" /></button>
           <p className="sidebar-note">
-            The smallest quantum system.
+            From two levels to finite chains.
             <br />
-            The foundation for everything next.
+            One verified job at a time.
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>17</span> Release acceptance</div>
+            <div className="future-lab"><span>22</span> scqubits adapter</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -275,6 +278,8 @@ export function App() {
                     ? "LINDBLAD DYNAMICS"
                     : tab === "sweep"
                       ? "PARAMETER SWEEPS"
+                    : tab === "many_body"
+                      ? "ISING SPIN CHAIN"
                     : tab === "presets"
                       ? "VOLUME VIII PRESETS"
                     : tab === "runs"
@@ -294,6 +299,8 @@ export function App() {
                         ? "OPEN-SYSTEM LABORATORY / 008"
                         : tab === "sweep"
                           ? "SWEEP LABORATORY / 009"
+                        : tab === "many_body"
+                          ? "MANY-BODY LABORATORY / 021"
                         : tab === "presets"
                           ? "REFERENCE PRESETS / 010"
                         : tab === "runs"
@@ -311,6 +318,8 @@ export function App() {
                         ? "A system meets its environment."
                         : tab === "sweep"
                           ? "The landscape of a model."
+                        : tab === "many_body"
+                          ? "One qubit becomes a chain."
                         : tab === "presets"
                           ? "From reference to experiment."
                         : tab === "runs"
@@ -319,7 +328,7 @@ export function App() {
               </h1>
               <p>
                 {tab === "backend"
-                  ? "Two independent numerical engines, one verified result format."
+                  ? "Independent numerical engines behind versioned, verified results."
                   : tab === "dynamics"
                     ? MODEL_REGISTRY[evolutionModel].description
                     : tab === "cavity"
@@ -328,6 +337,8 @@ export function App() {
                         ? "Explore relaxation, dephasing, cavity loss and stationary states."
                       : tab === "sweep"
                         ? "Sweep one or two parameters with checkpoints, cancellation and resume."
+                      : tab === "many_body"
+                        ? "Explore a finite Ising chain with independent QuSpin and NumPy engines."
                       : tab === "presets"
                         ? "Reproducible configurations from validated Volume VIII examples."
                       : tab === "runs"
@@ -335,7 +346,7 @@ export function App() {
                     : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
-            <span className="pill">{tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+            <span className="pill">{tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
           </div>
           <div className="tabs" role="tablist" aria-label="Workspace">
             <button
@@ -362,6 +373,7 @@ export function App() {
             <button role="tab" aria-selected={tab === "cavity"} onClick={() => setTab("cavity")}>Cavity QED</button>
             <button role="tab" aria-selected={tab === "open"} onClick={() => setTab("open")}>Open system</button>
             <button role="tab" aria-selected={tab === "sweep"} onClick={() => setTab("sweep")}>Sweeps</button>
+            <button role="tab" aria-selected={tab === "many_body"} onClick={() => setTab("many_body")}>Many-body</button>
             <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>Presets</button>
             <button role="tab" aria-selected={tab === "runs"} onClick={() => setTab("runs")}>Runs</button>
             <button
@@ -393,6 +405,7 @@ export function App() {
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} /></div>
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} /></div>
           <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
+          <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} onSnapshot={collectManyBody} /></div>
           {tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
@@ -433,6 +446,7 @@ export function App() {
                 ["018", "Optional Dynamiqs GPU evolution", "Implemented"],
                 ["019", "GPU-batched sweep scheduler", "Implemented"],
                 ["020", "Optional QuSpin Ising-chain adapter", "Implemented"],
+                ["021", "Many-body Ising-chain workspace", "Implemented"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>
@@ -446,7 +460,7 @@ export function App() {
                 crystals belong to a later phase.
               </p>
             </section>
-          ) : tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" ? null : (
+          ) : tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" ? null : (
             <>
               <section className="hamiltonian-card">
                 <div>

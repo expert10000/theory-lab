@@ -340,6 +340,7 @@ export interface QuantumBridge {
   cavity(job: CavityJob): Promise<CavityResult>;
   lindblad(job: LindbladJob): Promise<LindbladResult>;
   sweep(job: SweepJob): Promise<SweepResult>;
+  manyBody(job: ManyBodyJob): Promise<ManyBodyResult>;
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
   onProgress(listener: (progress: EvolutionProgress) => void): () => void;

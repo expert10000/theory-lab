@@ -8,6 +8,7 @@ import { EVOLUTION_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot } from "
 import { RunStore } from "../apps/desktop/main/runs";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
 import type { ManyBodyJob, ManyBodyResult } from "../packages/contracts";
+import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
@@ -28,6 +29,16 @@ test("workspace v1 accepts all lab drafts and rejects unknown or unsafe fields",
   assert.equal(isWorkspaceSnapshot({ ...workspace, extra: true }), false);
   assert.equal(isWorkspaceSnapshot({ ...workspace, sweep: { ...workspace.sweep, x: { ...workspace.sweep.x, points: 20000 } } }), false);
   assert.equal(isWorkspaceSnapshot({ ...workspace, spectrum: { ...workspace.spectrum, parameters: { delta: "x".repeat(200) } } }), false);
+});
+
+test("many-body job bounds and additive workspace v1 compatibility", () => {
+  const job = manyBodyJob("ising-test", MANY_BODY_DEFAULTS, "open", "native");
+  assert.deepEqual(job.model.parameters, { sites: 4, interaction: 1, transverse: 0.8, longitudinal: 0.15, boundary: "open" });
+  assert.throws(() => manyBodyJob("bad", { ...MANY_BODY_DEFAULTS, sites: "9" }, "open", "native"));
+  assert.throws(() => manyBodyJob("bad", { ...MANY_BODY_DEFAULTS, transverse: "NaN" }, "open", "native"));
+  assert.ok(isWorkspaceSnapshot(workspace), "older v1 snapshots must remain loadable");
+  assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "many_body", manyBody: { ...MANY_BODY_DEFAULTS } }));
+  assert.equal(isWorkspaceSnapshot({ ...workspace, manyBody: { ...MANY_BODY_DEFAULTS, sites: "2".repeat(101) } }), false);
 });
 
 test("run store persists provenance and verified data, then exports CSV, SVG and manifest", async () => {

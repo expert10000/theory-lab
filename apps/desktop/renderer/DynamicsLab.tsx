@@ -346,12 +346,12 @@ export function DynamicsLab({
   }
   async function cancel() {
     if (!activeJob.current || cancelling) return;
+    setCancelling(true);
+    setOutcome("CANCELLING");
     try {
-      if (await bridge.cancel(activeJob.current)) {
-        setCancelling(true);
-        setOutcome("CANCELLING");
-      }
+      if (!await bridge.cancel(activeJob.current)) setCancelling(false);
     } catch (err) {
+      setCancelling(false);
       setError(String(err));
     }
   }

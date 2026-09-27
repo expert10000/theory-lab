@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018–019 add optional Dynamiqs GPU evolution and batched sweeps.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018–021 add optional Dynamiqs GPU evolution and sweeps plus a finite Ising-chain laboratory with optional QuSpin.
 
 ## Run on Windows
 
@@ -57,7 +57,7 @@ Restart the worker. The **Backend** tab reports the actual JAX device; **Dynamic
 
 ## Optional QuSpin adapter (QLAB-020)
 
-Install the optional Python dependency with `.venv/bin/python -m pip install -r workers/quantum-python/requirements-quspin.txt` on Linux (or the corresponding `.venv\Scripts\python.exe` on Windows), then restart the worker. The Backend tab reports QuSpin availability. The versioned `many_body` job solves an open or periodic spin-½ Ising chain of 2–8 sites with QuSpin or an independent dense NumPy reference. It returns the lowest eight energies, finite-size gap, ground-state site magnetizations, and half-chain von Neumann entropy. The full basis avoids assumptions about symmetry sectors; no thermodynamic-limit claim is made. The interactive workspace is QLAB-021.
+Install the optional Python dependency with `.venv/bin/python -m pip install -r workers/quantum-python/requirements-quspin.txt` on Linux (or the corresponding `.venv\Scripts\python.exe` on Windows), then restart the worker. The Backend tab reports QuSpin availability. The versioned `many_body` job solves an open or periodic spin-½ Ising chain of 2–8 sites with QuSpin or an independent dense NumPy reference. It returns up to the lowest eight energies, finite-size gap, ground-state site magnetizations, and half-chain von Neumann entropy. The full basis avoids assumptions about symmetry sectors; no thermodynamic-limit claim is made. QLAB-021 exposes the job in the interactive Many-body workspace.
 
 ## Volume VIII presets
 
@@ -77,12 +77,14 @@ The Jaynes–Cummings default is mapped to [the Volume VIII Commit 691 QuTiP ada
 
 The **Open system** tab solves a rotating-frame atom–cavity Lindblad master equation. Independent non-negative rates control qubit relaxation γ₁, pure dephasing γφ, and cavity loss κ; a coherent cavity drive makes the stationary state nontrivial. The density-matrix plot shows excited population, photon number, purity and qubit coherence. A separate steady-state solve is reported only when both relaxation and cavity loss are positive, avoiding an unsupported uniqueness claim for undamped sectors. The maximum top-Fock-level occupation diagnoses cutoff leakage. QuTiP and an independent NumPy/SciPy Liouvillian implementation are checked against analytic exponential decay limits from the Volume VIII [open two-level](https://github.com/expert10000/theory/blob/development/examples/python/qutip/labs/open_system_dynamics.py) and [damped cavity](https://github.com/expert10000/theory/blob/development/examples/python/qutip/adapters/bosonic.py) examples.
 
+The **Many-body** tab solves a bounded 2–8-spin Ising chain with open or periodic boundary conditions. It shows low-lying energies, the finite-size gap, ground-state site magnetizations and half-chain entanglement entropy. Native NumPy is always available; optional QuSpin can be selected or compared against Native when installed. Draft controls are included in workspace snapshots, while completed calculations join run history and CSV/SVG exports. This is a finite full-basis laboratory, not a claim about a thermodynamic phase transition.
+
 The local Chapter 58 file remains an architecture-only placeholder. The Landau–Zener entry now cites the separate Volume VIII Commit 687 QuTiP example for its asymptotic reference; the other chapter-only tags remain provisional. No external example code is imported into the worker at runtime.
 
 ## Architecture
 
 ```text
-React renderer → narrow preload API → Electron main → JSON-RPC stdio → Python → QuTiP / Native / optional Dynamiqs GPU
+React renderer → narrow preload API → Electron main → JSON-RPC stdio → Python → QuTiP / Native / optional Dynamiqs GPU / optional QuSpin
                                       validates jobs                 validates jobs/results
                                       validates results ← quantum-result/v1
 ```
