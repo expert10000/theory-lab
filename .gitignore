@@ -9,3 +9,4 @@ artifacts/
 runs/
 .env
 .qlab-remote-artifacts/
+gateway-data/

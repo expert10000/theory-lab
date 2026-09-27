@@ -26,5 +26,12 @@ await Promise.all([
     outfile: "dist/renderer.js",
     minify: true,
   }),
+  build({
+    entryPoints: ["apps/gateway/launch.ts"],
+    bundle: true,
+    platform: "node",
+    format: "cjs",
+    outfile: "dist/gateway.cjs",
+  }),
   copyFile("apps/desktop/renderer/index.html", "dist/index.html"),
 ]);
