@@ -1405,7 +1405,7 @@ QLAB-025   pinned, read-only Hamiltonian Atlas catalog (implemented)
 QLAB-026   tested Atlas-to-lab convention bindings (implemented)
 QLAB-027   SSH-chain bands, winding and finite edges (implemented)
 QLAB-028   QWZ Berry curvature and Chern laboratory (implemented)
-QLAB-029   web client
+QLAB-029   web client foundation, pinned Atlas and SSH/QWZ labs (implemented)
 ```
 
 Only then begin:

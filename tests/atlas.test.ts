@@ -6,7 +6,7 @@ import { assertJob } from "../packages/contracts";
 import { spectrumJob, evolutionJob } from "../packages/models";
 import { cavityJob } from "../packages/models/cavity";
 import { manyBodyJob } from "../packages/models/many_body";
-import { consistentTopologyResult, topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
+import { consistentTopologyResult, isTopologyResponse, topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 import { isQuantumJob } from "../packages/contracts";
 
 test("pinned Atlas snapshot is complete, connected and reference-only", () => {
@@ -70,4 +70,18 @@ test("topology contract bounds the mesh and rejects inconsistent scientific arra
       chernIntegral: -1, berryCurvature: Array(21 * 21).fill(0) },
     provenance: { pythonVersion: "3", workerVersion: "1", computedAt: new Date().toISOString(), durationMs: 1 } } as const;
   assert.equal(consistentTopologyResult(job, mock), false);
+});
+
+test("browser topology guard validates bounded inline arrays without code generation", () => {
+  const job = topologyJob("ssh-web-guard", { ...TOPOLOGY_DEFAULTS, t1: "0", t2: "1", cells: "4", kPoints: "21" });
+  const density = [0.5, 0, 0, 0, 0, 0, 0, 0.5];
+  const value = { schema: "quantum-result/v1", jobId: job.jobId, runId: "run-guard", status: "completed",
+    operation: "topology", model: job.model, engine: { name: "native", version: "1.18" },
+    analysis: { kind: "ssh", bulkGap: 2, winding: 1, kValues: Array(21).fill(0),
+      lowerBand: Array(21).fill(-1), upperBand: Array(21).fill(1), edgeEnergies: [0, 0],
+      edgeDensity: density, edgeWeight: 1 },
+    provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:00Z", durationMs: 1 } };
+  assert.equal(isTopologyResponse(value, job), true);
+  assert.equal(isTopologyResponse({ ...value, analysis: { ...value.analysis, edgeDensity: [Infinity, ...density.slice(1)] } }, job), false);
+  assert.equal(isTopologyResponse({ ...value, analysis: { ...value.analysis, kValues: [0] } }, job), false);
 });

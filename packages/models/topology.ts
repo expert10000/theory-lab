@@ -53,3 +53,37 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   }
   return false;
 }
+
+// Browser-safe structural guard. Unlike the AJV contract compiler this uses no
+// runtime code generation, so the web client's strict CSP can remain intact.
+export function isTopologyResponse(value: unknown, job: TopologyJob): value is TopologyResult {
+  const record = (item: unknown): item is Record<string, unknown> => !!item && typeof item === "object" && !Array.isArray(item);
+  const finite = (item: unknown): item is number => typeof item === "number" && Number.isFinite(item);
+  const numericArray = (item: unknown, size: number) => Array.isArray(item) && item.length === size && item.every(finite);
+  if (!record(value) || value.schema !== "quantum-result/v1" || value.status !== "completed" ||
+      value.operation !== "topology" || value.jobId !== job.jobId ||
+      typeof value.runId !== "string" || !/^run-[A-Za-z0-9_-]{1,96}$/.test(value.runId) ||
+      !record(value.model) || JSON.stringify(value.model) !== JSON.stringify(job.model) ||
+      !record(value.engine) || value.engine.name !== "native" || typeof value.engine.version !== "string" ||
+      !record(value.provenance) || typeof value.provenance.pythonVersion !== "string" ||
+      typeof value.provenance.workerVersion !== "string" || typeof value.provenance.computedAt !== "string" ||
+      !finite(value.provenance.durationMs) || value.provenance.durationMs < 0 || !record(value.analysis)) return false;
+  const a = value.analysis;
+  if (job.model.type === "ssh") {
+    const { cells, kPoints } = job.model.parameters;
+    if (a.kind !== "ssh" || !finite(a.bulkGap) || a.bulkGap < 0 ||
+        !(a.winding === null || a.winding === 0 || a.winding === 1) ||
+        !numericArray(a.kValues, kPoints) || !numericArray(a.lowerBand, kPoints) ||
+        !numericArray(a.upperBand, kPoints) || !numericArray(a.edgeEnergies, 2) ||
+        !numericArray(a.edgeDensity, 2 * cells) || !finite(a.edgeWeight) || a.edgeWeight < 0 || a.edgeWeight > 1) return false;
+  } else {
+    const { grid } = job.model.parameters;
+    const phase = (item: unknown) => item === null || item === -1 || item === 0 || item === 1;
+    if (a.kind !== "qwz" || !finite(a.bulkGap) || a.bulkGap < 0 ||
+        !finite(a.sampledGap) || a.sampledGap < 0 || typeof a.gapClosed !== "boolean" ||
+        typeof a.meshResolved !== "boolean" || !phase(a.chern) || !phase(a.latticeChern) ||
+        !phase(a.analyticChern) || !(a.chernIntegral === null || finite(a.chernIntegral)) ||
+        !numericArray(a.berryCurvature, a.gapClosed ? 0 : grid * grid)) return false;
+  }
+  return consistentTopologyResult(job, value as unknown as TopologyResult);
+}

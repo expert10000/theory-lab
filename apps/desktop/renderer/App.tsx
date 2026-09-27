@@ -239,7 +239,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QLAB-028</span>
+          <span className="version">V0.1+ · QLAB-029</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -300,7 +300,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>29</span> Web client</div>
+            <div className="future-lab"><span>QVIS</span> 3D visualization</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -524,7 +524,7 @@ export function App() {
                 ["026", "Tested Atlas-to-lab bindings", "Implemented"],
                 ["027", "SSH-chain bands, winding & finite edges", "Implemented"],
                 ["028", "QWZ Berry curvature & Chern laboratory", "Implemented"],
-                ["029", "Web client", "Planned"],
+                ["029", "Web Atlas & topology client", "Implemented"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>

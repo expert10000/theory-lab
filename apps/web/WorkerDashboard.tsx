@@ -11,7 +11,7 @@ const rpcMethods = [
   ["capabilities", "Available engines and operations"],
   ["health", "Supervised liveness check"],
   ["resources", "Platform, CPU, memory and active job"],
-  ["quantum.run", "Inline spectrum or bounded circuit result"],
+  ["quantum.run", "Inline spectrum, circuit, many-body or topology result"],
   ["quantum.start", "Start an artifact-producing job"],
   ["quantum.cancel", "Request active-job cancellation"],
   ["shutdown", "Graceful worker termination"],
@@ -21,7 +21,7 @@ const routes = [
   ["GET", "/api/resources", "Live worker resource snapshot"],
   ["GET", "/api/activity", "Recent sanitized gateway calls"],
   ["GET", "/api/runs", "Saved run summaries"],
-  ["POST", "/api/jobs", "Run a v1 spectrum, evolution or circuit job"],
+  ["POST", "/api/jobs", "Run a v1 spectrum, evolution, circuit or topology job"],
   ["POST", "/api/jobs/:jobId/cancel", "Cancel an active evolution"],
   ["GET", "/api/artifacts/:jobId", "Verified Float64 artifact"],
 ];

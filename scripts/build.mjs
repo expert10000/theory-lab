@@ -47,4 +47,5 @@ await Promise.all([
   copyFile("apps/web/web.css", "dist/web/web.css"),
   copyFile("apps/web/dashboard.css", "dist/web/dashboard.css"),
   copyFile("apps/web/atlas.css", "dist/web/atlas.css"),
+  copyFile("apps/web/topology.css", "dist/web/topology.css"),
 ]);

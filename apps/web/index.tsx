@@ -1,12 +1,14 @@
 import React, { useState } from "react";
 import { createRoot } from "react-dom/client";
 import { defaultsFor, evolutionJob, spectrumJob } from "../../packages/models";
-import type { EvolutionResult, RunSummary, SpectrumResult, WorkerStatus } from "../../packages/contracts";
+import type { EvolutionResult, RunSummary, SpectrumResult, TopologyJob, TopologyResult, WorkerStatus } from "../../packages/contracts";
 import { WorkerDashboard } from "./WorkerDashboard";
 import { AtlasBrowser } from "./AtlasBrowser";
 import type { AtlasBinding } from "../../packages/atlas/bindings";
+import { TOPOLOGY_DEFAULTS, isTopologyResponse } from "../../packages/models/topology";
+import { TopologyLab } from "./TopologyLab";
 
-type Mode = "spectrum" | "dynamics" | "worker" | "atlas";
+type Mode = "spectrum" | "dynamics" | "worker" | "atlas" | "topology";
 type Engine = "qutip" | "native";
 type Reading = { result: SpectrumResult | EvolutionResult; points?: { time: number; p1: number }[] };
 
@@ -37,6 +39,7 @@ function App() {
   const [amplitude, setAmplitude] = useState(defaultsFor("driven_two_level").amplitude);
   const [frequency, setFrequency] = useState(defaultsFor("driven_two_level").frequency);
   const [reading, setReading] = useState<Reading | null>(null);
+  const [topologyDraft, setTopologyDraft] = useState(TOPOLOGY_DEFAULTS);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -93,8 +96,16 @@ function App() {
     } catch (reason) { setError(reason instanceof Error ? reason.message : "Calculation failed"); }
     finally { setBusy(false); }
   }
+  async function runTopology(job: TopologyJob): Promise<TopologyResult> {
+    const payload: unknown = await api("/api/jobs", token, { method: "POST", body: JSON.stringify(job) }).then(response => response.json());
+    if (!isTopologyResponse(payload, job))
+      throw new Error("Gateway returned an invalid or inconsistent topology result");
+    await refresh(token);
+    return payload;
+  }
   function atlasSupported(binding: AtlasBinding) {
-    return binding.kind === "spectrum" || (binding.kind === "dynamics" && binding.modelId === "driven_two_level");
+    return binding.kind === "spectrum" || binding.kind === "topology" ||
+      (binding.kind === "dynamics" && binding.modelId === "driven_two_level");
   }
   function loadAtlas(binding: AtlasBinding) {
     if (binding.kind === "spectrum") {
@@ -102,6 +113,12 @@ function App() {
     } else if (binding.kind === "dynamics" && binding.modelId === "driven_two_level") {
       setDelta(String(binding.parameters.delta)); setAmplitude(String(binding.parameters.amplitude));
       setFrequency(String(binding.parameters.frequency)); setReading(null); setMode("dynamics");
+    } else if (binding.kind === "topology") {
+      setTopologyDraft(current => binding.modelId === "ssh"
+        ? { ...current, modelId: "ssh", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2),
+            cells: String(binding.parameters.cells), kPoints: String(binding.parameters.kPoints) }
+        : { ...current, modelId: "qwz", mass: String(binding.parameters.mass), grid: String(binding.parameters.grid) });
+      setMode("topology");
     }
   }
 
@@ -111,22 +128,24 @@ function App() {
   const chart = points ? points.map((point, index) => `${24 + index * 592 / (points.length - 1)},${218 - point.p1 * 178}`).join(" ") : "";
   const formatted = (value: number) => Number.isFinite(value) ? value.toFixed(6) : "—";
   return <div className="app">
-    <header><div className="brand"><span className="brand-symbol">Ψ</span><div><strong>QUANTUM HAMILTONIAN LAB</strong><small>Web laboratory · version 0.1</small></div></div>
+    <header><div className="brand"><span className="brand-symbol">Ψ</span><div><strong>QUANTUM HAMILTONIAN LAB</strong><small>Web laboratory · QLAB-029</small></div></div>
       <div className="header-status"><span className={status?.state === "READY" ? "lamp on" : "lamp"}/>{status?.state === "READY" ? `${status.transport ?? "local"} worker ready` : "Gateway connection required"}</div></header>
     <main>
       <aside><div className="eyebrow">LABORATORIES</div>
         <button className={mode === "spectrum" ? "nav selected" : "nav"} onClick={() => setMode("spectrum")}><span>01</span> Two-level spectrum</button>
         <button className={mode === "dynamics" ? "nav selected" : "nav"} onClick={() => setMode("dynamics")}><span>02</span> Rabi dynamics</button>
-        <button className={mode === "worker" ? "nav selected" : "nav"} onClick={() => setMode("worker")}><span>03</span> Worker &amp; API</button>
-        <button className={mode === "atlas" ? "nav selected" : "nav"} onClick={() => setMode("atlas")}><span>04</span> Hamiltonian Atlas</button>
+        <button className={mode === "topology" ? "nav selected" : "nav"} onClick={() => setMode("topology")}><span>03</span> Topological bands</button>
+        <button className={mode === "worker" ? "nav selected" : "nav"} onClick={() => setMode("worker")}><span>04</span> Worker &amp; API</button>
+        <button className={mode === "atlas" ? "nav selected" : "nav"} onClick={() => setMode("atlas")}><span>05</span> Hamiltonian Atlas</button>
         <div className="aside-note">Runs travel through the versioned job contract to the supervised Python worker. Binary dynamics data is checked in this browser before plotting.</div>
         <div className="side-footer">QuTiP / NumPy · ℏ = 1</div>
       </aside>
       <section className="workspace">
-        {mode !== "worker" && mode !== "atlas" && <div className="page-intro"><div><div className="eyebrow">LIVE COMPUTATION</div><h1>{mode === "spectrum" ? "Two-level spectrum" : "Rabi dynamics"}</h1><p>{mode === "spectrum" ? "Diagonalize a coupled two-state Hamiltonian and inspect its eigenenergies." : "Evolve a driven qubit and inspect its excited-state population."}</p></div><div className="model-badge">{mode === "spectrum" ? "H = ½(Δσz + Ωσx)" : "H(t) = ½Δσz + ½A cos(ωt)σx"}</div></div>}
+        {mode !== "worker" && mode !== "atlas" && mode !== "topology" && <div className="page-intro"><div><div className="eyebrow">LIVE COMPUTATION</div><h1>{mode === "spectrum" ? "Two-level spectrum" : "Rabi dynamics"}</h1><p>{mode === "spectrum" ? "Diagonalize a coupled two-state Hamiltonian and inspect its eigenenergies." : "Evolve a driven qubit and inspect its excited-state population."}</p></div><div className="model-badge">{mode === "spectrum" ? "H = ½(Δσz + Ωσx)" : "H(t) = ½Δσz + ½A cos(ωt)σx"}</div></div>}
         {mode === "atlas" ? <AtlasBrowser onLoad={loadAtlas} supported={atlasSupported}/> : !token ? <form className="connect card" onSubmit={connect}><div className="eyebrow">CONNECT TO GATEWAY</div><h2>Enter access token</h2><p>The token is held in memory only. Refreshing the page clears it. Use HTTPS for access beyond this computer.</p>
           <div className="connect-row"><input aria-label="Gateway access token" type="password" autoComplete="off" value={tokenDraft} onChange={event => setTokenDraft(event.target.value)} placeholder="Gateway access token" required/><button className="primary">Connect</button></div></form> :
           mode === "worker" ? <WorkerDashboard token={token} onStatus={setStatus}/> :
+          mode === "topology" ? <TopologyLab draft={topologyDraft} onDraft={setTopologyDraft} status={status} runJob={runTopology}/> :
           <div className="grid"><form className="card controls" onSubmit={run}><div className="eyebrow">01 / CONFIGURE</div><h2>Experiment controls</h2>
             <div className="field"><label htmlFor="engine">Numerical engine</label><select id="engine" value={engine} onChange={event => setEngine(event.target.value as Engine)}><option value="qutip" disabled={!status?.capabilities?.engines.qutip.available}>QuTiP</option><option value="native" disabled={!status?.capabilities?.engines.native.available}>Native NumPy / SciPy</option></select></div>
             <div className="field"><label htmlFor="delta">Detuning Δ</label><input id="delta" type="number" step="any" value={delta} onChange={event => setDelta(event.target.value)} required/></div>

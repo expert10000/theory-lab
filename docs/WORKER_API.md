@@ -14,7 +14,7 @@ The Python worker receives newline-delimited JSON-RPC 2.0 through local stdio or
 | `capabilities` | Versioned engine and operation inventory |
 | `health` | Supervisor liveness check |
 | `resources` | `worker-resources/v1` snapshot |
-| `quantum.run` | Inline spectrum, many-body or circuit result |
+| `quantum.run` | Inline spectrum, many-body, circuit or topology result |
 | `quantum.start` | Start evolution, cavity, Lindblad or sweep job |
 | `quantum.cancel` | Request active-job cancellation |
 | `shutdown` | Graceful shutdown |
@@ -23,7 +23,7 @@ The Python worker receives newline-delimited JSON-RPC 2.0 through local stdio or
 
 ## Gateway routes
 
-The separate Node gateway requires `Authorization: Bearer <token>` on every `/api/*` route. It uses HTTP only on loopback; non-loopback binding requires TLS and an explicit origin. Jobs are checked against `quantum-job/v1` and return `quantum-result/v1`. The browser-facing job route currently supports `diagonalize`, `evolve`, and `circuit`; other worker operations remain desktop-only.
+The separate Node gateway requires `Authorization: Bearer <token>` on every `/api/*` route. It uses HTTP only on loopback; non-loopback binding requires TLS and an explicit origin. Jobs are checked against `quantum-job/v1` and return `quantum-result/v1`. The browser-facing job route currently supports `diagonalize`, `evolve`, `circuit` and bounded native `topology`; other worker operations remain desktop-only. SSH and QWZ topology responses are checked against the submitted model before persistence and again in the browser before plotting.
 
 | Route | Response |
 | --- | --- |
