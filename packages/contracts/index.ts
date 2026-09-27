@@ -56,6 +56,7 @@ export interface EvolutionSolver {
 }
 export type Observable = "p0" | "p1" | "sigma_x" | "sigma_y" | "sigma_z";
 export type EngineName = "qutip" | "native";
+export type EvolutionEngineName = EngineName | "dynamiqs";
 export interface SpectrumJob {
   schema: "quantum-job/v1";
   jobId: string;
@@ -67,7 +68,7 @@ export interface EvolutionJob {
   schema: "quantum-job/v1";
   jobId: string;
   operation: "evolve";
-  engine: EngineName;
+  engine: EvolutionEngineName;
   model: EvolutionModel;
   initialState: BasisState;
   solver: EvolutionSolver;
@@ -184,7 +185,7 @@ export interface EvolutionResult {
   initialState: BasisState;
   solver: EvolutionSolver;
   observables: Observable[];
-  engine: { name: EngineName; version: string };
+  engine: { name: EvolutionEngineName; version: string; device?: string };
   data: EvolutionData;
   analysis?: FloquetAnalysis;
   provenance: SpectrumResult["provenance"];
@@ -292,6 +293,7 @@ export interface WorkerCapabilities {
   engines: {
     qutip: { available: boolean; version: string | null };
     native: { available: boolean; version: string | null };
+    dynamiqs?: { available: boolean; version: string | null; device: string | null };
   };
   operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep")[];
 }

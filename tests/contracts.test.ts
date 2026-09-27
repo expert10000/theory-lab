@@ -61,6 +61,22 @@ test("native engine is accepted by the existing v1 job and result shapes", () =>
   assert.ok(isQuantumJob({ ...fixture, engine: "native" }));
   assert.ok(isQuantumJob({ ...evolutionFixture, engine: "native" }));
 });
+test("Dynamiqs is an additive evolution-only v1 engine", () => {
+  assert.ok(isQuantumJob({ ...evolutionFixture, engine: "dynamiqs" }));
+  assert.equal(isQuantumJob({ ...fixture, engine: "dynamiqs" }), false);
+  const caps = {
+    schema: "worker-capabilities/v1", protocol: 1,
+    worker: { version: "0.1.0" }, python: { version: "3.12" },
+    engines: {
+      qutip: { available: true, version: "5" },
+      native: { available: true, version: "1" },
+      dynamiqs: { available: false, version: null, device: null },
+    }, operations: ["evolve"],
+  };
+  assert.ok(isWorkerCapabilities(caps));
+  assert.equal(isWorkerCapabilities({ ...caps, engines: { ...caps.engines,
+    dynamiqs: { available: true, version: "0.3.6" } } }), false);
+});
 test("capabilities advertise only implemented operations", () => {
   const caps = {
     schema: "worker-capabilities/v1",

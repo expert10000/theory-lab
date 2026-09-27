@@ -56,7 +56,7 @@ export class EvolutionCoordinator {
     if (
       this.worker.status.state !== "READY" ||
       !this.worker.status.capabilities?.operations.includes(job.operation) ||
-      !this.worker.status.capabilities.engines[job.engine].available
+      !this.worker.status.capabilities.engines[job.engine]?.available
     )
       throw new Error(`${job.engine} ${job.operation} engine is not ready`);
     return new Promise((resolve, reject) => {

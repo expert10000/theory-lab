@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
   EvolutionResult,
   EvolutionProgress,
-  EngineName,
+  EvolutionEngineName,
   QuantumBridge,
   WorkerStatus,
   WorkspaceSnapshot,
@@ -26,7 +26,7 @@ import {
 import type { EvolutionPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
 
-type EngineMode = EngineName | "compare";
+type EngineMode = EvolutionEngineName | "compare";
 
 const series = [
   { name: "P₀", column: 1, color: "#79d9c1" },
@@ -46,7 +46,7 @@ function DynamicsChart({
   rows: number;
   selectedIndex: number;
   onSelect: (index: number) => void;
-  engine: EngineName;
+  engine: EvolutionEngineName;
 }) {
   const path = (column: number) => {
     const step = Math.max(1, Math.ceil(rows / 800));
@@ -67,7 +67,7 @@ function DynamicsChart({
       className="dynamics-chart"
       viewBox="0 0 800 390"
       role="img"
-      aria-label={`${engine === "qutip" ? "QuTiP" : "Native"} population and Pauli expectation time series`}
+      aria-label={`${engine === "qutip" ? "QuTiP" : engine === "native" ? "Native" : "Dynamiqs GPU"} population and Pauli expectation time series`}
       onClick={(event) => {
         const matrix = event.currentTarget.getScreenCTM();
         if (!matrix) return;
@@ -253,7 +253,7 @@ export function DynamicsLab({
     (engineMode === "compare"
       ? status.capabilities.engines.qutip.available &&
         status.capabilities.engines.native.available
-      : status.capabilities.engines[engineMode].available);
+      : !!status.capabilities.engines[engineMode]?.available);
   const stale =
     result &&
     (result.model.type !== modelId ||
@@ -269,7 +269,7 @@ export function DynamicsLab({
     () => (result && data ? sampleAt(data, selectedIndex) : null),
     [result, data, selectedIndex],
   );
-  async function runOne(engine: EngineName) {
+  async function runOne(engine: EvolutionEngineName) {
     const jobId = `job-${crypto.randomUUID()}`;
     activeJob.current = jobId;
     setProgress(null);
@@ -460,6 +460,7 @@ export function DynamicsLab({
             >
               <option value="qutip">QuTiP</option>
               <option value="native">Native · NumPy/SciPy</option>
+              <option value="dynamiqs" disabled={!status.capabilities?.engines.dynamiqs?.available}>Dynamiqs · GPU</option>
               <option value="compare">Compare both engines</option>
             </select>
           </label>
@@ -787,7 +788,7 @@ export function DynamicsLab({
           )}
           <div className="plot-caption">
             <span>
-              {result.engine.name === "qutip" ? "QuTiP" : "Native SciPy"}{" "}
+              {result.engine.name === "qutip" ? "QuTiP" : result.engine.name === "native" ? "Native SciPy" : "Dynamiqs GPU"}{" "}
               {result.engine.version} ·{" "}
               {result.provenance.durationMs.toFixed(1)} ms
             </span>

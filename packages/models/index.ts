@@ -1,6 +1,7 @@
 import type {
   EvolutionJob,
   EngineName,
+  EvolutionEngineName,
   LayerOneSource,
   Observable,
   SpectrumJob,
@@ -290,7 +291,7 @@ export function evolutionJob(
   tStart: number,
   tStop: number,
   samples: number,
-  engine: EngineName = "qutip",
+  engine: EvolutionEngineName = "qutip",
   sourceOverride?: LayerOneSource,
 ): EvolutionJob {
   const p = parametersFor(id, values);

@@ -59,6 +59,16 @@
             }
           },
           "required": ["available", "version"]
+        },
+        "dynamiqs": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "available": { "type": "boolean" },
+            "version": { "type": ["string", "null"] },
+            "device": { "type": ["string", "null"] }
+          },
+          "required": ["available", "version", "device"]
         }
       },
       "required": ["qutip", "native"]

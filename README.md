@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018 adds an optional Dynamiqs GPU evolution adapter.
 
 ## Run on Windows
 
@@ -45,6 +45,16 @@ Select **Floquet / strong drive** to compute the one-period propagator of the pe
 
 The **Sweeps** workspace varies one or two parameters of Rabi, Landau–Zener, Stückelberg, or strong-drive evolution and maps final P₁. Select QuTiP or native SciPy, a time window, axes and resolution (up to 10,000 cells), then run. A 1D curve or clickable 2D heatmap displays the result. Completed cells are cached by model, grid and engine version; cancel and rerun unchanged settings to resume. The result reports reused and newly computed cells. A sweep is a separate job, not the fixed Floquet preview map.
 
+## Optional Dynamiqs GPU evolution (QLAB-018)
+
+On a Linux or WSL2 CUDA 12 setup with a compatible NVIDIA driver, install the optional stack *after* the base Python worker requirements:
+
+```sh
+.venv/bin/python -m pip install -r workers/quantum-python/requirements-dynamiqs-gpu.txt
+```
+
+Restart the worker. The **Backend** tab reports the actual JAX device; **Dynamics** enables Dynamiqs only if the pinned package imports and JAX sees a GPU. This adapter uses Dynamiqs `sesolve` for the four two-level evolution models, produces the same verified ten-column artifact, and checks cancellation between bounded GPU chunks. It does not yet implement sweep batching, cavity QED, Lindblad, a Dynamiqs Floquet analysis, or a Windows-native CUDA worker. The published Dynamiqs 0.3.6 wheel failed import in our Python 3.12/JAX 0.11.2 test; the optional file pins an inspected upstream commit that fixes that issue. The GPU path is an architectural adapter, not a speedup claim for a two-state problem.
+
 ## Volume VIII presets
 
 Open **Presets** for six source-pinned configurations from the inspected `theory` QuTiP examples: resonant Rabi, Landau–Zener, Jaynes–Cummings vacuum Rabi, T₁ relaxation, pure dephasing, and damped cavity occupation. A card loads the existing lab; review its values, choose QuTiP or native, and run. Five presets show a full-trajectory analytic error and a pass/fail threshold; Landau–Zener shows only the asymptotic reference because its run has finite endpoints. Source revision, basis/frame mappings, and exclusions are detailed in [docs/PRESETS.md](docs/PRESETS.md). Editing a loaded preset creates a variant and disables the exact-preset analytic check.
@@ -68,7 +78,7 @@ The local Chapter 58 file remains an architecture-only placeholder. The Landau�
 ## Architecture
 
 ```text
-React renderer → narrow preload API → Electron main → JSON-RPC stdio → Python → QuTiP / Native
+React renderer → narrow preload API → Electron main → JSON-RPC stdio → Python → QuTiP / Native / optional Dynamiqs GPU
                                       validates jobs                 validates jobs/results
                                       validates results ← quantum-result/v1
 ```

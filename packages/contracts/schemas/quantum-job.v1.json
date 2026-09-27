@@ -113,7 +113,7 @@
           "const": "evolve"
         },
         "engine": {
-          "enum": ["qutip", "native"]
+          "enum": ["qutip", "native", "dynamiqs"]
         },
         "model": {
           "oneOf": [

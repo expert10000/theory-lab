@@ -35,7 +35,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <b>→</b>
           <span>JSON-RPC worker</span>
           <b>→</b>
-          <span>QuTiP / Native</span>
+          <span>QuTiP / Native / optional Dynamiqs GPU</span>
         </div>
       </div>
       <div className="backend-card-grid">
@@ -85,6 +85,13 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <small>
             Independent engine · norm left uncorrected for diagnostics
           </small>
+        </article>
+        <article className="panel backend-card">
+          <div className="backend-card-title"><p className="eyebrow">ENGINE 03 · OPTIONAL</p><span className={engines?.dynamiqs?.available ? "live-dot" : "offline-dot"}/></div>
+          <h2>Dynamiqs / JAX GPU</h2>
+          <p className="backend-version">{engines?.dynamiqs?.available ? `${engines.dynamiqs.version} · ${engines.dynamiqs.device}` : "Unavailable on this worker"}</p>
+          <p>Linux/WSL2 CUDA two-level Schrödinger evolution uses <code>dq.sesolve()</code> in bounded chunks. Capability detection verifies package import and a real JAX GPU device. Sweep batching, cavity and Lindblad adapters are later milestones.</p>
+          <small>Optional compute path · cancellation between GPU chunks</small>
         </article>
       </div>
       <div className="backend-card-grid">

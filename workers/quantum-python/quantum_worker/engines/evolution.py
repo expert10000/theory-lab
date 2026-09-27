@@ -11,6 +11,7 @@ from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.qutip_engine import engine
 from quantum_worker.engines.native_engine import NativeEvolution, libraries
+from quantum_worker.engines.dynamiqs_engine import availability as dynamiqs_availability, states as dynamiqs_states
 from quantum_worker.models import build
 
 COLUMNS = ["time", "p0", "p1", "sigma_x", "sigma_y", "sigma_z", "c0_re", "c0_im", "c1_re", "c1_im"]
@@ -33,6 +34,12 @@ def evolve(job, output_dir, cancelled, progress):
         solver = NativeEvolution(job, cancelled)
         _, scipy, _ = libraries()
         engine_version = scipy.__version__
+    elif job["engine"] == "dynamiqs":
+        info = dynamiqs_availability()
+        if not info["available"]:
+            raise ValueError("Dynamiqs GPU is unavailable")
+        solver = iter(dynamiqs_states(job, cancelled))
+        engine_version = info["version"]
     else:
         raise ValueError("Unsupported evolution engine")
     destination = Path(output_dir).resolve()
@@ -52,10 +59,18 @@ def evolve(job, output_dir, cancelled, progress):
                 if cancelled.is_set():
                     return None
                 t = settings["tStop"] if i == rows - 1 else settings["tStart"] + interval * i
-                state = solver.step(t)
-                if state is None:
-                    return None
-                c0, c1 = state.full().ravel() if job["engine"] == "qutip" else state
+                if job["engine"] == "dynamiqs":
+                    try:
+                        index, (c0, c1) = next(solver)
+                    except StopIteration:
+                        return None
+                    if index != i:
+                        raise ValueError("Dynamiqs sample index mismatch")
+                else:
+                    state = solver.step(t)
+                    if state is None:
+                        return None
+                    c0, c1 = state.full().ravel() if job["engine"] == "qutip" else state
                 p0, p1 = abs(c0) ** 2, abs(c1) ** 2
                 sx = 2 * (c0.conjugate() * c1).real
                 sy = 2 * (c0.conjugate() * c1).imag
@@ -73,7 +88,7 @@ def evolve(job, output_dir, cancelled, progress):
         if cancelled.is_set():
             return None
         analysis = None
-        if job["model"]["type"] == "strong_drive":
+        if job["model"]["type"] == "strong_drive" and job["engine"] != "dynamiqs":
             from quantum_worker.engines.floquet import analyze
             analysis = analyze(job, cancelled)
             if analysis is None or cancelled.is_set():
@@ -92,6 +107,8 @@ def evolve(job, output_dir, cancelled, progress):
         }
         if analysis is not None:
             result["analysis"] = analysis
+        if job["engine"] == "dynamiqs":
+            result["engine"]["device"] = info["device"]
         validate("quantum-result", result)
         return result
     finally:

@@ -1,0 +1,5 @@
+# Optional Linux/WSL2 CUDA 12 adapter. Install after the base worker requirements.
+# The published 0.3.6 wheel has a runtime type-alias import failure with JAX 0.11.2;
+# this inspected upstream commit includes the fix. Do not replace with an unpinned wheel.
+jax[cuda12]==0.11.2
+dynamiqs @ git+https://github.com/dynamiqs/dynamiqs.git@210d4ad819839b82ff31ec166c412bd911e2e5ad

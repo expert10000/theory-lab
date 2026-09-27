@@ -270,6 +270,14 @@ try {
     path: "artifacts/desktop-dynamics.png",
     fullPage: true,
   });
+  const gpu = await page.evaluate(() => window.quantum.getCapabilities());
+  if (gpu.engines.dynamiqs?.available) {
+    await page.getByRole("combobox", { name: "Dynamics engine" }).selectOption("dynamiqs");
+    await page.getByTestId("run-evolution").click();
+    await page.getByTestId("evolution-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 90000 });
+    assert.ok(await page.getByRole("img", { name: /Dynamiqs GPU population and Pauli/ }).isVisible());
+    await page.getByRole("combobox", { name: "Dynamics engine" }).selectOption("qutip");
+  }
   await page.getByLabel("Drive frequency ω", { exact: true }).fill("1.1");
   await page
     .getByTestId("dynamics-result-state")

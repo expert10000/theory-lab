@@ -8,6 +8,7 @@ from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.qutip_engine import availability, diagonalize
 from quantum_worker.engines.native_engine import availability as native_availability, diagonalize as native_diagonalize
+from quantum_worker.engines.dynamiqs_engine import availability as dynamiqs_availability
 from quantum_worker.jobs.manager import JobManager
 
 MAX_MESSAGE = 65536
@@ -18,7 +19,7 @@ def capabilities():
     native = native_availability()
     result = {"schema": "worker-capabilities/v1", "protocol": 1,
               "worker": {"version": __version__}, "python": {"version": platform.python_version()},
-              "engines": {"qutip": qutip, "native": native},
+              "engines": {"qutip": qutip, "native": native, "dynamiqs": dynamiqs_availability()},
               "operations": ["diagonalize", "evolve", "cavity", "lindblad", "sweep"] if qutip["available"] or native["available"] else []}
     validate("worker-capabilities", result)
     return result

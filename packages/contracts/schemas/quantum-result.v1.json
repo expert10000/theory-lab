@@ -460,9 +460,13 @@
           "additionalProperties": false,
           "properties": {
             "name": {
-              "enum": ["qutip", "native"]
+              "enum": ["qutip", "native", "dynamiqs"]
             },
             "version": {
+              "type": "string",
+              "minLength": 1
+            },
+            "device": {
               "type": "string",
               "minLength": 1
             }

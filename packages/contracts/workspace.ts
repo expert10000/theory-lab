@@ -1,8 +1,9 @@
 import Ajv from "ajv";
-import type { CavityModel, EngineName, SweepAxis } from "./index";
+import type { CavityModel, EngineName, EvolutionEngineName, SweepAxis } from "./index";
 
 export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "presets" | "runs" | "roadmap" | "backend";
 export type WorkspaceEngine = EngineName | "compare";
+export type DynamicsWorkspaceEngine = EvolutionEngineName | "compare";
 export interface WorkspaceSnapshot {
   schema: "quantum-workspace/v1";
   savedAt: string;
@@ -11,7 +12,7 @@ export interface WorkspaceSnapshot {
   spectrum: { parameters: Record<string, string>; engine: WorkspaceEngine };
   dynamics: { modelId: "driven_two_level" | "landau_zener" | "stuckelberg" | "strong_drive";
     parameters: Record<string, string>; start: string; stop: string; samples: string;
-    basis: 0 | 1; engine: WorkspaceEngine };
+    basis: 0 | 1; engine: DynamicsWorkspaceEngine };
   cavity: { modelId: CavityModel["type"]; parameters: Record<string, string>;
     qubit: "ground" | "excited"; photons: string; start: string; stop: string;
     samples: string; engine: EngineName };
@@ -27,7 +28,7 @@ export interface RunSummary {
   jobId: string;
   operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep";
   model: string;
-  engine: EngineName;
+  engine: EvolutionEngineName;
   engineVersion: string;
   computedAt: string;
   durationMs: number;
@@ -54,7 +55,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   spectrum: block(["parameters", "engine"], { parameters: values, engine: { enum: ["qutip", "native", "compare"] } }),
   dynamics: block(["modelId", "parameters", "start", "stop", "samples", "basis", "engine"], {
     modelId: evolutionModel, parameters: values, start: shortText, stop: shortText, samples: shortText,
-    basis: { enum: [0, 1] }, engine: { enum: ["qutip", "native", "compare"] },
+    basis: { enum: [0, 1] }, engine: { enum: ["qutip", "native", "dynamiqs", "compare"] },
   }),
   cavity: block(["modelId", "parameters", "qubit", "photons", "start", "stop", "samples", "engine"], {
     modelId: { enum: ["jaynes_cummings", "quantum_rabi"] }, parameters: values,
