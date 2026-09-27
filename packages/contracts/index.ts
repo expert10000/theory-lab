@@ -139,7 +139,7 @@ export interface SweepJob {
     initialIndex: 0 | 1;
   };
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob;
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -182,6 +182,24 @@ export interface ManyBodyResult {
   engine: { name: ManyBodyEngineName; version: string };
   spectrum: { lowEnergies: number[]; gap: number; units: "normalized"; hbar: 1 };
   groundState: { siteMagnetization: number[]; halfChainEntropy: number };
+  provenance: SpectrumResult["provenance"];
+}
+export interface SSHModel { type: "ssh"; parameters: { t1: number; t2: number; cells: number; kPoints: number }; source?: LayerOneSource }
+export interface QWZModel { type: "qwz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel }
+export interface SSHAnalysis {
+  kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
+  lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
+  edgeDensity: number[]; edgeWeight: number;
+}
+export interface QWZAnalysis {
+  kind: "qwz"; bulkGap: number; sampledGap: number; gapClosed: boolean;
+  chern: number | null; chernIntegral: number | null; berryCurvature: number[];
+}
+export interface TopologyResult {
+  schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
+  operation: "topology"; model: SSHModel | QWZModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {
@@ -324,7 +342,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -343,7 +361,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -371,6 +389,7 @@ export interface QuantumBridge {
   sweep(job: SweepJob): Promise<SweepResult>;
   manyBody(job: ManyBodyJob): Promise<ManyBodyResult>;
   circuit(job: CircuitJob): Promise<CircuitResult>;
+  topology(job: TopologyJob): Promise<TopologyResult>;
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
   onProgress(listener: (progress: EvolutionProgress) => void): () => void;

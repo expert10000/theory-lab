@@ -8,6 +8,7 @@ const bridge: QuantumBridge = {
   sweep: (job) => ipcRenderer.invoke("quantum:sweep", job),
   manyBody: (job) => ipcRenderer.invoke("quantum:many-body", job),
   circuit: (job) => ipcRenderer.invoke("quantum:circuit", job),
+  topology: (job) => ipcRenderer.invoke("quantum:topology", job),
   cancel: (jobId) => ipcRenderer.invoke("quantum:cancel", jobId),
   readData: (jobId) => ipcRenderer.invoke("quantum:read-data", jobId),
   onProgress: (listener) => {

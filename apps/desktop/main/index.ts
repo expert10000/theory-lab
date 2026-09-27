@@ -180,6 +180,25 @@ app.whenReady().then(() => {
       return result;
     } finally { running = false; }
   });
+  ipcMain.handle("quantum:topology", async (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if (value.operation !== "topology") throw new Error("Expected topology job");
+    if (worker.status.state !== "READY" || !worker.status.capabilities?.operations.includes("topology") ||
+        !worker.status.capabilities.engines.native.available) throw new Error("Native topology engine is not ready");
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const result = await worker.request("quantum.run", value, 60000);
+      if (!isQuantumResult(result) || result.operation !== "topology" ||
+          result.jobId !== value.jobId || result.engine.name !== "native" ||
+          JSON.stringify(result.model) !== JSON.stringify(value.model) ||
+          result.analysis.kind !== value.model.type)
+        throw new Error("Worker returned an invalid or mismatched topology result");
+      await runs.record(value, result);
+      return result;
+    } finally { running = false; }
+  });
   ipcMain.handle("quantum:status", (event) => {
     trusted(event);
     return worker.status;

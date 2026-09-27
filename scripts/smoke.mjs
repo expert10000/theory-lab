@@ -53,6 +53,7 @@ try {
       "run",
       "saveWorkspace",
       "sweep",
+      "topology",
     ],
   });
   const prefs = await app.evaluate(({ BrowserWindow }) => {
@@ -142,6 +143,15 @@ try {
     path: "artifacts/desktop-backend.png",
     fullPage: true,
   });
+  await page.getByTestId("open-atlas").click();
+  assert.ok(await page.getByTestId("atlas-panel").isVisible());
+  await page.getByRole("button", { name: /Su-Schrieffer-Heeger model/ }).click();
+  assert.match(await page.getByTestId("atlas-panel").innerText(), /Atlas t₁\/t₂/);
+  await page.getByTestId("open-atlas-binding").click();
+  assert.ok(await page.getByTestId("topology-lab").isVisible());
+  await page.getByTestId("run-topology").click();
+  await page.getByTestId("topology-result").waitFor();
+  assert.match(await page.getByTestId("topology-result").innerText(), /WINDING\s+1/);
   await page.getByRole("tab", { name: "Spectrum", exact: true }).click();
   await page.getByRole("button", { name: "Restore smoke values" }).click();
   await page.getByRole("button", { name: "Run spectrum" }).click();

@@ -156,7 +156,7 @@ export class EvolutionCoordinator {
     } else if (method === "job.completed") {
       if (
         !isQuantumResult(value) ||
-        value.operation === "diagonalize" ||
+        !("data" in value) ||
         value.operation !== active.job.operation ||
         value.data.path !== `${active.job.jobId}.f64` ||
         value.engine.name !== active.job.engine ||

@@ -10,14 +10,14 @@ function verifyId(id: string) {
   if (!identifier.test(id)) throw new Error("Invalid run ID");
 }
 function artifactName(result: QuantumResult): string | null {
-  return result.operation === "diagonalize" || result.operation === "many_body" || result.operation === "circuit" ? null : result.data.path;
+  return "data" in result ? result.data.path : null;
 }
 function summary(result: QuantumResult): RunSummary {
   return { schema: "quantum-run-manifest/v1", runId: result.runId, jobId: result.jobId,
     operation: result.operation, model: result.model.type, engine: result.engine.name,
     engineVersion: result.engine.version, computedAt: result.provenance.computedAt,
     durationMs: result.provenance.durationMs,
-    artifactSha256: result.operation === "diagonalize" || result.operation === "many_body" || result.operation === "circuit" ? null : result.data.sha256 };
+    artifactSha256: "data" in result ? result.data.sha256 : null };
 }
 export class RunStore {
   constructor(private readonly root: string, private readonly artifactDir: string) {}
@@ -38,7 +38,7 @@ export class RunStore {
     if (name) {
       if (name !== `${result.jobId}.f64` || basename(name) !== name) throw new Error("Invalid run artifact path");
       const data = await readFile(join(this.artifactDir, name));
-      if (result.operation === "diagonalize" || result.operation === "many_body" || result.operation === "circuit" || data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256)
+      if (!("data" in result) || data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256)
         throw new Error("Run artifact failed integrity check");
       await copyFile(join(this.artifactDir, name), join(dir, "data.f64"));
     }
@@ -62,7 +62,7 @@ export class RunStore {
             typeof value.durationMs === "number" && Number.isFinite(value.durationMs) &&
             (value.artifactSha256 === null || (typeof value.artifactSha256 === "string" && /^[a-f0-9]{64}$/.test(value.artifactSha256))) &&
             ["qutip", "native", "dynamiqs", "quspin", "scqubits"].includes(value.engine) &&
-            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit"].includes(value.operation))
+            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology"].includes(value.operation))
           runs.push({ schema: value.schema, runId: value.runId, jobId: value.jobId,
             operation: value.operation, model: value.model, engine: value.engine,
             engineVersion: value.engineVersion, computedAt: value.computedAt,
@@ -90,7 +90,7 @@ export class RunStore {
         result.operation !== job.operation || result.engine.name !== job.engine)
       throw new Error("Stored run has invalid contracts");
     let data: Buffer | null = null;
-    if (result.operation !== "diagonalize" && result.operation !== "many_body" && result.operation !== "circuit") {
+    if ("data" in result) {
       if (manifest.files.data !== "data.f64") throw new Error("Missing run data file");
       data = await readFile(join(dir, "data.f64"));
       if (data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256 ||
@@ -110,7 +110,7 @@ export class RunStore {
   }
 }
 
-function rowsOf(result: Exclude<QuantumResult, { operation: "diagonalize" | "many_body" | "circuit" }>, data: Buffer): number[][] {
+function rowsOf(result: Extract<QuantumResult, { data: unknown }>, data: Buffer): number[][] {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
   const stride = result.operation === "sweep" ? 1 : result.data.columns.length;
   const count = result.operation === "sweep" ? result.data.shape.x * result.data.shape.y : result.data.rows;
@@ -129,6 +129,13 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       `anharmonicity,0,${result.spectrum.anharmonicity},GHz`,
       `charge_matrix_element_01,0,${result.spectrum.chargeMatrixElement01},Cooper_pairs`,
       `cutoff_drift_e01,0,${result.spectrum.cutoffDriftE01},GHz`].join("\n") + "\n";
+  if (result.operation === "topology") {
+    const a = result.analysis;
+    if (a.kind === "ssh") return ["k,lower_band,upper_band", ...a.kValues.map((k, i) => `${k},${a.lowerBand[i]},${a.upperBand[i]}`),
+      "", "site,midgap_pair_density", ...a.edgeDensity.map((v, i) => `${i},${v}`)].join("\n") + "\n";
+    const grid = result.model.type === "qwz" ? result.model.parameters.grid : 1;
+    return ["kx_index,ky_index,berry_curvature", ...a.berryCurvature.map((v, i) => `${Math.floor(i / grid)},${i % grid},${v}`)].join("\n") + "\n";
+  }
   if (!data) throw new Error("Missing run numerical data");
   const rows = rowsOf(result, data);
   if (result.operation === "sweep") {
@@ -170,6 +177,19 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
       const y = 410 - (energy - low) * 290 / span;
       return `<path d="M${120 + index * 86} ${y} h58" stroke="#79d9c1" stroke-width="4"/><text x="${120 + index * 86}" y="${y - 10}" fill="white" font-family="sans-serif" font-size="11">E${index} ${energy.toFixed(3)}</text>`;
     }).join("") + `</svg>\n`;
+  }
+  if (result.operation === "topology") {
+    if (result.analysis.kind === "ssh") {
+      const a = result.analysis, scale = Math.max(1e-9, ...a.upperBand);
+      const line = (values: number[]) => values.map((v, i) => `${70 + i * 760 / (values.length - 1)},${265 - v * 150 / scale}`).join(" ");
+      return head + `<polyline points="${line(a.lowerBand)}" fill="none" stroke="#f2b36f" stroke-width="2"/><polyline points="${line(a.upperBand)}" fill="none" stroke="#79d9c1" stroke-width="2"/><text x="70" y="480" fill="white" font-family="sans-serif">SSH winding ${a.winding ?? "undefined"} · gap ${a.bulkGap.toFixed(6)}</text></svg>\n`;
+    }
+    const a = result.analysis, grid = result.model.type === "qwz" ? result.model.parameters.grid : 0;
+    const max = Math.max(1e-9, ...a.berryCurvature.map(Math.abs));
+    const cells = a.berryCurvature.map((v, i) => { const x = Math.floor(i / grid), y = i % grid;
+      const intensity = Math.floor(50 + 205 * Math.min(1, Math.abs(v) / max));
+      return `<rect x="${70 + x * 350 / grid}" y="${90 + y * 350 / grid}" width="${351 / grid}" height="${351 / grid}" fill="${v >= 0 ? `rgb(${intensity},80,90)` : `rgb(80,${intensity},170)`}"/>`; }).join("");
+    return head + cells + `<text x="450" y="480" fill="white" font-family="sans-serif">QWZ Chern ${a.chern ?? "undefined"} · gap ${a.bulkGap.toFixed(6)}</text></svg>\n`;
   }
   if (!data) throw new Error("Missing run numerical data");
   const rows = rowsOf(result, data);

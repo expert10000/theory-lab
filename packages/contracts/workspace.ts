@@ -1,7 +1,7 @@
 import Ajv from "ajv";
 import type { CavityModel, EngineName, EvolutionEngineName, ManyBodyEngineName, SweepEngineName, SweepAxis } from "./index";
 
-export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas";
+export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas" | "topology";
 export type ManyBodyWorkspaceEngine = ManyBodyEngineName | "compare";
 export type CircuitWorkspaceEngine = import("./index").CircuitEngineName | "compare";
 export type WorkspaceEngine = EngineName | "compare";
@@ -27,12 +27,13 @@ export interface WorkspaceSnapshot {
     boundary: "open" | "periodic"; engine: ManyBodyWorkspaceEngine };
   circuit?: { EJ: string; EC: string; ng: string; ncut: string; levels: string;
     engine: CircuitWorkspaceEngine };
+  topology?: { modelId: "ssh" | "qwz"; t1: string; t2: string; cells: string; kPoints: string; mass: string; grid: string };
 }
 export interface RunSummary {
   schema: "quantum-run-manifest/v1";
   runId: string;
   jobId: string;
-  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit";
+  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology";
   model: string;
   engine: EvolutionEngineName | ManyBodyEngineName | import("./index").CircuitEngineName;
   engineVersion: string;
@@ -56,7 +57,7 @@ const axis = block(["parameter", "start", "stop", "points"], {
 const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "spectrum", "dynamics", "cavity", "open", "sweep"], {
   schema: { const: "quantum-workspace/v1" },
   savedAt: { type: "string", minLength: 1, maxLength: 50 },
-  tab: { enum: ["spectrum", "hamiltonian", "dynamics", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas"] },
+  tab: { enum: ["spectrum", "hamiltonian", "dynamics", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "topology"] },
   selectedPresetId: { anyOf: [{ type: "string", maxLength: 100 }, { type: "null" }] },
   spectrum: block(["parameters", "engine"], { parameters: values, engine: { enum: ["qutip", "native", "compare"] } }),
   dynamics: block(["modelId", "parameters", "start", "stop", "samples", "basis", "engine"], {
@@ -83,6 +84,10 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   circuit: block(["EJ", "EC", "ng", "ncut", "levels", "engine"], {
     EJ: shortText, EC: shortText, ng: shortText, ncut: shortText, levels: shortText,
     engine: { enum: ["scqubits", "native", "compare"] },
+  }),
+  topology: block(["modelId", "t1", "t2", "cells", "kPoints", "mass", "grid"], {
+    modelId: { enum: ["ssh", "qwz"] }, t1: shortText, t2: shortText,
+    cells: shortText, kPoints: shortText, mass: shortText, grid: shortText,
   }),
 });
 const ajv = new Ajv({ strict: true, allErrors: true });

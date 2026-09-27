@@ -6,6 +6,7 @@ import { assertJob } from "../packages/contracts";
 import { spectrumJob, evolutionJob } from "../packages/models";
 import { cavityJob } from "../packages/models/cavity";
 import { manyBodyJob } from "../packages/models/many_body";
+import { topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 
 test("pinned Atlas snapshot is complete, connected and reference-only", () => {
   assert.equal(ATLAS_REVISION, "61791aff00c0f35a82ec6f2271deded5cc5e99d6");
@@ -25,7 +26,7 @@ test("pinned Atlas snapshot is complete, connected and reference-only", () => {
 });
 
 test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian coefficients", () => {
-  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain"];
+  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain", "ssh"];
   for (const id of ids) {
     const binding = atlasBinding(id);
     assert.ok(binding, id);
@@ -42,9 +43,12 @@ test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian co
     } else if (binding.kind === "cavity") {
       job = cavityJob(binding.modelId, "atlas-test", Object.fromEntries(Object.entries(binding.parameters).map(([key, value]) => [key, String(value)])), { qubit: "excited", photons: 0 }, { type: "schrodinger", tStart: 0, tStop: 10, samples: 31 }, "native");
       assert.equal(job.model.parameters.qubitFrequency / 2, 0.5); // absolute energies differ by this global offset
-    } else {
+    } else if (binding.kind === "many_body") {
       job = manyBodyJob("atlas-test", Object.fromEntries(Object.entries(binding.parameters).map(([key, value]) => [key, String(value)])) as never, "open", "native");
       assert.equal(job.model.parameters.longitudinal, 0);
+    } else {
+      job = topologyJob("atlas-test", { ...TOPOLOGY_DEFAULTS, modelId: "ssh", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2) });
+      assert.deepEqual(job.model.parameters, { t1: 0.6, t2: 1, cells: 16, kPoints: 101 });
     }
     assertJob(job);
   }

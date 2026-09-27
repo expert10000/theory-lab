@@ -12,6 +12,7 @@ from quantum_worker.engines.native_engine import availability as native_availabi
 from quantum_worker.engines.dynamiqs_engine import availability as dynamiqs_availability
 from quantum_worker.engines.many_body import quspin_availability, solve as many_body_solve
 from quantum_worker.engines.circuit import scqubits_availability, solve as circuit_solve
+from quantum_worker.engines.topology import solve as topology_solve
 from quantum_worker.jobs.manager import JobManager
 
 MAX_MESSAGE = 65536
@@ -24,7 +25,7 @@ def capabilities():
               "worker": {"version": __version__}, "python": {"version": platform.python_version()},
               "engines": {"qutip": qutip, "native": native, "dynamiqs": dynamiqs_availability(),
                           "quspin": quspin_availability(), "scqubits": scqubits_availability()},
-              "operations": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit"] if qutip["available"] or native["available"] else []}
+              "operations": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology"] if qutip["available"] or native["available"] else []}
     validate("worker-capabilities", result)
     return result
 
@@ -65,6 +66,8 @@ def dispatch(method, params):
             return many_body_solve(params)
         if params.get("operation") == "circuit":
             return circuit_solve(params)
+        if params.get("operation") == "topology":
+            return topology_solve(params)
         if params.get("engine") == "native":
             return native_diagonalize(params)
         return diagonalize(params)

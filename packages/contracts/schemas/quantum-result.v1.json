@@ -11,6 +11,22 @@
         "points": { "type": "integer", "minimum": 2, "maximum": 101 }
       },
       "required": ["parameter", "start", "stop", "points"]
+    },
+    "topologyModel": {
+      "oneOf": [
+        { "type": "object", "additionalProperties": false,
+          "properties": { "type": { "const": "ssh" }, "parameters": { "type": "object", "additionalProperties": false,
+            "properties": { "t1": { "type": "number", "minimum": -10, "maximum": 10 }, "t2": { "type": "number", "minimum": -10, "maximum": 10 },
+              "cells": { "type": "integer", "minimum": 4, "maximum": 40 }, "kPoints": { "type": "integer", "minimum": 21, "maximum": 201 } },
+            "required": ["t1", "t2", "cells", "kPoints"] },
+            "source": { "$ref": "#/oneOf/0/properties/model/properties/source" } }, "required": ["type", "parameters"] },
+        { "type": "object", "additionalProperties": false,
+          "properties": { "type": { "const": "qwz" }, "parameters": { "type": "object", "additionalProperties": false,
+            "properties": { "mass": { "type": "number", "minimum": -6, "maximum": 6 },
+              "grid": { "type": "integer", "minimum": 11, "maximum": 31 } },
+            "required": ["mass", "grid"] },
+            "source": { "$ref": "#/oneOf/0/properties/model/properties/source" } }, "required": ["type", "parameters"] }
+      ]
     }
   },
   "oneOf": [
@@ -935,6 +951,38 @@
           }, "required": ["energies", "e01", "e12", "anharmonicity", "chargeMatrixElement01", "cutoffDriftE01", "units"] },
         "provenance": { "$ref": "#/oneOf/5/properties/provenance" }
       }, "required": ["schema", "jobId", "runId", "status", "operation", "model", "engine", "spectrum", "provenance"]
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "quantum-result/v1" },
+        "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "runId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "status": { "const": "completed" }, "operation": { "const": "topology" },
+        "model": { "$ref": "#/definitions/topologyModel" },
+        "engine": { "type": "object", "additionalProperties": false,
+          "properties": { "name": { "const": "native" }, "version": { "type": "string", "minLength": 1 } },
+          "required": ["name", "version"] },
+        "analysis": { "oneOf": [
+          { "type": "object", "additionalProperties": false,
+            "properties": { "kind": { "const": "ssh" }, "bulkGap": { "type": "number", "minimum": 0 },
+              "winding": { "enum": [0, 1, null] },
+              "kValues": { "type": "array", "items": { "type": "number" }, "minItems": 21, "maxItems": 201 },
+              "lowerBand": { "type": "array", "items": { "type": "number" }, "minItems": 21, "maxItems": 201 },
+              "upperBand": { "type": "array", "items": { "type": "number" }, "minItems": 21, "maxItems": 201 },
+              "edgeEnergies": { "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 2 },
+              "edgeDensity": { "type": "array", "items": { "type": "number", "minimum": 0, "maximum": 1 }, "minItems": 8, "maxItems": 80 },
+              "edgeWeight": { "type": "number", "minimum": 0, "maximum": 1 } },
+            "required": ["kind", "bulkGap", "winding", "kValues", "lowerBand", "upperBand", "edgeEnergies", "edgeDensity", "edgeWeight"] },
+          { "type": "object", "additionalProperties": false,
+            "properties": { "kind": { "const": "qwz" }, "bulkGap": { "type": "number", "minimum": 0 },
+              "sampledGap": { "type": "number", "minimum": 0 }, "gapClosed": { "type": "boolean" },
+              "chern": { "enum": [-1, 0, 1, null] }, "chernIntegral": { "type": ["number", "null"] },
+              "berryCurvature": { "type": "array", "items": { "type": "number" }, "maxItems": 961 } },
+            "required": ["kind", "bulkGap", "sampledGap", "gapClosed", "chern", "chernIntegral", "berryCurvature"] }
+        ] },
+        "provenance": { "$ref": "#/oneOf/5/properties/provenance" }
+      }, "required": ["schema", "jobId", "runId", "status", "operation", "model", "engine", "analysis", "provenance"]
     }
   ]
 }

@@ -20,6 +20,8 @@ import { RunHistory } from "./RunHistory";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
+import { TopologyLab } from "./TopologyLab";
+import { TOPOLOGY_DEFAULTS } from "../../../packages/models/topology";
 import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../../../packages/atlas";
 import { atlasBinding } from "../../../packages/atlas/bindings";
 import {
@@ -53,10 +55,11 @@ export function App() {
     useState<EvolutionModelId>("driven_two_level");
   const [cavityModel, setCavityModel] = useState<CavityModelId>("jaynes_cummings");
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
-  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit">>>({});
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit" | "topology">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
+  const [atlasTopology, setAtlasTopology] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["topology"]> } | null>(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const collectDynamics = useCallback((value: WorkspaceSnapshot["dynamics"]) => { workspaceParts.current.dynamics = value; checkParts(); }, []);
   const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
@@ -64,6 +67,7 @@ export function App() {
   const collectSweep = useCallback((value: WorkspaceSnapshot["sweep"]) => { workspaceParts.current.sweep = value; checkParts(); }, []);
   const collectManyBody = useCallback((value: NonNullable<WorkspaceSnapshot["manyBody"]>) => { workspaceParts.current.manyBody = value; checkParts(); }, []);
   const collectCircuit = useCallback((value: NonNullable<WorkspaceSnapshot["circuit"]>) => { workspaceParts.current.circuit = value; checkParts(); }, []);
+  const collectTopology = useCallback((value: NonNullable<WorkspaceSnapshot["topology"]>) => { workspaceParts.current.topology = value; }, []);
   function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody && workspaceParts.current.circuit) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
@@ -185,12 +189,18 @@ export function App() {
         reference: "Pinned Hamiltonian Atlas entry", convention: binding.convention, source,
         modelId: binding.modelId, parameters: binding.parameters, initialState: { qubit: "excited", photons: 0 },
         solver: { tStart: 0, tStop: 25, samples: 401 } });
-    } else {
+    } else if (binding.kind === "many_body") {
       const p = binding.parameters;
       setAtlasManyBody(current => ({ epoch: (current?.epoch ?? 0) + 1,
         draft: { sites: String(p.sites), interaction: String(p.interaction), transverse: String(p.transverse),
           longitudinal: String(p.longitudinal), boundary: p.boundary, engine: "native" } }));
       setTab("many_body");
+    } else {
+      setAtlasTopology(current => ({ epoch: (current?.epoch ?? 0) + 1,
+        draft: { ...TOPOLOGY_DEFAULTS, modelId: "ssh", t1: String(binding.parameters.t1),
+          t2: String(binding.parameters.t2), cells: String(binding.parameters.cells),
+          kPoints: String(binding.parameters.kPoints) } }));
+      setTab("topology");
     }
   }
   async function saveWorkspace() {
@@ -199,7 +209,8 @@ export function App() {
     const snapshot: WorkspaceSnapshot = { schema: "quantum-workspace/v1", savedAt: new Date().toISOString(),
       tab, selectedPresetId: selectedPreset?.id ?? null,
       spectrum: { parameters, engine: engineMode }, dynamics: parts.dynamics,
-      cavity: parts.cavity, open: parts.open, sweep: parts.sweep, manyBody: parts.manyBody, circuit: parts.circuit };
+      cavity: parts.cavity, open: parts.open, sweep: parts.sweep, manyBody: parts.manyBody, circuit: parts.circuit,
+      topology: parts.topology ?? TOPOLOGY_DEFAULTS };
     try { await window.quantum.saveWorkspace(snapshot); setWorkspaceMessage("Workspace saved"); }
     catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
   }
@@ -230,7 +241,7 @@ export function App() {
           <span className="version">V0.1+ · QLAB-024</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
-          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
+          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -245,7 +256,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
+      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
             LABORATORIES <span>11 / 11</span>
@@ -276,6 +287,7 @@ export function App() {
           <button className="lab-selected" onClick={() => { setSelectedPreset(null); setTab("open"); }}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("sweep")}><span>▦</span> Parameter sweeps <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("many_body")}><span>⋈</span> Ising chain <span className="live-dot" /></button>
+          <button className="lab-selected" onClick={() => setTab("topology")}><span>◇</span> Topological bands <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("circuit")}><span>◈</span> Transmon circuit <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("presets")}><span>▣</span> Volume VIII presets <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("runs")}><span>◷</span> Saved runs <span className="live-dot" /></button>
@@ -317,6 +329,7 @@ export function App() {
                       ? "PARAMETER SWEEPS"
                     : tab === "many_body"
                       ? "ISING SPIN CHAIN"
+                    : tab === "topology" ? "TOPOLOGICAL BANDS"
                     : tab === "circuit"
                       ? "TRANSMON CIRCUIT"
                     : tab === "presets"
@@ -341,6 +354,7 @@ export function App() {
                           ? "SWEEP LABORATORY / 009"
                         : tab === "many_body"
                           ? "MANY-BODY LABORATORY / 021"
+                        : tab === "topology" ? "LATTICE TOPOLOGY / 027–028"
                         : tab === "circuit"
                           ? "SUPERCONDUCTING CIRCUIT / 023"
                         : tab === "presets"
@@ -363,6 +377,7 @@ export function App() {
                           ? "The landscape of a model."
                         : tab === "many_body"
                           ? "One qubit becomes a chain."
+                        : tab === "topology" ? "Bands acquire topology."
                         : tab === "circuit"
                           ? "A circuit becomes a quantum system."
                         : tab === "presets"
@@ -385,6 +400,7 @@ export function App() {
                         ? "Sweep one or two parameters with checkpoints, cancellation and resume."
                       : tab === "many_body"
                         ? "Explore a finite Ising chain with independent QuSpin and NumPy engines."
+                      : tab === "topology" ? "Computed band topology for finite and periodic lattice models."
                       : tab === "circuit"
                         ? "Resolve transmon levels in a finite charge basis with scqubits or NumPy."
                       : tab === "presets"
@@ -422,6 +438,7 @@ export function App() {
             <button role="tab" aria-selected={tab === "open"} onClick={() => setTab("open")}>Open system</button>
             <button role="tab" aria-selected={tab === "sweep"} onClick={() => setTab("sweep")}>Sweeps</button>
             <button role="tab" aria-selected={tab === "many_body"} onClick={() => setTab("many_body")}>Many-body</button>
+            <button role="tab" aria-selected={tab === "topology"} onClick={() => setTab("topology")}>Topology</button>
             <button role="tab" aria-selected={tab === "circuit"} onClick={() => setTab("circuit")}>Circuit</button>
             <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>Presets</button>
             <button role="tab" aria-selected={tab === "runs"} onClick={() => setTab("runs")}>Runs</button>
@@ -456,6 +473,7 @@ export function App() {
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} /></div>
           <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} /></div>
+          <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
           {tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
@@ -514,7 +532,7 @@ export function App() {
                 crystals belong to a later phase.
               </p>
             </section>
-          ) : tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" ? null : (
+          ) : tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" ? null : (
             <>
               <section className="hamiltonian-card">
                 <div>
