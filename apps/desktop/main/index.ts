@@ -3,6 +3,7 @@ import {
   BrowserWindow,
   dialog,
   ipcMain,
+  shell,
   session,
   type IpcMainInvokeEvent,
 } from "electron";
@@ -13,6 +14,8 @@ import { pathToFileURL } from "node:url";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
+import { consistentTopologyResult } from "../../../packages/models/topology";
+import { atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
   type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
 
@@ -193,11 +196,18 @@ app.whenReady().then(() => {
       if (!isQuantumResult(result) || result.operation !== "topology" ||
           result.jobId !== value.jobId || result.engine.name !== "native" ||
           JSON.stringify(result.model) !== JSON.stringify(value.model) ||
-          result.analysis.kind !== value.model.type)
+          !consistentTopologyResult(value, result))
         throw new Error("Worker returned an invalid or mismatched topology result");
       await runs.record(value, result);
       return result;
     } finally { running = false; }
+  });
+  ipcMain.handle("quantum:open-atlas-source", async (event, id: unknown) => {
+    trusted(event);
+    if (typeof id !== "string") throw new Error("Invalid Atlas ID");
+    const entry = atlasEntry(id);
+    if (!entry) throw new Error("Unknown Atlas entry");
+    await shell.openExternal(atlasUrl(entry));
   });
   ipcMain.handle("quantum:status", (event) => {
     trusted(event);

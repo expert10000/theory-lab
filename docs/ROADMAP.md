@@ -1401,7 +1401,11 @@ QLAB-021   many-body workspace
 QLAB-022   scqubits adapter
 QLAB-023   superconducting-circuit workspace
 QLAB-024   remote worker transport
-QLAB-025   web client
+QLAB-025   pinned, read-only Hamiltonian Atlas catalog (implemented)
+QLAB-026   tested Atlas-to-lab convention bindings (implemented)
+QLAB-027   SSH-chain bands, winding and finite edges (implemented)
+QLAB-028   QWZ Berry curvature and Chern laboratory (implemented)
+QLAB-029   web client
 ```
 
 Only then begin:

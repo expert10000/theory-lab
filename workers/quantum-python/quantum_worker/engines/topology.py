@@ -35,6 +35,58 @@ def ssh_analysis(np, parameters):
             "edgeWeight": edge_weight}
 
 
+def qwz_analysis(np, parameters):
+    mass, grid = parameters["mass"], parameters["grid"]
+    # All possible closings are at high-symmetry points: m = -2, 0, +2.
+    gap = 2.0 * min(abs(mass + 2), abs(mass), abs(mass - 2))
+    k = -np.pi + 2 * np.pi * np.arange(grid) / grid
+    kx, ky = np.meshgrid(k, k, indexing="ij")
+    dx, dy = np.sin(kx), np.sin(ky)
+    dz = mass + np.cos(kx) + np.cos(ky)
+    sampled_gap = float(2 * np.min(np.sqrt(dx * dx + dy * dy + dz * dz)))
+    if gap < 1e-10:
+        return {"kind": "qwz", "bulkGap": 0.0, "sampledGap": 0.0,
+                "gapClosed": True, "chern": None, "latticeChern": None,
+                "analyticChern": None, "meshResolved": False, "chernIntegral": None,
+                "berryCurvature": []}
+    matrix = np.empty((grid, grid, 2, 2), dtype=np.complex128)
+    matrix[..., 0, 0] = dz
+    matrix[..., 1, 1] = -dz
+    matrix[..., 0, 1] = dx - 1j * dy
+    matrix[..., 1, 0] = dx + 1j * dy
+    _, eigenvectors = np.linalg.eigh(matrix)
+    occupied = eigenvectors[..., :, 0]
+    ux = np.sum(np.conj(occupied) * np.roll(occupied, -1, axis=0), axis=-1)
+    uy = np.sum(np.conj(occupied) * np.roll(occupied, -1, axis=1), axis=-1)
+    if min(float(np.min(abs(ux))), float(np.min(abs(uy)))) < 1e-10:
+        raise ValueError("QWZ momentum mesh crosses a singular link; refine the grid")
+    ux, uy = ux / abs(ux), uy / abs(uy)
+    plaquette = ux * np.roll(uy, -1, axis=0) * np.conj(np.roll(ux, -1, axis=1)) * np.conj(uy)
+    chern_raw = float(np.sum(np.angle(plaquette)) / (2 * np.pi))
+    chern = int(round(chern_raw))
+    if abs(chern_raw - chern) > 1e-6:
+        raise ValueError("Nonintegral lattice Chern number")
+    # The mass-sign (Dirac-point) phase diagram is an independent check on a
+    # mesh that may be too coarse near m = -2, 0, +2.
+    analytic_chern = -1 if -2 < mass < 0 else 1 if 0 < mass < 2 else 0
+    resolved = chern == analytic_chern
+    # Independent continuous two-band curvature at cell centers, integrated by
+    # a midpoint quadrature. This converges with mesh refinement; FHS is integer.
+    halfstep = np.pi / grid
+    cx, cy = np.meshgrid(k + halfstep, k + halfstep, indexing="ij")
+    sx, sy = np.sin(cx), np.sin(cy)
+    cosx, cosy = np.cos(cx), np.cos(cy)
+    z = mass + cosx + cosy
+    norm = np.sqrt(sx * sx + sy * sy + z * z)
+    curvature = -0.5 * (sx * sx * cosy + sy * sy * cosx + z * cosx * cosy) / norm ** 3
+    integral = float(np.sum(curvature) * (2 * np.pi / grid) ** 2 / (2 * np.pi))
+    return {"kind": "qwz", "bulkGap": float(gap), "sampledGap": sampled_gap,
+            "gapClosed": False, "chern": chern if resolved else None,
+            "latticeChern": chern, "analyticChern": analytic_chern,
+            "meshResolved": resolved, "chernIntegral": integral,
+            "berryCurvature": curvature.ravel().tolist()}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -44,6 +96,8 @@ def solve(job):
     model = job["model"]
     if model["type"] == "ssh":
         analysis = ssh_analysis(np, model["parameters"])
+    elif model["type"] == "qwz":
+        analysis = qwz_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,

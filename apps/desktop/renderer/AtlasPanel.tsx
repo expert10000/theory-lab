@@ -22,7 +22,7 @@ export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
           <h4>Assumptions & limits</h4><p>{selected.assumptions.join(" · ") || "Not specified"}</p>{selected.important_limits.map((limit, index) => <p key={index}><strong>{limit.condition}</strong> → {limit.result}</p>)}
           <h4>Observables</h4><p>{selected.observables.join(" · ")}</p>
           {selected.relations.length > 0 && <><h4>Related entries</h4><div className="atlas-relations">{selected.relations.map((relation, index) => <button key={index} onClick={() => { setSelectedId(relation.target); setFamily("all"); setQuery(""); }}>{relation.target} ↗</button>)}</div></>}
-          <p><a href={atlasUrl(selected)} target="_blank" rel="noopener noreferrer">View pinned source ↗</a></p>
+          <p><button className="text-button" onClick={() => void window.quantum.openAtlasSource(selected.id)}>View pinned source ↗</button> <small>({atlasUrl(selected)})</small></p>
           {binding ? <div className="atlas-binding"><p className="eyebrow">THEORY LAB BINDING / TESTED SUBSPACE</p><p>{binding.convention}</p><button className="run-button" data-testid="open-atlas-binding" onClick={() => openLab?.(selectedId)}>Load in {binding.modelId.replaceAll("_", " ")} lab ↗</button></div> : <p className="scope-note">No tested Theory Lab binding for this entry yet.</p>}
         </article>}</div>
     </section>

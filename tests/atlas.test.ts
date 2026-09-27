@@ -6,7 +6,8 @@ import { assertJob } from "../packages/contracts";
 import { spectrumJob, evolutionJob } from "../packages/models";
 import { cavityJob } from "../packages/models/cavity";
 import { manyBodyJob } from "../packages/models/many_body";
-import { topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
+import { consistentTopologyResult, topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
+import { isQuantumJob } from "../packages/contracts";
 
 test("pinned Atlas snapshot is complete, connected and reference-only", () => {
   assert.equal(ATLAS_REVISION, "61791aff00c0f35a82ec6f2271deded5cc5e99d6");
@@ -26,7 +27,7 @@ test("pinned Atlas snapshot is complete, connected and reference-only", () => {
 });
 
 test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian coefficients", () => {
-  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain", "ssh"];
+  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain", "ssh", "qwz"];
   for (const id of ids) {
     const binding = atlasBinding(id);
     assert.ok(binding, id);
@@ -46,11 +47,27 @@ test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian co
     } else if (binding.kind === "many_body") {
       job = manyBodyJob("atlas-test", Object.fromEntries(Object.entries(binding.parameters).map(([key, value]) => [key, String(value)])) as never, "open", "native");
       assert.equal(job.model.parameters.longitudinal, 0);
-    } else {
+    } else if (binding.modelId === "ssh") {
       job = topologyJob("atlas-test", { ...TOPOLOGY_DEFAULTS, modelId: "ssh", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2) });
       assert.deepEqual(job.model.parameters, { t1: 0.6, t2: 1, cells: 16, kPoints: 101 });
+    } else {
+      job = topologyJob("atlas-test", { ...TOPOLOGY_DEFAULTS, modelId: "qwz", mass: String(binding.parameters.mass), grid: String(binding.parameters.grid) });
+      assert.deepEqual(job.model.parameters, { mass: 1, grid: 21 });
     }
     assertJob(job);
   }
   assert.equal(atlasBinding("graphene_nn"), null);
+});
+
+test("topology contract bounds the mesh and rejects inconsistent scientific arrays", () => {
+  const job = topologyJob("qwz-test", { ...TOPOLOGY_DEFAULTS, modelId: "qwz" });
+  assertJob(job);
+  assert.equal(isQuantumJob({ ...job, model: { type: "qwz", parameters: { mass: -1, grid: 1000 } } }), false);
+  const mock = { schema: "quantum-result/v1", jobId: job.jobId, runId: "run-test", status: "completed",
+    operation: "topology", model: job.model, engine: { name: "native", version: "1" },
+    analysis: { kind: "qwz", bulkGap: 2, sampledGap: 2, gapClosed: false, chern: -1,
+      latticeChern: -1, analyticChern: -1, meshResolved: true,
+      chernIntegral: -1, berryCurvature: Array(21 * 21).fill(0) },
+    provenance: { pythonVersion: "3", workerVersion: "1", computedAt: new Date().toISOString(), durationMs: 1 } } as const;
+  assert.equal(consistentTopologyResult(job, mock), false);
 });

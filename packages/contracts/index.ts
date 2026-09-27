@@ -194,7 +194,8 @@ export interface SSHAnalysis {
 }
 export interface QWZAnalysis {
   kind: "qwz"; bulkGap: number; sampledGap: number; gapClosed: boolean;
-  chern: number | null; chernIntegral: number | null; berryCurvature: number[];
+  chern: number | null; latticeChern: number | null; analyticChern: number | null;
+  meshResolved: boolean; chernIntegral: number | null; berryCurvature: number[];
 }
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
@@ -390,6 +391,7 @@ export interface QuantumBridge {
   manyBody(job: ManyBodyJob): Promise<ManyBodyResult>;
   circuit(job: CircuitJob): Promise<CircuitResult>;
   topology(job: TopologyJob): Promise<TopologyResult>;
+  openAtlasSource(id: string): Promise<void>;
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
   onProgress(listener: (progress: EvolutionProgress) => void): () => void;

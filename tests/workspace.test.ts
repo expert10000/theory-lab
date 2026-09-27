@@ -10,6 +10,7 @@ import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
 import type { CircuitJob, CircuitResult, ManyBodyJob, ManyBodyResult } from "../packages/contracts";
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 import { CIRCUIT_DEFAULTS, circuitJob } from "../packages/models/circuit";
+import { TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
@@ -49,6 +50,13 @@ test("circuit draft is additive to workspace v1 and builds a bounded job", () =>
   assert.ok(isWorkspaceSnapshot(workspace), "older snapshots remain loadable");
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "circuit", circuit: CIRCUIT_DEFAULTS }));
   assert.equal(isWorkspaceSnapshot({ ...workspace, circuit: { ...CIRCUIT_DEFAULTS, engine: "quspin" } }), false);
+});
+
+test("topology draft is additive to workspace v1", () => {
+  assert.ok(isWorkspaceSnapshot(workspace), "older v1 snapshots remain loadable");
+  assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "topology", topology: TOPOLOGY_DEFAULTS }));
+  assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "atlas" }));
+  assert.equal(isWorkspaceSnapshot({ ...workspace, topology: { ...TOPOLOGY_DEFAULTS, modelId: "weyl" } }), false);
 });
 
 test("run store persists provenance and verified data, then exports CSV, SVG and manifest", async () => {

@@ -5,7 +5,8 @@ export type AtlasBinding =
   | { kind: "dynamics"; atlasId: "semiclassical_rabi_drive" | "landau_zener" | "floquet_two_level"; modelId: "driven_two_level" | "landau_zener" | "strong_drive"; parameters: Record<string, number>; convention: string }
   | { kind: "cavity"; atlasId: "jaynes_cummings" | "rabi"; modelId: "jaynes_cummings" | "quantum_rabi"; parameters: { qubitFrequency: number; cavityFrequency: number; coupling: number; cutoff: number }; convention: string }
   | { kind: "many_body"; atlasId: "ising_chain"; modelId: "ising_chain"; parameters: { sites: number; interaction: number; transverse: number; longitudinal: number; boundary: "open" }; convention: string }
-  | { kind: "topology"; atlasId: "ssh"; modelId: "ssh"; parameters: { t1: number; t2: number; cells: number; kPoints: number }; convention: string };
+  | { kind: "topology"; atlasId: "ssh"; modelId: "ssh"; parameters: { t1: number; t2: number; cells: number; kPoints: number }; convention: string }
+  | { kind: "topology"; atlasId: "qwz"; modelId: "qwz"; parameters: { mass: number; grid: number }; convention: string };
 
 function value(id: string, symbol: string): number {
   const defaultValue = atlasEntry(id)?.parameters.find(parameter => parameter.symbol === symbol)?.default;
@@ -46,6 +47,10 @@ export function atlasBinding(id: string): AtlasBinding | null {
       return { kind: "topology", atlasId: id, modelId: "ssh",
         parameters: { t1: value(id, "t_1"), t2: value(id, "t_2"), cells: 16, kPoints: 101 },
         convention: "Atlas t₁/t₂ are the lab intracell/intercell hoppings. Bloch H(k)=(t₁+t₂ cos k)σx+t₂ sin k σy; open chain uses |n,A⟩,|n,B⟩ and 16 cells. Winding requires nonzero bulk gap." };
+    case "qwz":
+      return { kind: "topology", atlasId: id, modelId: "qwz",
+        parameters: { mass: value(id, "m"), grid: 21 },
+        convention: "Atlas H(k)=sin kₓ σx+sin kᵧ σy+(m+cos kₓ+cos kᵧ)σz, with lattice spacing, hopping scale and ħ set to 1. The lab computes the lower-band FHS Chern number and an independent midpoint Berry-curvature integral; at m=−2, 0, 2 the invariant is undefined." };
     default: return null;
   }
 }

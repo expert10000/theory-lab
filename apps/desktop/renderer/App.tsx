@@ -196,10 +196,11 @@ export function App() {
           longitudinal: String(p.longitudinal), boundary: p.boundary, engine: "native" } }));
       setTab("many_body");
     } else {
-      setAtlasTopology(current => ({ epoch: (current?.epoch ?? 0) + 1,
-        draft: { ...TOPOLOGY_DEFAULTS, modelId: "ssh", t1: String(binding.parameters.t1),
-          t2: String(binding.parameters.t2), cells: String(binding.parameters.cells),
-          kPoints: String(binding.parameters.kPoints) } }));
+      const draft = binding.modelId === "ssh"
+        ? { ...TOPOLOGY_DEFAULTS, modelId: "ssh" as const, t1: String(binding.parameters.t1),
+            t2: String(binding.parameters.t2), cells: String(binding.parameters.cells), kPoints: String(binding.parameters.kPoints) }
+        : { ...TOPOLOGY_DEFAULTS, modelId: "qwz" as const, mass: String(binding.parameters.mass), grid: String(binding.parameters.grid) };
+      setAtlasTopology(current => ({ epoch: (current?.epoch ?? 0) + 1, draft }));
       setTab("topology");
     }
   }
@@ -238,7 +239,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QLAB-024</span>
+          <span className="version">V0.1+ · QLAB-028</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -259,7 +260,7 @@ export function App() {
       <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>11 / 11</span>
+            LABORATORIES <span>13 / 13</span>
           </p>
           {(
             [
@@ -299,7 +300,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>25</span> Web client</div>
+            <div className="future-lab"><span>29</span> Web client</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -410,7 +411,7 @@ export function App() {
                     : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
-            <span className="pill">{tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+            <span className="pill">{tab === "atlas" ? "48 SOURCE ENTRIES" : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
           </div>
           <div className="tabs" role="tablist" aria-label="Workspace">
             <button
@@ -519,6 +520,11 @@ export function App() {
                 ["022", "Optional scqubits transmon adapter", "Implemented"],
                 ["023", "Superconducting-circuit workspace", "Implemented"],
                 ["024", "Opt-in SSH worker transport", "Implemented"],
+                ["025", "Pinned Hamiltonian Atlas catalog", "Implemented"],
+                ["026", "Tested Atlas-to-lab bindings", "Implemented"],
+                ["027", "SSH-chain bands, winding & finite edges", "Implemented"],
+                ["028", "QWZ Berry curvature & Chern laboratory", "Implemented"],
+                ["029", "Web client", "Planned"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>

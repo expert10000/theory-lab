@@ -1,4 +1,4 @@
-import type { TopologyJob, WorkspaceSnapshot } from "../contracts";
+import type { TopologyJob, TopologyResult, WorkspaceSnapshot } from "../contracts";
 import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../atlas";
 
 export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
@@ -21,4 +21,35 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
       cells: numeric(draft.cells, 4, 40, true), kPoints: numeric(draft.kPoints, 21, 201, true) }, source } };
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
+}
+
+export function consistentTopologyResult(job: TopologyJob, result: TopologyResult): boolean {
+  if (result.jobId !== job.jobId || JSON.stringify(result.model) !== JSON.stringify(job.model) ||
+      result.analysis.kind !== job.model.type) return false;
+  const a = result.analysis;
+  if (job.model.type === "ssh" && a.kind === "ssh") {
+    const { t1, t2, cells, kPoints } = job.model.parameters;
+    const gap = 2 * Math.abs(Math.abs(t1) - Math.abs(t2));
+    return a.kValues.length === kPoints && a.lowerBand.length === kPoints && a.upperBand.length === kPoints &&
+      a.edgeDensity.length === 2 * cells && Math.abs(a.bulkGap - gap) < 1e-8 &&
+      a.winding === (gap < 1e-10 ? null : Number(Math.abs(t2) > Math.abs(t1))) &&
+      Math.abs(a.edgeDensity.reduce((sum, value) => sum + value, 0) - 1) < 1e-7 &&
+      Math.abs(a.edgeWeight - a.edgeDensity[0] - a.edgeDensity[a.edgeDensity.length - 1]) < 1e-7 &&
+      Math.abs(a.lowerBand[0] + a.upperBand[0]) < 1e-8;
+  }
+  if (job.model.type === "qwz" && a.kind === "qwz") {
+    const { mass, grid } = job.model.parameters;
+    const gap = 2 * Math.min(Math.abs(mass + 2), Math.abs(mass), Math.abs(mass - 2));
+    if (Math.abs(a.bulkGap - gap) > 1e-8 || a.gapClosed !== (gap < 1e-10)) return false;
+    if (a.gapClosed) return a.chern === null && a.latticeChern === null && a.analyticChern === null &&
+      !a.meshResolved && a.chernIntegral === null && a.berryCurvature.length === 0;
+    const expected = mass > -2 && mass < 0 ? -1 : mass > 0 && mass < 2 ? 1 : 0;
+    if (a.analyticChern !== expected || a.latticeChern === null ||
+        a.meshResolved !== (a.latticeChern === expected) ||
+        a.chern !== (a.meshResolved ? a.latticeChern : null) ||
+        a.chernIntegral === null || a.berryCurvature.length !== grid * grid) return false;
+    const integral = a.berryCurvature.reduce((sum, value) => sum + value, 0) * (2 * Math.PI / grid) ** 2 / (2 * Math.PI);
+    return Math.abs(integral - a.chernIntegral) < 1e-7 && a.sampledGap >= gap - 1e-7;
+  }
+  return false;
 }

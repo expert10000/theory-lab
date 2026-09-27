@@ -977,9 +977,11 @@
           { "type": "object", "additionalProperties": false,
             "properties": { "kind": { "const": "qwz" }, "bulkGap": { "type": "number", "minimum": 0 },
               "sampledGap": { "type": "number", "minimum": 0 }, "gapClosed": { "type": "boolean" },
-              "chern": { "enum": [-1, 0, 1, null] }, "chernIntegral": { "type": ["number", "null"] },
+              "chern": { "enum": [-1, 0, 1, null] }, "latticeChern": { "enum": [-1, 0, 1, null] },
+              "analyticChern": { "enum": [-1, 0, 1, null] }, "meshResolved": { "type": "boolean" },
+              "chernIntegral": { "type": ["number", "null"] },
               "berryCurvature": { "type": "array", "items": { "type": "number" }, "maxItems": 961 } },
-            "required": ["kind", "bulkGap", "sampledGap", "gapClosed", "chern", "chernIntegral", "berryCurvature"] }
+            "required": ["kind", "bulkGap", "sampledGap", "gapClosed", "chern", "latticeChern", "analyticChern", "meshResolved", "chernIntegral", "berryCurvature"] }
         ] },
         "provenance": { "$ref": "#/oneOf/5/properties/provenance" }
       }, "required": ["schema", "jobId", "runId", "status", "operation", "model", "engine", "analysis", "provenance"]

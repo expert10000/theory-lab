@@ -48,6 +48,7 @@ try {
       "loadWorkspace",
       "manyBody",
       "onProgress",
+      "openAtlasSource",
       "readData",
       "restart",
       "run",
@@ -145,6 +146,7 @@ try {
   });
   await page.getByTestId("open-atlas").click();
   assert.ok(await page.getByTestId("atlas-panel").isVisible());
+  await page.screenshot({ path: "artifacts/desktop-atlas.png", fullPage: true });
   await page.getByRole("button", { name: /Su-Schrieffer-Heeger model/ }).click();
   assert.match(await page.getByTestId("atlas-panel").innerText(), /Atlas t₁\/t₂/);
   await page.getByTestId("open-atlas-binding").click();
@@ -152,6 +154,15 @@ try {
   await page.getByTestId("run-topology").click();
   await page.getByTestId("topology-result").waitFor();
   assert.match(await page.getByTestId("topology-result").innerText(), /WINDING\s+1/);
+  await page.screenshot({ path: "artifacts/desktop-ssh.png", fullPage: true });
+  await page.getByRole("combobox", { name: "Topology model" }).selectOption("qwz");
+  await page.getByTestId("run-topology").click();
+  await page.getByTestId("qwz-chern").waitFor();
+  assert.equal(await page.getByTestId("qwz-chern").textContent(), "-1");
+  await page.screenshot({ path: "artifacts/desktop-qwz.png", fullPage: true });
+  await page.getByRole("spinbutton", { name: "QWZ mass" }).fill("0");
+  await page.getByTestId("run-topology").click();
+  await page.getByTestId("qwz-chern").filter({ hasText: "undefined" }).waitFor();
   await page.getByRole("tab", { name: "Spectrum", exact: true }).click();
   await page.getByRole("button", { name: "Restore smoke values" }).click();
   await page.getByRole("button", { name: "Run spectrum" }).click();

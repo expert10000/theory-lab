@@ -3,6 +3,7 @@ import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises"
 import { basename, join } from "node:path";
 import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
+import { consistentTopologyResult } from "../../../packages/models/topology";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const sha = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
@@ -26,6 +27,8 @@ export class RunStore {
     if (!isQuantumResult(result) || job.jobId !== result.jobId || job.operation !== result.operation ||
         job.engine !== result.engine.name || JSON.stringify(job.model) !== JSON.stringify(result.model))
       throw new Error("Cannot persist a mismatched quantum run");
+    if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
+      throw new Error("Cannot persist inconsistent topology data");
     verifyId(result.runId);
     const dir = join(this.root, result.runId);
     await this.ensureRoot();
@@ -89,6 +92,8 @@ export class RunStore {
     if (!isQuantumResult(result) || result.runId !== runId || result.jobId !== job.jobId ||
         result.operation !== job.operation || result.engine.name !== job.engine)
       throw new Error("Stored run has invalid contracts");
+    if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
+      throw new Error("Stored topology data failed consistency check");
     let data: Buffer | null = null;
     if ("data" in result) {
       if (manifest.files.data !== "data.f64") throw new Error("Missing run data file");
@@ -189,7 +194,7 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
     const cells = a.berryCurvature.map((v, i) => { const x = Math.floor(i / grid), y = i % grid;
       const intensity = Math.floor(50 + 205 * Math.min(1, Math.abs(v) / max));
       return `<rect x="${70 + x * 350 / grid}" y="${90 + y * 350 / grid}" width="${351 / grid}" height="${351 / grid}" fill="${v >= 0 ? `rgb(${intensity},80,90)` : `rgb(80,${intensity},170)`}"/>`; }).join("");
-    return head + cells + `<text x="450" y="480" fill="white" font-family="sans-serif">QWZ Chern ${a.chern ?? "undefined"} · gap ${a.bulkGap.toFixed(6)}</text></svg>\n`;
+    return head + cells + `<text x="450" y="480" fill="white" font-family="sans-serif">QWZ Chern ${a.chern ?? (a.gapClosed ? "undefined" : "unresolved")} · gap ${a.bulkGap.toFixed(6)}</text></svg>\n`;
   }
   if (!data) throw new Error("Missing run numerical data");
   const rows = rowsOf(result, data);

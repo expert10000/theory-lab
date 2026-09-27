@@ -9,6 +9,7 @@ const bridge: QuantumBridge = {
   manyBody: (job) => ipcRenderer.invoke("quantum:many-body", job),
   circuit: (job) => ipcRenderer.invoke("quantum:circuit", job),
   topology: (job) => ipcRenderer.invoke("quantum:topology", job),
+  openAtlasSource: (id) => ipcRenderer.invoke("quantum:open-atlas-source", id),
   cancel: (jobId) => ipcRenderer.invoke("quantum:cancel", jobId),
   readData: (jobId) => ipcRenderer.invoke("quantum:read-data", jobId),
   onProgress: (listener) => {
