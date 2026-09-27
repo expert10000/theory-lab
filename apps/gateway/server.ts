@@ -60,6 +60,11 @@ export async function startGateway(options: GatewayOptions) {
     throw new Error("Non-loopback gateway binding requires TLS");
   if (host !== "127.0.0.1" && host !== "::1" && !options.origin)
     throw new Error("Non-loopback gateway binding requires QLAB_GATEWAY_ORIGIN");
+  if (options.origin) {
+    const origin = new URL(options.origin);
+    if (origin.origin !== options.origin || origin.protocol !== (options.tls ? "https:" : "http:"))
+      throw new Error("Gateway origin must be an exact HTTP(S) origin matching TLS mode");
+  }
   const worker = new WorkerSupervisor(options.root);
   const status = await worker.start();
   if (status.state !== "READY") throw new Error(status.detail);
@@ -140,8 +145,11 @@ export async function startGateway(options: GatewayOptions) {
       json(response, 422, { error: error instanceof Error ? error.message : "Job failed" });
     } finally { busy = false; }
   };
-  const server = options.tls ? createHttpsServer(options.tls, (req, res) => void handler(req, res).catch(() => json(res, 500, { error: "Gateway failed" }))) :
-    createHttpServer((req, res) => void handler(req, res).catch(() => json(res, 500, { error: "Gateway failed" })));
+  const serve = (req: IncomingMessage, res: ServerResponse) => void handler(req, res).catch(() => {
+    if (!res.headersSent) json(res, 500, { error: "Gateway failed" });
+    else res.destroy();
+  });
+  const server = options.tls ? createHttpsServer(options.tls, serve) : createHttpServer(serve);
   server.requestTimeout = 30000;
   server.headersTimeout = 10000;
   server.maxConnections = 64;

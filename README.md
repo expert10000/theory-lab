@@ -91,6 +91,23 @@ Electron supervises `ssh -T` with `BatchMode=yes` and `StrictHostKeyChecking=yes
 
 With a configured host, run `npm run accept:remote` from the local checkout. It checks the live handshake, native spectrum, separately copied evolution artifact, SHA-256 tamper rejection, cancellation, health and restart. It only removes its own temporary local files; the remote artifact directory still needs administrator-managed retention. This check is not run by CI because CI has no trusted SSH host.
 
+On 2026-09-27 this passed against a key-only OpenSSH server bound to WSL loopback, with a separate Linux Python 3.12/QuTiP environment. The browser smoke also passed over that SSH route. This is a real SSH transport check on one computer, not acceptance of an external cloud host or long-running deployment.
+
+## Authenticated web laboratory (QLAB-025)
+
+The optional React web client uses an authenticated Node gateway in front of the same supervised worker and versioned contracts. It currently exposes the two-level spectrum and Rabi dynamics, with QuTiP or native computation, recent-run metadata and browser-side SHA-256 verification of evolution data. It does not replace the Electron desktop or expose all its laboratories.
+
+From the repository root, set a fresh token and start the gateway:
+
+```powershell
+$env:QLAB_GATEWAY_TOKEN = node -e "process.stdout.write(require('node:crypto').randomBytes(32).toString('hex'))"
+npm run start:gateway
+```
+
+Open `http://127.0.0.1:8765` and paste the token. The browser retains it only in memory. For non-loopback binding, configure `QLAB_GATEWAY_TLS_KEY`, `QLAB_GATEWAY_TLS_CERT`, `QLAB_GATEWAY_HOST`, and the exact public `QLAB_GATEWAY_ORIGIN` (`https://...`); startup rejects non-loopback HTTP. Use a trusted private network and keep the token secret. `QLAB_GATEWAY_PORT` and `QLAB_GATEWAY_DATA_DIR` optionally change the port and run-storage path. The gateway accepts one calculation at a time and does not provide accounts, multi-user isolation, or a production deployment recipe. To route it to an SSH worker, use the existing `QLAB_REMOTE_*` environment variables.
+
+`npm run test:web` builds the client and runs a real headless Chrome → gateway → Python → browser smoke test. It requires Google Chrome on the machine and saves a screenshot under ignored `artifacts/`.
+
 The local Chapter 58 file remains an architecture-only placeholder. The Landau–Zener entry now cites the separate Volume VIII Commit 687 QuTiP example for its asymptotic reference; the other chapter-only tags remain provisional. No external example code is imported into the worker at runtime.
 
 ## Architecture
@@ -99,6 +116,7 @@ The local Chapter 58 file remains an architecture-only placeholder. The Landau�
 React renderer → narrow preload API → Electron main → JSON-RPC stdio → Python → QuTiP / Native / optional Dynamiqs GPU / optional QuSpin
                                       validates jobs                 validates jobs/results
                                       validates results ← quantum-result/v1
+React web client → authenticated HTTP(S) gateway ────────────────┘
 ```
 
 Renderer: sandboxed, context isolated, no Node integration, no filesystem/process APIs, restrictive CSP. Electron checks the originating frame of each IPC call, denies permissions, navigation, and popups. Python is local, has no listening port, and reserves stdout for bounded protocol messages. The supervisor checks hello/capabilities/health, applies timeouts, reports crashes, and gracefully shuts down or terminates its child. Recovery is user initiated.

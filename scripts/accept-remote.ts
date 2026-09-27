@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
@@ -25,13 +26,13 @@ try {
   assert.equal(status.transport, "ssh");
   assert.ok(status.capabilities?.engines.native.available);
 
-  const spectrum = spectrumJob("live-ssh-spectrum", { delta: "1", omega: "0.8" }, "native");
+  const spectrum = spectrumJob(randomUUID(), { delta: "1", omega: "0.8" }, "native");
   const diagonal = await worker.request("quantum.run", spectrum);
   assert.ok(diagonal && typeof diagonal === "object" && "spectrum" in diagonal);
   const energies = (diagonal as { spectrum: { eigenvalues: [number, number] } }).spectrum.eigenvalues;
   assert.ok(Math.abs(energies[0] + Math.hypot(1, .8) / 2) < 1e-9);
 
-  const job = evolutionJob("driven_two_level", "live-ssh-evolution", defaultsFor("driven_two_level"),
+  const job = evolutionJob("driven_two_level", randomUUID(), defaultsFor("driven_two_level"),
     0, 0, 5, 101, "native");
   const result = await coordinator.run(job);
   assert.equal(result.operation, "evolve");
@@ -43,7 +44,7 @@ try {
   await writeFile(copied, damaged);
   await assert.rejects(coordinator.readData(job.jobId), /integrity check/);
 
-  progressJob = "live-ssh-cancel";
+  progressJob = randomUUID();
   const longJob = evolutionJob("driven_two_level", progressJob, defaultsFor("driven_two_level"),
     0, 0, 1000, 50000, "native");
   const running = coordinator.run(longJob);

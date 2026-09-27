@@ -1,6 +1,7 @@
 import { build } from "esbuild";
 import { mkdir, copyFile } from "node:fs/promises";
 await mkdir("dist", { recursive: true });
+await mkdir("dist/web", { recursive: true });
 await Promise.all([
   build({
     entryPoints: ["apps/desktop/main/index.ts"],
@@ -33,5 +34,15 @@ await Promise.all([
     format: "cjs",
     outfile: "dist/gateway.cjs",
   }),
+  build({
+    entryPoints: ["apps/web/index.tsx"],
+    bundle: true,
+    platform: "browser",
+    format: "esm",
+    outfile: "dist/web/web.js",
+    minify: true,
+  }),
   copyFile("apps/desktop/renderer/index.html", "dist/index.html"),
+  copyFile("apps/web/index.html", "dist/web/index.html"),
+  copyFile("apps/web/web.css", "dist/web/web.css"),
 ]);

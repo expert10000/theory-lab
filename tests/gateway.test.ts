@@ -46,6 +46,8 @@ test("gateway serves verified evolution artifacts and rejects invalid binding", 
   const dataDir = await mkdtemp(join(tmpdir(), "qlab-gateway-data-"));
   await assert.rejects(startGateway({ root: process.cwd(), dataDir,
     webDir: "", token, host: "0.0.0.0", port: 0 }), /requires TLS/);
+  await assert.rejects(startGateway({ root: process.cwd(), dataDir,
+    webDir: "", token, port: 0, origin: "https://example.test" }), /matching TLS mode/);
   const gateway = await startGateway({ root: process.cwd(), dataDir,
     webDir: join(process.cwd(), "dist", "web"), token, port: 0 });
   try {
