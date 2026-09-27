@@ -35,7 +35,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <b>→</b>
           <span>JSON-RPC worker</span>
           <b>→</b>
-          <span>QuTiP / Native / optional Dynamiqs GPU</span>
+          <span>QuTiP / Native / optional Dynamiqs GPU / QuSpin</span>
         </div>
       </div>
       <div className="backend-card-grid">
@@ -92,6 +92,13 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <p className="backend-version">{engines?.dynamiqs?.available ? `${engines.dynamiqs.version} · ${engines.dynamiqs.device}` : "Unavailable on this worker"}</p>
           <p>Linux/WSL2 CUDA two-level Schrödinger evolution uses <code>dq.sesolve()</code> in bounded chunks. Parameter sweeps group up to 32 Hamiltonians in one GPU solve, checkpointing each batch. Capability detection verifies package import and a real JAX GPU device. Cavity and Lindblad adapters are later milestones.</p>
           <small>Optional compute path · cancellation between GPU chunks/batches</small>
+        </article>
+        <article className="panel backend-card">
+          <div className="backend-card-title"><p className="eyebrow">ENGINE 04 · OPTIONAL</p><span className={engines?.quspin?.available ? "live-dot" : "offline-dot"}/></div>
+          <h2>QuSpin</h2>
+          <p className="backend-version">{engines?.quspin?.available ? `Version ${engines.quspin.version}` : "Unavailable on this worker"}</p>
+          <p>A full spin-½ basis constructs the finite Ising-chain Hamiltonian from Pauli <code>zz</code>, <code>x</code>, and <code>z</code> terms. Its low spectrum, site magnetizations, and half-chain entropy are checked against an independent dense NumPy construction.</p>
+          <small>Optional finite-chain adapter · no symmetry-sector reduction yet</small>
         </article>
       </div>
       <div className="backend-card-grid">

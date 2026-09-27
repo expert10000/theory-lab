@@ -522,6 +522,34 @@
         }
       },
       "required": ["schema", "jobId", "operation", "engine", "model", "initialState", "solver"]
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "schema": { "const": "quantum-job/v1" },
+        "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+        "operation": { "const": "many_body" },
+        "engine": { "enum": ["quspin", "native"] },
+        "model": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "type": { "const": "ising_chain" },
+            "parameters": {
+              "type": "object", "additionalProperties": false,
+              "properties": {
+                "sites": { "type": "integer", "minimum": 2, "maximum": 8 },
+                "interaction": { "type": "number", "minimum": -10, "maximum": 10 },
+                "transverse": { "type": "number", "minimum": -10, "maximum": 10 },
+                "longitudinal": { "type": "number", "minimum": -10, "maximum": 10 },
+                "boundary": { "enum": ["open", "periodic"] }
+              },
+              "required": ["sites", "interaction", "transverse", "longitudinal", "boundary"]
+            }
+          },
+          "required": ["type", "parameters"]
+        }
+      },
+      "required": ["schema", "jobId", "operation", "engine", "model"]
     }
   ]
 }

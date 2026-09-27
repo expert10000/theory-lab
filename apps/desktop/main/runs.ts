@@ -10,14 +10,14 @@ function verifyId(id: string) {
   if (!identifier.test(id)) throw new Error("Invalid run ID");
 }
 function artifactName(result: QuantumResult): string | null {
-  return result.operation === "diagonalize" ? null : result.data.path;
+  return result.operation === "diagonalize" || result.operation === "many_body" ? null : result.data.path;
 }
 function summary(result: QuantumResult): RunSummary {
   return { schema: "quantum-run-manifest/v1", runId: result.runId, jobId: result.jobId,
     operation: result.operation, model: result.model.type, engine: result.engine.name,
     engineVersion: result.engine.version, computedAt: result.provenance.computedAt,
     durationMs: result.provenance.durationMs,
-    artifactSha256: result.operation === "diagonalize" ? null : result.data.sha256 };
+    artifactSha256: result.operation === "diagonalize" || result.operation === "many_body" ? null : result.data.sha256 };
 }
 export class RunStore {
   constructor(private readonly root: string, private readonly artifactDir: string) {}
@@ -38,7 +38,7 @@ export class RunStore {
     if (name) {
       if (name !== `${result.jobId}.f64` || basename(name) !== name) throw new Error("Invalid run artifact path");
       const data = await readFile(join(this.artifactDir, name));
-      if (result.operation === "diagonalize" || data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256)
+      if (result.operation === "diagonalize" || result.operation === "many_body" || data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256)
         throw new Error("Run artifact failed integrity check");
       await copyFile(join(this.artifactDir, name), join(dir, "data.f64"));
     }
@@ -61,8 +61,8 @@ export class RunStore {
             typeof value.model === "string" && typeof value.engineVersion === "string" &&
             typeof value.durationMs === "number" && Number.isFinite(value.durationMs) &&
             (value.artifactSha256 === null || (typeof value.artifactSha256 === "string" && /^[a-f0-9]{64}$/.test(value.artifactSha256))) &&
-            ["qutip", "native"].includes(value.engine) &&
-            ["diagonalize", "evolve", "cavity", "lindblad", "sweep"].includes(value.operation))
+            ["qutip", "native", "dynamiqs", "quspin"].includes(value.engine) &&
+            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body"].includes(value.operation))
           runs.push({ schema: value.schema, runId: value.runId, jobId: value.jobId,
             operation: value.operation, model: value.model, engine: value.engine,
             engineVersion: value.engineVersion, computedAt: value.computedAt,
@@ -90,7 +90,7 @@ export class RunStore {
         result.operation !== job.operation || result.engine.name !== job.engine)
       throw new Error("Stored run has invalid contracts");
     let data: Buffer | null = null;
-    if (result.operation !== "diagonalize") {
+    if (result.operation !== "diagonalize" && result.operation !== "many_body") {
       if (manifest.files.data !== "data.f64") throw new Error("Missing run data file");
       data = await readFile(join(dir, "data.f64"));
       if (data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256 ||
@@ -110,7 +110,7 @@ export class RunStore {
   }
 }
 
-function rowsOf(result: Exclude<QuantumResult, { operation: "diagonalize" }>, data: Buffer): number[][] {
+function rowsOf(result: Exclude<QuantumResult, { operation: "diagonalize" | "many_body" }>, data: Buffer): number[][] {
   const view = new DataView(data.buffer, data.byteOffset, data.byteLength);
   const stride = result.operation === "sweep" ? 1 : result.data.columns.length;
   const count = result.operation === "sweep" ? result.data.shape.x * result.data.shape.y : result.data.rows;
@@ -119,6 +119,10 @@ function rowsOf(result: Exclude<QuantumResult, { operation: "diagonalize" }>, da
 export function numericalCsv(result: QuantumResult, data: Buffer | null): string {
   if (result.operation === "diagonalize")
     return `level,energy,units\nE-,${result.spectrum.eigenvalues[0]},normalized\nE+,${result.spectrum.eigenvalues[1]},normalized\n`;
+  if (result.operation === "many_body")
+    return ["kind,index,value", ...result.spectrum.lowEnergies.map((energy, index) => `energy,${index},${energy}`),
+      ...result.groundState.siteMagnetization.map((value, index) => `site_magnetization,${index},${value}`),
+      `gap,0,${result.spectrum.gap}`, `half_chain_entropy,0,${result.groundState.halfChainEntropy}`].join("\n") + "\n";
   if (!data) throw new Error("Missing run numerical data");
   const rows = rowsOf(result, data);
   if (result.operation === "sweep") {
@@ -144,6 +148,14 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
   if (result.operation === "diagonalize") {
     const [low, high] = result.spectrum.eigenvalues;
     return head + `<path d="M250 360 H650 M250 170 H650" stroke="#79d9c1" stroke-width="4"/><text x="670" y="365" fill="white" font-family="sans-serif">E− ${low.toFixed(6)}</text><text x="670" y="175" fill="white" font-family="sans-serif">E+ ${high.toFixed(6)}</text></svg>\n`;
+  }
+  if (result.operation === "many_body") {
+    const energies = result.spectrum.lowEnergies;
+    const low = energies[0], span = Math.max(1e-9, energies[energies.length - 1] - low);
+    return head + energies.map((energy, index) => {
+      const y = 410 - (energy - low) * 290 / span;
+      return `<path d="M${120 + index * 86} ${y} h58" stroke="#79d9c1" stroke-width="4"/><text x="${120 + index * 86}" y="${y - 10}" fill="white" font-family="sans-serif" font-size="11">E${index} ${energy.toFixed(3)}</text>`;
+    }).join("") + `</svg>\n`;
   }
   if (!data) throw new Error("Missing run numerical data");
   const rows = rowsOf(result, data);

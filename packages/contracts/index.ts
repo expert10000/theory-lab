@@ -138,7 +138,34 @@ export interface SweepJob {
     initialIndex: 0 | 1;
   };
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob;
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob;
+export type ManyBodyEngineName = "quspin" | "native";
+export interface ManyBodyModel {
+  type: "ising_chain";
+  parameters: {
+    sites: number; interaction: number; transverse: number; longitudinal: number;
+    boundary: "open" | "periodic";
+  };
+}
+export interface ManyBodyJob {
+  schema: "quantum-job/v1";
+  jobId: string;
+  operation: "many_body";
+  engine: ManyBodyEngineName;
+  model: ManyBodyModel;
+}
+export interface ManyBodyResult {
+  schema: "quantum-result/v1";
+  jobId: string;
+  runId: string;
+  status: "completed";
+  operation: "many_body";
+  model: ManyBodyModel;
+  engine: { name: ManyBodyEngineName; version: string };
+  spectrum: { lowEnergies: number[]; gap: number; units: "normalized"; hbar: 1 };
+  groundState: { siteMagnetization: number[]; halfChainEntropy: number };
+  provenance: SpectrumResult["provenance"];
+}
 export interface SpectrumResult {
   schema: "quantum-result/v1";
   jobId: string;
@@ -279,7 +306,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -295,8 +322,9 @@ export interface WorkerCapabilities {
     qutip: { available: boolean; version: string | null };
     native: { available: boolean; version: string | null };
     dynamiqs?: { available: boolean; version: string | null; device: string | null };
+    quspin?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";

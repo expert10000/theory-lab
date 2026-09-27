@@ -1,5 +1,5 @@
 import Ajv from "ajv";
-import type { CavityModel, EngineName, EvolutionEngineName, SweepEngineName, SweepAxis } from "./index";
+import type { CavityModel, EngineName, EvolutionEngineName, ManyBodyEngineName, SweepEngineName, SweepAxis } from "./index";
 
 export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "presets" | "runs" | "roadmap" | "backend";
 export type WorkspaceEngine = EngineName | "compare";
@@ -26,9 +26,9 @@ export interface RunSummary {
   schema: "quantum-run-manifest/v1";
   runId: string;
   jobId: string;
-  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep";
+  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body";
   model: string;
-  engine: EvolutionEngineName;
+  engine: EvolutionEngineName | ManyBodyEngineName;
   engineVersion: string;
   computedAt: string;
   durationMs: number;

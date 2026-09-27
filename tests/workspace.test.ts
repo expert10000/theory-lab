@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import { EVOLUTION_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot } from "../packages/contracts";
 import { RunStore } from "../apps/desktop/main/runs";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
+import type { ManyBodyJob, ManyBodyResult } from "../packages/contracts";
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
@@ -68,5 +69,28 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
     assert.match(await readFile(join(root, "spectrum.csv"), "utf8"), /E\+,0.64/);
     await writeFile(join(root, "runs", result.runId, "data.f64"), Buffer.alloc(binary.byteLength));
     await assert.rejects(store.export(result.runId, "csv", join(root, "bad.csv")), /integrity check/);
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("run store persists inline many-body results and exports spectra", async () => {
+  const root = await mkdtemp(join(tmpdir(), "qlab-ising-test-"));
+  try {
+    const store = new RunStore(join(root, "runs"), join(root, "artifacts"));
+    const job: ManyBodyJob = { schema: "quantum-job/v1", jobId: "ising-run", operation: "many_body",
+      engine: "native", model: { type: "ising_chain", parameters: {
+        sites: 2, interaction: 1, transverse: 0.8, longitudinal: 0.15, boundary: "open" } } };
+    const result: ManyBodyResult = { schema: "quantum-result/v1", jobId: job.jobId,
+      runId: "run-ising-test", status: "completed", operation: "many_body", model: job.model,
+      engine: { name: "native", version: "1.18" },
+      spectrum: { lowEnergies: [-1.2, -0.1, 0.1, 1.2], gap: 1.1, units: "normalized", hbar: 1 },
+      groundState: { siteMagnetization: [0.7, 0.7], halfChainEntropy: 0.2 },
+      provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:02Z", durationMs: 3 } };
+    await store.record(job, result);
+    assert.equal((await store.list())[0].operation, "many_body");
+    const csv = join(root, "ising.csv"), svg = join(root, "ising.svg");
+    await store.export(result.runId, "csv", csv);
+    await store.export(result.runId, "svg", svg);
+    assert.match(await readFile(csv, "utf8"), /site_magnetization,0,0.7/);
+    assert.match(await readFile(svg, "utf8"), /E0 -1.200/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

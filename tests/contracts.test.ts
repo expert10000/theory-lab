@@ -11,6 +11,16 @@ import { cavityDefaults, cavityJob } from "../packages/models/cavity";
 import { lindbladDefaults, lindbladJob } from "../packages/models/lindblad";
 import { SWEEP_DEFAULTS, sweepJob } from "../packages/models/sweep";
 
+test("many-body contract bounds a full-basis Ising-chain job", () => {
+  const job = { schema: "quantum-job/v1", jobId: "ising-4", operation: "many_body",
+    engine: "quspin", model: { type: "ising_chain", parameters: {
+      sites: 4, interaction: 1, transverse: 0.8, longitudinal: 0.15, boundary: "open" } } };
+  assert.ok(isQuantumJob(job));
+  assert.equal(isQuantumJob({ ...job, model: { ...job.model,
+    parameters: { ...job.model.parameters, sites: 9 } } }), false);
+  assert.equal(isQuantumJob({ ...job, engine: "qutip" }), false);
+});
+
 test("canonical job fixture is compatible with v1", () =>
   assert.ok(isQuantumJob(fixture)));
 test("evolution job accepts optional Layer-1 source IDs and rejects unsupported solvers", () => {

@@ -69,6 +69,11 @@
             "device": { "type": ["string", "null"] }
           },
           "required": ["available", "version", "device"]
+        },
+        "quspin": {
+          "type": "object", "additionalProperties": false,
+          "properties": { "available": { "type": "boolean" }, "version": { "type": ["string", "null"] } },
+          "required": ["available", "version"]
         }
       },
       "required": ["qutip", "native"]
@@ -76,7 +81,7 @@
     "operations": {
       "type": "array",
       "items": {
-        "enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep"]
+        "enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body"]
       },
       "uniqueItems": true
     }

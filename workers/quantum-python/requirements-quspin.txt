@@ -1,0 +1,2 @@
+# Optional QuSpin adapter for the bounded Ising-chain laboratory.
+quspin==1.0.1

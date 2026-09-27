@@ -1,6 +1,6 @@
 # Desktop implementation
 
-The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–019 follow the supplied commit sequence.
+The original supplied roadmap is preserved in ROADMAP.md. QLAB-000 records the plan; QLAB-001–020 follow the supplied commit sequence.
 
 The smoke laboratory uses normalized units (ħ = 1), H = (Δ σz + Ω σx)/2, and E± = ±hypot(Δ, Ω)/2. Ω is a static transverse coupling here, not a time-dependent drive.
 
@@ -32,6 +32,7 @@ Reference material: [Electron 44](https://www.electronjs.org/blog/electron-44-0)
 - QLAB-017: froze the source-based desktop v0.1 boundary and added a Windows/Ubuntu GitHub Actions acceptance matrix. The full Electron smoke now passes locally on Windows 11 and Ubuntu 22.04 WSL2/WSLg after a compact-layout fix. The [release record](RELEASE_V0.1.md) lists tested versions, checks and exclusions; CI results are separate from these local runs.
 - QLAB-018: optional Dynamiqs/JAX GPU adapter for two-level Schrödinger evolution. Capabilities verify a successful import and an actual GPU device, and the renderer only enables the engine when ready. Bounded `sesolve` chunks preserve progress/cancellation and produce the existing verified `quantum-data/v1` shape. This phase does not add GPU sweep batching or other Dynamiqs operations. Four model trajectories were compared with QuTiP on an RTX 3080 under WSL2. The optional dependency file pins a fixed upstream commit because the published 0.3.6 wheel fails to import with the tested JAX version.
 - QLAB-019: optional GPU sweep scheduler batches up to 32 Hamiltonians per Dynamiqs `sesolve` call, maintains row-major `quantum-sweep-data/v1`, records the GPU device, and checkpoints each batch for cancellation/resume. A 2D sweep was compared cell-by-cell with QuTiP on the RTX 3080; the Windows CPU-only path remains unchanged.
+- QLAB-020: optional QuSpin 1.0.1 adapter plus independent dense NumPy reference for a full-basis 2–8-site Ising chain. A strict `many_body` job/result contract returns a bounded low-energy spectrum, gap, site magnetizations and half-chain entropy. QuSpin's Pauli convention and full basis agree with native across open/periodic test chains. The adapter is exposed through the existing worker protocol; a React laboratory follows in QLAB-021.
 
 Validated on Windows with Node 24.19.0 and Python 3.12.2. Type checking, twenty-five TypeScript tests, twenty-five Python tests, and the real Electron end-to-end smoke test pass. The desktop test exercises both engines and Compare mode for static spectrum and evolution, the Backend tab, Landau–Zener and Stückelberg passages, Floquet analysis, Jaynes–Cummings, quantum Rabi, Lindblad dynamics, 1D/2D sweeps with cache reuse, all six source-linked presets with analytic checks, workspace save/restore, durable run history across a full app restart, and CSV/SVG/manifest exports, plus plot and slider selection, Bloch rendering, cancellation, stale data, worker recovery, security preferences and compact layout. Screenshots are in the ignored artifacts directory.
 
