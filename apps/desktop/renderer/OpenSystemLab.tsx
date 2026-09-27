@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { EngineName, EvolutionProgress, LindbladJob, LindbladResult, QuantumBridge, WorkerStatus } from "../../../packages/contracts";
 import { LINDBLAD_FIELDS, lindbladDefaults, lindbladJob } from "../../../packages/models/lindblad";
+import type { OpenPreset } from "../../../packages/models/presets";
+import { PresetCheck } from "./PresetCheck";
 
 function decode(bytes: Uint8Array, rows: number): Float64Array {
   if (bytes.byteLength !== rows * 56) throw new Error("Invalid Lindblad artifact shape");
@@ -31,7 +33,7 @@ function OpenChart({ data, rows, cutoff, selected, onSelect }: { data: Float64Ar
   </div>;
 }
 
-export function OpenSystemLab({ bridge, status }: { bridge: QuantumBridge; status: WorkerStatus }) {
+export function OpenSystemLab({ bridge, status, preset }: { bridge: QuantumBridge; status: WorkerStatus; preset?: OpenPreset | null }) {
   const [parameters, setParameters] = useState(lindbladDefaults);
   const [qubit, setQubit] = useState<LindbladJob["initialState"]["qubit"]>("excited");
   const [photons, setPhotons] = useState("0");
@@ -47,6 +49,14 @@ export function OpenSystemLab({ bridge, status }: { bridge: QuantumBridge; statu
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
   const active = useRef<string | null>(null);
+  useEffect(() => {
+    if (!preset) return;
+    if (active.current) void bridge.cancel(active.current);
+    setParameters(Object.fromEntries(Object.entries(preset.parameters).map(([key, value]) => [key, String(value)])));
+    setQubit(preset.initialState.qubit); setPhotons(String(preset.initialState.photons));
+    setStart(String(preset.solver.tStart)); setStop(String(preset.solver.tStop)); setSamples(String(preset.solver.samples));
+    setEngine("qutip"); setResult(null); setData(null); setSelected(0); setOutcome("PRESET LOADED");
+  }, [preset]);
   useEffect(() => bridge.onProgress(value => { if (value.jobId === active.current) setProgress(value); }), [bridge]);
   const solver = { type: "master" as const, tStart: Number(start), tStop: Number(stop), samples: Number(samples) };
   let valid = Boolean(photons.trim() && start.trim() && stop.trim() && samples.trim());
@@ -73,7 +83,7 @@ export function OpenSystemLab({ bridge, status }: { bridge: QuantumBridge; statu
     setRunning(true); setError(""); setOutcome("RUNNING"); setResult(null); setData(null); setSelected(0); setProgress(null);
     const jobId = `job-${crypto.randomUUID()}`; active.current = jobId;
     try {
-      const job = lindbladJob(jobId, parameters, { qubit, photons: Number(photons) }, solver, engine);
+      const job = lindbladJob(jobId, parameters, { qubit, photons: Number(photons) }, solver, engine, preset?.source);
       const completed = await bridge.lindblad(job);
       const bytes = await bridge.readData(jobId);
       if (bytes.byteLength !== completed.data.bytes) throw new Error("Lindblad artifact size mismatch");
@@ -85,6 +95,7 @@ export function OpenSystemLab({ bridge, status }: { bridge: QuantumBridge; statu
     } finally { active.current = null; setRunning(false); }
   }
   return <div className="cavity-lab">
+    {preset && <div className="preset-loaded" data-testid="preset-loaded">VOLUME VIII PRESET · {preset.title}<small>{preset.reference}</small></div>}
     <section className="hamiltonian-card"><div><p className="eyebrow">LINDBLAD / OPEN ATOM–CAVITY MODEL</p><div className="formula">H = Δq |e⟩⟨e| + Δc a†a + g(σ₊a + σ₋a†) + F(a + a†)</div></div><div className="model-convention"><span>ROTATING FRAME</span><p>Master equation · ħ = 1</p></div></section>
     <section className="panel dynamics-settings">
       <div><p className="eyebrow">OPEN-SYSTEM LABORATORY / QLAB-013</p><h2>Loss, phase, and steady state.</h2><p>Relaxation, pure dephasing and cavity loss are independent collapse channels. Purity and qubit coherence are calculated from the evolving density matrix.</p></div>
@@ -103,6 +114,7 @@ export function OpenSystemLab({ bridge, status }: { bridge: QuantumBridge; statu
       {running && <div className="progress-wrap"><progress max="1" value={progress?.fraction ?? 0}/><span>{progress ? `${progress.completed} / ${progress.total}` : "Starting…"}</span></div>}
     </section>
     {error && <div className="error-message" role="alert">{error}</div>}
+    <PresetCheck preset={preset} result={result} data={data} />
     {result && data && diagnostics && <section className="panel cavity-result" data-testid="lindblad-result">
       <div className="panel-heading"><div><p className="eyebrow">QUANTUM-LINDBLAD-DATA / V1</p><h2>Density-matrix dynamics</h2></div><span className={`result-badge ${stale ? "stale" : ""}`}>{stale ? "OUT OF DATE" : `${result.data.rows} SAMPLES`}</span></div>
       <div className="cavity-metrics"><div><span>MINIMUM PURITY</span><strong data-testid="minimum-purity">{diagnostics.minPurity.toFixed(6)}</strong></div><div><span>TRACE DRIFT / MAX</span><strong>{diagnostics.maxTraceDrift.toExponential(2)}</strong></div><div><span>FOCK BOUNDARY / MAX</span><strong>{diagnostics.maxBoundary.toExponential(2)}</strong><small>{diagnostics.maxBoundary > .02 ? "Increase cutoff" : "Cutoff appears adequate"}</small></div></div>

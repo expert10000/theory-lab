@@ -1,4 +1,4 @@
-import type { CavityJob, CavityModel, EngineName } from "../contracts";
+import type { CavityJob, CavityModel, EngineName, LayerOneSource } from "../contracts";
 
 export type CavityModelId = CavityModel["type"];
 export interface CavityDefinition {
@@ -40,6 +40,7 @@ export function cavityJob(
   initialState: CavityJob["initialState"],
   solver: CavityJob["solver"],
   engine: EngineName,
+  sourceOverride?: LayerOneSource,
 ): CavityJob {
   const qubitFrequency = Number(input.qubitFrequency);
   const cavityFrequency = Number(input.cavityFrequency);
@@ -57,7 +58,7 @@ export function cavityJob(
   return {
     schema: "quantum-job/v1", jobId, operation: "cavity", engine,
     model: { type: id, parameters: { qubitFrequency, cavityFrequency, coupling, cutoff },
-             ...(CAVITY_REGISTRY[id].source ? { source: CAVITY_REGISTRY[id].source } : {}) },
+             ...((sourceOverride ?? CAVITY_REGISTRY[id].source) ? { source: sourceOverride ?? CAVITY_REGISTRY[id].source } : {}) },
     initialState, solver,
   };
 }

@@ -136,7 +136,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
       <article className="panel backend-card backend-wide">
         <p className="eyebrow">SOURCE EXAMPLES / THEORY DEVELOPMENT BRANCH</p>
         <h2>Mapped references, not a runtime import.</h2>
-        <p>Landau–Zener's asymptotic reference is recorded in the Volume VIII two-level QuTiP example (Commit 687). The Jaynes–Cummings lab uses the Commit 691 atom-first basis and checks its vacuum-Rabi population and dressed splitting. The Lindblad laboratory checks relaxation, dephasing and cavity-loss limits against Commit 688/690 analytic examples. These source examples are not imported at runtime. The linked tree has no direct Floquet or full quantum-Rabi example yet.</p>
+        <p>Six Presets cards are mapped to an inspected, pinned Volume VIII QuTiP revision: Commit 687 Rabi/Landau–Zener, Commit 691 Jaynes–Cummings, Commit 688 relaxation/dephasing, and Commit 690's bosonic number-decay limit. Analytic checks apply only to exact configurations. The example code is not imported at runtime. The linked tree has no direct Floquet or full quantum-Rabi example yet.</p>
       </article>
     </section>
   );

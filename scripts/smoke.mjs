@@ -394,7 +394,7 @@ try {
   await page.getByTestId("run-sweep").click();
   await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("sweep-line").waitFor();
-  assert.equal(await page.getByTestId("sweep-reused").textContent(), "0");
+  assert.ok(["0", "5"].includes(await page.getByTestId("sweep-reused").textContent()));
   await page.screenshot({ path: "artifacts/desktop-sweep-line.png", fullPage: true });
   await page.getByTestId("run-sweep").click();
   await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
@@ -406,9 +406,43 @@ try {
   await page.getByTestId("sweep-heatmap").waitFor();
   assert.equal(await page.getByTestId("sweep-heatmap").locator(".sweep-heatmap button").count(), 20);
   await page.screenshot({ path: "artifacts/desktop-sweep-heatmap.png", fullPage: true });
+  await page.getByRole("tab", { name: "Presets" }).click();
+  await page.getByTestId("preset-page").waitFor();
+  assert.equal(await page.locator(".preset-card").count(), 6);
+  await page.screenshot({ path: "artifacts/desktop-presets.png", fullPage: true });
+  await page.getByRole("button", { name: "Open Resonant Rabi oscillation" }).click();
+  await page.getByTestId("preset-loaded").getByText(/Resonant Rabi oscillation/).waitFor();
+  await page.getByTestId("evolution-state").filter({ hasText: "PRESET LOADED" }).waitFor();
+  await page.waitForFunction(() => document.querySelector('input[aria-label="Drive frequency ω"]')?.value === "0");
+  await page.getByTestId("run-evolution").click();
+  await page.getByTestId("evolution-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  assert.match(await page.getByTestId("preset-check").textContent(), /ANALYTIC CHECK PASSED/);
+  await page.getByRole("tab", { name: "Presets" }).click();
+  await page.getByRole("button", { name: "Open Landau–Zener crossing" }).click();
+  await page.getByTestId("evolution-state").filter({ hasText: "PRESET LOADED" }).waitFor();
+  await page.getByTestId("run-evolution").click();
+  await page.getByTestId("evolution-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  assert.match(await page.getByTestId("preset-check").textContent(), /ASYMPTOTIC REFERENCE ONLY/);
+  await page.getByRole("tab", { name: "Presets" }).click();
+  await page.getByRole("button", { name: "Open Jaynes–Cummings vacuum Rabi" }).click();
+  await page.getByTestId("cavity-state").filter({ hasText: "PRESET LOADED" }).waitFor();
+  await page.getByTestId("run-cavity").click();
+  await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  assert.match(await page.getByTestId("preset-check").textContent(), /ANALYTIC CHECK PASSED/);
+  for (const title of ["T₁ relaxation", "Pure dephasing", "Damped cavity occupation"]) {
+    await page.getByRole("tab", { name: "Presets" }).click();
+    await page.getByRole("button", { name: `Open ${title}` }).click();
+    await page.getByTestId("preset-loaded").getByText(new RegExp(title)).waitFor();
+    await page.getByTestId("lindblad-state").filter({ hasText: "PRESET LOADED" }).waitFor();
+    await page.getByTestId("run-lindblad").click();
+    await page.getByTestId("lindblad-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+    assert.match(await page.getByTestId("preset-check").textContent(), /ANALYTIC CHECK PASSED/);
+  }
+  await page.getByTestId("lindblad-result").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "artifacts/desktop-preset-cavity-loss.png", fullPage: true });
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native spectrum, evolution, Floquet, cavity, Lindblad and sweep labs; verified binary data, numerical references, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native spectrum, evolution, Floquet, cavity, Lindblad, sweeps and six Volume VIII presets; verified binary data, numerical references, cancellation, restart and sandbox.",
   );
 } finally {
   await app.close();

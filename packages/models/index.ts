@@ -291,6 +291,7 @@ export function evolutionJob(
   tStop: number,
   samples: number,
   engine: EngineName = "qutip",
+  sourceOverride?: LayerOneSource,
 ): EvolutionJob {
   const p = parametersFor(id, values);
   if (
@@ -316,13 +317,13 @@ export function evolutionJob(
             frequency: p.frequency,
             phase: p.phase,
           },
-          source: definition.source,
+          source: sourceOverride ?? definition.source,
         }
       : id === "landau_zener"
         ? {
             type: id,
             parameters: { sweepRate: p.sweepRate, gap: p.gap, bias: p.bias },
-            source: definition.source,
+            source: sourceOverride ?? definition.source,
           }
         : {
             type: id,
@@ -332,7 +333,7 @@ export function evolutionJob(
               bias: p.bias,
               turnTime: p.turnTime,
             },
-            source: definition.source,
+            source: sourceOverride ?? definition.source,
           };
   return {
     schema: "quantum-job/v1",

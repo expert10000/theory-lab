@@ -22,6 +22,8 @@ import {
   compareEvolution,
   type EvolutionComparison,
 } from "../../../packages/quantum-3d/comparison";
+import type { EvolutionPreset } from "../../../packages/models/presets";
+import { PresetCheck } from "./PresetCheck";
 
 type EngineMode = EngineName | "compare";
 
@@ -152,10 +154,12 @@ export function DynamicsLab({
   bridge,
   status,
   modelId,
+  preset,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
   modelId: EvolutionModelId;
+  preset?: EvolutionPreset | null;
 }) {
   const definition = MODEL_REGISTRY[modelId];
   const [parameters, setParameters] = useState(() => defaultsFor(modelId));
@@ -195,6 +199,14 @@ export function DynamicsLab({
     setSelectedIndex(0);
     setOutcome("READY TO EVOLVE");
   }, [modelId]);
+  useEffect(() => {
+    if (!preset || preset.modelId !== modelId) return;
+    if (activeJob.current) void bridge.cancel(activeJob.current);
+    setParameters(Object.fromEntries(Object.entries(preset.parameters).map(([key, value]) => [key, String(value)])));
+    setStartTime(String(preset.solver.tStart)); setDuration(String(preset.solver.tStop));
+    setSamples(String(preset.solver.samples)); setBasis(preset.initialIndex); setEngineMode("qutip");
+    setResult(null); setData(null); setComparison(null); setSelectedIndex(0); setOutcome("PRESET LOADED");
+  }, [preset, modelId]);
   useEffect(
     () =>
       bridge.onProgress((update) => {
@@ -258,6 +270,7 @@ export function DynamicsLab({
         end,
         count,
         engine,
+        preset?.source,
       ),
     );
     const bytes = await bridge.readData(jobId);
@@ -339,6 +352,7 @@ export function DynamicsLab({
         </div>
       </section>
       <section className="panel dynamics-settings">
+        {preset && <div className="preset-loaded" data-testid="preset-loaded">VOLUME VIII PRESET · {preset.title}<small>{preset.reference}</small></div>}
         <div>
           <p className="eyebrow">EVOLUTION JOB</p>
           <h2>{definition.label}</h2>
@@ -477,6 +491,7 @@ export function DynamicsLab({
           </div>
         )}
       </section>
+      <PresetCheck preset={preset} result={result} data={data} />
       {error && (
         <div className="error-message" role="alert">
           {error}

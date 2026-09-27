@@ -10,6 +10,8 @@ import { DynamicsLab } from "./DynamicsLab";
 import { CavityLab } from "./CavityLab";
 import { OpenSystemLab } from "./OpenSystemLab";
 import { SweepLab } from "./SweepLab";
+import { PresetPanel } from "./PresetPanel";
+import { type LaboratoryPreset } from "../../../packages/models/presets";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import {
@@ -42,6 +44,7 @@ export function App() {
   const [evolutionModel, setEvolutionModel] =
     useState<EvolutionModelId>("driven_two_level");
   const [cavityModel, setCavityModel] = useState<CavityModelId>("jaynes_cummings");
+  const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
   const [resultMode, setResultMode] = useState<EngineMode | null>(null);
@@ -50,7 +53,7 @@ export function App() {
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<
-    "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "roadmap" | "backend"
+    "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "presets" | "roadmap" | "backend"
   >("spectrum");
   const initialRun = useRef(false);
   const valid = parametersFor("two_level", parameters) !== null;
@@ -138,6 +141,12 @@ export function App() {
       setRestarting(false);
     }
   }
+  function openPreset(preset: LaboratoryPreset) {
+    setSelectedPreset(preset);
+    if (preset.kind === "evolution") { setEvolutionModel(preset.modelId); setTab("dynamics"); }
+    else if (preset.kind === "cavity") { setCavityModel(preset.modelId); setTab("cavity"); }
+    else setTab("open");
+  }
   return (
     <div className="app">
       <header className="topbar">
@@ -151,8 +160,8 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1 · QLAB-014</span>
-          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "backend" && tab !== "roadmap" && (
+          <span className="version">V0.1 · QLAB-015</span>
+          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "presets" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -167,7 +176,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" ? "dynamics-layout" : ""}`}>
+      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "presets" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
             LABORATORIES <span>09 / 09</span>
@@ -185,6 +194,7 @@ export function App() {
               key={id}
               className="lab-selected"
               onClick={() => {
+                setSelectedPreset(null);
                 if (id !== "two_level") setEvolutionModel(id);
                 setTab(id === "two_level" ? "spectrum" : "dynamics");
               }}
@@ -193,9 +203,10 @@ export function App() {
               {MODEL_REGISTRY[id].label} <span className="live-dot" />
             </button>
           ))}
-          {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" onClick={() => { setCavityModel(id); setTab("cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
-          <button className="lab-selected" onClick={() => setTab("open")}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
+          {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" onClick={() => { setSelectedPreset(null); setCavityModel(id); setTab("cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
+          <button className="lab-selected" onClick={() => { setSelectedPreset(null); setTab("open"); }}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("sweep")}><span>▦</span> Parameter sweeps <span className="live-dot" /></button>
+          <button className="lab-selected" onClick={() => setTab("presets")}><span>▣</span> Volume VIII presets <span className="live-dot" /></button>
           <p className="sidebar-note">
             The smallest quantum system.
             <br />
@@ -203,7 +214,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>15</span> Volume VIII presets</div>
+            <div className="future-lab"><span>16</span> Durable runs & exports</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -230,6 +241,8 @@ export function App() {
                     ? "LINDBLAD DYNAMICS"
                     : tab === "sweep"
                       ? "PARAMETER SWEEPS"
+                    : tab === "presets"
+                      ? "VOLUME VIII PRESETS"
                 : "TWO-LEVEL SYSTEM"}
           </div>
           <div className="workspace-title">
@@ -245,6 +258,8 @@ export function App() {
                         ? "OPEN-SYSTEM LABORATORY / 008"
                         : tab === "sweep"
                           ? "SWEEP LABORATORY / 009"
+                        : tab === "presets"
+                          ? "REFERENCE PRESETS / 010"
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
@@ -258,6 +273,8 @@ export function App() {
                         ? "A system meets its environment."
                         : tab === "sweep"
                           ? "The landscape of a model."
+                        : tab === "presets"
+                          ? "From reference to experiment."
                     : "A two-level universe."}
               </h1>
               <p>
@@ -271,10 +288,12 @@ export function App() {
                         ? "Explore relaxation, dephasing, cavity loss and stationary states."
                       : tab === "sweep"
                         ? "Sweep one or two parameters with checkpoints, cancellation and resume."
+                      : tab === "presets"
+                        ? "Reproducible configurations from validated Volume VIII examples."
                     : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
-            <span className="pill">{tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+            <span className="pill">{tab === "presets" ? "6 PINNED PRESETS" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
           </div>
           <div className="tabs" role="tablist" aria-label="Workspace">
             <button
@@ -301,6 +320,7 @@ export function App() {
             <button role="tab" aria-selected={tab === "cavity"} onClick={() => setTab("cavity")}>Cavity QED</button>
             <button role="tab" aria-selected={tab === "open"} onClick={() => setTab("open")}>Open system</button>
             <button role="tab" aria-selected={tab === "sweep"} onClick={() => setTab("sweep")}>Sweeps</button>
+            <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>Presets</button>
             <button
               role="tab"
               aria-selected={tab === "roadmap"}
@@ -321,12 +341,13 @@ export function App() {
               bridge={window.quantum}
               status={status}
               modelId={evolutionModel}
+              preset={selectedPreset?.kind === "evolution" ? selectedPreset : null}
             />
           </div>
-          <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} /></div>
-          <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} /></div>
+          <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} /></div>
+          <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} /></div>
           <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} /></div>
-          {tab === "backend" ? (
+          {tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -360,9 +381,10 @@ export function App() {
                 ["012", "Jaynes–Cummings & quantum Rabi cavity QED", "Implemented"],
                 ["013", "Lindblad dynamics, purity & steady state", "Implemented"],
                 ["014", "Parameter sweeps & heatmap workspace", "Implemented"],
+                ["015", "Volume VIII reproducible presets", "Implemented"],
                 [
-                  "015–017",
-                  "Book presets, persistence & release validation",
+                  "016–017",
+                  "Persistence & release validation",
                   "Planned",
                 ],
               ].map(([id, title, state]) => (
@@ -374,7 +396,7 @@ export function App() {
               ))}
               <p className="scope-note">
                 Volume VIII chapters 58–59 are still architecture placeholders;
-                book-preset validation remains QLAB-015. Atoms, molecules and
+                mapped example presets are pinned to the inspected theory revision. Atoms, molecules and
                 crystals belong to a later phase.
               </p>
             </section>

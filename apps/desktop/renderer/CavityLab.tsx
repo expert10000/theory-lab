@@ -1,6 +1,8 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { CavityResult, EngineName, EvolutionProgress, QuantumBridge, WorkerStatus } from "../../../packages/contracts";
 import { CAVITY_REGISTRY, cavityDefaults, cavityJob, type CavityModelId } from "../../../packages/models/cavity";
+import type { CavityPreset } from "../../../packages/models/presets";
+import { PresetCheck } from "./PresetCheck";
 
 function readF64(bytes: Uint8Array): Float64Array {
   if (bytes.byteLength % 8) throw new Error("Invalid cavity artifact length");
@@ -33,7 +35,7 @@ function CavityPlot({ data, rows, selected, onSelect }: { data: Float64Array; ro
   </div>;
 }
 
-export function CavityLab({ bridge, status, modelId }: { bridge: QuantumBridge; status: WorkerStatus; modelId: CavityModelId }) {
+export function CavityLab({ bridge, status, modelId, preset }: { bridge: QuantumBridge; status: WorkerStatus; modelId: CavityModelId; preset?: CavityPreset | null }) {
   const definition = CAVITY_REGISTRY[modelId];
   const [parameters, setParameters] = useState(() => cavityDefaults(modelId));
   const [qubit, setQubit] = useState<"ground" | "excited">("excited");
@@ -54,6 +56,14 @@ export function CavityLab({ bridge, status, modelId }: { bridge: QuantumBridge; 
     setParameters(cavityDefaults(modelId)); setResult(null); setData(null); setSelected(0);
     setOutcome("READY TO RUN"); setError("");
   }, [modelId]);
+  useEffect(() => {
+    if (!preset || preset.modelId !== modelId) return;
+    if (activeJob.current) void bridge.cancel(activeJob.current);
+    setParameters(Object.fromEntries(Object.entries(preset.parameters).map(([key, value]) => [key, String(value)])));
+    setQubit(preset.initialState.qubit); setPhotons(String(preset.initialState.photons));
+    setStart(String(preset.solver.tStart)); setStop(String(preset.solver.tStop)); setSamples(String(preset.solver.samples));
+    setEngine("qutip"); setResult(null); setData(null); setSelected(0); setOutcome("PRESET LOADED");
+  }, [preset, modelId]);
   useEffect(() => bridge.onProgress(update => { if (update.jobId === activeJob.current) setProgress(update); }), [bridge]);
   const solver = { type: "schrodinger" as const, tStart: Number(start), tStop: Number(stop), samples: Number(samples) };
   let valid = Boolean(photons.trim() && start.trim() && stop.trim() && samples.trim());
@@ -87,7 +97,7 @@ export function CavityLab({ bridge, status, modelId }: { bridge: QuantumBridge; 
     setRunning(true); setError(""); setOutcome("RUNNING"); setResult(null); setData(null); setSelected(0); setProgress(null);
     const jobId = `job-${crypto.randomUUID()}`; activeJob.current = jobId;
     try {
-      const job = cavityJob(modelId, jobId, parameters, { qubit, photons: Number(photons) }, solver, engine);
+      const job = cavityJob(modelId, jobId, parameters, { qubit, photons: Number(photons) }, solver, engine, preset?.source);
       const completed = await bridge.cavity(job);
       const bytes = await bridge.readData(jobId);
       if (bytes.byteLength !== completed.data.bytes) throw new Error("Cavity artifact size mismatch");
@@ -101,6 +111,7 @@ export function CavityLab({ bridge, status, modelId }: { bridge: QuantumBridge; 
     } finally { activeJob.current = null; setRunning(false); }
   }
   return <div className="cavity-lab">
+    {preset && <div className="preset-loaded" data-testid="preset-loaded">VOLUME VIII PRESET · {preset.title}<small>{preset.reference}</small></div>}
     <section className="hamiltonian-card"><div><p className="eyebrow">CAVITY QED / {definition.label.toUpperCase()}</p><div className="formula">{definition.hamiltonian}</div></div><div className="model-convention"><span>ATOM × FOCK</span><p>|g⟩ = |0⟩ · |e⟩ = |1⟩ · ħ = 1</p></div></section>
     <section className="panel dynamics-settings">
       <div><p className="eyebrow">CLOSED-SYSTEM LABORATORY</p><h2>{definition.label}</h2><p>{definition.description}. Set the Fock cutoff high enough that the boundary population remains small.</p></div>
@@ -119,6 +130,7 @@ export function CavityLab({ bridge, status, modelId }: { bridge: QuantumBridge; 
       {running && <div className="progress-wrap"><progress max="1" value={progress?.fraction ?? 0}/><span>{progress ? `${progress.completed} / ${progress.total}` : "Starting…"}</span></div>}
     </section>
     {error && <div className="error-message" role="alert">{error}</div>}
+    <PresetCheck preset={preset} result={result} data={data} />
     {result && data && diagnostics && <section className="panel cavity-result" data-testid="cavity-result">
       <div className="panel-heading"><div><p className="eyebrow">QUANTUM-CAVITY-DATA / V1</p><h2>Dressed spectrum & dynamics</h2></div><span className={`result-badge ${stale ? "stale" : ""}`} data-testid="cavity-result-state">{stale ? "OUT OF DATE" : `${result.data.rows} SAMPLES`}</span></div>
       <div className="cavity-metrics"><div><span>BOUNDARY POPULATION / MAX</span><strong data-testid="cavity-boundary">{diagnostics.maxBoundary.toExponential(3)}</strong><small>{diagnostics.maxBoundary > 0.02 ? "Increase cutoff; truncation may affect results" : "Fock cutoff appears adequate for this run"}</small></div><div><span>NORM DRIFT / MAX</span><strong>{diagnostics.maxNormDrift.toExponential(3)}</strong></div><div><span>PARITY DRIFT / MAX</span><strong>{diagnostics.maxParityDrift.toExponential(3)}</strong></div>{result.model.type === "jaynes_cummings" && <div><span>VACUUM-RABI REFERENCE</span><strong data-testid="jc-reference">{result.initialState.qubit === "excited" && result.initialState.photons === 0 ? diagnostics.maxReferenceError.toExponential(3) : "|e,0⟩ only"}</strong><small>√(Δ²+4g²) = {diagnostics.dressedSplitting.toFixed(4)}</small></div>}</div>

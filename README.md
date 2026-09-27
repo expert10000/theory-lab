@@ -1,6 +1,6 @@
 # Quantum Hamiltonian Lab
 
-An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–014 cover two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, and QuTiP/native comparison.
+An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–015 cover two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, and QuTiP/native comparison.
 
 ## Run on Windows
 
@@ -44,6 +44,10 @@ Select **Floquet / strong drive** to compute the one-period propagator of the pe
 ## Parameter sweeps
 
 The **Sweeps** workspace varies one or two parameters of Rabi, Landau–Zener, Stückelberg, or strong-drive evolution and maps final P₁. Select QuTiP or native SciPy, a time window, axes and resolution (up to 10,000 cells), then run. A 1D curve or clickable 2D heatmap displays the result. Completed cells are cached by model, grid and engine version; cancel and rerun unchanged settings to resume. The result reports reused and newly computed cells. A sweep is a separate job, not the fixed Floquet preview map.
+
+## Volume VIII presets
+
+Open **Presets** for six source-pinned configurations from the inspected `theory` QuTiP examples: resonant Rabi, Landau–Zener, Jaynes–Cummings vacuum Rabi, T₁ relaxation, pure dephasing, and damped cavity occupation. A card loads the existing lab; review its values, choose QuTiP or native, and run. Five presets show a full-trajectory analytic error and a pass/fail threshold; Landau–Zener shows only the asymptotic reference because its run has finite endpoints. Source revision, basis/frame mappings, and exclusions are detailed in [docs/PRESETS.md](docs/PRESETS.md). Editing a loaded preset creates a variant and disables the exact-preset analytic check.
 
 ## Cavity QED
 
