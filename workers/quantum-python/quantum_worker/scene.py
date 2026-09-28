@@ -127,6 +127,7 @@ class QuantumScene(TypedDict):
     lattice: NotRequired[SceneLattice]
     reciprocal: NotRequired[SceneReciprocal]
     bands: NotRequired[dict]
+    topology: NotRequired[dict]
     annotations: list[Annotation]
 
 
@@ -233,6 +234,20 @@ def validate_scene(scene: QuantumScene):
             e = datasets.get(b["energies"][i])
             if not o or o["kind"] != ("polyline" if b["kind"] == "path" else "mesh") or datasets[o["positions"]]["count"] != k["count"] or not e or e["components"] != 1 or e["count"] != k["count"] or e["unit"] != b["energyUnit"]:
                 raise ValueError("Band object/dataset mismatch")
+    topology = scene.get("topology")
+    if topology:
+        unique([q["id"] for q in topology["quantities"]]+[i["id"] for i in topology["invariants"]])
+        if not topology["quantities"] and not topology["invariants"]:
+            raise ValueError("Empty topology metadata")
+        for q in topology["quantities"]:
+            o = next((o for o in scene["objects"] if o["id"] == q["object"]),None)
+            d = datasets.get(q["dataset"])
+            vector = q["kind"] in ("berry-connection","pseudospin")
+            if not o or not d or d["components"] != (3 if vector else 1) or d["count"] != datasets[o["positions"]]["count"] or (vector and (o["kind"] != "vectors" or o.get("values") != q["dataset"])) or (not vector and o.get("scalars") != q["dataset"]) or (q["kind"] == "berry-phase" and d["unit"] != "rad"):
+                raise ValueError("Topology quantity reference mismatch")
+        for i in topology["invariants"]:
+            if (i["status"] in ("undefined","unresolved")) != (i["value"] is None):
+                raise ValueError("Topology invariant status/value mismatch")
     c = scene["camera"]
     direction = [t - p for t, p in zip(c["target"], c["position"])]
     u = c["up"]

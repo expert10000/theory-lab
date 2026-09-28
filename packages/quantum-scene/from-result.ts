@@ -125,6 +125,7 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
       scene.objects[scene.objects.length - 1].style.size = .2;
     }
     scene.annotations.push({ id: "sublattice-key", text: "A₀ B₀ | A₁ B₁ … · orange t₁, teal t₂ · bond width not hopping magnitude", position: [center, 0, -1.5] });
+    scene.topology={quantities:[],invariants:[{id:"winding",label:"SSH winding",value:a.winding,status:a.winding===null?"undefined":"verified",method:"Worker phase criterion |t2| > |t1|, undefined at bulk gap closure"}],limitations:["Open-chain density is not Berry connection; the viewer does not derive winding."]};
   } else if (result.operation === "topology" && result.model.type === "qwz" && result.analysis.kind === "qwz") {
     const a = result.analysis, grid = result.model.parameters.grid;
     if (a.gapClosed || a.berryCurvature.length !== grid * grid) throw new Error("QWZ field undefined at gap closure; no scene can be exported");
@@ -140,6 +141,7 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
     const height = Math.max(1, ...a.berryCurvature.map(Math.abs));
     scene.camera = { position: [8 + height, 6 + height, 6 + height], target: [0, 0, 0], up: [0, 0, 1] };
     scene.annotations.push({ id: "invariant", text: `Chern ${a.chern ?? "unresolved"} · mesh ${grid}×${grid} · no periodic seam interpolation`, position: [0, 0, height] });
+    scene.topology={quantities:[{id:"lower-curvature",label:"Lower-band Berry curvature",kind:"berry-curvature",object:"berry-curvature",dataset:"curvature",convention:"Occupied lower band; curvature at cell centers; a=1; kx-major/ky-fastest"}],invariants:[{id:"chern",label:"Chern number",value:a.chern,status:a.meshResolved?"verified":"unresolved",method:"Worker FHS lattice result cross-checked against independent Dirac mass-sign phase diagram"}],limitations:["Curvature samples use midpoint quadrature, not the FHS plaquette array.","A coarse mesh can be unresolved; no invariant is inferred from the displayed surface.","No periodic seam interpolation or new Berry-connection computation."]};
     object("brillouin-boundary", "Brillouin-zone boundary at curvature height 0 (not a mesh seam)", "polyline",
       await dataset("bz-boundary", [-Math.PI, -Math.PI, 0, Math.PI, -Math.PI, 0, Math.PI, Math.PI, 0, -Math.PI, Math.PI, 0, -Math.PI, -Math.PI, 0], 3, "kx, ky, zero display height"), "#617888");
     for (const [id, values, label, position] of [

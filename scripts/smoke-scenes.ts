@@ -26,6 +26,7 @@ const extra = [
   { id: "mesh", label: "Fixture mesh", kind: "mesh", positions: "vertices", indices: "triangles", scalars: "scalars" },
 ].map(o => ({ ...o, visible: o.id !== "mesh", style: { color: "#79d9c1", opacity: 1, size: .1 } }));
 const complete = { ...scene, objects: [...scene.objects, ...extra] }; assertScene(complete);
+complete.topology={quantities:[{id:"supplied-vector",label:"Supplied pseudospin fixture",kind:"pseudospin",object:complete.objects[0].id,dataset:complete.objects[0].values!,convention:"Synthetic renderer fixture, not a model computation"}],invariants:[],limitations:["No invariant inferred from this supplied vector."]};
 const source = `
 import React from 'react';
 import {createRoot} from 'react-dom/client';
@@ -89,6 +90,8 @@ try {
   await page.goto(origin);
   await page.getByTestId("scene-verification").filter({ hasText: "SHA-256 VERIFIED" }).waitFor();
   await page.locator(".scene-canvas canvas").waitFor();
+  await page.getByLabel("Topology quantity").selectOption("supplied-vector");
+  assert.match(await page.getByTestId("topology-sample").innerText(),/0\.000000, 0\.000000, 1\.000000/);
   assert.equal(await page.getByRole("checkbox", { name: "Fixture mesh" }).isChecked(), false);
   await page.getByRole("checkbox", { name: "Fixture mesh" }).check();
   await page.getByLabel("Inspect scene object").selectOption("mesh");

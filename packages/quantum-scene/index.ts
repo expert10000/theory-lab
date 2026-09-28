@@ -30,6 +30,7 @@ export interface QuantumScene {
   lattice?: SceneLattice;
   reciprocal?: SceneReciprocal;
   bands?: SceneBands;
+  topology?: SceneTopology;
   annotations: { id: string; text: string; position: Vec3 }[];
 }
 export interface SceneLattice {
@@ -53,6 +54,11 @@ export interface SceneBands {
   grid?: [number, number];
 }
 export interface ScenePayload { scene: QuantumScene; artifacts: Record<string, Uint8Array> }
+export interface SceneTopology {
+  quantities: {id:string;label:string;kind:"berry-curvature"|"berry-connection"|"pseudospin"|"berry-phase";object:string;dataset:string;convention:string}[];
+  invariants: {id:string;label:string;value:number|null;status:"verified"|"supplied"|"undefined"|"unresolved";method:string}[];
+  limitations: string[];
+}
 export const MAX_SCENE_BYTES = 16 * 1024 * 1024;
 
 // Interpret only the vocabulary used by this fixed schema. No eval/code generation,
@@ -154,6 +160,16 @@ export function assertScene(value: unknown): asserts value is QuantumScene {
       const o=scene.objects.find(o=>o.id===id), e=datasets.get(b.energies[i]);
       if(!o||o.kind!==(b.kind==="path"?"polyline":"mesh")||datasets.get(o.positions)!.count!==k.count||!e||e.components!==1||e.count!==k.count||e.unit!==b.energyUnit) throw new Error("Band object/dataset mismatch");
     });
+  }
+  if(scene.topology) {
+    const t=scene.topology;
+    unique([...t.quantities.map(q=>q.id),...t.invariants.map(i=>i.id)]);
+    if(!t.quantities.length&&!t.invariants.length) throw new Error("Empty topology metadata");
+    for(const q of t.quantities) {
+      const o=scene.objects.find(o=>o.id===q.object),d=datasets.get(q.dataset),vector=["berry-connection","pseudospin"].includes(q.kind);
+      if(!o||!d||d.components!==(vector?3:1)||d.count!==datasets.get(o.positions)!.count||(vector?(o.kind!=="vectors"||o.values!==q.dataset):o.scalars!==q.dataset)||(q.kind==="berry-phase"&&d.unit!=="rad")) throw new Error("Topology quantity reference mismatch");
+    }
+    for(const i of t.invariants) if((i.status==="undefined"||i.status==="unresolved")!==(i.value===null)) throw new Error("Topology invariant status/value mismatch");
   }
   const { position: p, target: t, up } = scene.camera;
   const direction = t.map((v, i) => v - p[i]);

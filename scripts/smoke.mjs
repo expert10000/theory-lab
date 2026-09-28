@@ -138,7 +138,7 @@ try {
   );
   assert.ok(await page.getByText("Generic lattice cells & bounded supercell fixtures", {exact:true}).isVisible());
   assert.ok(await page.getByText("Reciprocal basis & Brillouin-zone inspection",{exact:true}).isVisible());
-  assert.match(await page.getByTestId("planned-QVIS-011").innerText(), /Planned/);
+  assert.match(await page.getByTestId("planned-QVIS-012").innerText(), /Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -622,6 +622,8 @@ try {
     await page.getByTestId("scene-verification").filter({ hasText: "SHA-256 VERIFIED" }).waitFor();
     await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
     await page.screenshot({ path: `artifacts/desktop-scene-${run.model}.png`, fullPage: true });
+    await page.getByTestId("topology-inspection").waitFor();
+    assert.match(await page.getByTestId("topology-invariant").innerText(),/reported verified/);
     if (run.model === "ssh") assert.ok(await page.getByRole("checkbox", {name:/Intracell A–B/}).isChecked());
     else assert.ok(await page.getByRole("checkbox", {name:"Brillouin-zone boundary at curvature height 0 (not a mesh seam)",exact:true}).isChecked());
   }

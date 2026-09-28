@@ -5,6 +5,7 @@ import { verifyScenePayload, type ScenePayload, type Vec3 } from "../quantum-sce
 import { scalarColor, scalarRange } from "./scalarColor";
 import { phaseColor } from "./fields";
 import { BandInspection } from "./BandInspection";
+import { TopologyInspection } from "./TopologyInspection";
 
 // Shared renderer consumes declarative scenes only. No worker, filesystem or IPC.
 export async function browserSceneDigest(bytes: Uint8Array): Promise<string> {
@@ -184,6 +185,7 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
         {fallback && <p className="scene-fallback">WebGL unavailable. Verified numerical inspection remains available below.</p>}
       </div>
       <div className="scene-inspection">
+        {ready?.payload===payload && payload.scene.topology && <TopologyInspection topology={payload.scene.topology} arrays={ready.arrays} selected={selected} index={safeIndex} onSelect={id=>{setSelected(id);setIndex(0);}} unit={id=>payload.scene.datasets.find(d=>d.id===id)!.unit}/>}
         {ready?.payload===payload && payload.scene.bands && <BandInspection bands={payload.scene.bands} kUnit={payload.scene.datasets.find(d=>d.id===payload.scene.bands!.coordinates)!.unit} arrays={ready.arrays} selected={selected} index={safeIndex} onSelect={(id,i)=>{setSelected(id);setIndex(i);}}/>}
         {reciprocal && <div className="reciprocal-inspection" data-testid="reciprocal-inspection">
           <h3>Primitive reciprocal-space inspection</h3>

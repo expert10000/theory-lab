@@ -72,15 +72,15 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
     detail:
       "Verified supplied SSH/QWZ energies, synchronized band/k-point/gap inspection and offline bundles. No inferred topology.",
   },
-];
-export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-011",
     title: "Supplied Berry/vector/topology scene extensions",
-    state: "Planned",
+    state: "Implemented",
     detail:
       "Display supplied quantities; do not infer invariants or invent unsupported physics models.",
   },
+];
+export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-012",
     title: "Chunked artifacts, lazy verification & LOD",

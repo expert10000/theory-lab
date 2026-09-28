@@ -43,6 +43,7 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 | QVIS-008 | Square/honeycomb/cubic open supercell fixtures, basis/cell inspection and export | Implemented; LATTICE_RECIPROCAL_BANDS.md |
 | QVIS-009 | Explicit dual bases, primitive square/hexagonal/cubic zones, named points and paths | Implemented, bounded fixtures; LATTICE_RECIPROCAL_BANDS.md |
 | QVIS-010 | Supplied SSH band paths/QWZ energy surfaces, synchronized sample/gap inspection and offline bundles | Implemented, bounded two-band models; LATTICE_RECIPROCAL_BANDS.md |
+| QVIS-011 | Reusable supplied Berry scalar/vector/pseudospin/phase quantities and reported invariant states | Implemented; strict TS/Python references, saved SSH/QWZ and synthetic vector compatibility tests |
 
 Implemented means code and relevant tests exist, not that every future example
 in the supplied plan is supported. Verification uses build/typecheck, Node and
