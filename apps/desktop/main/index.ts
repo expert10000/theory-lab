@@ -14,6 +14,7 @@ import { pathToFileURL } from "node:url";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
+import { readSceneBundle } from "../../../packages/quantum-scene/bundle";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
@@ -270,6 +271,13 @@ app.whenReady().then(() => {
     const selection = await dialog.showOpenDialog({ title: "Choose parent folder for a new scene bundle", properties: ["openDirectory"] });
     if (selection.canceled || !selection.filePaths[0]) return null;
     return runs.exportScene(runId, selection.filePaths[0]);
+  });
+  ipcMain.handle("quantum:import-scene", async (event, ...args: unknown[]) => {
+    trusted(event);
+    if (args.length) throw new Error("Scene import accepts no renderer paths or arguments");
+    const selection = await dialog.showOpenDialog({ title: "Open a verified .qscene folder", properties: ["openDirectory"] });
+    if (selection.canceled || !selection.filePaths[0]) return null;
+    return readSceneBundle(selection.filePaths[0]);
   });
   ipcMain.handle("quantum:export-run", async (event, runId: unknown, format: unknown) => {
     trusted(event);

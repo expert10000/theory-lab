@@ -92,6 +92,25 @@ loads and verifies saved job/result/data, adapts them, and writes to the folder
 selected by the user. The renderer cannot supply arbitrary file paths, scene
 metadata or binary files for export. No worker RPC or gateway endpoint was added.
 
+## QVIS-006: read-only bundle import
+
+In **Scenes**, select **Open scene bundle** and choose the exported `.qscene`
+folder. A no-argument trusted preload call opens the native folder dialog; React
+cannot provide a path. Main verifies bounded metadata, the scene schema and
+references, every byte count and hash, and finite/index-valid numerical data
+before releasing the payload. Unexpected files, nested directories, symbolic
+file links and directory junctions are rejected. Reads are capped even if a file
+grows during verification. The importer does not execute formulas, load URLs,
+invoke a worker, modify the source folder, or insert an artificial saved run.
+
+Primitive and regular-field bundles use the same viewers and inspect original
+Float64 values. Imported scenes are clearly marked **READ-ONLY**; their supplied
+provenance is not independently authenticated. Hashes detect corruption, not
+publisher identity or scientific correctness. Open only trusted bundles.
+Export of imported data is disabled; **Return to saved run** restores the normal
+saved-run workflow. Cancelling or rejecting another import keeps the previous
+valid preview. No Math3D integration is introduced.
+
 The viewer is proven in an independent browser under strict CSP, but the
 existing web client's navigation does not yet expose Scenes. The first
 integration is file-based; no Math3D launch, importer or live worker bridge is

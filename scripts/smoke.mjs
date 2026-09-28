@@ -45,6 +45,7 @@ try {
       "getResources",
       "getScene",
       "getStatus",
+      "importScene",
       "lindblad",
       "listRuns",
       "loadWorkspace",
@@ -662,6 +663,38 @@ try {
   await page.getByTestId("open-scenes").click();
   await page.getByLabel("Scene saved run").selectOption(orbitalRun.runId);
   await page.getByTestId("scenes-page").getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  const importedFolder = resolve(parent, `${orbitalRun.runId}.qscene`);
+  const importedBefore = await readFile(resolve(importedFolder,"scene.json"),"utf8");
+  const runCount = await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length));
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},importedFolder);
+  await page.getByTestId("import-scene").click();
+  await page.getByTestId("scene-source").filter({hasText:"IMPORTED BUNDLE"}).waitFor();
+  await page.getByTestId("scenes-page").getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  assert.ok(await page.getByTestId("export-scene").isDisabled());
+  assert.equal(await readFile(resolve(importedFolder,"scene.json"),"utf8"),importedBefore);
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length)),runCount);
+  await page.getByTestId("scenes-page").getByTestId("field-slice").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-imported-field.png",fullPage:true});
+  await app.evaluate(({dialog})=>{dialog.showOpenDialog=async()=>({canceled:true,filePaths:[]});});
+  await page.getByTestId("import-scene").click();
+  await page.getByRole("status").filter({hasText:"Scene import cancelled"}).waitFor();
+  assert.match(await page.getByTestId("scene-source").innerText(),/IMPORTED BUNDLE/);
+  await page.getByRole("button",{name:"Return to saved run"}).click();
+  await page.getByTestId("scene-source").filter({hasText:"SAVED NUMERICAL RUN"}).waitFor();
+  await page.getByTestId("scenes-page").getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  const primitiveFolder = resolve(parent, `${sceneRun.runId}.qscene`);
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},primitiveFolder);
+  await page.getByTestId("import-scene").click();
+  await page.getByTestId("scene-source").filter({hasText:"IMPORTED BUNDLE"}).waitFor();
+  await page.getByTestId("scenes-page").getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  const {writeFile,unlink}=await import("node:fs/promises");
+  const extraFile=resolve(primitiveFolder,"unexpected.txt");
+  try {
+    await writeFile(extraFile,"not part of the bundle",{flag:"wx"});
+    await page.getByTestId("import-scene").click();
+    await page.getByRole("status").filter({hasText:"unexpected"}).waitFor();
+    assert.match(await page.getByTestId("scene-run-id").innerText(),new RegExp(sceneRun.runId));
+  }finally{await unlink(extraFile);}
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → QuTiP/Native labs, sweeps and six presets; orbital 1s/2p fields, signed lobes, phase and slices; durable runs, workspace restore, CSV/SVG/manifest/scene exports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",

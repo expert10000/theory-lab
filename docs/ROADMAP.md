@@ -1416,7 +1416,7 @@ QVIS-002   independent scene viewer, saved Bloch/SSH/QWZ adapters and bundle exp
 QVIS-003   regular scalar/complex fields, signed isosurfaces, slices and phase (implemented)
 QVIS-004   hydrogenic orbital worker, s/p/d fields, radial and grid diagnostics (implemented)
 QVIS-005   SSH sublattices/bonds, Ising magnetization and QWZ axes (implemented)
-QVIS-006   next: verified scene bundle import (not implemented)
+QVIS-006   read-only verified scene bundle import and provenance inspection (implemented)
 QVIS-007   planned: orbital convergence and radial-node diagnostics (not implemented)
 M3D-Q01    future: importer in the separate Math3D repository (not implemented)
 ```

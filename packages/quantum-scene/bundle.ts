@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { lstat, mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, open, readdir, rm, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import { assertScene, verifyScenePayload, type ScenePayload } from "./index";
 
@@ -24,10 +24,27 @@ export async function writeSceneBundle(payload: ScenePayload, parent: string): P
 }
 async function boundedRead(path: string, expected?: number) {
   const info = await lstat(path);
-  if (!info.isFile() || info.size > (expected ?? 128 * 1024) || (expected !== undefined && info.size !== expected)) throw new Error("Invalid bundle file size");
-  return readFile(path);
+  const limit = expected ?? 128 * 1024;
+  if (!info.isFile() || info.isSymbolicLink() || info.size > limit || (expected !== undefined && info.size !== expected)) throw new Error("Invalid bundle file size or link");
+  const file = await open(path, "r");
+  try {
+    const actual = await file.stat();
+    if (!actual.isFile() || actual.size > limit || (expected !== undefined && actual.size !== expected)) throw new Error("Invalid bundle file size");
+    // Read no more than limit+1 even if the file grows after the stat check.
+    const bytes = Buffer.alloc(limit + 1);
+    let count = 0;
+    while (count <= limit) {
+      const { bytesRead } = await file.read(bytes, count, bytes.length - count, count);
+      if (!bytesRead) break;
+      count += bytesRead;
+    }
+    if (count > limit || (expected !== undefined && count !== expected)) throw new Error("Invalid bundle file size");
+    return bytes.subarray(0, count);
+  } finally { await file.close(); }
 }
 export async function readSceneBundle(directory: string): Promise<ScenePayload> {
+  const root = await lstat(directory);
+  if (!root.isDirectory() || root.isSymbolicLink()) throw new Error("Bundle root must be a directory, not a link");
   const manifest = JSON.parse((await boundedRead(join(directory, "bundle.json"))).toString("utf8"));
   if (manifest.schema !== "quantum-scene-bundle/v1" || Object.keys(manifest).sort().join(",") !== "scene,schema" ||
       !manifest.scene || Object.keys(manifest.scene).sort().join(",") !== "bytes,path,sha256" ||
@@ -36,6 +53,10 @@ export async function readSceneBundle(directory: string): Promise<ScenePayload> 
   const bytes = await boundedRead(join(directory, "scene.json"), manifest.scene.bytes);
   if (hash(bytes) !== manifest.scene.sha256) throw new Error("Scene metadata integrity failed");
   const scene: unknown = JSON.parse(bytes.toString("utf8")); assertScene(scene);
+  const expected = new Set(["bundle.json", "scene.json", ...scene.datasets.map(d => d.path)]);
+  const entries = await readdir(directory, { withFileTypes: true });
+  if (entries.length !== expected.size || entries.some(e => !e.isFile() || e.isSymbolicLink() || !expected.has(e.name)))
+    throw new Error("Bundle contains missing, unexpected or linked files");
   const artifacts: ScenePayload["artifacts"] = {};
   for (const d of scene.datasets) artifacts[d.path] = await boundedRead(join(directory, d.path), d.bytes);
   const payload = { scene, artifacts };

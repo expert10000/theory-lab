@@ -86,6 +86,10 @@ Saved orbital runs replay in **Scenes** and export verified `.qscene` bundles,
 CSV grids or radial SVGs. Math3D is unchanged and is not connected. Scientific
 scope, conventions and tests are in [docs/FIELDS_ORBITALS.md](docs/FIELDS_ORBITALS.md).
 
+**Scenes → Open scene bundle** reopens a trusted `.qscene` folder as a read-only,
+hash-verified preview, including fields and lattice scenes. It does not change
+the folder or create a saved physics run. See [docs/QUANTUM_SCENE.md](docs/QUANTUM_SCENE.md).
+
 ## Saved workspaces and runs
 
 **Save workspace** records the selected tab, preset and all laboratory controls; **Restore** reopens that snapshot after edits or an app restart. Every completed calculation also creates a durable job/result/manifest record under Electron's application user-data directory, with a hash-verified copy of any binary data. Open **Runs** to inspect provenance and export a numerical CSV, an SVG figure, or a JSON manifest using a native save dialog. Stored artifacts are checked again before export. These are development-checkout files; back up the app's user-data directory if you need long-term archival.
