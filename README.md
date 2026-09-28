@@ -2,6 +2,12 @@
 
 An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018–021 add optional Dynamiqs GPU evolution and sweeps plus a finite Ising-chain laboratory with optional QuSpin.
 
+The [delivery roadmap](docs/ROADMAP.md) and
+[post-QLAB plan/status map](docs/POST_QLAB_QVIS_M3D_ROADMAP.md) distinguish
+implemented QVIS-001–007 from remaining generic lattice, reciprocal-space,
+band and streaming work. The supplied Math3D plan is preserved as a separate
+track; it is not a claim that integration is already implemented.
+
 ## Run on Windows
 
 Install Node.js 24 LTS and Python 3.12, then from this repository:
@@ -122,7 +128,7 @@ With a configured host, run `npm run accept:remote` from the local checkout. It 
 
 On 2026-09-27 this passed against a key-only OpenSSH server bound to WSL loopback, with a separate Linux Python 3.12/QuTiP environment. The browser smoke also passed over that SSH route. This is a real SSH transport check on one computer, not acceptance of an external cloud host or long-running deployment.
 
-## Authenticated web laboratory (QLAB-025)
+## Authenticated web laboratory (QLAB-029)
 
 The optional React web client uses an authenticated Node gateway in front of the same supervised worker and versioned contracts. It currently exposes the two-level spectrum and Rabi dynamics, with QuTiP or native computation, recent-run metadata and browser-side SHA-256 verification of evolution data. It does not replace the Electron desktop or expose all its laboratories.
 

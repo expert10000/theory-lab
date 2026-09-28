@@ -1,0 +1,60 @@
+import { test } from "node:test";
+import assert from "node:assert/strict";
+import { readFile } from "node:fs/promises";
+import {
+  DELIVERED_QVIS,
+  POST_QVIS,
+  SOURCE_PLAN_COVERAGE,
+} from "../packages/models/roadmap";
+
+test("roadmap preserves delivered IDs and labels future work as planned", () => {
+  assert.deepEqual(
+    DELIVERED_QVIS.map((r) => r.id),
+    Array.from(
+      { length: 7 },
+      (_, i) => `QVIS-${String(i + 1).padStart(3, "0")}`,
+    ),
+  );
+  assert.ok(DELIVERED_QVIS.every((r) => r.state === "Implemented"));
+  assert.match(DELIVERED_QVIS[5].title, /bundle import/);
+  assert.match(DELIVERED_QVIS[6].title, /convergence/);
+  assert.deepEqual(
+    POST_QVIS.slice(0, 3).map((r) => r.id),
+    ["QVIS-008", "QVIS-009", "QVIS-010"],
+  );
+  assert.ok(POST_QVIS.every((r) => r.state === "Planned"));
+  assert.equal(
+    new Set([...DELIVERED_QVIS, ...POST_QVIS].map((r) => r.id)).size,
+    13,
+  );
+  assert.equal(
+    SOURCE_PLAN_COVERAGE.find((r) => r.id === "QVIS-005")!.state,
+    "Partial",
+  );
+  assert.equal(
+    SOURCE_PLAN_COVERAGE.find((r) => r.id === "QVIS-006")!.state,
+    "Partial",
+  );
+  assert.equal(
+    SOURCE_PLAN_COVERAGE.find((r) => r.id === "QVIS-007")!.state,
+    "Planned",
+  );
+  assert.equal(
+    SOURCE_PLAN_COVERAGE.find((r) => r.id === "M3D-Q01–Q10")!.state,
+    "External / not assessed",
+  );
+});
+
+test("tracked post-QLAB document keeps the source plan and a separate status overlay", async () => {
+  const doc = await readFile("docs/POST_QLAB_QVIS_M3D_ROADMAP.md", "utf8");
+  assert.match(doc, /# Supplied planning reference \(preserved\)/);
+  assert.match(doc, /# 9\. Numbering Freeze/);
+  assert.match(
+    doc,
+    /Acceptance checkmarks in the supplied plan are targets, not test results/,
+  );
+  for (const row of [...DELIVERED_QVIS, ...POST_QVIS])
+    assert.ok(doc.includes(row.id));
+  assert.match(doc, /commit e4afd9a/);
+  assert.match(doc, /planned, not implemented/);
+});

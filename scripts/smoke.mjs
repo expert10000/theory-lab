@@ -134,6 +134,16 @@ try {
       .getByText("Foundation & first spectrum", { exact: true })
       .isVisible(),
   );
+  assert.match(await page.getByTestId("planned-QVIS-008").innerText(), /Planned/);
+  assert.match(await page.getByTestId("planned-QVIS-009").innerText(), /Planned/);
+  assert.match(await page.getByTestId("planned-QVIS-010").innerText(), /Planned/);
+  await page.getByTestId("source-plan-coverage").locator("summary").click();
+  assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
+  assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
+  assert.match(await page.getByTestId("plan-coverage-QVIS-007").innerText(), /Planned/);
+  await page.getByTestId("source-plan-coverage").locator("summary").click();
+  await page.getByTestId("post-roadmap").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-post-roadmap.png", fullPage:true});
   await page.getByRole("tab", { name: "Backend", exact: true }).click();
   assert.ok(await page.getByTestId("backend-page").isVisible());
   assert.ok(

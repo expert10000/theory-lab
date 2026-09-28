@@ -24,6 +24,8 @@ import { AtlasPanel } from "./AtlasPanel";
 import { TopologyLab } from "./TopologyLab";
 import { TOPOLOGY_DEFAULTS } from "../../../packages/models/topology";
 import { OrbitalLab } from "./OrbitalLab";
+import { PostRoadmapPanel } from "./PostRoadmapPanel";
+import { DELIVERED_QVIS } from "../../../packages/models/roadmap";
 import { ORBITAL_DEFAULTS } from "../../../packages/models/orbital";
 import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../../../packages/atlas";
 import { atlasBinding } from "../../../packages/atlas/bindings";
@@ -306,7 +308,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>—</span> Further Lab extensions</div>
+            <div className="future-lab"><span>008</span> Generic lattice scenes</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -534,13 +536,7 @@ export function App() {
                 ["027", "SSH-chain bands, winding & finite edges", "Implemented"],
                 ["028", "QWZ Berry curvature & Chern laboratory", "Implemented"],
                 ["029", "Web Atlas & topology client", "Implemented"],
-                ["QVIS-001", "Portable quantum-scene/v1 contract", "Implemented"],
-                ["QVIS-002", "Reusable scene renderer & verified bundle export", "Implemented"],
-                ["QVIS-003", "Scalar/complex fields, isosurfaces & slices", "Implemented"],
-                ["QVIS-004", "Hydrogenic orbital fields & radial diagnostics", "Implemented"],
-                ["QVIS-005", "SSH bonds, Ising magnetization & QWZ axes", "Implemented"],
-                ["QVIS-006", "Read-only verified scene bundle import", "Implemented"],
-                ["QVIS-007", "Orbital convergence studies & radial nodes", "Implemented"],
+                ...DELIVERED_QVIS.map(({id, title, state}) => [id, title, state]),
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>
@@ -552,6 +548,7 @@ export function App() {
                 Volume VIII chapters 58–59 are still architecture placeholders;
                 mapped example presets are pinned to the inspected theory revision. Hydrogenic orbitals are the first analytic atomic extension; multi-electron atoms, molecules and crystals remain future work.
               </p>
+              <PostRoadmapPanel />
             </section>
           ) : tab === "orbital" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" ? null : (
             <>

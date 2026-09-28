@@ -1,0 +1,927 @@
+# Post-QLAB roadmap — integration and implementation status
+
+Updated 2026-09-28. This file incorporates the supplied
+`MATH3D-2026/POST_QLAB_QVIS_M3D_ROADMAP.md` as a planning reference.
+The source document is preserved below; this status overlay and
+[ROADMAP.md](ROADMAP.md) describe the actual Lab delivery sequence.
+Acceptance checkmarks in the supplied plan are targets, not test results.
+
+## History and numbering reconciliation
+
+Existing commits are not renamed. The original plan places the web client at
+QLAB-025; this repository shipped the Atlas/catalog/bindings/topology additions
+as QLAB-025–028 and the authenticated web client as QLAB-029. New visualization
+work continues under QVIS, not additional QLAB numbers.
+
+QVIS-001–004 match the reference at a deliberately bounded scope.
+The delivered QVIS-005 enriches existing SSH/Ising/QWZ scenes, not arbitrary
+crystals. Delivered QVIS-006 imports verified bundles; delivered QVIS-007 adds
+orbital convergence and radial nodes. Those last two are not the reference
+plan's reciprocal-space and band milestones.
+
+Consequently the next Lab commits fill those gaps as QVIS-008–010. The
+reference's remaining topology, streaming and release goals move to
+QVIS-011–013. This explicitly extends the proposed 001–010 numbering freeze
+rather than relabelling historical commits or prematurely claiming the release.
+M3D-Q01–Q10 retain their proposed names and remain a separate-repository track.
+
+## Delivered Lab milestones
+
+| Historical ID | Delivered scope | Status / evidence |
+| --- | --- | --- |
+| QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |
+| QLAB-018–024 | Optional engines, many-body/circuit UI, supervised SSH transport, worker information | Implemented; availability depends on installed engines/configuration |
+| QLAB-025–028 | Pinned Atlas, tested bindings, SSH and QWZ labs | Implemented; packages/atlas, topology worker and tests |
+| QLAB-029 | Authenticated React web client → gateway → worker | Implemented; apps/web, apps/gateway and web smoke |
+| QVIS-001 | Strict TS/Python scene contract, units, IDs, hashes and bounded binary artifacts | Implemented |
+| QVIS-002 | Independent browser-compatible renderer, saved-result adapters and bundle export | Implemented; Scenes navigation is desktop-only |
+| QVIS-003 | Bounded regular scalar/complex fields, signed lobes, slices, phase and isosurfaces | Implemented; not an unbounded volumetric engine |
+| QVIS-004 | Analytic single-electron hydrogenic 1s–3d laboratory | Implemented; not multi-electron chemistry |
+| QVIS-005 | SSH A/B bonds, exact Ising magnetization, QWZ axes/boundary guides | Implemented; commit 74acf92 |
+| QVIS-006 | Read-only verified .qscene import and provenance inspection | Implemented; commit 9092b07 |
+| QVIS-007 | Fixed-box/fixed-spacing orbital studies and positive radial-node diagnostics | Implemented; commit e4afd9a |
+
+Implemented means code and relevant tests exist, not that every future example
+in the supplied plan is supported. Most recent verification: build/typecheck,
+66 Node tests passed (one unconfigured SSH test skipped), 46 worker tests passed
+(four unavailable optional-engine cases skipped), strict-CSP scene/browser
+tests, authenticated web smoke, and Windows Electron acceptance/restart.
+The earlier v0.1 Linux acceptance record is separate from this Windows run.
+
+## Coverage of the supplied plan
+
+| Reference goal | Actual coverage | Remaining work |
+| --- | --- | --- |
+| QVIS-001 scene contract | Implemented, bounded primitives/fields | Additional vocabularies must be explicit, compatible additions |
+| QVIS-002 reusable renderer | Implemented, browser-compatible package | Product web navigation/import is not yet implemented |
+| QVIS-003 scalar/complex visualization | Implemented, bounded grids | Larger/chunked grids belong to streaming work |
+| QVIS-004 orbital lab | Implemented, analytic hydrogenic examples | No many-electron atom/molecule solver |
+| QVIS-005 lattice/crystal primitives | Partial: SSH/Ising sites/bonds, schematic boundaries | Generic square/honeycomb/cubic fixtures, cells, basis, translations, bounded supercells |
+| QVIS-006 reciprocal/BZ visualization | Partial: QWZ square-BZ perimeter and axes | Reciprocal basis, high-symmetry points/paths, k-point inspection |
+| QVIS-007 band integration | Not implemented as portable scene workflow; SSH 2D bands already exist | Supplied band arrays → scene geometry, selected band/k-point/gap inspection |
+| QVIS-008 Berry/topology visualization | Partial: supplied QWZ lower-band curvature and validated invariant | Reusable supplied scalar/vector topology scenes; additional models are future physics work |
+| QVIS-009 streaming/LOD | Not implemented; current 16 MiB/grid budgets are limits, not streaming | Chunk manifests, lazy verification, bounded memory, cancellation, cache and progressive display |
+| QVIS-010 release freeze | Not complete | Close the remaining acceptance gaps and publish tested compatibility/limitations |
+| M3D-Q01–Q10 | External / not assessed | No Math3D checkout or integration implementation was inspected in this task |
+| Track A Atlas | Partial: pinned catalog and explicit tested model bindings | Progressively unify model metadata; no claim that the reference's whole family list is computed |
+
+## Next three Lab-only commits (planned, not implemented)
+
+1. **QVIS-008 — generic lattice scenes**
+   `feat(qvis): add bounded lattice cells and supercell scene fixtures`
+   Represent sites, basis sites, bonds, unit-cell edges and translations using
+   existing portable primitives. Add square, honeycomb and simple-cubic
+   fixtures with explicit schematic coordinates/units, stable identities,
+   bounded supercells, import/export tests and desktop inspection.
+   A geometry fixture must not pretend to be a worker-computed physics run.
+2. **QVIS-009 — reciprocal-space guides**
+   `feat(qvis): add reciprocal basis and Brillouin-zone scene inspection`
+   Add explicitly supplied reciprocal basis, labelled high-symmetry points
+   and paths, boundaries and k-point inspection. Establish conventions and
+   bounded fixtures first; do not infer a general Wigner–Seitz zone from an
+   arbitrary model or silently identify real/reciprocal selections.
+3. **QVIS-010 — portable band scenes**
+   `feat(qvis): integrate supplied band paths and surfaces with scene inspection`
+   Start with verified existing SSH/QWZ results, preserve supplied energies
+   and k coordinates, and synchronize selected band/k-point and gap readouts.
+   Do not connect periodic seams or infer crossings/topology from coarse
+   samples. Add round-trip, integrity and desktop/browser acceptance tests.
+
+Then QVIS-011 covers supplied Berry/vector/topology extensions, QVIS-012 covers
+chunked data/LOD/cancellation, and QVIS-013 is the evidence-based visualization
+release gate. Product web Scenes remains a release-gate gap, not something
+already shipped merely because the renderer runs in a browser.
+
+Track A feeds metadata in parallel. M3D-Q is documented but not authorized by
+this Lab-only sequence. No direct Lab-to-Math3D worker calls or launch coupling
+are introduced: QuantumResult → QuantumScene → independent consumers.
+
+---
+
+# Supplied planning reference (preserved)
+
+The following is the original proposed roadmap. Its imperative wording and
+checkmarks describe the supplied plan; the overlay above reconciles it with
+checked-in code. In particular, its numbering freeze and "Immediate Next
+Commit" are historical proposals, not the current implementation status.
+
+# Quantum Lab — Post-QLAB Roadmap
+
+## 1. Boundary after QLAB-025
+
+The Quantum Hamiltonian Lab (`QLAB`) sequence reaches its planned application boundary with:
+
+```text
+QLAB-025   Web client
+```
+
+Do not continue indefinitely with `QLAB-026`, `QLAB-027`, etc. After QLAB-025, split development into:
+
+```text
+Track A     Hamiltonian Atlas
+QVIS        Portable Quantum Visualization
+M3D-Q       Math3D Quantum Integration
+```
+
+Target architecture:
+
+```text
+                    HAMILTONIAN ATLAS
+                           |
+                  machine-readable models
+                           |
+                  +--------+--------+
+                  |                 |
+                  v                 v
+                QLAB            TEXTBOOK
+                  |
+                  v
+            QuantumResult
+                  |
+                  v
+            QuantumScene
+                  |
+          +-------+-------+
+          |       |       |
+          v       v       v
+       Desktop   Web    Math3D
+```
+
+The central architectural rule is:
+
+```text
+QuantumResult
+      |
+      v
+QuantumScene
+      |
+      +---- Quantum Lab renderer
+      +---- Web renderer
+      +---- Math3D adapter
+```
+
+Quantum Lab must not acquire special-purpose Math3D calls. Both applications should consume a portable, versioned `quantum-scene/v1` format. Large scientific arrays remain binary artifacts referenced by scene metadata rather than being embedded in JSON.
+
+---
+
+# 2. QVIS — Quantum Visualization Layer
+
+## Goal
+
+Create a reusable scientific visualization layer between numerical quantum results and concrete viewers.
+
+Target consumers:
+
+```text
+Quantum Lab Desktop
+Quantum Lab Web
+Math3D
+future clients
+```
+
+## QVIS-001
+
+```text
+arch(qvis): define portable quantum scene contract
+```
+
+Introduce `quantum-scene/v1`.
+
+Conceptual structure:
+
+```text
+scene
+├── schema
+├── metadata
+├── provenance
+├── coordinateSystem
+├── camera
+├── objects[]
+├── datasets[]
+├── selections
+├── annotations
+└── source
+```
+
+Initial object families:
+
+```text
+point-cloud
+bonds
+vectors
+polyline
+mesh
+scalar-field
+complex-field
+isosurface
+reciprocal-lattice
+```
+
+Requirements:
+
+- strict versioned schema
+- TypeScript and Python representations
+- runtime validation
+- compatibility fixtures
+- explicit units and coordinate systems
+- stable object IDs
+- source/provenance metadata
+- binary artifact references
+- artifact size/hash verification
+
+Do not initially encode atoms or crystals as application-specific special cases. They should be expressible through reusable primitives.
+
+## QVIS-002
+
+```text
+feat(qvis): add reusable quantum scene renderer
+```
+
+Build the renderer as an application-independent package, preferably around the existing `packages/quantum-3d/` boundary.
+
+Support:
+
+```text
+points
+lines
+vectors
+meshes
+labels
+scalar coloring
+camera controls
+visibility
+selection
+inspection
+artifact loading
+```
+
+Preserve the existing Bloch sphere as an early specialized consumer.
+
+## QVIS-003
+
+```text
+feat(qvis): add orbital scalar and complex-field visualization
+```
+
+Add visualization primitives for:
+
+```text
+psi(r)
+|psi(r)|^2
+arg psi(r)
+Re psi(r)
+Im psi(r)
+```
+
+Support:
+
+- volumetric scalar fields
+- complex fields
+- probability density
+- phase
+- signed lobes
+- isosurfaces
+- slices
+- threshold controls
+
+Use the binary data plane for numerical grids.
+
+## QVIS-004
+
+```text
+feat(qvis): add atomic orbital laboratory
+```
+
+First complete field-based scientific laboratory.
+
+Initial examples:
+
+```text
+1s
+2s
+2p
+3s
+3p
+3d
+```
+
+Views:
+
+```text
+|psi|^2 isosurface
+Re psi signed lobes
+Im psi
+phase
+radial probability
+angular structure
+```
+
+Synchronize orbital parameters, 3D fields, 2D slices, and radial plots.
+
+## QVIS-005
+
+```text
+feat(qvis): add lattice and crystal scene primitives
+```
+
+Add reusable representations for:
+
+```text
+sites
+bonds
+unit cells
+basis sites
+translation vectors
+supercells
+periodic boundaries
+```
+
+Initial targets:
+
+```text
+1D chain
+SSH chain
+square lattice
+honeycomb lattice
+simple cubic lattice
+```
+
+This is a visualization/data-model milestone, not yet a full crystallography package.
+
+## QVIS-006
+
+```text
+feat(qvis): add reciprocal-space and Brillouin-zone visualization
+```
+
+Represent:
+
+```text
+reciprocal lattice vectors
+high-symmetry points
+high-symmetry paths
+Brillouin-zone boundaries
+k-points
+selected k-state
+```
+
+Where meaningful, synchronize real-space and reciprocal-space selection.
+
+## QVIS-007
+
+```text
+feat(qvis): add band-structure scene integration
+```
+
+Support `E_n(k)` data.
+
+Views:
+
+```text
+1D high-symmetry band paths
+2D band surfaces
+selected band
+selected k-point
+gap readouts
+crossings
+avoided crossings
+```
+
+Synchronize band plots, k-space scenes, and state metadata.
+
+## QVIS-008
+
+```text
+feat(qvis): add Berry curvature and topology visualization
+```
+
+Support supplied quantities such as:
+
+```text
+Berry connection
+Berry curvature
+Berry phase paths
+spin/pseudospin textures
+topological singularities
+Weyl points
+nodal structures
+```
+
+Initial model targets can include:
+
+```text
+SSH
+Rice-Mele
+QWZ
+BHZ
+BBH
+Kitaev chain
+Weyl
+Landau / Hall
+```
+
+The visualization layer displays computed quantities; it should not silently infer topology itself.
+
+## QVIS-009
+
+```text
+feat(qvis): add quantum field streaming and level-of-detail
+```
+
+Prepare for large datasets with:
+
+```text
+chunked artifacts
+lazy loading
+bounded memory
+progressive refinement
+LOD
+cancellation
+cache reuse
+```
+
+Target data classes:
+
+```text
+large orbital grids
+wavefunction fields
+density fields
+large k-space grids
+band surfaces
+Berry-curvature maps
+time-dependent field sequences
+```
+
+Preserve:
+
+```text
+JSON   = control and metadata
+binary = numerical data
+```
+
+## QVIS-010
+
+```text
+release(qvis): freeze portable quantum visualization v0.1
+```
+
+Acceptance target:
+
+```text
+quantum-scene/v1 validation          ✓
+desktop renderer                     ✓
+web-compatible renderer boundary     ✓
+binary artifact verification         ✓
+atomic orbital scene                 ✓
+lattice scene                        ✓
+Brillouin-zone scene                 ✓
+band visualization                   ✓
+Berry/topology visualization         ✓
+large-data path                      ✓
+selection/inspection                 ✓
+provenance                           ✓
+```
+
+---
+
+# 3. M3D-Q — Math3D Quantum Integration
+
+## Goal
+
+Make Math3D an advanced geometry and field viewer for Quantum Lab without directly coupling the two applications.
+
+## M3D-Q01
+
+```text
+arch(math3d-quantum): define quantum scene importer
+```
+
+Implement:
+
+```text
+quantum-scene/v1
+        |
+        v
+Math3D import adapter
+        |
+        v
+Math3D scene
+```
+
+Validate schema version and artifact integrity before import.
+
+## M3D-Q02
+
+```text
+feat(math3d-quantum): import atomic and orbital scenes
+```
+
+Support:
+
+```text
+orbital isosurfaces
+probability density
+phase/sign visualization
+atomic annotations
+field slices
+```
+
+Preserve scientific metadata and provenance.
+
+## M3D-Q03
+
+```text
+feat(math3d-quantum): add scalar and complex quantum field rendering
+```
+
+Map generic quantum fields onto Math3D geometry/field infrastructure.
+
+Do not duplicate physics computation inside Math3D.
+
+## M3D-Q04
+
+```text
+feat(math3d-quantum): add lattice and crystal visualization
+```
+
+Import:
+
+```text
+sites
+bonds
+basis
+unit cells
+supercells
+translation vectors
+```
+
+Use existing Math3D inspection and selection patterns.
+
+## M3D-Q05
+
+```text
+feat(math3d-quantum): add reciprocal lattice and Brillouin zones
+```
+
+Render:
+
+```text
+reciprocal basis
+Brillouin-zone geometry
+high-symmetry points
+high-symmetry paths
+selected k-points
+```
+
+## M3D-Q06
+
+```text
+feat(math3d-quantum): add band surfaces
+```
+
+Support geometric visualization of `E_n(kx,ky)` and bounded higher-dimensional reciprocal-space datasets.
+
+Provide:
+
+```text
+band selection
+surface inspection
+gap/crossing markers
+k-point picking
+```
+
+## M3D-Q07
+
+```text
+feat(math3d-quantum): add Berry curvature and quantum vector fields
+```
+
+Render supplied:
+
+```text
+Berry curvature
+Berry connection where appropriate
+spin textures
+pseudospin textures
+other quantum vector fields
+```
+
+## M3D-Q08
+
+```text
+feat(math3d-quantum): add topological Hamiltonian visualization
+```
+
+Target:
+
+```text
+QWZ
+BHZ
+BBH
+Kitaev
+Weyl
+nodal structures
+Landau / Hall
+```
+
+Potential views:
+
+```text
+band inversion
+edge/bulk distinction
+Weyl nodes
+Berry-flux structures
+topological-transition sweeps
+```
+
+## M3D-Q09
+
+```text
+feat(math3d-quantum): add Quantum Lab to Math3D round trip
+```
+
+Expose:
+
+```text
+[ Open in Math3D ]
+```
+
+Flow:
+
+```text
+QLab result
+    |
+    v
+QuantumScene
+    |
+    v
+portable serialized scene
+    |
+    v
+Math3D
+    |
+    v
+import + inspect
+```
+
+No hidden QLab-specific scene mutation should be required.
+
+## M3D-Q10
+
+```text
+release(math3d-quantum): freeze QLab Math3D integration v0.1
+```
+
+Acceptance:
+
+```text
+portable scene import              ✓
+artifact verification              ✓
+orbitals                           ✓
+scalar/complex fields              ✓
+lattices                           ✓
+Brillouin zones                    ✓
+band surfaces                      ✓
+Berry/vector fields                ✓
+topological scenes                 ✓
+QLab -> Math3D handoff             ✓
+provenance retained                ✓
+```
+
+---
+
+# 4. Hamiltonian Atlas — Parallel Track A
+
+The Hamiltonian Atlas proceeds in parallel.
+
+Its responsibility is:
+
+```text
+Hamiltonian Atlas = model definitions + formulas + metadata + references
+QLab              = computation and scientific workflows
+QVIS              = portable visualization
+Math3D            = advanced geometry/field inspection
+```
+
+Desired relationship:
+
+```text
+Hamiltonian Atlas entry
+        |
+        +-- formula
+        +-- basis
+        +-- parameters
+        +-- assumptions
+        +-- symmetries
+        +-- conserved quantities
+        +-- important limits
+        +-- observables
+        +-- chapter references
+        +-- computational examples
+                |
+                v
+             QLab model
+                |
+                v
+          QuantumResult
+                |
+                v
+          QuantumScene
+```
+
+Representative Atlas families:
+
+```text
+free particle
+harmonic oscillator
+two-level systems
+spin Hamiltonians
+Zeeman / Stark
+Landau-Zener
+Jaynes-Cummings
+Rabi
+tight-binding
+SSH
+Rice-Mele
+QWZ
+BHZ
+BBH
+Kitaev chain
+Weyl
+Landau / Hall
+Hubbard-like models
+BCS-like models
+```
+
+Long term, the Atlas should become the metadata source for the QLab model browser rather than creating a second independent model registry.
+
+---
+
+# 5. Recommended Development Order
+
+```text
+QLAB-025
+   |
+   v
+QVIS-001 -> QVIS-002 -> QVIS-003 -> QVIS-004 -> QVIS-005
+   -> QVIS-006 -> QVIS-007 -> QVIS-008 -> QVIS-009 -> QVIS-010
+   |
+   v
+M3D-Q01 -> M3D-Q02 -> M3D-Q03 -> M3D-Q04 -> M3D-Q05
+   -> M3D-Q06 -> M3D-Q07 -> M3D-Q08 -> M3D-Q09 -> M3D-Q10
+```
+
+Track A proceeds in parallel:
+
+```text
+A1 -> A2 -> A3 -> A4 -> A5 -> ...
+ |
+ +---- progressively feeds QLab model metadata
+```
+
+QVIS and M3D-Q may overlap after `quantum-scene/v1` becomes sufficiently stable; M3D-Q01 does not necessarily need to wait for every QVIS visualization feature.
+
+---
+
+# 6. Milestone Gates
+
+## Gate 1 — QLAB complete
+
+After QLAB-025:
+
+```text
+desktop client       established
+web client           established
+worker contracts     stable
+physics engines      established
+remote execution     established
+```
+
+Visualization expansion moves to QVIS rather than extending QLAB.
+
+## Gate 2 — Portable visualization
+
+After QVIS-010:
+
+```text
+QuantumResult
+     |
+     v
+QuantumScene
+```
+
+is a stable interoperability boundary.
+
+## Gate 3 — Math3D interoperability
+
+After M3D-Q10:
+
+```text
+QLab
+  |
+  v
+QuantumScene
+  |
+  v
+Math3D
+```
+
+works without direct application coupling.
+
+---
+
+# 7. Long-Term Architecture
+
+```text
+                       THEORY / TEXTBOOK
+                              |
+                              v
+                     HAMILTONIAN ATLAS
+                              |
+                   machine-readable models
+                              |
+                              v
+                    QUANTUM COMPUTATION
+                              |
+                +-------------+-------------+
+                |             |             |
+              QuTiP         Native       optional
+                                        engines
+                |             |             |
+                +-------------+-------------+
+                              |
+                              v
+                        QuantumResult
+                              |
+                              v
+                        QuantumScene
+                              |
+              +---------------+---------------+
+              |               |               |
+              v               v               v
+         QLab Desktop      QLab Web         Math3D
+```
+
+This gives four clean responsibilities:
+
+```text
+Hamiltonian Atlas   model knowledge
+Quantum Lab         computation and scientific workflows
+QVIS                portable quantum visualization
+Math3D              advanced geometry, field and topology inspection
+```
+
+---
+
+# 8. Immediate Next Commit
+
+After completing and freezing QLAB-025:
+
+```text
+QVIS-001
+arch(qvis): define portable quantum scene contract
+```
+
+Primary deliverables:
+
+```text
+quantum-scene/v1 schema
+TypeScript types
+Python models
+runtime validators
+compatibility fixtures
+artifact-reference contract
+coordinate/unit conventions
+provenance/source conventions
+scene examples
+contract tests
+```
+
+Suggested first fixtures:
+
+```text
+bloch-vector.scene.json
+orbital-field.scene.json
+ssh-chain.scene.json
+brillouin-zone.scene.json
+band-surface.scene.json
+berry-field.scene.json
+```
+
+These fixtures establish the interoperability vocabulary before QVIS-002 begins rendering it.
+
+---
+
+# 9. Numbering Freeze
+
+Use these namespaces going forward:
+
+```text
+QLAB-001 ... QLAB-025     Quantum Lab application/platform
+A1 ...                    Hamiltonian Atlas
+QVIS-001 ... QVIS-010     portable quantum visualization
+M3D-Q01 ... M3D-Q10       Math3D quantum integration
+```
+
+This prevents responsibilities from becoming mixed and keeps the history readable.
+
