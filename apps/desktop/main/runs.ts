@@ -8,6 +8,9 @@ import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/mod
 import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
 import { bandSceneFromResult } from "../../../packages/quantum-scene/bands";
 import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
+import {makeSceneStream} from "../../../packages/quantum-scene/stream";
+import {scenePreview} from "../../../packages/quantum-scene/lod";
+import {writeStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const sha = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
@@ -129,8 +132,11 @@ export class RunStore {
     if(view==="bands") return bandSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));
     return sceneFromResult(result, data, manifest.hashes.result, async bytes => sha(bytes));
   }
-  async exportScene(runId: string, parent: string, view?: "standard"|"bands") {
-    return writeSceneBundle(await this.scene(runId,view), parent);
+  async exportScene(runId: string, parent: string, view?: "standard"|"bands",format:"regular"|"stream"="regular") {
+    if(format!=="regular"&&format!=="stream")throw new Error("Unsupported scene bundle format");
+    const payload=await this.scene(runId,view);
+    if(format==="stream"){const digest=async(bytes:Uint8Array)=>sha(bytes),preview=await scenePreview(payload,digest);return writeStreamBundle(await makeSceneStream([{label:"Coarse display subset",payload:preview},{label:"Full supplied samples",payload}],digest),parent);}
+    return writeSceneBundle(payload, parent);
   }
 }
 

@@ -15,6 +15,7 @@ import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
+import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { atlasEntry, atlasUrl } from "../../../packages/atlas";
@@ -22,6 +23,7 @@ import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
   type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
 
 const worker = new WorkerSupervisor(join(__dirname, ".."));
+const sceneStreams=new Map<string,Awaited<ReturnType<typeof openStreamBundle>>>();
 function trusted(event: IpcMainInvokeEvent) {
   if (
     event.senderFrame !== event.sender.mainFrame ||
@@ -277,16 +279,24 @@ app.whenReady().then(() => {
     if(selection.canceled || !selection.filePaths[0]) return null;
     return writeSceneBundle(payload,selection.filePaths[0]);
   });
-  ipcMain.handle("quantum:export-scene", async (event, runId: unknown, view: unknown) => {
+  ipcMain.handle("quantum:export-scene", async (event, runId: unknown, view: unknown,format:unknown) => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
     // Validate saved metadata/data before prompting. Never accept renderer paths/data.
     if(view!==undefined&&view!=="standard"&&view!=="bands") throw new Error("Unsupported scene view");
+    if(format!==undefined&&format!=="regular"&&format!=="stream")throw new Error("Unsupported scene bundle format");
     await runs.scene(runId,view);
     const selection = await dialog.showOpenDialog({ title: "Choose parent folder for a new scene bundle", properties: ["openDirectory"] });
     if (selection.canceled || !selection.filePaths[0]) return null;
-    return runs.exportScene(runId, selection.filePaths[0],view);
+    return runs.exportScene(runId, selection.filePaths[0],view,format);
   });
+  ipcMain.handle("quantum:import-scene-stream",async(event,...args:unknown[])=>{
+    trusted(event);if(args.length)throw new Error("Stream import accepts no renderer paths");
+    const selection=await dialog.showOpenDialog({title:"Open a chunked multilevel .qscene folder",properties:["openDirectory"]});if(selection.canceled||!selection.filePaths[0])return null;
+    const source=await openStreamBundle(selection.filePaths[0]),id=randomUUID();while(sceneStreams.size>=2)sceneStreams.delete(sceneStreams.keys().next().value!);sceneStreams.set(id,source);return{id,manifest:source.manifest};
+  });
+  ipcMain.handle("quantum:scene-chunk",async(event,id:unknown,path:unknown)=>{trusted(event);if(typeof id!=="string"||typeof path!=="string"||!sceneStreams.has(id))throw new Error("Unknown scene stream handle");return sceneStreams.get(id)!.read(path);});
+  ipcMain.handle("quantum:release-scene-stream",(event,id:unknown)=>{trusted(event);if(typeof id!=="string")throw new Error("Invalid scene stream handle");sceneStreams.delete(id);});
   ipcMain.handle("quantum:import-scene", async (event, ...args: unknown[]) => {
     trusted(event);
     if (args.length) throw new Error("Scene import accepts no renderer paths or arguments");

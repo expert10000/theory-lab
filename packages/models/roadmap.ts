@@ -79,15 +79,15 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
     detail:
       "Display supplied quantities; do not infer invariants or invent unsupported physics models.",
   },
-];
-export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-012",
     title: "Chunked artifacts, lazy verification & LOD",
-    state: "Planned",
+    state: "Implemented",
     detail:
-      "Bounded memory, progressive refinement, cancellation and cache reuse.",
+      "Separate bounded multilevel bundles, lazy 64 KiB chunks, 4 MiB cache, retained verified view on cancellation and explicit display subsets.",
   },
+];
+export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-013",
     title: "Portable visualization v0.1 release gate",
@@ -153,8 +153,8 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
   {
     id: "QVIS-009",
     title: "Large-data streaming and LOD",
-    state: "Planned",
-    detail: "Current 16 MiB and grid limits are not streaming.",
+    state: "Implemented (bounded)",
+    detail: "Separate multilevel bundles with lazy verified chunks and cache/cancellation; current per-level grid/memory bounds remain. No unlimited volumes or time player.",
   },
   {
     id: "QVIS-010",

@@ -10,6 +10,8 @@ import latticeFixture from "../packages/quantum-scene/fixtures/lattice-honeycomb
 import reciprocalFixture from "../packages/quantum-scene/fixtures/reciprocal-honeycomb.json";
 import bandFixture from "../packages/quantum-scene/fixtures/bands-ssh.json";
 import { assertScene } from "../packages/quantum-scene";
+import {makeSceneStream} from "../packages/quantum-scene/stream";
+import {scenePreview} from "../packages/quantum-scene/lod";
 
 const scene = structuredClone(fixture.scene);
 scene.objects[0].label = "Fixture vector";
@@ -27,11 +29,15 @@ const extra = [
 ].map(o => ({ ...o, visible: o.id !== "mesh", style: { color: "#79d9c1", opacity: 1, size: .1 } }));
 const complete = { ...scene, objects: [...scene.objects, ...extra] }; assertScene(complete);
 complete.topology={quantities:[{id:"supplied-vector",label:"Supplied pseudospin fixture",kind:"pseudospin",object:complete.objects[0].id,dataset:complete.objects[0].values!,convention:"Synthetic renderer fixture, not a model computation"}],invariants:[],limitations:["No invariant inferred from this supplied vector."]};
+const digest=async(b:Uint8Array)=>createHash("sha256").update(b).digest("hex");
+const fullPayload={scene:complete,artifacts:Object.fromEntries(Object.entries(values).map(([p,v])=>{const b=Buffer.alloc(v.length*8);v.forEach((n,i)=>b.writeDoubleLE(n,i*8));return[p,b];}))};
+const stream=await makeSceneStream([{label:"Coarse display subset",payload:await scenePreview(fullPayload,digest)},{label:"Full supplied samples",payload:fullPayload}],digest);
 const source = `
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {SceneViewer} from './packages/quantum-3d/SceneViewer';
 import {FieldViewer} from './packages/quantum-3d/FieldViewer';
+import {StreamViewer} from './packages/quantum-3d/StreamViewer';
 import {OrbitalConvergence} from './apps/desktop/renderer/OrbitalConvergence';
 import {orbitalJob, ORBITAL_DEFAULTS} from './packages/models/orbital';
 import './packages/quantum-3d/scene.css';
@@ -71,7 +77,13 @@ function StudyHarness() {
   const [busy,setBusy] = React.useState(false);
   return <OrbitalConvergence bridge={bridge} preview={orbitalJob('test',ORBITAL_DEFAULTS)} ready={true} busy={busy} onBusy={setBusy}/>;
 }
-createRoot(document.getElementById('root')).render(location.search.includes('convergence') ? <StudyHarness/> : fields ? <FieldViewer payload={{scene,artifacts}}/> : <SceneViewer payload={{scene, artifacts}} />);
+const chunks=${JSON.stringify(Object.fromEntries(Object.entries(stream.chunks).map(([p,b])=>[p,[...b]])))};
+let slow=true;
+const streamSource={manifest:${JSON.stringify(stream.manifest)},read:async(path,signal)=>{
+  if(slow && !${JSON.stringify(stream.manifest.levels[0].parts.flatMap(p=>p.chunks))}.includes(path)) await new Promise((resolve,reject)=>{signal.addEventListener('abort',()=>reject(new DOMException('Aborted','AbortError')),{once:true});});
+  return new Uint8Array(chunks[path]);
+}};
+createRoot(document.getElementById('root')).render(location.search.includes('stream') ? <><button onClick={()=>{slow=false;}}>Use normal loading</button><StreamViewer source={streamSource}/></> : location.search.includes('convergence') ? <StudyHarness/> : fields ? <FieldViewer payload={{scene,artifacts}}/> : <SceneViewer payload={{scene, artifacts}} />);
 `;
 const output = await build({ stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" }, bundle: true, platform: "browser", format: "esm", write: false, outdir: "memory" });
 const js = output.outputFiles.find(f => f.path.endsWith(".js"))!.text;
@@ -137,6 +149,14 @@ try {
   await page.getByRole("slider",{name:"Scene sample"}).press("End");
   assert.match(await page.getByTestId("lattice-site-inspection").innerText(),/c\(1,1,0\)\/b1 · basis B/);
   await page.getByRole("checkbox",{name:"Primitive cell wireframes"}).uncheck();
+  await page.goto(`${origin}/?stream`);
+  await page.getByTestId("stream-status").filter({hasText:"displayed: Coarse display subset"}).waitFor();
+  await page.getByTestId("refine-scene").click();
+  await page.getByTestId("cancel-scene-load").click();
+  await page.getByTestId("stream-status").filter({hasText:"cancelled"}).waitFor();
+  assert.match(await page.getByTestId("stream-status").innerText(),/displayed: Coarse display subset/);
+  await page.getByRole("button",{name:"Use normal loading"}).click();await page.getByTestId("refine-scene").click();
+  await page.getByTestId("stream-status").filter({hasText:"displayed: Full supplied samples"}).waitFor();
   await page.goto(`${origin}/?convergence`);
   await page.getByTestId("run-orbital-study").click();
   await page.getByTestId("orbital-study-row").waitFor();

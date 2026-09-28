@@ -48,6 +48,7 @@ try {
       "getSceneExample",
       "getStatus",
       "importScene",
+      "importSceneStream",
       "lindblad",
       "listRuns",
       "loadWorkspace",
@@ -56,6 +57,8 @@ try {
       "openAtlasSource",
       "orbital",
       "readData",
+      "readSceneChunk",
+      "releaseSceneStream",
       "restart",
       "run",
       "saveWorkspace",
@@ -138,7 +141,7 @@ try {
   );
   assert.ok(await page.getByText("Generic lattice cells & bounded supercell fixtures", {exact:true}).isVisible());
   assert.ok(await page.getByText("Reciprocal basis & Brillouin-zone inspection",{exact:true}).isVisible());
-  assert.match(await page.getByTestId("planned-QVIS-012").innerText(), /Planned/);
+  assert.match(await page.getByTestId("planned-QVIS-013").innerText(), /Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -803,6 +806,20 @@ try {
   await examplePage.getByTestId("scene-source").filter({hasText:"IMPORTED BUNDLE"}).waitFor();
   assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length)),beforeExamples);
   assert.ok(await page.evaluate(async()=>{try{await window.quantum.getSceneExample({family:"square",repeats:[99,1,1],path:"../outside"});return false;}catch{return true;}}));
+  await examplePage.getByRole("button",{name:"Return to saved run"}).click();
+  await examplePage.getByLabel("Scene saved run").selectOption(orbitalRun.runId);
+  await examplePage.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},parent);
+  await examplePage.getByTestId("export-scene-stream").click();
+  await examplePage.getByRole("status").filter({hasText:"Exported verified scene bundle"}).waitFor();
+  const lodFolder=resolve(parent,`${orbitalRun.runId}-lod.qscene`);
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},lodFolder);
+  await examplePage.getByTestId("import-scene-stream").click();
+  await examplePage.getByTestId("stream-status").filter({hasText:"displayed: Coarse display subset"}).waitFor();
+  await examplePage.getByTestId("refine-scene").click();
+  await examplePage.getByTestId("stream-status").filter({hasText:"displayed: Full supplied samples"}).waitFor();
+  assert.ok(await examplePage.getByTestId("export-scene").isDisabled());
+  assert.ok(await page.evaluate(async()=>{try{await window.quantum.readSceneChunk("unknown","../secret");return false;}catch{return true;}}));
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → QuTiP/Native labs, sweeps and presets; orbital studies; lattice/reciprocal fixtures, supplied SSH/QWZ bands including gap closure, shared sample selection, verified export/import; durable runs, workspace restore, integrity, cancellation, restart and sandbox.",

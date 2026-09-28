@@ -420,7 +420,10 @@ export interface QuantumBridge {
   loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
   listRuns(): Promise<import("./workspace").RunSummary[]>;
   getScene(runId: string, view?: "standard" | "bands"): Promise<import("../quantum-scene").ScenePayload>;
-  exportScene(runId: string, view?: "standard" | "bands"): Promise<string | null>;
+  exportScene(runId: string, view?: "standard" | "bands", format?: "regular"|"stream"): Promise<string | null>;
+  importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;
+  readSceneChunk(id:string,path:string): Promise<Uint8Array>;
+  releaseSceneStream(id:string): Promise<void>;
   importScene(): Promise<import("../quantum-scene").ScenePayload | null>;
   getSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<import("../quantum-scene").ScenePayload>;
   exportSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<string | null>;

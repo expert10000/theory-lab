@@ -8,6 +8,7 @@ import type {
 } from "../../../packages/quantum-scene/examples";
 import { SceneViewer } from "../../../packages/quantum-3d/SceneViewer";
 import { FieldViewer } from "../../../packages/quantum-3d/FieldViewer";
+import {StreamViewer,type SceneStreamSource} from "../../../packages/quantum-3d/StreamViewer";
 import "../../../packages/quantum-3d/scene.css";
 
 export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
@@ -15,7 +16,8 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   const [runId, setRunId] = useState("");
   const [savedPayload, setPayload] = useState<ScenePayload | null>(null);
   const [imported, setImported] = useState<ScenePayload | null>(null);
-  const [source, setSource] = useState<"saved" | "bundle" | "example">("saved");
+  const [source, setSource] = useState<"saved" | "bundle" | "example"|"stream">("saved");
+  const [stream,setStream]=useState<(SceneStreamSource&{id:string})|null>(null);
   const [example, setExample] = useState<{
     request: SceneExampleRequest;
     payload: ScenePayload;
@@ -25,7 +27,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   const [view,setView]=useState<"real"|"reciprocal">("real");
   const [savedView,setSavedView]=useState<"standard"|"bands">("standard");
   const payload =
-    source === "example"
+    source === "stream"?null:source === "example"
       ? (example?.payload ?? null)
       : source === "bundle"
         ? imported
@@ -93,14 +95,14 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
       setBusy(false);
     }
   }
-  async function exportScene() {
+  async function exportScene(format:"regular"|"stream"="regular") {
     const current = runId;
     setBusy(true);
     try {
       const path =
         source === "example" && example
           ? await bridge.exportSceneExample(example.request)
-          : await bridge.exportScene(current,savedView);
+          : await bridge.exportScene(current,savedView,format);
       setMessage(
         path
           ? `Exported verified scene bundle: ${path}`
@@ -132,10 +134,11 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
       setBusy(false);
     }
   }
+  async function importStream(){setBusy(true);try{const s=await bridge.importSceneStream();if(s){if(stream)void bridge.releaseSceneStream(stream.id);setStream({...s,read:async(path,signal)=>{signal.throwIfAborted();const b=await bridge.readSceneChunk(s.id,path);signal.throwIfAborted();return b;}});setSource("stream");setMessage("Opened chunked scene · metadata verified, data checked on demand");}}catch(e){setMessage(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
   return (
     <section className="scene-lab" data-testid="scenes-page">
       <div className="panel scene-intro">
-        <p className="eyebrow">QVIS-001–010 · PORTABLE VISUALIZATION</p>
+        <p className="eyebrow">QVIS-001–012 · PORTABLE VISUALIZATION</p>
         <h2>One result. A portable scene.</h2>
         <p>
           Preview verified saved Bloch trajectories, SSH sublattices and bonds,
@@ -185,6 +188,8 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
           >
             Open scene bundle
           </button>
+          <button data-testid="export-scene-stream" disabled={busy||source!=="saved"||!payload} onClick={()=>void exportScene("stream")}>Export chunked LOD bundle</button>
+          <button data-testid="import-scene-stream" disabled={busy} onClick={()=>void importStream()}>Open chunked scene bundle</button>
           {source !== "saved" && (
             <button
               type="button"
@@ -251,7 +256,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
           never enter numerical run history.
         </p>
         <p data-testid="scene-source">
-          {source === "example"
+          {source==="stream"?"IMPORTED CHUNKED BUNDLE · READ-ONLY · unread chunks are not verified":source === "example"
             ? "GEOMETRY FIXTURE · NO WORKER RUN"
             : source === "bundle"
               ? "IMPORTED BUNDLE · READ-ONLY · hashes verify integrity, not publisher identity"
@@ -273,6 +278,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
           work without a live worker.
         </div>
       )}
+      {source==="stream"&&stream&&<div className="panel"><StreamViewer source={stream}/></div>}
       {payload && (
         <>
           <div className="panel">

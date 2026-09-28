@@ -22,14 +22,14 @@ export async function writeSceneBundle(payload: ScenePayload, parent: string): P
     throw error;
   }
 }
-async function boundedRead(path: string, expected?: number) {
+export async function boundedRead(path: string, expected?: number) {
   const info = await lstat(path);
   const limit = expected ?? 128 * 1024;
   if (!info.isFile() || info.isSymbolicLink() || info.size > limit || (expected !== undefined && info.size !== expected)) throw new Error("Invalid bundle file size or link");
   const file = await open(path, "r");
   try {
     const actual = await file.stat();
-    if (!actual.isFile() || actual.size > limit || (expected !== undefined && actual.size !== expected)) throw new Error("Invalid bundle file size");
+    if (!actual.isFile() || actual.dev!==info.dev || actual.ino!==info.ino || actual.size > limit || (expected !== undefined && actual.size !== expected)) throw new Error("Invalid bundle file size or identity");
     // Read no more than limit+1 even if the file grows after the stat check.
     const bytes = Buffer.alloc(limit + 1);
     let count = 0;

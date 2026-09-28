@@ -44,6 +44,7 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 | QVIS-009 | Explicit dual bases, primitive square/hexagonal/cubic zones, named points and paths | Implemented, bounded fixtures; LATTICE_RECIPROCAL_BANDS.md |
 | QVIS-010 | Supplied SSH band paths/QWZ energy surfaces, synchronized sample/gap inspection and offline bundles | Implemented, bounded two-band models; LATTICE_RECIPROCAL_BANDS.md |
 | QVIS-011 | Reusable supplied Berry scalar/vector/pseudospin/phase quantities and reported invariant states | Implemented; strict TS/Python references, saved SSH/QWZ and synthetic vector compatibility tests |
+| QVIS-012 | Separate bounded multilevel bundles, lazy chunk verification, preview/refine, cancellation and cache reuse | Implemented; 64 MiB unique chunks, 16 MiB per scene, 4 MiB cache; not unlimited-volume streaming |
 
 Implemented means code and relevant tests exist, not that every future example
 in the supplied plan is supported. Verification uses build/typecheck, Node and
@@ -64,7 +65,7 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 | QVIS-006 reciprocal/BZ visualization | Partial: explicit square/honeycomb/cubic dual bases, zones, named points/paths and inspection | General arbitrary-crystal zone construction remains outside bounded fixtures |
 | QVIS-007 band integration | Implemented, bounded: supplied SSH paths/QWZ surfaces, shared band/k-point/gap selection and verified bundles | Arbitrary-crystal bands and additional physics models remain outside this delivery |
 | QVIS-008 Berry/topology visualization | Partial: supplied QWZ lower-band curvature and validated invariant | Reusable supplied scalar/vector topology scenes; additional models are future physics work |
-| QVIS-009 streaming/LOD | Not implemented; current 16 MiB/grid budgets are limits, not streaming | Chunk manifests, lazy verification, bounded memory, cancellation, cache and progressive display |
+| QVIS-009 streaming/LOD | Implemented, bounded: multilevel manifests, lazy chunk verification, preview/refine, bounded cache and cancellation | Unlimited volumes, time-sequence players and out-of-core GPU rendering remain future work |
 | QVIS-010 release freeze | Not complete | Close the remaining acceptance gaps and publish tested compatibility/limitations |
 | M3D-Q01–Q10 | External / not assessed | No Math3D checkout or integration implementation was inspected in this task |
 | Track A Atlas | Partial: pinned catalog and explicit tested model bindings | Progressively unify model metadata; no claim that the reference's whole family list is computed |
