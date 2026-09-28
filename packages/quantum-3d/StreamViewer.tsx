@@ -4,9 +4,9 @@ import type {ScenePayload} from "../quantum-scene";
 import {SceneViewer,browserSceneDigest} from "./SceneViewer";
 import {FieldViewer} from "./FieldViewer";
 
-export interface SceneStreamSource {manifest:SceneStream;read:(path:string,signal:AbortSignal)=>Promise<Uint8Array>}
+export interface SceneStreamSource {manifest:SceneStream;read:(path:string,signal:AbortSignal)=>Promise<Uint8Array>;loader?:SceneChunkLoader}
 export function StreamViewer({source}:{source:SceneStreamSource}) {
-  const loader=useMemo(()=>new SceneChunkLoader(source.manifest,source.read,browserSceneDigest),[source]),controller=useRef<AbortController|null>(null),sequence=useRef(0);
+  const loader=useMemo(()=>source.loader??new SceneChunkLoader(source.manifest,source.read,browserSceneDigest),[source]),controller=useRef<AbortController|null>(null),sequence=useRef(0);
   const [payload,setPayload]=useState<ScenePayload|null>(null),[shown,setShown]=useState(-1),[selected,setSelected]=useState(0),[loading,setLoading]=useState(false),[progress,setProgress]=useState(""),[error,setError]=useState("");
   async function load(level:number){controller.current?.abort();const c=new AbortController();controller.current=c;const serial=++sequence.current;setLoading(true);setError("");setProgress("Verifying selected level…");
     try{const p=await loader.load(level,c.signal,(done,total)=>{if(serial===sequence.current)setProgress(`Verified parts ${done}/${total}`);});if(serial===sequence.current){setPayload(p);setShown(level);setSelected(level);setProgress("Selected level verified");}}

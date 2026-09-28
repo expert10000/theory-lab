@@ -115,10 +115,12 @@ Export of imported data is disabled; **Return to saved run** restores the normal
 saved-run workflow. Cancelling or rejecting another import keeps the previous
 valid preview. No Math3D integration is introduced.
 
-The viewer is proven in an independent browser under strict CSP, but the
-existing web client's navigation does not yet expose Scenes. The first
-integration is file-based; no Math3D launch, importer or live worker bridge is
-part of these milestones.
+The web client's **Portable scenes** exposes the shared viewers under strict
+CSP. Authenticated saved-run views use read-only scene metadata/dataset/chunk
+routes; local folder imports require no token, upload nothing and create no
+runs. Both regular and separate chunked bundles are accepted. The first external
+integration remains file-based; no Math3D launch, importer or live worker bridge
+is part of these milestones. See [the bounded release record](RELEASE_QVIS_V0.1.md).
 
 ## QVIS-008–010: bounded lattices, reciprocal guides and bands
 

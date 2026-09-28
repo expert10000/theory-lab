@@ -6,7 +6,8 @@ import type {
   LatticeFamily,
   SceneExampleRequest,
 } from "../../../packages/quantum-scene/examples";
-import { SceneViewer } from "../../../packages/quantum-3d/SceneViewer";
+import { SceneViewer,browserSceneDigest } from "../../../packages/quantum-3d/SceneViewer";
+import {SceneChunkLoader} from "../../../packages/quantum-scene/stream";
 import { FieldViewer } from "../../../packages/quantum-3d/FieldViewer";
 import {StreamViewer,type SceneStreamSource} from "../../../packages/quantum-3d/StreamViewer";
 import "../../../packages/quantum-3d/scene.css";
@@ -134,11 +135,42 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
       setBusy(false);
     }
   }
-  async function importStream(){setBusy(true);try{const s=await bridge.importSceneStream();if(s){if(stream)void bridge.releaseSceneStream(stream.id);setStream({...s,read:async(path,signal)=>{signal.throwIfAborted();const b=await bridge.readSceneChunk(s.id,path);signal.throwIfAborted();return b;}});setSource("stream");setMessage("Opened chunked scene · metadata verified, data checked on demand");}}catch(e){setMessage(e instanceof Error?e.message:String(e));}finally{setBusy(false);}}
+  async function importStream() {
+    setBusy(true);
+    let opened: string | undefined;
+    try {
+      const s = await bridge.importSceneStream();
+      if (s) {
+        opened = s.id;
+        const next: SceneStreamSource & { id: string } = {
+          ...s,
+          read: async (path, signal) => {
+            signal.throwIfAborted();
+            const bytes = await bridge.readSceneChunk(s.id, path);
+            signal.throwIfAborted();
+            return bytes;
+          },
+        };
+        next.loader = new SceneChunkLoader(s.manifest, next.read, browserSceneDigest);
+        // Keep the old viewer and its handle until the new preview is verified.
+        await next.loader.load(0, new AbortController().signal);
+        if (stream) void bridge.releaseSceneStream(stream.id);
+        setStream(next);
+        setSource("stream");
+        setMessage("Opened chunked scene · preview verified, remaining data checked on demand");
+        opened = undefined;
+      }
+    } catch (error) {
+      if (opened) void bridge.releaseSceneStream(opened);
+      setMessage(`${error instanceof Error ? error.message : String(error)} · previous verified preview retained`);
+    } finally {
+      setBusy(false);
+    }
+  }
   return (
     <section className="scene-lab" data-testid="scenes-page">
       <div className="panel scene-intro">
-        <p className="eyebrow">QVIS-001–012 · PORTABLE VISUALIZATION</p>
+        <p className="eyebrow">QVIS-001–013 · PORTABLE VISUALIZATION</p>
         <h2>One result. A portable scene.</h2>
         <p>
           Preview verified saved Bloch trajectories, SSH sublattices and bonds,

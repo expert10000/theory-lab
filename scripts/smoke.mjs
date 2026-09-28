@@ -141,7 +141,7 @@ try {
   );
   assert.ok(await page.getByText("Generic lattice cells & bounded supercell fixtures", {exact:true}).isVisible());
   assert.ok(await page.getByText("Reciprocal basis & Brillouin-zone inspection",{exact:true}).isVisible());
-  assert.match(await page.getByTestId("planned-QVIS-013").innerText(), /Planned/);
+  assert.match(await page.getByTestId("qvis-release-status").innerText(), /QVIS-001–013 implemented/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);

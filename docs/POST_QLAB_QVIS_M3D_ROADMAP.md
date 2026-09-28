@@ -22,7 +22,8 @@ plan's reciprocal-space and band milestones.
 Consequently Lab commits QVIS-008–010 fill those gaps at a bounded scope. The
 reference's remaining topology, streaming and release goals move to
 QVIS-011–013. This explicitly extends the proposed 001–010 numbering freeze
-rather than relabelling historical commits or prematurely claiming the release.
+rather than relabelling historical commits. The bounded release is now recorded
+in [RELEASE_QVIS_V0.1.md](RELEASE_QVIS_V0.1.md).
 M3D-Q01–Q10 retain their proposed names and remain a separate-repository track.
 
 ## Delivered Lab milestones
@@ -34,7 +35,7 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 | QLAB-025–028 | Pinned Atlas, tested bindings, SSH and QWZ labs | Implemented; packages/atlas, topology worker and tests |
 | QLAB-029 | Authenticated React web client → gateway → worker | Implemented; apps/web, apps/gateway and web smoke |
 | QVIS-001 | Strict TS/Python scene contract, units, IDs, hashes and bounded binary artifacts | Implemented |
-| QVIS-002 | Independent browser-compatible renderer, saved-result adapters and bundle export | Implemented; Scenes navigation is desktop-only |
+| QVIS-002 | Independent browser-compatible renderer, saved-result adapters and bundle export | Implemented; shared desktop/web Scenes as of QVIS-013 |
 | QVIS-003 | Bounded regular scalar/complex fields, signed lobes, slices, phase and isosurfaces | Implemented; not an unbounded volumetric engine |
 | QVIS-004 | Analytic single-electron hydrogenic 1s–3d laboratory | Implemented; not multi-electron chemistry |
 | QVIS-005 | SSH A/B bonds, exact Ising magnetization, QWZ axes/boundary guides | Implemented; commit 74acf92 |
@@ -45,6 +46,7 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 | QVIS-010 | Supplied SSH band paths/QWZ energy surfaces, synchronized sample/gap inspection and offline bundles | Implemented, bounded two-band models; LATTICE_RECIPROCAL_BANDS.md |
 | QVIS-011 | Reusable supplied Berry scalar/vector/pseudospin/phase quantities and reported invariant states | Implemented; strict TS/Python references, saved SSH/QWZ and synthetic vector compatibility tests |
 | QVIS-012 | Separate bounded multilevel bundles, lazy chunk verification, preview/refine, cancellation and cache reuse | Implemented; 64 MiB unique chunks, 16 MiB per scene, 4 MiB cache; not unlimited-volume streaming |
+| QVIS-013 | Bounded portable visualization v0.1 acceptance, web Scenes, read-only saved views/offline imports and compatibility record | Implemented; RELEASE_QVIS_V0.1.md and web/desktop/browser acceptance |
 
 Implemented means code and relevant tests exist, not that every future example
 in the supplied plan is supported. Verification uses build/typecheck, Node and
@@ -58,15 +60,15 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 | Reference goal | Actual coverage | Remaining work |
 | --- | --- | --- |
 | QVIS-001 scene contract | Implemented, bounded primitives/fields | Additional vocabularies must be explicit, compatible additions |
-| QVIS-002 reusable renderer | Implemented, browser-compatible package | Product web navigation/import is not yet implemented |
+| QVIS-002 reusable renderer | Implemented, shared desktop/web Scenes and read-only folder import | Browser export and additional compute controls are not part of this release |
 | QVIS-003 scalar/complex visualization | Implemented, bounded grids | Larger/chunked grids belong to streaming work |
 | QVIS-004 orbital lab | Implemented, analytic hydrogenic examples | No many-electron atom/molecule solver |
 | QVIS-005 lattice/crystal primitives | Partial: square/honeycomb/cubic open fixtures, cells, basis, translations and supercells now exist | Arbitrary crystals and periodic bonds remain outside the bounded example scope |
 | QVIS-006 reciprocal/BZ visualization | Partial: explicit square/honeycomb/cubic dual bases, zones, named points/paths and inspection | General arbitrary-crystal zone construction remains outside bounded fixtures |
 | QVIS-007 band integration | Implemented, bounded: supplied SSH paths/QWZ surfaces, shared band/k-point/gap selection and verified bundles | Arbitrary-crystal bands and additional physics models remain outside this delivery |
-| QVIS-008 Berry/topology visualization | Partial: supplied QWZ lower-band curvature and validated invariant | Reusable supplied scalar/vector topology scenes; additional models are future physics work |
+| QVIS-008 Berry/topology visualization | Partial: reusable supplied scalar/vector/phase quantities and reported invariants; saved SSH/QWZ and synthetic vector fixtures | Additional model engines remain future physics work; the viewer computes no invariants |
 | QVIS-009 streaming/LOD | Implemented, bounded: multilevel manifests, lazy chunk verification, preview/refine, bounded cache and cancellation | Unlimited volumes, time-sequence players and out-of-core GPU rendering remain future work |
-| QVIS-010 release freeze | Not complete | Close the remaining acceptance gaps and publish tested compatibility/limitations |
+| QVIS-010 release freeze | Implemented, bounded: tested compatibility/limits in RELEASE_QVIS_V0.1.md | No standalone installer, arbitrary-size volume engine or Math3D integration is claimed |
 | M3D-Q01–Q10 | External / not assessed | No Math3D checkout or integration implementation was inspected in this task |
 | Track A Atlas | Partial: pinned catalog and explicit tested model bindings | Progressively unify model metadata; no claim that the reference's whole family list is computed |
 
@@ -92,10 +94,11 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
    Do not connect periodic seams or infer crossings/topology from coarse
    samples. Add round-trip, integrity and desktop/browser acceptance tests.
 
-Then QVIS-011 covers supplied Berry/vector/topology extensions, QVIS-012 covers
-chunked data/LOD/cancellation, and QVIS-013 is the evidence-based visualization
-release gate. Product web Scenes remains a release-gate gap, not something
-already shipped merely because the renderer runs in a browser.
+QVIS-011 supplied Berry/vector/topology extensions and QVIS-012 chunked
+data/LOD/cancellation are implemented. QVIS-013 closes the bounded visualization
+release gate with real product web Scenes, authenticated read-only saved views,
+offline imports and explicit compatibility/limits. See QVIS_DELIVERY_011_013.md
+for the implementation scope and RELEASE_QVIS_V0.1.md for acceptance evidence.
 
 Track A feeds metadata in parallel. M3D-Q is documented but not authorized by
 this Lab-only sequence. No direct Lab-to-Math3D worker calls or launch coupling

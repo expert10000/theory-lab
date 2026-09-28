@@ -17,7 +17,7 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
     title: "Reusable scene renderer & verified bundle export",
     state: "Implemented",
     detail:
-      "Browser-compatible package; product Scenes navigation is desktop-only.",
+      "Shared desktop/web viewers; verified desktop export and read-only browser imports.",
   },
   {
     id: "QVIS-003",
@@ -86,16 +86,15 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
     detail:
       "Separate bounded multilevel bundles, lazy 64 KiB chunks, 4 MiB cache, retained verified view on cancellation and explicit display subsets.",
   },
-];
-export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-013",
     title: "Portable visualization v0.1 release gate",
-    state: "Planned",
+    state: "Implemented",
     detail:
-      "Requires missing acceptance targets, including product web Scenes; not a completed release.",
+      "Bounded v0.1 acceptance: desktop/web Scenes, offline imports, strict CSP, compatibility, integrity and documented limits.",
   },
 ];
+export const POST_QVIS: RoadmapEntry[] = [];
 export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
   {
     id: "QVIS-001",
@@ -108,7 +107,7 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     title: "Reusable renderer",
     state: "Implemented (bounded)",
     detail:
-      "Independent browser tests pass; product web Scenes navigation is not shipped.",
+      "Shared renderer, desktop export and product web Scenes with read-only saved views/offline imports.",
   },
   {
     id: "QVIS-003",
@@ -148,7 +147,7 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     title: "Berry/topology visualization",
     state: "Partial",
     detail:
-      "Supplied QWZ curvature/invariant exists; the broader model/vector vocabulary does not.",
+      "Supplied scalar/vector/phase quantities and reported invariants; SSH/QWZ plus explicit vector fixtures. Additional model engines remain future work.",
   },
   {
     id: "QVIS-009",
@@ -159,9 +158,9 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
   {
     id: "QVIS-010",
     title: "Visualization release freeze",
-    state: "Release gate pending",
+    state: "Implemented (bounded)",
     detail:
-      "Reference acceptance checkmarks are targets, not completion evidence.",
+      "Windows Electron/Chrome acceptance and compatibility/limits recorded in RELEASE_QVIS_V0.1.md; no Math3D or unlimited-volume claim.",
   },
   {
     id: "M3D-Q01–Q10",

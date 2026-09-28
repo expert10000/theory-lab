@@ -8,6 +8,9 @@ import { EvolutionCoordinator } from "../desktop/main/evolution";
 import { RunStore } from "../desktop/main/runs";
 import { assertJob, isQuantumResult, type EvolutionJob, type QuantumJob, type QuantumResult } from "../../packages/contracts";
 import { consistentTopologyResult } from "../../packages/models/topology";
+import type {ScenePayload} from "../../packages/quantum-scene";
+import {scenePreview} from "../../packages/quantum-scene/lod";
+import {makeSceneStream} from "../../packages/quantum-scene/stream";
 
 export interface GatewayOptions {
   root: string;
@@ -74,6 +77,10 @@ export async function startGateway(options: GatewayOptions) {
   const coordinator = new EvolutionCoordinator(worker, artifacts, () => {});
   const digest = createHash("sha256").update(options.token).digest();
   let busy = false;
+  let sceneCache:{key:string;payload:ScenePayload}|undefined;
+  let streamCache:{key:string;value:Awaited<ReturnType<typeof makeSceneStream>>}|undefined;
+  let sceneMaterializing=false;
+  const sceneDigest=async(b:Uint8Array)=>createHash("sha256").update(b).digest("hex");
   let allowedOrigin = options.origin ?? "";
   let totalCalls = 0;
   const recentCalls: { at: string; method: string; route: string; status: number; durationMs: number }[] = [];
@@ -105,7 +112,11 @@ export async function startGateway(options: GatewayOptions) {
       const started = performance.now();
       const route = path === "/api/jobs" || path === "/api/runs" ? path :
         /^\/api\/artifacts\/[^/]+$/.test(path) ? "/api/artifacts/:jobId" :
-        /^\/api\/jobs\/[^/]+\/cancel$/.test(path) ? "/api/jobs/:jobId/cancel" : "/api/other";
+        /^\/api\/jobs\/[^/]+\/cancel$/.test(path) ? "/api/jobs/:jobId/cancel" :
+        /^\/api\/scenes\/[^/]+$/.test(path) ? "/api/scenes/:runId" :
+        /^\/api\/scenes\/[^/]+\/stream$/.test(path) ? "/api/scenes/:runId/stream" :
+        /^\/api\/scenes\/[^/]+\/datasets\/[^/]+$/.test(path) ? "/api/scenes/:runId/datasets/:datasetId" :
+        /^\/api\/scenes\/[^/]+\/chunks\/[^/]+$/.test(path) ? "/api/scenes/:runId/chunks/:chunkName" : "/api/other";
       response.once("finish", () => {
         totalCalls++;
         recentCalls.unshift({ at: new Date().toISOString(), method, route, status: response.statusCode,
@@ -123,6 +134,26 @@ export async function startGateway(options: GatewayOptions) {
       json(response, 200, { schema: "gateway-activity/v1", totalCalls, recent: recentCalls }); return;
     }
     if (method === "GET" && path === "/api/runs") { json(response, 200, await runs.list()); return; }
+    const sceneMatch=/^\/api\/scenes\/([A-Za-z0-9_-]{1,100})(?:\/(stream|datasets\/[A-Za-z0-9_-]{1,100}|chunks\/chunk-[a-f0-9]{64}\.f64))?$/.exec(path);
+    if(method==="GET"&&sceneMatch){
+      const query=new URL(request.url!,allowedOrigin).searchParams,view=query.get("view")??"standard";
+      if([...query.keys()].some(k=>k!=="view")||query.getAll("view").length>1||!["standard","bands"].includes(view)){json(response,400,{error:"Invalid scene view query"});return;}
+      const key=`${sceneMatch[1]}/${view}`,kind=sceneMatch[2]??"metadata";
+      if(sceneMaterializing){json(response,409,{error:"Another scene is being materialized"});return;}sceneMaterializing=true;
+      try{
+        if(kind==="stream"||kind.startsWith("chunks/")){
+          let value=streamCache?.key===key?streamCache.value:undefined;
+          if(kind==="stream"||!value){const payload=await runs.scene(sceneMatch[1],view as "standard"|"bands");value=await makeSceneStream([{label:"Coarse display subset",payload:await scenePreview(payload,sceneDigest)},{label:"Full supplied samples",payload}],sceneDigest);streamCache={key,value};}
+          if(kind==="stream"){json(response,200,value.manifest);return;}
+          const bytes=value.chunks[kind.slice(7)];if(!bytes){json(response,404,{error:"Unknown scene chunk"});return;}
+          response.writeHead(200,{"Content-Type":"application/octet-stream","Content-Length":bytes.length,"Cache-Control":"no-store"});response.end(bytes);return;
+        }
+        let payload=sceneCache?.key===key?sceneCache.payload:undefined;if(kind==="metadata"||!payload){payload=await runs.scene(sceneMatch[1],view as "standard"|"bands");sceneCache={key,payload};}
+        if(kind==="metadata"){json(response,200,payload.scene);return;}
+        const d=payload.scene.datasets.find(d=>d.id===kind.slice(9));if(!d){json(response,404,{error:"Unknown scene dataset"});return;}
+        const bytes=payload.artifacts[d.path];response.writeHead(200,{"Content-Type":"application/octet-stream","Content-Length":bytes.length,"Cache-Control":"no-store"});response.end(bytes);
+      }catch{json(response,422,{error:"Verified scene unavailable; select a compatible run/view"});}finally{sceneMaterializing=false;}return;
+    }
     const artifactMatch = /^\/api\/artifacts\/([A-Za-z0-9_-]{1,100})$/.exec(path);
     if (method === "GET" && artifactMatch) {
       try {

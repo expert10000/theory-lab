@@ -24,6 +24,10 @@ const routes = [
   ["POST", "/api/jobs", "Run a v1 spectrum, evolution, circuit or topology job"],
   ["POST", "/api/jobs/:jobId/cancel", "Cancel an active evolution"],
   ["GET", "/api/artifacts/:jobId", "Verified Float64 artifact"],
+  ["GET", "/api/scenes/:runId", "Verified saved scene metadata; optional view=standard|bands"],
+  ["GET", "/api/scenes/:runId/datasets/:datasetId", "Declared scene dataset bytes (read-only)"],
+  ["GET", "/api/scenes/:runId/stream", "Bounded multilevel manifest (read-only)"],
+  ["GET", "/api/scenes/:runId/chunks/:chunkName", "Declared SHA-256 chunk (read-only)"],
 ];
 const engineLabels: Record<string, string> = { qutip: "QuTiP", native: "Native NumPy / SciPy",
   dynamiqs: "Dynamiqs", quspin: "QuSpin", scqubits: "scqubits" };

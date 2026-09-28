@@ -4,8 +4,8 @@ An Electron 44 + React/TypeScript desktop laboratory with a supervised Python wo
 
 The [delivery roadmap](docs/ROADMAP.md) and
 [post-QLAB plan/status map](docs/POST_QLAB_QVIS_M3D_ROADMAP.md) distinguish
-implemented QVIS-001–008 from remaining reciprocal-space,
-band and streaming work. The supplied Math3D plan is preserved as a separate
+implemented QVIS-001–013 from broader future physics and visualization work.
+The supplied Math3D plan is preserved as a separate
 track; it is not a claim that integration is already implemented.
 
 ## Run on Windows
@@ -23,13 +23,18 @@ npm start
 
 On Linux, create `.venv` with `python3.12 -m venv .venv`, then `.venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python`, followed by `npm ci`, `npm run build`, and `npm start`. Ubuntu 22.04 under WSL2/WSLg passed the v0.1 desktop acceptance suite; see [the release record](docs/RELEASE_V0.1.md) for the tested environment and caveats. `QLAB_PYTHON` may specify an alternate interpreter.
 
-## Portable scenes (QVIS-001–010)
+## Portable scenes (QVIS-001–013)
 
 Open **Scenes** or **Portable scenes** in the sidebar to preview saved Dynamics,
 SSH or QWZ runs. Orbit the geometry, inspect Float64 samples, toggle objects and
 export a verified `quantum-scene/v1` bundle to a new `.qscene` folder. Math3D is
 unchanged; a separate importer comes later. See [the scene contract and usage](docs/QUANTUM_SCENE.md).
-The renderer is browser-compatible, but Scenes is currently a desktop UI feature.
+The web client's **Portable scenes** uses the same viewers for authenticated
+saved runs and read-only local `.qscene` folder imports, including fields,
+lattices, reciprocal guides, bands and supplied topology. Imports never upload
+files or create runs and need no token. Desktop also exports/imports chunked
+LOD bundles with lazy verification, cancellation and retained previews.
+See the [bounded QVIS v0.1 release record](docs/RELEASE_QVIS_V0.1.md).
 
 **Scenes → Bounded lattice examples** previews square, honeycomb and simple-cubic
 open supercells with basis sites, nearest-neighbor bonds, cell outlines and
@@ -42,7 +47,7 @@ symmetry points/paths and square, hexagonal or cubic boundaries. For a saved SSH
 or QWZ run, choose **Saved view → SSH / QWZ energy bands** for portable energy
 paths/surfaces, shared sample selection and gap inspection. New QWZ calculations
 include band arrays; older saved QWZ results require a re-run for this view.
-The Roadmap tab marks QVIS-008–010 implemented; no Math3D files are changed.
+The Roadmap tab marks QVIS-001–013 implemented; no Math3D files are changed.
 
 ## First experiment
 

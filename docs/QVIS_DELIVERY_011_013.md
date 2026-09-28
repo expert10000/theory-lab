@@ -42,3 +42,26 @@ invariants. Full levels preserve every original byte. This is bounded preparatio
 for larger collections, not an arbitrary-size volume engine, time-sequence
 player or out-of-core GPU renderer. Decoder, retained-display and GPU buffers
 add memory beyond the payload/cache limits; no total process-heap cap is claimed.
+
+## QVIS-013: bounded v0.1 release gate
+
+Product web **Portable scenes** now uses the same geometry/field/topology/stream
+components as desktop. Saved scenes use authenticated same-origin, read-only
+metadata and binary routes; standard and supplied SSH/QWZ band views preserve
+their source run ID. The browser verifies response budgets, SHA-256 and semantic
+references before display. Gateway preparation is serialized, with one regular
+and one stream cache entry. No arbitrary filesystem paths or upload APIs exist.
+The Worker & API panel lists these routes and sanitized activity patterns.
+
+Local regular/chunked folder import needs no bearer token and never invokes the
+worker, uploads data or records runs. Exact inventories, bounded metadata/files,
+paths, sizes, hashes and semantics are checked. Stream imports verify the first
+level before replacing a valid preview; unread levels remain unverified. Field,
+lattice, reciprocal, band and supplied topology inspection share the desktop
+viewers. Browser export/new physics controls are not part of this delivery.
+
+The Roadmap tab and tracked planning overlay mark QVIS-001–013 implemented at
+their actual bounded scopes. The supplied source plan remains unchanged and
+broader crystal/model goals remain partial. RELEASE_QVIS_V0.1.md records the
+source release's acceptance, formats and explicit limits. No Math3D files,
+cross-app worker calls, standalone installer or remote-deployment claim.
