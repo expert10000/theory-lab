@@ -103,6 +103,17 @@ class SceneLattice(TypedDict):
     basisIndices: str
 
 
+class SceneReciprocal(TypedDict):
+    directBasis: list[list[float]]
+    basis: list[list[float]]
+    directUnit: str
+    reciprocalUnit: str
+    pointObject: str
+    points: list[dict]
+    paths: list[dict]
+    boundaryObjects: list[str]
+
+
 class QuantumScene(TypedDict):
     schema: Literal["quantum-scene/v1"]
     id: str
@@ -114,6 +125,7 @@ class QuantumScene(TypedDict):
     objects: list[SceneObject]
     fields: NotRequired[list[SceneField]]
     lattice: NotRequired[SceneLattice]
+    reciprocal: NotRequired[SceneReciprocal]
     annotations: list[Annotation]
 
 
@@ -186,6 +198,27 @@ def validate_scene(scene: QuantumScene):
             d = datasets.get(lattice[key])
             if not d or d["components"] != components or d["count"] != count:
                 raise ValueError("Lattice dataset mismatch")
+    reciprocal = scene.get("reciprocal")
+    if reciprocal:
+        r = reciprocal
+        objects = {o["id"]: o for o in scene["objects"]}
+        unique([p["id"] for p in r["points"]]); unique([p["object"] for p in r["paths"]]); unique(r["boundaryObjects"])
+        if len(r["basis"]) != len(r["directBasis"]):
+            raise ValueError("Reciprocal dimension mismatch")
+        for i,a in enumerate(r["directBasis"]):
+            for j,b in enumerate(r["basis"]):
+                if abs(sum(v*w for v,w in zip(a,b))-(2*math.pi if i==j else 0)) > 1e-9:
+                    raise ValueError("Reciprocal basis is not dual (2pi convention)")
+        o = objects.get(r["pointObject"])
+        if not o or o["kind"] != "point-cloud" or datasets[o["positions"]]["count"] != len(r["points"]):
+            raise ValueError("Reciprocal point object mismatch")
+        point_ids = {p["id"] for p in r["points"]}
+        for path in r["paths"]:
+            o = objects.get(path["object"])
+            if not o or o["kind"] != "polyline" or datasets[o["positions"]]["count"] != len(path["points"]) or any(p not in point_ids for p in path["points"]):
+                raise ValueError("Reciprocal path mismatch")
+        if any(objects.get(o,{}).get("kind") not in ("polyline","segments") for o in r["boundaryObjects"]):
+            raise ValueError("Reciprocal boundary mismatch")
     c = scene["camera"]
     direction = [t - p for t, p in zip(c["target"], c["position"])]
     u = c["up"]
@@ -233,4 +266,15 @@ def verify_scene_artifacts(scene: QuantumScene, artifacts: dict[str, bytes]):
                 expected = lattice["basis"][int(k)]["position"][axis] + sum(t[axis]*cell[j] for j,t in enumerate(lattice["translations"]))
                 if abs(positions[3*i+axis]-expected) > 1e-9:
                     raise ValueError("Lattice position disagrees with cell and basis")
+    r = scene.get("reciprocal")
+    if r:
+        objects = {o["id"]: o for o in scene["objects"]}
+        def check_points(object_id, points):
+            values = arrays[objects[object_id]["positions"]]
+            for i,p in enumerate(points):
+                if any(abs(v-values[3*i+a]) > 1e-9 for a,v in enumerate(p)):
+                    raise ValueError("Reciprocal point coordinates disagree")
+        check_points(r["pointObject"], [p["position"] for p in r["points"]])
+        for path in r["paths"]:
+            check_points(path["object"], [next(p["position"] for p in r["points"] if p["id"] == id) for id in path["points"]])
     return arrays

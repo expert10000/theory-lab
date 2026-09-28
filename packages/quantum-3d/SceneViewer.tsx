@@ -163,6 +163,9 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
   const lattice = payload.scene.lattice;
   const siteCell = lattice && object?.positions === lattice.sites && ready?.payload === payload ? [...ready.arrays.get(lattice.cells)!.slice(safeIndex*3,safeIndex*3+3)] : null;
   const siteBasis = siteCell ? ready!.arrays.get(lattice!.basisIndices)![safeIndex] : null;
+  const reciprocal=ready?.payload===payload?payload.scene.reciprocal:undefined;
+  const path=reciprocal?.paths.find(p=>p.object===selected);
+  const kPoint=reciprocal && (selected===reciprocal.pointObject ? reciprocal.points[safeIndex] : path ? reciprocal.points.find(p=>p.id===path.points[safeIndex]) : undefined);
   useEffect(() => {
     const current = view.current;
     if (!current) return;
@@ -180,6 +183,22 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
         {fallback && <p className="scene-fallback">WebGL unavailable. Verified numerical inspection remains available below.</p>}
       </div>
       <div className="scene-inspection">
+        {reciprocal && <div className="reciprocal-inspection" data-testid="reciprocal-inspection">
+          <h3>Primitive reciprocal-space inspection</h3>
+          <div className="scene-run-controls">
+            <label>Named k-point<select aria-label="Reciprocal point" value={selected===reciprocal.pointObject?reciprocal.points[safeIndex]?.id??"":""} onChange={e=>{setSelected(reciprocal.pointObject);setIndex(reciprocal.points.findIndex(p=>p.id===e.target.value));}}>
+              <option value="" disabled>Choose a supplied point</option>{reciprocal.points.map(p=><option key={p.id} value={p.id}>{p.label}</option>)}
+            </select></label>
+            <label>Supplied symmetry path<select aria-label="Reciprocal path" value={path?.object??""} onChange={e=>{setSelected(e.target.value);setIndex(0);}}>
+              <option value="" disabled>Choose a supplied path</option>{reciprocal.paths.map(p=><option key={p.object} value={p.object}>{p.label}</option>)}
+            </select></label>
+          </div>
+          <p data-testid="reciprocal-point-value">{kPoint?`${kPoint.label} · k = (${kPoint.position.map(v=>v.toPrecision(7)).join(", ")}) ${reciprocal.reciprocalUnit}`:"Select a named point or inspect a path vertex; no nearest-point inference."}</p>
+          <details><summary>Explicit dual bases and convention</summary>
+            {reciprocal.directBasis.map((a,i)=><p key={i}>a{i+1}=({a.map(v=>v.toPrecision(6)).join(", ")}) {reciprocal.directUnit}; b{i+1}=({reciprocal.basis[i].map(v=>v.toPrecision(6)).join(", ")}) {reciprocal.reciprocalUnit}</p>)}
+            <p>Checked aᵢ·bⱼ = 2πδᵢⱼ. Boundaries and point labels are supplied for this primitive lattice, not an arbitrary-crystal Wigner–Seitz construction. Repeat counts do not fold this primitive zone; no automatic real/reciprocal selection mapping.</p>
+          </details>
+        </div>}
         <label>Inspect object <select aria-label="Inspect scene object" value={selected} onChange={e => { setSelected(e.target.value); setIndex(0); }}>{payload.scene.objects.map(o => <option key={o.id} value={o.id}>{o.label}</option>)}</select></label>
         <label>Sample / vertex {safeIndex + 1} / {count}<input aria-label="Scene sample" type="range" min={0} max={Math.max(0, count - 1)} value={safeIndex} disabled={!count} onChange={e => setIndex(Number(e.target.value))} /></label>
         <div data-testid="scene-coordinate">{point && point.map((v, i) => <span key={i}>{payload.scene.coordinates.axes[i]} = {v.toPrecision(7)} {payload.scene.coordinates.units[i]}<br /></span>)}

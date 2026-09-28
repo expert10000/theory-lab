@@ -28,6 +28,7 @@ export interface QuantumScene {
   datasets: SceneDataset[]; objects: SceneObject[];
   fields?: SceneField[];
   lattice?: SceneLattice;
+  reciprocal?: SceneReciprocal;
   annotations: { id: string; text: string; position: Vec3 }[];
 }
 export interface SceneLattice {
@@ -37,6 +38,13 @@ export interface SceneLattice {
   repeats: [number, number, number];
   boundary: "open";
   sites: string; cells: string; basisIndices: string;
+}
+export interface SceneReciprocal {
+  directBasis: Vec3[]; basis: Vec3[]; directUnit: string; reciprocalUnit: string;
+  pointObject: string;
+  points: {id: string; label: string; position: Vec3}[];
+  paths: {object: string; label: string; points: string[]}[];
+  boundaryObjects: string[];
 }
 export interface ScenePayload { scene: QuantumScene; artifacts: Record<string, Uint8Array> }
 export const MAX_SCENE_BYTES = 16 * 1024 * 1024;
@@ -119,6 +127,19 @@ export function assertScene(value: unknown): asserts value is QuantumScene {
       if (!d || d.components !== components || d.count !== count) throw new Error("Lattice dataset mismatch");
     }
   }
+  if (scene.reciprocal) {
+    const r=scene.reciprocal, objects=new Map(scene.objects.map(o=>[o.id,o]));
+    unique(r.points.map(p=>p.id));unique(r.paths.map(p=>p.object));unique(r.boundaryObjects);
+    if(r.directBasis.length!==r.basis.length) throw new Error("Reciprocal dimension mismatch");
+    r.directBasis.forEach((a,i)=>r.basis.forEach((b,j)=>{if(Math.abs(a.reduce((n,v,k)=>n+v*b[k],0)-(i===j?2*Math.PI:0))>1e-9) throw new Error("Reciprocal basis is not dual (2pi convention)");}));
+    const points=objects.get(r.pointObject);
+    if(!points||points.kind!=="point-cloud"||datasets.get(points.positions)!.count!==r.points.length) throw new Error("Reciprocal point object mismatch");
+    for(const path of r.paths) {
+      const o=objects.get(path.object);
+      if(!o||o.kind!=="polyline"||datasets.get(o.positions)!.count!==path.points.length||path.points.some(id=>!r.points.some(p=>p.id===id))) throw new Error("Reciprocal path mismatch");
+    }
+    for(const id of r.boundaryObjects) if(!["polyline","segments"].includes(objects.get(id)?.kind??"")) throw new Error("Reciprocal boundary mismatch");
+  }
   const { position: p, target: t, up } = scene.camera;
   const direction = t.map((v, i) => v - p[i]);
   const cross = [direction[1] * up[2] - direction[2] * up[1], direction[2] * up[0] - direction[0] * up[2], direction[0] * up[1] - direction[1] * up[0]];
@@ -162,6 +183,16 @@ export async function verifyScenePayload(payload: ScenePayload, digest: (bytes: 
         if(Math.abs(positions[i*3+a]-expected)>1e-9) throw new Error("Lattice position disagrees with cell and basis");
       }
     }
+  }
+  const r=payload.scene.reciprocal;
+  if(r) {
+    const objects=new Map(payload.scene.objects.map(o=>[o.id,o]));
+    const checkPoints=(object:string,points:Vec3[])=>{
+      const values=arrays.get(objects.get(object)!.positions)!;
+      points.forEach((p,i)=>p.forEach((v,a)=>{if(Math.abs(values[i*3+a]-v)>1e-9)throw new Error("Reciprocal point coordinates disagree");}));
+    };
+    checkPoints(r.pointObject,r.points.map(p=>p.position));
+    for(const path of r.paths) checkPoints(path.object,path.points.map(id=>r.points.find(p=>p.id===id)!.position));
   }
   return arrays;
 }

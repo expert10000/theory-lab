@@ -9,6 +9,17 @@ from jsonschema.exceptions import ValidationError
 
 
 class SceneTests(unittest.TestCase):
+    def test_shared_reciprocal_fixtures(self):
+        root = Path(__file__).resolve().parents[3] / "packages/quantum-scene/fixtures"
+        for family in ("square","honeycomb","simple_cubic"):
+            fixture = json.loads((root / f"reciprocal-{family}.json").read_text(encoding="utf-8"))
+            scene=fixture["scene"]
+            artifacts={p:struct.pack(f"<{len(v)}d",*v) for p,v in fixture["values"].items()}
+            verify_scene_artifacts(scene,artifacts)
+            scene["reciprocal"]["basis"][0][0]+=.1
+            with self.assertRaisesRegex(ValueError,"not dual"):
+                validate_scene(scene)
+
     def test_shared_lattice_fixtures_and_identity_checks(self):
         root = Path(__file__).resolve().parents[3] / "packages/quantum-scene/fixtures"
         for family in ("square","honeycomb","simple_cubic"):

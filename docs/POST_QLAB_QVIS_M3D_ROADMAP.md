@@ -41,12 +41,13 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 | QVIS-006 | Read-only verified .qscene import and provenance inspection | Implemented; commit 9092b07 |
 | QVIS-007 | Fixed-box/fixed-spacing orbital studies and positive radial-node diagnostics | Implemented; commit e4afd9a |
 | QVIS-008 | Square/honeycomb/cubic open supercell fixtures, basis/cell inspection and export | Implemented; LATTICE_RECIPROCAL_BANDS.md |
+| QVIS-009 | Explicit dual bases, primitive square/hexagonal/cubic zones, named points and paths | Implemented, bounded fixtures; LATTICE_RECIPROCAL_BANDS.md |
 
 Implemented means code and relevant tests exist, not that every future example
-in the supplied plan is supported. Most recent verification: build/typecheck,
-66 Node tests passed (one unconfigured SSH test skipped), 46 worker tests passed
-(four unavailable optional-engine cases skipped), strict-CSP scene/browser
-tests, authenticated web smoke, and Windows Electron acceptance/restart.
+in the supplied plan is supported. Verification uses build/typecheck, Node and
+worker tests, strict-CSP scene/browser tests and Windows Electron acceptance.
+Unconfigured SSH and unavailable optional-engine tests are explicitly skipped;
+their passing availability cannot be inferred from the rest of the suite.
 The earlier v0.1 Linux acceptance record is separate from this Windows run.
 
 ## Coverage of the supplied plan
@@ -58,7 +59,7 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 | QVIS-003 scalar/complex visualization | Implemented, bounded grids | Larger/chunked grids belong to streaming work |
 | QVIS-004 orbital lab | Implemented, analytic hydrogenic examples | No many-electron atom/molecule solver |
 | QVIS-005 lattice/crystal primitives | Partial: square/honeycomb/cubic open fixtures, cells, basis, translations and supercells now exist | Arbitrary crystals and periodic bonds remain outside the bounded example scope |
-| QVIS-006 reciprocal/BZ visualization | Partial: QWZ square-BZ perimeter and axes | Reciprocal basis, high-symmetry points/paths, k-point inspection |
+| QVIS-006 reciprocal/BZ visualization | Partial: explicit square/honeycomb/cubic dual bases, zones, named points/paths and inspection | General arbitrary-crystal zone construction remains outside bounded fixtures |
 | QVIS-007 band integration | Not implemented as portable scene workflow; SSH 2D bands already exist | Supplied band arrays → scene geometry, selected band/k-point/gap inspection |
 | QVIS-008 Berry/topology visualization | Partial: supplied QWZ lower-band curvature and validated invariant | Reusable supplied scalar/vector topology scenes; additional models are future physics work |
 | QVIS-009 streaming/LOD | Not implemented; current 16 MiB/grid budgets are limits, not streaming | Chunk manifests, lazy verification, bounded memory, cancellation, cache and progressive display |
@@ -75,7 +76,7 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
    fixtures with explicit schematic coordinates/units, stable identities,
    bounded supercells, import/export tests and desktop inspection.
    A geometry fixture must not pretend to be a worker-computed physics run.
-2. **QVIS-009 — reciprocal-space guides**
+2. **QVIS-009 — reciprocal-space guides (implemented, bounded fixtures)**
    `feat(qvis): add reciprocal basis and Brillouin-zone scene inspection`
    Add explicitly supplied reciprocal basis, labelled high-symmetry points
    and paths, boundaries and k-point inspection. Establish conventions and

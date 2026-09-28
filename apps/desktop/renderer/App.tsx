@@ -245,7 +245,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QVIS-008</span>
+          <span className="version">V0.1+ · QVIS-009</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -308,7 +308,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>009</span> Reciprocal-space guides</div>
+            <div className="future-lab"><span>010</span> Portable band scenes</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>

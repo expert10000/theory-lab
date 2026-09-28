@@ -1,0 +1,387 @@
+{
+  "scene": {
+    "schema": "quantum-scene/v1",
+    "id": "fixture-eae40716296a48f431776ce3",
+    "title": "honeycomb · primitive reciprocal fixture",
+    "provenance": {
+      "kind": "geometry-fixture",
+      "runId": "fixture-eae40716296a48f431776ce3",
+      "jobId": "fixture-eae40716296a48f431776ce3",
+      "model": "honeycomb",
+      "engine": "geometry",
+      "engineVersion": "qvis/1",
+      "computedAt": "not applicable (no calculation)",
+      "resultSha256": "eae40716296a48f431776ce3b3102b6190b8aeaae32eac4cc1311b3e40a5d9f9",
+      "adapter": "qvis/1",
+      "parameters": {
+        "zone": "primitive",
+        "convention": "ai dot bj = 2pi deltaij"
+      }
+    },
+    "coordinates": {
+      "handedness": "right",
+      "axes": [
+        "kx",
+        "ky",
+        "kz"
+      ],
+      "units": [
+        "rad / schematic primitive spacing",
+        "rad / schematic primitive spacing",
+        "rad / schematic primitive spacing"
+      ]
+    },
+    "camera": {
+      "position": [
+        12,
+        -10,
+        10
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ]
+    },
+    "objects": [
+      {
+        "id": "symmetry-points",
+        "label": "Named high-symmetry k-points",
+        "kind": "point-cloud",
+        "positions": "symmetry-points",
+        "visible": true,
+        "style": {
+          "color": "#f2b36f",
+          "opacity": 1,
+          "size": 0.15
+        }
+      },
+      {
+        "id": "primitive-bz",
+        "label": "Supplied primitive Brillouin-zone boundary",
+        "kind": "polyline",
+        "positions": "primitive-bz",
+        "visible": true,
+        "style": {
+          "color": "#79d9c1",
+          "opacity": 1,
+          "size": 1
+        }
+      },
+      {
+        "id": "symmetry-path",
+        "label": "Γ → M → K → Γ",
+        "kind": "polyline",
+        "positions": "symmetry-path",
+        "visible": true,
+        "style": {
+          "color": "#f2b36f",
+          "opacity": 1,
+          "size": 1
+        }
+      },
+      {
+        "id": "reciprocal-b1",
+        "label": "Reciprocal b1 (2π convention)",
+        "kind": "vectors",
+        "positions": "reciprocal-origin-0",
+        "visible": true,
+        "style": {
+          "color": "#5995f0",
+          "opacity": 1,
+          "size": 1
+        },
+        "values": "reciprocal-basis-0"
+      },
+      {
+        "id": "reciprocal-b2",
+        "label": "Reciprocal b2 (2π convention)",
+        "kind": "vectors",
+        "positions": "reciprocal-origin-1",
+        "visible": true,
+        "style": {
+          "color": "#5995f0",
+          "opacity": 1,
+          "size": 1
+        },
+        "values": "reciprocal-basis-1"
+      }
+    ],
+    "datasets": [
+      {
+        "id": "symmetry-points",
+        "path": "symmetry-points.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 3,
+        "unit": "rad / schematic primitive spacing",
+        "bytes": 72,
+        "sha256": "3a3ebfe4ae3c8f4ae0eeb0875b3424fd8302288c76466cf765bb44eb9776d4d5"
+      },
+      {
+        "id": "primitive-bz",
+        "path": "primitive-bz.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 7,
+        "unit": "rad / schematic primitive spacing",
+        "bytes": 168,
+        "sha256": "2d7fbedea894d98f533edbf6ec1adbb12f9198cdb59cb1efcb073872f22f3fa9"
+      },
+      {
+        "id": "symmetry-path",
+        "path": "symmetry-path.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 4,
+        "unit": "rad / schematic primitive spacing",
+        "bytes": 96,
+        "sha256": "2ec89d23d2ff5450265d55c3dc27cd659106fb47c062ecc7b73ef234d341c099"
+      },
+      {
+        "id": "reciprocal-origin-0",
+        "path": "reciprocal-origin-0.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "rad / schematic primitive spacing",
+        "bytes": 24,
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+      },
+      {
+        "id": "reciprocal-basis-0",
+        "path": "reciprocal-basis-0.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "rad / schematic primitive spacing",
+        "bytes": 24,
+        "sha256": "9108abb345900e81c0f164a0e6abea89994bfbd4845d9e1e3a361c45aa506341"
+      },
+      {
+        "id": "reciprocal-origin-1",
+        "path": "reciprocal-origin-1.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "rad / schematic primitive spacing",
+        "bytes": 24,
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+      },
+      {
+        "id": "reciprocal-basis-1",
+        "path": "reciprocal-basis-1.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "rad / schematic primitive spacing",
+        "bytes": 24,
+        "sha256": "847c74f2cf12262319e4570060f9fe70c4206ffbdf2e11e2e4e0184d6b6ff46e"
+      }
+    ],
+    "annotations": [
+      {
+        "id": "reciprocal-label-0",
+        "text": "b1",
+        "position": [
+          3.6275987284684357,
+          -2.0943951023931953,
+          0
+        ]
+      },
+      {
+        "id": "reciprocal-label-1",
+        "text": "b2",
+        "position": [
+          0,
+          4.1887902047863905,
+          0
+        ]
+      },
+      {
+        "id": "k-label-Gamma",
+        "text": "Γ",
+        "position": [
+          0,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "k-label-M",
+        "text": "M",
+        "position": [
+          1.8137993642342178,
+          1.0471975511965976,
+          0
+        ]
+      },
+      {
+        "id": "k-label-K",
+        "text": "K",
+        "position": [
+          2.4183991523122903,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "primitive-zone-note",
+        "text": "Supplied primitive zone · repeats do not fold the zone · geometry only",
+        "position": [
+          0,
+          0,
+          -1
+        ]
+      }
+    ],
+    "reciprocal": {
+      "directBasis": [
+        [
+          1.7320508075688772,
+          0,
+          0
+        ],
+        [
+          0.8660254037844386,
+          1.5,
+          0
+        ]
+      ],
+      "basis": [
+        [
+          3.6275987284684357,
+          -2.0943951023931953,
+          0
+        ],
+        [
+          0,
+          4.1887902047863905,
+          0
+        ]
+      ],
+      "directUnit": "schematic primitive spacing",
+      "reciprocalUnit": "rad / schematic primitive spacing",
+      "pointObject": "symmetry-points",
+      "points": [
+        {
+          "id": "Gamma",
+          "label": "Γ",
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "id": "M",
+          "label": "M",
+          "position": [
+            1.8137993642342178,
+            1.0471975511965976,
+            0
+          ]
+        },
+        {
+          "id": "K",
+          "label": "K",
+          "position": [
+            2.4183991523122903,
+            0,
+            0
+          ]
+        }
+      ],
+      "paths": [
+        {
+          "object": "symmetry-path",
+          "label": "Γ → M → K → Γ",
+          "points": [
+            "Gamma",
+            "M",
+            "K",
+            "Gamma"
+          ]
+        }
+      ],
+      "boundaryObjects": [
+        "primitive-bz"
+      ]
+    }
+  },
+  "values": {
+    "symmetry-points.f64": [
+      0,
+      0,
+      0,
+      1.8137993642342178,
+      1.0471975511965976,
+      0,
+      2.4183991523122903,
+      0,
+      0
+    ],
+    "primitive-bz.f64": [
+      2.4183991523122903,
+      0,
+      0,
+      1.2091995761561454,
+      2.0943951023931953,
+      0,
+      -1.2091995761561447,
+      2.0943951023931957,
+      0,
+      -2.4183991523122903,
+      2.9616847809399187e-16,
+      0,
+      -1.2091995761561463,
+      -2.094395102393195,
+      0,
+      1.2091995761561454,
+      -2.0943951023931953,
+      0,
+      2.4183991523122903,
+      -5.923369561879837e-16,
+      0
+    ],
+    "symmetry-path.f64": [
+      0,
+      0,
+      0,
+      1.8137993642342178,
+      1.0471975511965976,
+      0,
+      2.4183991523122903,
+      0,
+      0,
+      0,
+      0,
+      0
+    ],
+    "reciprocal-origin-0.f64": [
+      0,
+      0,
+      0
+    ],
+    "reciprocal-basis-0.f64": [
+      3.6275987284684357,
+      -2.0943951023931953,
+      0
+    ],
+    "reciprocal-origin-1.f64": [
+      0,
+      0,
+      0
+    ],
+    "reciprocal-basis-1.f64": [
+      0,
+      4.1887902047863905,
+      0
+    ]
+  }
+}

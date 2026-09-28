@@ -1,4 +1,6 @@
 import type { QuantumResult } from "../contracts";
+import { SceneBuilder } from "./builder";
+import { addReciprocalGuides } from "./reciprocal";
 import { assertScene, decodeDataset, verifyScenePayload, type QuantumScene, type SceneObject, type ScenePayload } from "./index";
 
 export function supportsScene(operation: string, model: string): boolean {
@@ -149,6 +151,12 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
       scene.annotations.push({ id: `${id}-label`, text: label, position: [...position] });
     }
   } else throw new Error("Result/model analysis mismatch");
+  if(result.operation === "topology" && result.model.type === "qwz") {
+    const b=new SceneBuilder(scene,digest);
+    Object.assign(b.payload.artifacts,artifacts);
+    await addReciprocalGuides(b,"square","lattice constant a=1","rad / lattice constant");
+    Object.assign(artifacts,b.payload.artifacts);
+  }
   assertScene(scene);
   const payload = { scene, artifacts };
   await verifyScenePayload(payload, digest);

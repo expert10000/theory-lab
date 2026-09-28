@@ -137,7 +137,7 @@ try {
       .isVisible(),
   );
   assert.ok(await page.getByText("Generic lattice cells & bounded supercell fixtures", {exact:true}).isVisible());
-  assert.match(await page.getByTestId("planned-QVIS-009").innerText(), /Planned/);
+  assert.ok(await page.getByText("Reciprocal basis & Brillouin-zone inspection",{exact:true}).isVisible());
   assert.match(await page.getByTestId("planned-QVIS-010").innerText(), /Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -623,7 +623,7 @@ try {
     await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
     await page.screenshot({ path: `artifacts/desktop-scene-${run.model}.png`, fullPage: true });
     if (run.model === "ssh") assert.ok(await page.getByRole("checkbox", {name:/Intracell A–B/}).isChecked());
-    else assert.ok(await page.getByRole("checkbox", {name:/Brillouin-zone boundary/}).isChecked());
+    else assert.ok(await page.getByRole("checkbox", {name:"Brillouin-zone boundary at curvature height 0 (not a mesh seam)",exact:true}).isChecked());
   }
   const isingSceneRun = savedRuns.find(r => r.model === "ising_chain");
   assert.ok(isingSceneRun);
@@ -744,6 +744,18 @@ try {
     await page.screenshot({path:`artifacts/desktop-lattice-${family}.png`,fullPage:true});
   }
   assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length)),beforeExamples);
+  await examplePage.getByLabel("Geometry view").selectOption("reciprocal");
+  for(const family of ["square","honeycomb","simple_cubic"]) {
+    await examplePage.getByLabel("Geometry family").selectOption(family);
+    await examplePage.getByTestId("open-geometry-example").click();
+    await examplePage.getByTestId("reciprocal-inspection").waitFor();
+    await examplePage.getByLabel("Reciprocal point").selectOption(family==="honeycomb"?"K":family==="square"?"M":"R");
+    await examplePage.getByTestId("reciprocal-point-value").filter({hasText:"rad / schematic"}).waitFor();
+    await examplePage.getByLabel("Reciprocal path").selectOption("symmetry-path");
+    await examplePage.getByLabel("Scene sample").focus();await examplePage.getByLabel("Scene sample").press("End");
+    await examplePage.getByTestId("reciprocal-inspection").scrollIntoViewIfNeeded();
+    await page.screenshot({path:`artifacts/desktop-reciprocal-${family}.png`,fullPage:true});
+  }
   const exampleParent=resolve("artifacts",`lattice-export-${Date.now()}`);
   await mkdir(exampleParent);
   await app.evaluate(({dialog},parent)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[parent]});},exampleParent);

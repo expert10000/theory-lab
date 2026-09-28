@@ -6,6 +6,8 @@
 .scene-run-controls select, .scene-inspection select { width: 100%; }
 .scene-run-controls select, .scene-inspection select { padding: 9px; background: #0e1720; color: #dceee9; border: 1px solid #2c414d; border-radius: 4px; }
 .scene-run-controls button, .scene-toolbar button { padding: 9px 13px; background: #1a3438; color: #8ddcc8; border: 1px solid #2b494d; border-radius: 4px; }
+.scene-run-controls input[type=number] { padding: 9px; background: #0e1720; color: #dceee9; border: 1px solid #2c414d; border-radius: 4px; width: 100%; }
+.reciprocal-inspection { grid-column: 1 / -1; border-top: 1px solid #2c414d; padding: 18px 0; }
 .scene-viewer { padding: 18px; }
 .scene-toolbar { padding-bottom: 14px; color: #85d9c4; font-size: 12px; }
 .scene-toolbar small { color: #98aebb; }

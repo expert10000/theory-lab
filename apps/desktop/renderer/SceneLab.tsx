@@ -22,6 +22,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   } | null>(null);
   const [family, setFamily] = useState<LatticeFamily>("square"),
     [repeats, setRepeats] = useState(["3", "3", "1"]);
+  const [view,setView]=useState<"real"|"reciprocal">("real");
   const payload =
     source === "example"
       ? (example?.payload ?? null)
@@ -117,6 +118,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
       const request: SceneExampleRequest = {
         family,
         repeats: repeats.map(Number) as [number, number, number],
+        view,
       };
       if (repeats.some((v) => !v.trim()))
         throw new Error("Every repeat count is required");
@@ -132,7 +134,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   return (
     <section className="scene-lab" data-testid="scenes-page">
       <div className="panel scene-intro">
-        <p className="eyebrow">QVIS-001–008 · PORTABLE VISUALIZATION</p>
+        <p className="eyebrow">QVIS-001–009 · PORTABLE VISUALIZATION</p>
         <h2>One result. A portable scene.</h2>
         <p>
           Preview verified saved Bloch trajectories, SSH sublattices and bonds,
@@ -193,6 +195,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
         </div>
         <h3>Bounded lattice examples</h3>
         <div className="scene-run-controls">
+          <label>Geometry view<select aria-label="Geometry view" value={view} disabled={busy} onChange={e=>setView(e.target.value as "real"|"reciprocal")}><option value="real">Real-space cells</option><option value="reciprocal">Primitive reciprocal zone</option></select></label>
           <label>
             Family
             <select

@@ -58,15 +58,15 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
     detail:
       "Square, honeycomb and simple cubic; explicit basis, bonds and translations. Geometry is not a computed physics run.",
   },
-];
-export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-009",
     title: "Reciprocal basis & Brillouin-zone inspection",
-    state: "Planned",
+    state: "Implemented",
     detail:
       "Supplied high-symmetry points/paths, boundaries and k-point inspection.",
   },
+];
+export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-010",
     title: "Portable band paths & surfaces",
@@ -135,7 +135,7 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     title: "Reciprocal-space and Brillouin zones",
     state: "Partial",
     detail:
-      "QWZ perimeter/axes exist; generic reciprocal bases and symmetry paths do not.",
+      "Square/honeycomb/cubic primitive fixtures and QWZ guides now have explicit dual bases, named points and paths. No arbitrary-crystal BZ construction.",
   },
   {
     id: "QVIS-007",

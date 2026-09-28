@@ -7,6 +7,7 @@ import { chromium } from "playwright";
 import fixture from "../packages/quantum-scene/fixtures/bloch-vector.json";
 import fieldFixture from "../packages/quantum-scene/fixtures/complex-field.json";
 import latticeFixture from "../packages/quantum-scene/fixtures/lattice-honeycomb.json";
+import reciprocalFixture from "../packages/quantum-scene/fixtures/reciprocal-honeycomb.json";
 import { assertScene } from "../packages/quantum-scene";
 
 const scene = structuredClone(fixture.scene);
@@ -35,8 +36,9 @@ import './packages/quantum-3d/scene.css';
 import './packages/ui/theme.css';
 const fields = location.search.includes('fields');
 const lattice = location.search.includes('lattice');
-const scene = lattice ? ${JSON.stringify(latticeFixture.scene)} : fields ? ${JSON.stringify(fieldFixture.scene)} : ${JSON.stringify(complete)};
-const values = lattice ? ${JSON.stringify(latticeFixture.values)} : fields ? ${JSON.stringify(fieldFixture.values)} : ${JSON.stringify(values)};
+const reciprocal = location.search.includes('reciprocal');
+const scene = reciprocal ? ${JSON.stringify(reciprocalFixture.scene)} : lattice ? ${JSON.stringify(latticeFixture.scene)} : fields ? ${JSON.stringify(fieldFixture.scene)} : ${JSON.stringify(complete)};
+const values = reciprocal ? ${JSON.stringify(reciprocalFixture.values)} : lattice ? ${JSON.stringify(latticeFixture.values)} : fields ? ${JSON.stringify(fieldFixture.values)} : ${JSON.stringify(values)};
 const artifacts = Object.fromEntries(Object.entries(values).map(([path, values]) => {
   const bytes = new Uint8Array(values.length * 8), view = new DataView(bytes.buffer);
   values.forEach((v, i) => view.setFloat64(i*8, v, true)); return [path, bytes];
@@ -107,6 +109,13 @@ try {
   await page.getByLabel("Field quantity").selectOption("imaginary");
   await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.screenshot({path:"artifacts/field-browser.png",fullPage:true});
+  await page.goto(`${origin}/?reciprocal`);
+  await page.getByTestId("reciprocal-inspection").waitFor();
+  await page.getByLabel("Reciprocal point").selectOption("K");
+  assert.match(await page.getByTestId("reciprocal-point-value").innerText(),/K · k =/);
+  await page.getByLabel("Reciprocal path").selectOption("symmetry-path");
+  await page.getByLabel("Scene sample").focus();await page.getByLabel("Scene sample").press("End");
+  assert.match(await page.getByTestId("reciprocal-point-value").innerText(),/Γ · k =/);
   await page.goto(`${origin}/?lattice`);
   await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.getByLabel("Inspect scene object").selectOption("lattice-sites-object");

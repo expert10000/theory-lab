@@ -34,9 +34,15 @@ publisher. The three checked-in small fixtures exercise TS/Python compatibility;
 tests also cover 8³ bounds, nearest-neighbor lengths, bad identities/coordinates,
 degenerate translations, paired segments and bundle round trips.
 
-## QVIS-009 — reciprocal-space guides (planned)
+## QVIS-009 — reciprocal-space guides (implemented, bounded fixtures)
 
-Explicit reciprocal bases, bounded named points/paths and Brillouin-zone fixtures.
+Choose **Geometry view → Primitive reciprocal zone** in Scenes. Square,
+honeycomb and simple-cubic fixtures supply dual bases (aᵢ·bⱼ=2πδᵢⱼ), named
+symmetry points, selectable paths and zone boundaries. Repeats do not fold the
+primitive zone. Named-point/path selection shares the original-coordinate
+inspector and marker. Saved QWZ curvature scenes also include square guides.
+Both validators check duality, references and stored point/path coordinates;
+bundles retain these guides offline. Coordinates use rad per declared spacing.
 No arbitrary-crystal Wigner–Seitz construction or implicit coordinate conversion.
 
 ## QVIS-010 — portable band scenes (planned)

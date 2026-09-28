@@ -1,9 +1,12 @@
 import { SceneBuilder, type SceneDigest } from "./builder";
+import { addReciprocalGuides } from "./reciprocal";
 import type { QuantumScene, Vec3 } from "./index";
-export type LatticeFamily = "square" | "honeycomb" | "simple_cubic";
+import {latticeDefinition, type LatticeFamily} from "./lattice-definition";
+export type {LatticeFamily} from "./lattice-definition";
 export interface SceneExampleRequest {
   family: LatticeFamily;
   repeats: [number, number, number];
+  view?: "real" | "reciprocal";
 }
 export function assertExampleRequest(
   value: unknown,
@@ -12,7 +15,8 @@ export function assertExampleRequest(
   if (
     !v ||
     typeof v !== "object" ||
-    Object.keys(v).sort().join(",") !== "family,repeats" ||
+    !["family,repeats","family,repeats,view"].includes(Object.keys(v).sort().join(",")) ||
+    (v.view !== undefined && !["real","reciprocal"].includes(v.view)) ||
     !["square", "honeycomb", "simple_cubic"].includes(v.family) ||
     !Array.isArray(v.repeats) ||
     v.repeats.length !== 3 ||
@@ -23,39 +27,12 @@ export function assertExampleRequest(
       "Invalid geometry example: supported family, repeats 1…8, planar z=1; no paths or extra fields",
     );
 }
-export function latticeDefinition(family: LatticeFamily) {
-  if (family === "honeycomb")
-    return {
-      dimensions: 2 as const,
-      translations: [
-        [Math.sqrt(3), 0, 0],
-        [Math.sqrt(3) / 2, 1.5, 0],
-      ] as Vec3[],
-      basis: [
-        { label: "A", position: [0, 0, 0] as Vec3 },
-        { label: "B", position: [0, 1, 0] as Vec3 },
-      ],
-    };
-  return {
-    dimensions: (family === "simple_cubic" ? 3 : 2) as 2 | 3,
-    translations: (family === "simple_cubic"
-      ? [
-          [1, 0, 0],
-          [0, 1, 0],
-          [0, 0, 1],
-        ]
-      : [
-          [1, 0, 0],
-          [0, 1, 0],
-        ]) as Vec3[],
-    basis: [{ label: "A", position: [0, 0, 0] as Vec3 }],
-  };
-}
 export async function sceneExample(
   request: SceneExampleRequest,
   digest: SceneDigest,
 ) {
   assertExampleRequest(request);
+  if(request.view === "reciprocal") return reciprocalExample(request,digest);
   const descriptor = JSON.stringify({
     schema: "qvis-geometry-example/1",
     family: request.family,
@@ -234,5 +211,16 @@ export async function sceneExample(
     text: "Geometry fixture · open boundaries · no Hamiltonian, atom species or worker job",
     position: [center[0], center[1], center[2] + 1],
   });
+  return b.finish();
+}
+async function reciprocalExample(request:SceneExampleRequest,digest:SceneDigest) {
+  const hash=await digest(new TextEncoder().encode(JSON.stringify({schema:"qvis-reciprocal-example/1",family:request.family}))),id=`fixture-${hash.slice(0,24)}`;
+  const scene:QuantumScene={schema:"quantum-scene/v1",id,title:`${request.family.replaceAll("_"," ")} · primitive reciprocal fixture`,
+    provenance:{kind:"geometry-fixture",runId:id,jobId:id,model:request.family,engine:"geometry",engineVersion:"qvis/1",computedAt:"not applicable (no calculation)",resultSha256:hash,adapter:"qvis/1",parameters:{zone:"primitive",convention:"ai dot bj = 2pi deltaij"}},
+    coordinates:{handedness:"right",axes:["kx","ky","kz"],units:["rad / schematic primitive spacing","rad / schematic primitive spacing","rad / schematic primitive spacing"]},
+    camera:{position:[12,-10,10],target:[0,0,0],up:[0,0,1]},objects:[],datasets:[],annotations:[]};
+  const b=new SceneBuilder(scene,digest);
+  await addReciprocalGuides(b,request.family);
+  scene.annotations.push({id:"primitive-zone-note",text:"Supplied primitive zone · repeats do not fold the zone · geometry only",position:[0,0,-1]});
   return b.finish();
 }
