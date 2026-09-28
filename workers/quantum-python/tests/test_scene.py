@@ -1,0 +1,55 @@
+import copy
+import json
+import struct
+import unittest
+from pathlib import Path
+from quantum_worker.scene import validate_scene, verify_scene_artifacts
+from jsonschema.exceptions import ValidationError
+
+
+class SceneTests(unittest.TestCase):
+    def setUp(self):
+        self.fixture = json.loads((Path(__file__).resolve().parents[3] / "packages/quantum-scene/fixtures/bloch-vector.json").read_text())
+
+    def test_shared_fixture_and_binary_hashes(self):
+        scene = self.fixture["scene"]
+        validate_scene(scene)
+        artifacts = {p: struct.pack(f"<{len(v)}d", *v) for p, v in self.fixture["values"].items()}
+        arrays = verify_scene_artifacts(scene, artifacts)
+        self.assertEqual(arrays["directions"], (0, 0, 1))
+        artifacts["directions.f64"] = bytes(24)
+        with self.assertRaises(ValueError):
+            verify_scene_artifacts(scene, artifacts)
+
+    def test_invalid_contracts(self):
+        rejected = json.loads((Path(__file__).resolve().parents[3] / "packages/quantum-scene/fixtures/rejected.json").read_text())
+        for fixture in rejected:
+            scene = copy.deepcopy(self.fixture["scene"])
+            if fixture["field"] == "schema":
+                scene["schema"] = fixture["value"]
+            elif fixture["field"] == "path":
+                scene["datasets"][0]["path"] = fixture["value"]
+            else:
+                scene["objects"][0]["kind"] = fixture["value"]
+            with self.assertRaises(ValidationError):
+                validate_scene(scene)
+        for parameters in ({"delta": float("nan")}, {"delta": True}, {"unsafe-key": 1}, {}):
+            scene = copy.deepcopy(self.fixture["scene"])
+            scene["provenance"]["parameters"] = parameters
+            with self.assertRaises(ValidationError):
+                validate_scene(scene)
+        mutations = [
+            lambda s: s.update(schema="quantum-scene/v2"),
+            lambda s: s.update(script="executable"),
+            lambda s: s["datasets"][0].update(path="../secret.f64"),
+            lambda s: s["datasets"][0].update(bytes=8),
+            lambda s: s["objects"][0].update(values="missing"),
+            lambda s: s["objects"][0].update(kind="mesh"),
+            lambda s: s["camera"].update(target=s["camera"]["position"]),
+            lambda s: s["objects"][0]["style"].update(opacity=float("nan")),
+        ]
+        for mutate in mutations:
+            scene = copy.deepcopy(self.fixture["scene"])
+            mutate(scene)
+            with self.assertRaises((ValueError, ValidationError)):
+                validate_scene(scene)

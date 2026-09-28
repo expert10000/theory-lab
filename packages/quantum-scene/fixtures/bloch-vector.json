@@ -1,0 +1,15 @@
+{
+  "scene": {
+    "schema": "quantum-scene/v1", "id": "fixture-bloch", "title": "Bloch vector compatibility fixture",
+    "provenance": {"runId": "fixture-run", "jobId": "fixture-job", "model": "driven_two_level", "engine": "native", "engineVersion": "fixture", "computedAt": "2026-09-28T00:00:00Z", "resultSha256": "0000000000000000000000000000000000000000000000000000000000000000", "adapter": "qvis/1"},
+    "coordinates": {"handedness": "right", "axes": ["sigma_x", "sigma_y", "sigma_z"], "units": ["dimensionless", "dimensionless", "dimensionless"]},
+    "camera": {"position": [3, 2, 2], "target": [0, 0, 0], "up": [0, 0, 1]},
+    "datasets": [
+      {"id": "origins", "path": "origins.f64", "format": "f64le", "count": 1, "components": 3, "unit": "dimensionless", "bytes": 24, "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"},
+      {"id": "directions", "path": "directions.f64", "format": "f64le", "count": 1, "components": 3, "unit": "dimensionless", "bytes": 24, "sha256": "04ae04134c8318578c932394683055fea108f3f586ff5b055613752c5f03e6f5"}
+    ],
+    "objects": [{"id": "bloch", "label": "Initial Bloch vector", "kind": "vectors", "positions": "origins", "values": "directions", "visible": true, "style": {"color": "#ffca80", "opacity": 1, "size": 1}}],
+    "annotations": [{"id": "north", "text": "sigma_z = +1", "position": [0, 0, 1]}]
+  },
+  "values": {"origins.f64": [0, 0, 0], "directions.f64": [0, 0, 1]}
+}

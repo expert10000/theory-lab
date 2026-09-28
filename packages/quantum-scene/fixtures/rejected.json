@@ -1,0 +1,6 @@
+[
+  {"description": "Unknown future scene version", "field": "schema", "value": "quantum-scene/v2"},
+  {"description": "External artifact URL", "field": "path", "value": "https://example.invalid/data.f64"},
+  {"description": "Artifact traversal", "field": "path", "value": "../data.f64"},
+  {"description": "Unsupported complex field", "field": "kind", "value": "complex-field"}
+]
