@@ -43,9 +43,10 @@ test("schema-only structural rejection matches CSP-safe validator", () => {
     if (fixture.field === "kind") s.objects[0].kind = fixture.value;
     assert.equal(validate(s), false, fixture.description); assert.throws(() => assertScene(s));
   }
-  for (const value of [null, [], {}, { ...fresh(), title: "" }, { ...fresh(), objects: [] }, { ...fresh(), unknown: true }]) {
+  for (const value of [null, [], {}, { ...fresh(), title: "" }, { ...fresh(), unknown: true }]) {
     assert.equal(validate(value), false); assert.throws(() => assertScene(value));
   }
+  assert.throws(() => assertScene({ ...fresh(), objects: [] }), /no objects or fields/);
   const parameters = { ...fresh(), provenance: { ...fresh().provenance, parameters: { delta: 1, boundary: "open" } } };
   assert.ok(validate(parameters)); assertScene(parameters);
   for (const values of [{ delta: NaN }, { delta: true }, { "unsafe-key": 1 }, {}]) {

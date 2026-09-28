@@ -1413,7 +1413,8 @@ Portable visualization milestones now implemented:
 ```text
 QVIS-001   strict portable quantum-scene/v1 contract, TS/Python and binary verification
 QVIS-002   independent scene viewer, saved Bloch/SSH/QWZ adapters and bundle export
-QVIS-003   next: scalar/complex fields (not implemented)
+QVIS-003   regular scalar/complex fields, signed isosurfaces, slices and phase (implemented)
+QVIS-004   next: hydrogenic orbital laboratory (not implemented)
 M3D-Q01    future: importer in the separate Math3D repository (not implemented)
 ```
 

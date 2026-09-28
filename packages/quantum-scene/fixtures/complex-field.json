@@ -1,0 +1,158 @@
+{
+  "scene": {
+    "schema": "quantum-scene/v1",
+    "id": "fixture-field",
+    "title": "Planar complex field fixture",
+    "provenance": {
+      "runId": "fixture-run",
+      "jobId": "fixture-job",
+      "model": "driven_two_level",
+      "engine": "native",
+      "engineVersion": "fixture",
+      "computedAt": "2026-09-28T00:00:00Z",
+      "resultSha256": "0000000000000000000000000000000000000000000000000000000000000000",
+      "adapter": "qvis/1"
+    },
+    "coordinates": {
+      "handedness": "right",
+      "axes": [
+        "x",
+        "y",
+        "z"
+      ],
+      "units": [
+        "dimensionless",
+        "dimensionless",
+        "dimensionless"
+      ]
+    },
+    "camera": {
+      "position": [
+        3,
+        2,
+        2
+      ],
+      "target": [
+        0,
+        0,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ]
+    },
+    "datasets": [
+      {
+        "id": "real",
+        "path": "real.f64",
+        "format": "f64le",
+        "count": 27,
+        "components": 1,
+        "unit": "dimensionless",
+        "bytes": 216,
+        "sha256": "e04035ee27d5658a4a51ab956e4639fe1e0865c6ce203cfc3557fe7932e6b7c8"
+      },
+      {
+        "id": "imaginary",
+        "path": "imaginary.f64",
+        "format": "f64le",
+        "count": 27,
+        "components": 1,
+        "unit": "dimensionless",
+        "bytes": 216,
+        "sha256": "8a6f100a163b20193e5bab81a7dc91a61f7dc2e1be56c043ccadfec2a0dec3c7"
+      }
+    ],
+    "objects": [],
+    "annotations": [],
+    "fields": [
+      {
+        "id": "psi",
+        "label": "psi = x + iy (not normalized)",
+        "kind": "complex-field",
+        "real": "real",
+        "imaginary": "imaginary",
+        "grid": {
+          "shape": [
+            3,
+            3,
+            3
+          ],
+          "origin": [
+            -1,
+            -1,
+            -1
+          ],
+          "spacing": [
+            1,
+            1,
+            1
+          ],
+          "order": "xyz-z-fastest"
+        }
+      }
+    ]
+  },
+  "values": {
+    "real.f64": [
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      -1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1,
+      1
+    ],
+    "imaginary.f64": [
+      -1,
+      -1,
+      -1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      -1,
+      -1,
+      -1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1,
+      -1,
+      -1,
+      -1,
+      0,
+      0,
+      0,
+      1,
+      1,
+      1
+    ]
+  }
+}

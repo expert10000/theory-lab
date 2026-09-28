@@ -53,3 +53,12 @@ class SceneTests(unittest.TestCase):
             mutate(scene)
             with self.assertRaises((ValueError, ValidationError)):
                 validate_scene(scene)
+
+    def test_shared_field_fixture(self):
+        fixture = json.loads((Path(__file__).resolve().parents[3] / "packages/quantum-scene/fixtures/complex-field.json").read_text())
+        artifacts = {p: struct.pack(f"<{len(v)}d", *v) for p, v in fixture["values"].items()}
+        arrays = verify_scene_artifacts(fixture["scene"], artifacts)
+        self.assertEqual(arrays["real"][18], 1)
+        fixture["scene"]["fields"][0]["grid"]["spacing"][0] = 0
+        with self.assertRaises(ValueError):
+            validate_scene(fixture["scene"])

@@ -3,6 +3,7 @@ import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { verifyScenePayload, type ScenePayload, type Vec3 } from "../quantum-scene";
 import { scalarColor, scalarRange } from "./scalarColor";
+import { phaseColor } from "./fields";
 
 // Shared renderer consumes declarative scenes only. No worker, filesystem or IPC.
 export async function browserSceneDigest(bytes: Uint8Array): Promise<string> {
@@ -57,7 +58,7 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
         const scalar = ready.arrays.get(o.scalars)!;
         const [low, high] = scalarRange(scalar);
         const colors: number[] = [];
-        for (const v of scalar) { const c = new THREE.Color().setRGB(...scalarColor(v, low, high), THREE.SRGBColorSpace); colors.push(c.r, c.g, c.b); }
+        for (const v of scalar) { const c = new THREE.Color().setRGB(...(o.colorMap==="phase"?phaseColor(v):scalarColor(v, low, high)), THREE.SRGBColorSpace); colors.push(c.r, c.g, c.b); }
         geometry.setAttribute("color", new THREE.Float32BufferAttribute(colors, 3));
       }
       const style = { color: o.scalars ? "#ffffff" : o.style.color, opacity: o.style.opacity, transparent: o.style.opacity < 1, vertexColors: !!o.scalars };
@@ -174,7 +175,7 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
         <div data-testid="scene-coordinate">{point && point.map((v, i) => <span key={i}>{payload.scene.coordinates.axes[i]} = {v.toPrecision(7)} {payload.scene.coordinates.units[i]}<br /></span>)}
           {scalar !== undefined && <span>Scalar = {scalar.toPrecision(7)} {payload.scene.datasets.find(d => d.id === object?.scalars)?.unit}</span>}</div>
       </div>
-      {range && <div className="scene-scale" aria-label="Selected object color scale"><span>{range[0].toPrecision(5)}</span><span className="scene-scale-gradient" /><span>{range[1].toPrecision(5)} {payload.scene.datasets.find(d => d.id === object?.scalars)?.unit}</span>{range[0] === range[1] && <small>Constant field (midpoint color)</small>}</div>}
+      {range && <div className="scene-scale" aria-label="Selected object color scale"><span>{object?.colorMap==="phase"?"−π":range[0].toPrecision(5)}</span><span className={`scene-scale-gradient ${object?.colorMap==="phase"?"phase-gradient":""}`} /><span>{object?.colorMap==="phase"?"+π (cyclic)":range[1].toPrecision(5)} {payload.scene.datasets.find(d => d.id === object?.scalars)?.unit}</span>{range[0] === range[1] && <small>Constant field</small>}</div>}
       <fieldset className="scene-visibility"><legend>Object visibility</legend>{payload.scene.objects.map(o => <label key={o.id}><input type="checkbox" checked={!hidden.has(o.id)} onChange={e => setHidden(current => { const next = new Set(current); if (e.target.checked) next.delete(o.id); else next.add(o.id); return next; })} />{o.label}</label>)}</fieldset>
       <p className="scene-axis-note">Right-handed axes: {payload.scene.coordinates.axes.join(" / ")} · Coordinates are inspected from Float64 data; GPU rendering uses Float32.</p>
       <ul className="scene-annotations">{payload.scene.annotations.map(a => <li key={a.id}>{a.text}</li>)}</ul>

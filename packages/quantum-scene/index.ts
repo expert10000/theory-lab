@@ -8,7 +8,13 @@ export interface SceneDataset {
 export interface SceneObject {
   id: string; label: string; kind: "point-cloud" | "polyline" | "vectors" | "mesh";
   positions: string; values?: string; indices?: string; scalars?: string; visible: boolean;
+  colorMap?: "phase";
   style: { color: string; opacity: number; size: number };
+}
+export interface SceneField {
+  id: string; label: string; kind: "scalar-field" | "complex-field";
+  real: string; imaginary?: string;
+  grid: { shape: [number, number, number]; origin: Vec3; spacing: Vec3; order: "xyz-z-fastest" };
 }
 export interface QuantumScene {
   schema: "quantum-scene/v1"; id: string; title: string;
@@ -19,6 +25,7 @@ export interface QuantumScene {
   coordinates: { handedness: "right"; axes: [string, string, string]; units: [string, string, string] };
   camera: { position: Vec3; target: Vec3; up: Vec3 };
   datasets: SceneDataset[]; objects: SceneObject[];
+  fields?: SceneField[];
   annotations: { id: string; text: string; position: Vec3 }[];
 }
 export interface ScenePayload { scene: QuantumScene; artifacts: Record<string, Uint8Array> }
@@ -59,14 +66,28 @@ function check(rule: any, value: any, path: string): void {
 export function assertScene(value: unknown): asserts value is QuantumScene {
   check(schema, value, "scene");
   const scene = value as QuantumScene;
+  if (!scene.objects.length && !scene.fields?.length) throw new Error("Scene has no objects or fields");
   const unique = (ids: string[]) => { if (new Set(ids).size !== ids.length) throw new Error("Duplicate scene identity"); };
-  unique([...scene.objects.map(o => o.id), ...scene.annotations.map(a => a.id)]);
+  unique([...scene.objects.map(o => o.id), ...scene.annotations.map(a => a.id), ...(scene.fields ?? []).map(f => f.id)]);
   unique(scene.datasets.map(d => d.id)); unique(scene.datasets.map(d => d.path));
   if (scene.datasets.reduce((n, d) => n + d.bytes, 0) > MAX_SCENE_BYTES) throw new Error("Scene exceeds memory budget");
   const datasets = new Map(scene.datasets.map(d => [d.id, d]));
   for (const d of scene.datasets) if (d.bytes !== d.count * d.components * 8) throw new Error("Dataset shape/size mismatch");
+  for (const field of scene.fields ?? []) {
+    if ((field.kind === "complex-field") !== !!field.imaginary) throw new Error("Field kind/reference mismatch");
+    const nodes = field.grid.shape.reduce((n, v) => n * v, 1);
+    for (const id of [field.real, field.imaginary].filter(Boolean)) {
+      const d = datasets.get(id!);
+      if (!d || d.components !== 1 || d.count !== nodes) throw new Error("Field grid/dataset mismatch");
+    }
+    for (let axis = 0; axis < 3; axis++) {
+      const { spacing, origin, shape } = field.grid;
+      if (spacing[axis] <= 0 || Math.abs(origin[axis] + spacing[axis] * (shape[axis] - 1)) > 1000000) throw new Error("Invalid field grid extent");
+    }
+  }
   for (const o of scene.objects) {
     const p = datasets.get(o.positions);
+    if (o.colorMap === "phase" && (!o.scalars || datasets.get(o.scalars)?.unit !== "rad")) throw new Error("Phase color requires a radian scalar dataset");
     if (!p || p.components !== 3) throw new Error("Missing position dataset");
     if (o.kind === "polyline" && p.count < 2) throw new Error("Polyline needs two points");
     if ((o.kind === "vectors") !== !!o.values || (o.kind === "mesh") !== !!o.indices) throw new Error("Object kind/reference mismatch");
@@ -103,5 +124,9 @@ export async function verifyScenePayload(payload: ScenePayload, digest: (bytes: 
     const count = arrays.get(o.positions)!.length / 3;
     if (!arrays.get(o.indices)!.every(v => Number.isInteger(v) && v >= 0 && v < count)) throw new Error("Invalid mesh indices");
   }
+  for (const field of payload.scene.fields ?? []) if (field.kind === "complex-field") {
+    for (const id of [field.real,field.imaginary!]) if (!arrays.get(id)!.every(v => Math.abs(v) <= 1e100)) throw new Error("Complex amplitude exceeds safe derived-density range");
+  }
+  for (const object of payload.scene.objects) if (object.colorMap === "phase" && !arrays.get(object.scalars!)!.every(v=>Math.abs(v)<=Math.PI+1e-10)) throw new Error("Phase outside radian range");
   return arrays;
 }

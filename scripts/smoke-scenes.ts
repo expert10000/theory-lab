@@ -5,6 +5,7 @@ import { mkdir } from "node:fs/promises";
 import { build } from "esbuild";
 import { chromium } from "playwright";
 import fixture from "../packages/quantum-scene/fixtures/bloch-vector.json";
+import fieldFixture from "../packages/quantum-scene/fixtures/complex-field.json";
 import { assertScene } from "../packages/quantum-scene";
 
 const scene = structuredClone(fixture.scene);
@@ -26,16 +27,18 @@ const source = `
 import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {SceneViewer} from './packages/quantum-3d/SceneViewer';
+import {FieldViewer} from './packages/quantum-3d/FieldViewer';
 import './packages/quantum-3d/scene.css';
 import './packages/ui/theme.css';
-const scene = ${JSON.stringify(complete)};
-const values = ${JSON.stringify(values)};
+const fields = location.search.includes('fields');
+const scene = fields ? ${JSON.stringify(fieldFixture.scene)} : ${JSON.stringify(complete)};
+const values = fields ? ${JSON.stringify(fieldFixture.values)} : ${JSON.stringify(values)};
 const artifacts = Object.fromEntries(Object.entries(values).map(([path, values]) => {
   const bytes = new Uint8Array(values.length * 8), view = new DataView(bytes.buffer);
   values.forEach((v, i) => view.setFloat64(i*8, v, true)); return [path, bytes];
 }));
 if (location.search.includes('corrupt')) artifacts['vertices.f64'][0] ^= 1;
-createRoot(document.getElementById('root')).render(<SceneViewer payload={{scene, artifacts}} />);
+createRoot(document.getElementById('root')).render(fields ? <FieldViewer payload={{scene,artifacts}}/> : <SceneViewer payload={{scene, artifacts}} />);
 `;
 const output = await build({ stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" }, bundle: true, platform: "browser", format: "esm", write: false, outdir: "memory" });
 const js = output.outputFiles.find(f => f.path.endsWith(".js"))!.text;
@@ -65,6 +68,17 @@ try {
   await page.getByRole("button", { name: "Reset camera" }).click();
   await mkdir("artifacts", { recursive: true });
   await page.screenshot({ path: "artifacts/scene-browser.png", fullPage: true });
+  await page.goto(`${origin}/?fields`);
+  await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByLabel("Field quantity").selectOption("phase");
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByTestId("field-slice").click();
+  assert.match(await page.getByTestId("field-sample").innerText(),/undefined near a node/);
+  await page.getByLabel("Slice normal").selectOption("0");
+  await page.getByLabel("Field quantity").selectOption("imaginary");
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.screenshot({path:"artifacts/field-browser.png",fullPage:true});
   await page.goto(`${origin}/?corrupt`);
   await page.getByRole("alert").filter({ hasText: "integrity failed" }).waitFor();
   assert.equal(await page.locator(".scene-canvas canvas").count(), 0);

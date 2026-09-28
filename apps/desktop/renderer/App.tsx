@@ -530,6 +530,7 @@ export function App() {
                 ["029", "Web Atlas & topology client", "Implemented"],
                 ["QVIS-001", "Portable quantum-scene/v1 contract", "Implemented"],
                 ["QVIS-002", "Reusable scene renderer & verified bundle export", "Implemented"],
+                ["QVIS-003", "Scalar/complex fields, isosurfaces & slices", "Implemented"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>

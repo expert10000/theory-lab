@@ -3,6 +3,7 @@ import type { QuantumBridge, RunSummary } from "../../../packages/contracts";
 import type { ScenePayload } from "../../../packages/quantum-scene";
 import { supportsScene } from "../../../packages/quantum-scene/from-result";
 import { SceneViewer } from "../../../packages/quantum-3d/SceneViewer";
+import { FieldViewer } from "../../../packages/quantum-3d/FieldViewer";
 import "../../../packages/quantum-3d/scene.css";
 
 export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
@@ -48,7 +49,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
     {message && <p className="runs-message" role="status">{message}</p>}
     {busy && !payload && <p role="status">Checking saved result and numerical artifacts…</p>}
     {!runId && <div className="panel runs-empty">Run Dynamics or Topology first, then refresh here. Existing saved runs work without a live worker.</div>}
-    {payload && <><div className="panel"><SceneViewer key={payload.scene.id} payload={payload} /></div>
+    {payload && <><div className="panel">{payload.scene.fields?.length ? <FieldViewer key={payload.scene.id} payload={payload}/> : <SceneViewer key={payload.scene.id} payload={payload} />}</div>
       <div className="panel scene-provenance"><p className="eyebrow">SCIENTIFIC PROVENANCE</p><h3>{payload.scene.title}</h3>
         <p>{payload.scene.provenance.engine} {payload.scene.provenance.engineVersion} · {payload.scene.provenance.computedAt}</p>
         <p>{Object.entries(payload.scene.provenance.parameters ?? {}).map(([key, value]) => `${key} = ${value}`).join(" · ")}</p>
