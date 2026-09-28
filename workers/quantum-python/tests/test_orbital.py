@@ -9,7 +9,7 @@ import numpy as np
 from jsonschema.exceptions import ValidationError
 from scipy.integrate import quad
 from quantum_worker.contracts import validate
-from quantum_worker.engines.orbital import radial, wavefunction, orbital
+from quantum_worker.engines.orbital import radial, wavefunction, orbital, radial_nodes
 
 
 def job(n=1,l=0,m=0,basis="complex",Z=1,radius=8,grid=31):
@@ -18,6 +18,27 @@ def job(n=1,l=0,m=0,basis="complex",Z=1,radius=8,grid=31):
 
 
 class OrbitalTests(unittest.TestCase):
+    def test_radial_nodes_and_spherical_cube_bounds(self):
+        for n in (1,2,3):
+            for l in range(n):
+                for Z in (1,3,6):
+                    nodes=radial_nodes(n,l,Z)
+                    self.assertEqual(len(nodes),n-l-1)
+                    self.assertTrue(all(r>0 for r in nodes))
+                    self.assertTrue(all(abs(float(radial(n,l,Z,r)))<1e-12 for r in nodes))
+        self.assertAlmostEqual(radial_nodes(2,0,1)[0],2)
+        np.testing.assert_allclose(radial_nodes(3,0,1),[1.5*(3-math.sqrt(3)),1.5*(3+math.sqrt(3))],atol=1e-12)
+        self.assertAlmostEqual(radial_nodes(3,1,1)[0],6)
+        with tempfile.TemporaryDirectory() as root:
+            for radius,Z in ((.5,1),(2,3),(120,6)):
+                result=orbital(job(radius=radius,Z=Z),root,threading.Event(),lambda *_:None)
+                bounds=result["analysis"]["cubeProbabilityBounds"]
+                for q,value in zip((radius,math.sqrt(3)*radius),bounds):
+                    u=Z*q
+                    expected=1-math.exp(-2*u)*(1+2*u+2*u*u)
+                    self.assertAlmostEqual(value,expected,places=10)
+                self.assertLessEqual(bounds[0],bounds[1]+1e-12)
+
     def test_closed_forms_nodes_and_real_convention(self):
         for Z in (1,3,6):
             p=job(Z=Z)["model"]["parameters"]

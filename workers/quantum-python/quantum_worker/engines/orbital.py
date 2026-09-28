@@ -40,6 +40,12 @@ def available():
         return False
 
 
+def radial_nodes(n, l, Z):
+    from scipy.special import roots_genlaguerre
+    degree = n-l-1
+    return (roots_genlaguerre(degree, 2*l+1)[0]*n/(2*Z)).tolist() if degree else []
+
+
 def orbital(job, output_dir, cancelled, progress):
     validate("quantum-job",job)
     if job["operation"] != "orbital" or job["engine"] != "native":
@@ -79,12 +85,19 @@ def orbital(job, output_dir, cancelled, progress):
         if abs(norm-1)>1e-8 or abs(mean-expected_mean)>1e-8:
             raise ValueError("Orbital radial validation failed")
         radii = np.linspace(0,max(radius,12*n*n/Z),401)
+        nodes = radial_nodes(n,l,Z)
+        if len(nodes) != n-l-1 or any(abs(float(radial(n,l,Z,r))) > 1e-10 for r in nodes):
+            raise ValueError("Orbital radial node validation failed")
+        # The cube contains the sphere R and is contained in the sphere sqrt(3)R.
+        bounds = [min(1.0,max(0.0,quad(lambda r: float(r*r*radial(n,l,Z,r)**2),0,q,epsabs=1e-10)[0]))
+                  for q in (radius,math.sqrt(3)*radius)]
         result = {"schema":"quantum-result/v1","jobId":job["jobId"],"runId":"run-"+uuid4().hex,"status":"completed",
                   "operation":"orbital","model":job["model"],"engine":{"name":"native","version":scipy.__version__},
                   "data":{"schema":"quantum-data/v1","format":"f64le","path":filename,"rows":grid**3,
                           "columns":["psi_re","psi_im"],"bytes":grid**3*16,"sha256":digest.hexdigest()},
                   "analysis":{"energyHartree":-Z*Z/(2*n*n),"gridProbability":probability,"radialNormalization":norm,"meanRadius":mean,
-                              "radialRadii":radii.tolist(),"radialProbability":(radii*radii*radial(n,l,Z,radii)**2).tolist()},
+                              "radialRadii":radii.tolist(),"radialProbability":(radii*radii*radial(n,l,Z,radii)**2).tolist(),
+                              "radialNodes":nodes,"cubeProbabilityBounds":bounds},
                   "provenance":{"pythonVersion":platform.python_version(),"workerVersion":__version__,
                                 "computedAt":datetime.now(timezone.utc).isoformat(),"durationMs":(perf_counter()-started)*1000}}
         validate("quantum-result",result)

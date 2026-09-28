@@ -27,6 +27,10 @@ parameters are `n`, `l`, `m`, `basis` (`complex`, `real_cos`, `real_sin`), `Z`,
 The result carries an interleaved f64le `[psi_re,psi_im]` artifact in
 `xyz-z-fastest` order, analytic energy in Hartree, infinite-domain radial norm
 and mean radius, unrenormalized finite-grid probability and a radial profile.
+QVIS-007 adds optional `radialNodes` (positive radii in a₀) and
+`cubeProbabilityBounds` (two radial sphere integrals bracketing the cube's
+continuum probability, estimated numerically). Convergence studies submit up
+to four ordinary orbital jobs sequentially; no additional RPC method is needed.
 The existing trusted preload exposes only `orbital(job)`; no new worker HTTP
 endpoint, gateway operation or Math3D connection is introduced. See
 [FIELDS_ORBITALS.md](FIELDS_ORBITALS.md) for scientific assumptions and formats.

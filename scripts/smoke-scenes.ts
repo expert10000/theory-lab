@@ -28,6 +28,8 @@ import React from 'react';
 import {createRoot} from 'react-dom/client';
 import {SceneViewer} from './packages/quantum-3d/SceneViewer';
 import {FieldViewer} from './packages/quantum-3d/FieldViewer';
+import {OrbitalConvergence} from './apps/desktop/renderer/OrbitalConvergence';
+import {orbitalJob, ORBITAL_DEFAULTS} from './packages/models/orbital';
 import './packages/quantum-3d/scene.css';
 import './packages/ui/theme.css';
 const fields = location.search.includes('fields');
@@ -38,7 +40,31 @@ const artifacts = Object.fromEntries(Object.entries(values).map(([path, values])
   values.forEach((v, i) => view.setFloat64(i*8, v, true)); return [path, bytes];
 }));
 if (location.search.includes('corrupt')) artifacts['vertices.f64'][0] ^= 1;
-createRoot(document.getElementById('root')).render(fields ? <FieldViewer payload={{scene,artifacts}}/> : <SceneViewer payload={{scene, artifacts}} />);
+// Synthetic bridge exercises renderer scheduling only; worker physics and
+// persistence are checked separately by desktop and worker integration tests.
+let calls = 0, rejectActive;
+globalThis.studyCalls = () => calls;
+const bridge = {
+  onProgress: () => () => {},
+  cancel: async () => { rejectActive?.(new Error('Cancelled')); },
+  orbital: async job => {
+    calls++;
+    if (calls === 2) await new Promise((resolve, reject) => { rejectActive = reject; });
+    const p = job.model.parameters;
+    return {jobId:job.jobId, runId:job.jobId, model:job.model,
+      engine:{name:'native',version:'test'},
+      data:{rows:p.grid**3,bytes:p.grid**3*16},
+      analysis:{energyHartree:-(p.Z**2)/(2*p.n**2),radialNormalization:1,
+        meanRadius:(3*p.n**2-p.l*(p.l+1))/(2*p.Z),gridProbability:0.99,
+        radialRadii:Array.from({length:401},(_,i)=>i/10),
+        radialProbability:Array(401).fill(0)}};
+  }
+};
+function StudyHarness() {
+  const [busy,setBusy] = React.useState(false);
+  return <OrbitalConvergence bridge={bridge} preview={orbitalJob('test',ORBITAL_DEFAULTS)} ready={true} busy={busy} onBusy={setBusy}/>;
+}
+createRoot(document.getElementById('root')).render(location.search.includes('convergence') ? <StudyHarness/> : fields ? <FieldViewer payload={{scene,artifacts}}/> : <SceneViewer payload={{scene, artifacts}} />);
 `;
 const output = await build({ stdin: { contents: source, resolveDir: process.cwd(), loader: "tsx" }, bundle: true, platform: "browser", format: "esm", write: false, outdir: "memory" });
 const js = output.outputFiles.find(f => f.path.endsWith(".js"))!.text;
@@ -79,6 +105,19 @@ try {
   await page.getByLabel("Field quantity").selectOption("imaginary");
   await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.screenshot({path:"artifacts/field-browser.png",fullPage:true});
+  await page.goto(`${origin}/?convergence`);
+  await page.getByTestId("run-orbital-study").click();
+  await page.getByTestId("orbital-study-row").waitFor();
+  await page.getByTestId("cancel-orbital-study").click();
+  await page.getByRole("status").filter({hasText:"Study cancelled · 1 completed runs retained"}).waitFor();
+  assert.equal(await page.getByTestId("orbital-study-row").count(), 1);
+  assert.equal(await page.evaluate(() => (globalThis as any).studyCalls()), 2);
+  await page.getByTestId("run-orbital-study").click();
+  await page.getByRole("status").filter({hasText:"Study complete · 4 verified saved runs"}).waitFor();
+  assert.equal(await page.getByTestId("orbital-study-row").count(), 4);
+  assert.equal(await page.evaluate(() => (globalThis as any).studyCalls()), 6);
+  await page.getByLabel("Orbital convergence mode").selectOption("box");
+  await page.getByText("OUT OF DATE", {exact:true}).waitFor();
   await page.goto(`${origin}/?corrupt`);
   await page.getByRole("alert").filter({ hasText: "integrity failed" }).waitFor();
   assert.equal(await page.locator(".scene-canvas canvas").count(), 0);
@@ -98,7 +137,7 @@ try {
   await fallback.getByRole("slider", { name: "Scene sample" }).press("End");
   assert.match(await fallback.getByTestId("scene-coordinate").innerText(), /sigma_y = 1\.000000/);
   assert.deepEqual(errors, []);
-  console.log("PASS: independent web renderer, four primitives, strict CSP, verification, inspection, visibility, camera, corruption rejection and WebGL fallback.");
+  console.log("PASS: independent web renderer, four primitives, strict CSP, convergence cancellation/retained cases, verification, inspection, visibility, camera, corruption rejection and WebGL fallback.");
 } finally {
   await browser.close(); await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
 }

@@ -243,7 +243,7 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QVIS-006</span>
+          <span className="version">V0.1+ · QVIS-007</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -306,7 +306,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>007</span> Orbital convergence</div>
+            <div className="future-lab"><span>—</span> Further Lab extensions</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -540,6 +540,7 @@ export function App() {
                 ["QVIS-004", "Hydrogenic orbital fields & radial diagnostics", "Implemented"],
                 ["QVIS-005", "SSH bonds, Ising magnetization & QWZ axes", "Implemented"],
                 ["QVIS-006", "Read-only verified scene bundle import", "Implemented"],
+                ["QVIS-007", "Orbital convergence studies & radial nodes", "Implemented"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>

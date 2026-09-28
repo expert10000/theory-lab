@@ -30,4 +30,10 @@
 .field-slice { width: min(100%, 380px); height: auto; aspect-ratio: 1; display: block; image-rendering: pixelated; background: #0c151f; border: 1px solid #2c414d; margin-top: 18px; cursor: crosshair; }
 .field-viewer p { line-height: 1.65; }
 .phase-gradient { background: linear-gradient(90deg, cyan, blue, magenta, red, yellow, lime, cyan); }
+.orbital-convergence { padding: 22px; }
+.orbital-convergence p { line-height: 1.65; }
+.convergence-table-wrap { overflow-x: auto; }
+.convergence-table { border-collapse: collapse; width: 100%; min-width: 760px; font-size: 12px; }
+.convergence-table th, .convergence-table td { border-bottom: 1px solid #2c414d; padding: 12px 9px; text-align: left; }
+.convergence-table th { color: #a7bbc4; }
 @media (max-width: 1000px) { .scene-inspection { grid-template-columns: 1fr; } }

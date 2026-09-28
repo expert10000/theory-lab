@@ -189,7 +189,8 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
   if (result.operation === "orbital") {
     const a = result.analysis, max = Math.max(...a.radialProbability);
     const points = a.radialProbability.map((v, i) => `${70 + 760 * a.radialRadii[i] / a.radialRadii[400]},${440 - v * 350 / max}`).join(" ");
-    return head + `<polyline points="${points}" stroke="#79d9c1" fill="none" stroke-width="2"/><text x="70" y="480" fill="white" font-family="sans-serif">Radial probability r²|R(r)|² · r in a0 · E = ${a.energyHartree} Hartree</text></svg>\n`;
+    const nodes = (a.radialNodes ?? []).map((r,i)=>{const x=70+760*r/a.radialRadii[400];return `<path d="M${x} 90 V440" stroke="#f2b36f" stroke-dasharray="4 4"/><text x="${x+3}" y="${105+i*14}" fill="#f2b36f" font-family="sans-serif" font-size="11">N${i+1}</text>`;}).join("");
+    return head + `<polyline points="${points}" stroke="#79d9c1" fill="none" stroke-width="2"/>${nodes}<text x="70" y="480" fill="white" font-family="sans-serif">Radial probability r²|R(r)|² · r in a0 · E = ${a.energyHartree} Hartree</text></svg>\n`;
   }
   if (result.operation === "diagonalize") {
     const [low, high] = result.spectrum.eigenvalues;

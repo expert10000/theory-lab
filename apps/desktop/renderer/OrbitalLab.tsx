@@ -11,6 +11,8 @@ import {
 } from "../../../packages/models/orbital";
 import type { ScenePayload } from "../../../packages/quantum-scene";
 import { FieldViewer } from "../../../packages/quantum-3d/FieldViewer";
+import { OrbitalConvergence } from "./OrbitalConvergence";
+import { OrbitalRadialPlot } from "./OrbitalRadialPlot";
 
 const presets = [
   [1, 0, "1s"],
@@ -39,6 +41,8 @@ export function OrbitalLab({
   const [running, setRunning] = useState(false),
     [progress, setProgress] = useState(0),
     [message, setMessage] = useState("");
+  const [studying, setStudying] = useState(false);
+  const busy = running || studying;
   const jobId = useRef<string | null>(null),
     sequence = useRef(0);
   useEffect(() => {
@@ -100,7 +104,7 @@ export function OrbitalLab({
     });
   }
   async function run() {
-    if (!preview || !ready || running) return;
+    if (!preview || !ready || busy) return;
     const request = ++sequence.current,
       id = `job-${crypto.randomUUID()}`;
     jobId.current = id;
@@ -136,7 +140,6 @@ export function OrbitalLab({
   }
   const a = result?.analysis,
     p = result?.model.parameters;
-  const max = a ? Math.max(...a.radialProbability) : 1;
   return (
     <div className="cavity-lab" data-testid="orbital-lab">
       <section className="hamiltonian-card">
@@ -165,7 +168,7 @@ export function OrbitalLab({
           {presets.map(([n, l, label]) => (
             <button
               key={label}
-              disabled={running}
+              disabled={busy}
               onClick={() =>
                 setDraft((old) => ({
                   ...old,
@@ -188,7 +191,7 @@ export function OrbitalLab({
             Principal n
             <select
               aria-label="Orbital n"
-              disabled={running}
+              disabled={busy}
               value={draft.n}
               onChange={(e) => quantumChange("n", e.target.value)}
             >
@@ -201,7 +204,7 @@ export function OrbitalLab({
             Angular l
             <select
               aria-label="Orbital l"
-              disabled={running}
+              disabled={busy}
               value={draft.l}
               onChange={(e) => quantumChange("l", e.target.value)}
             >
@@ -214,7 +217,7 @@ export function OrbitalLab({
             Magnetic m
             <select
               aria-label="Orbital m"
-              disabled={running}
+              disabled={busy}
               value={draft.m}
               onChange={(e) => quantumChange("m", e.target.value)}
             >
@@ -233,7 +236,7 @@ export function OrbitalLab({
             Harmonic basis
             <select
               aria-label="Orbital basis"
-              disabled={running}
+              disabled={busy}
               value={draft.basis}
               onChange={(e) => quantumChange("basis", e.target.value)}
             >
@@ -248,7 +251,7 @@ export function OrbitalLab({
             Nuclear charge Z
             <input
               aria-label="Orbital Z"
-              disabled={running}
+              disabled={busy}
               type="number"
               min="1"
               max="6"
@@ -261,7 +264,7 @@ export function OrbitalLab({
             Cube half-width (a₀)
             <input
               aria-label="Orbital radius"
-              disabled={running}
+              disabled={busy}
               type="number"
               min="0.5"
               max="120"
@@ -274,7 +277,7 @@ export function OrbitalLab({
             Points per axis
             <select
               aria-label="Orbital grid"
-              disabled={running}
+              disabled={busy}
               value={draft.grid}
               onChange={(e) => change("grid", e.target.value)}
             >
@@ -288,7 +291,7 @@ export function OrbitalLab({
           <button
             className="run-button"
             data-testid="run-orbital"
-            disabled={!preview || !ready || running}
+            disabled={!preview || !ready || busy}
             onClick={() => void run()}
           >
             {running
@@ -317,6 +320,14 @@ export function OrbitalLab({
           √2(−1)ᵐ Re/Im Yₗᵐ for m &gt; 0; m = 0 is unchanged.
         </p>
       </section>
+      <OrbitalConvergence
+        bridge={bridge}
+        preview={preview}
+        ready={ready}
+        busy={busy}
+        onBusy={setStudying}
+        restoreEpoch={restoreEpoch}
+      />
       {message && (
         <p className="runs-message" role="status">
           {message}
@@ -371,36 +382,18 @@ export function OrbitalLab({
               resolution before interpreting this sampled field quantitatively.
             </p>
           )}
-          {payload && <FieldViewer key={result.runId} payload={payload} />}
-          <div className="sweep-visual">
-            <p className="eyebrow">
-              RADIAL PROBABILITY r²|R(r)|² / NOT 3D DENSITY
+          {a.cubeProbabilityBounds && (
+            <p>
+              Sphere reference interval for the true cube probability:{" "}
+              {a.cubeProbabilityBounds.map((v) => v.toFixed(8)).join(" … ")}.
+              This geometric bracket is estimated by independent radial
+              quadrature, not Cartesian grid normalization.
             </p>
-            <svg
-              viewBox="0 0 800 260"
-              role="img"
-              aria-label="Orbital radial probability"
-            >
-              <path d="M50 20 V220 H760" stroke="#526875" fill="none" />
-              <polyline
-                points={a.radialProbability
-                  .map(
-                    (v, i) =>
-                      `${50 + (710 * a.radialRadii[i]) / a.radialRadii[400]},${220 - (180 * v) / max}`,
-                  )
-                  .join(" ")}
-                fill="none"
-                stroke="#79d9c1"
-                strokeWidth="2"
-              />
-              <text x="50" y="245" fill="#a7bbc4" fontSize="12">
-                r = 0
-              </text>
-              <text x="610" y="245" fill="#a7bbc4" fontSize="12">
-                r = {a.radialRadii[400].toPrecision(4)} a₀
-              </text>
-            </svg>
-          </div>
+          )}
+          {payload && (
+            <FieldViewer key={`field-${result.runId}`} payload={payload} />
+          )}
+          <OrbitalRadialPlot key={`radial-${result.runId}`} result={result} />
           <button
             data-testid="export-orbital-scene"
             disabled={!payload}

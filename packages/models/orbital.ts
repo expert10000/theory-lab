@@ -63,6 +63,15 @@ export function consistentOrbitalResult(
 ) {
   const p = job.model.parameters,
     a = result.analysis;
+  // Independent closed forms for degrees 0–2, the complete supported n<=3 range.
+  const expectedNodes =
+    p.n - p.l - 1 === 0
+      ? []
+      : p.n - p.l - 1 === 1
+        ? [(p.n * (p.l + 1)) / p.Z]
+        : [3 - Math.sqrt(3), 3 + Math.sqrt(3)].map(
+            (r) => (r * p.n) / (2 * p.Z),
+          );
   return (
     result.jobId === job.jobId &&
     JSON.stringify(result.model) === JSON.stringify(job.model) &&
@@ -76,7 +85,17 @@ export function consistentOrbitalResult(
     a.radialProbability.length === 401 &&
     a.radialRadii[0] === 0 &&
     a.radialProbability[0] === 0 &&
-    a.radialRadii.every((v, i) => i === 0 || v > a.radialRadii[i - 1])
+    a.radialRadii.every((v, i) => i === 0 || v > a.radialRadii[i - 1]) &&
+    (a.radialNodes === undefined ||
+      (a.radialNodes.length === expectedNodes.length &&
+        a.radialNodes.every(
+          (r, i) => Math.abs(r - expectedNodes[i]) < 1e-9,
+        ))) &&
+    (a.cubeProbabilityBounds === undefined ||
+      (a.cubeProbabilityBounds.length === 2 &&
+        a.cubeProbabilityBounds[0] >= 0 &&
+        a.cubeProbabilityBounds[1] <= 1 &&
+        a.cubeProbabilityBounds[0] <= a.cubeProbabilityBounds[1] + 1e-12))
   );
 }
 /** Independent trapezoidal check of the exact received Float64 grid; no rescaling. */

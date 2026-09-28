@@ -7,6 +7,7 @@ const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
+const errors = [];
 try {
   const page = await app.firstWindow();
   // Some headless Xvfb renderers reject Page.captureScreenshot while DOM and
@@ -14,7 +15,6 @@ try {
   if (process.env.QLAB_SKIP_SCREENSHOTS === "1") {
     page.screenshot = async () => {};
   }
-  const errors = [];
   page.on("pageerror", (error) => errors.push(error.message));
   await page
     .getByTestId("worker-status")
@@ -645,6 +645,7 @@ try {
   await page.getByLabel("Field quantity").selectOption("real");
   await page.getByRole("checkbox",{name:/^real = [^-]/}).waitFor();
   await page.getByRole("checkbox",{name:/^real = -/}).waitFor();
+  assert.equal(await page.getByTestId("field-viewer").count(), 1, "changing orbitals must replace the field, not retain duplicate panels");
   await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
   await page.screenshot({path:"artifacts/desktop-orbital-2p.png",fullPage:true});
   await page.getByLabel("Field quantity").selectOption("phase");
@@ -695,10 +696,39 @@ try {
     await page.getByRole("status").filter({hasText:"unexpected"}).waitFor();
     assert.match(await page.getByTestId("scene-run-id").innerText(),new RegExp(sceneRun.runId));
   }finally{await unlink(extraFile);}
+  await page.getByTestId("open-orbitals").click();
+  await page.getByRole("button",{name:"1s",exact:true}).click();
+  await page.getByTestId("run-orbital-study").click();
+  await page.getByRole("status").filter({hasText:"Study complete · 4 verified saved runs"}).waitFor();
+  const gridRows=page.getByTestId("orbital-study-row");
+  assert.equal(await gridRows.count(),4);
+  assert.equal(await gridRows.nth(0).locator("td").nth(1).innerText(),await gridRows.nth(3).locator("td").nth(1).innerText());
+  await page.getByTestId("orbital-convergence").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-orbital-grid-study.png",fullPage:true});
+  await page.getByLabel("Orbital convergence mode").selectOption("box");
+  await page.getByTestId("run-orbital-study").click();
+  await page.getByRole("status").filter({hasText:"Study complete · 4 verified saved runs"}).waitFor();
+  assert.equal(await gridRows.nth(0).locator("td").nth(2).innerText(),await gridRows.nth(3).locator("td").nth(2).innerText());
+  await page.getByTestId("orbital-convergence").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-orbital-box-study.png",fullPage:true});
+  await page.getByRole("button",{name:"2s",exact:true}).click();
+  assert.ok(await page.getByTestId("orbital-convergence").getByText("OUT OF DATE").isVisible());
+  await page.getByTestId("run-orbital").click();
+  await page.getByTestId("orbital-radial-nodes").filter({hasText:"2.000000 a₀"}).waitFor();
+  assert.equal(await page.getByTestId("radial-node-marker").count(),1);
+  await page.getByRole("img",{name:"Orbital radial probability"}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-orbital-nodes.png",fullPage:true});
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native labs, sweeps and six presets; orbital 1s/2p fields, signed lobes, phase and slices; durable runs, workspace restore, CSV/SVG/manifest/scene exports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native labs, sweeps and six presets; orbital fields, fixed-box/fixed-spacing studies and radial nodes; durable runs, workspace restore, CSV/SVG/manifest/scene exports and read-only bundle imports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",
   );
+} catch (error) {
+  console.error("Renderer errors:", errors);
+  const page = await app.firstWindow();
+  console.error("Renderer alerts:", await page.getByRole("alert").allTextContents());
+  console.error("Field state:", (await page.getByTestId("field-viewer").allTextContents()).slice(0, 2));
+  await page.screenshot({path:"artifacts/desktop-smoke-failure.png",fullPage:true}).catch(() => {});
+  throw error;
 } finally {
   await app.close();
 }

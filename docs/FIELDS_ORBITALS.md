@@ -90,3 +90,48 @@ complex harmonics, angular and radial normalization across all supported
 quantum numbers, charge scaling, grid convergence, unchanged truncated norm,
 cancellation cleanup, saved/offline bundles and corrupted artifact rejection.
 Desktop acceptance exercises 1s, real 2p lobes, phase/nodal slices and export.
+
+## QVIS-007 — convergence studies and radial nodes
+
+In **Orbitals**, use **Run convergence study** before interpreting a sampled
+field quantitatively. Grid refinement holds the current cube half-width fixed
+and runs 21³/31³/41³/49³ grids. Box growth holds the current spacing fixed,
+setting half-width to `spacing × (grid − 1)/2` for those grids. Cases outside
+0.5–120 a₀ are omitted, not clamped; at least two admissible boxes are required.
+Quantum numbers, basis, Z and native engine version remain fixed. Each case
+uses the same supervised orbital job and is verified and saved normally.
+
+The table reports actual half-width, spacing, uncorrected grid integral I,
+signed I−1, |ΔI| between consecutive cases, and a radial sphere reference
+interval. I−1 combines missing tails with Cartesian quadrature error; |ΔI|
+is a change diagnostic, not an error bound or automatic convergence certificate.
+The cube contains a sphere of radius R and is contained in one of radius √3R.
+Radial quadrature estimates the probabilities of those two spheres, hence a
+reference bracket for the continuum cube probability. Distance outside that
+interval diagnoses grid inconsistency, within radial quadrature accuracy;
+falling inside it does not establish convergence.
+
+Cancellation requests the active worker job and stops scheduling later cases.
+Completed cases remain saved; failed/cancelled/partial studies are labelled as
+such. Workspace restore invalidates the current study display and stops later
+cases. The comparison table is session-local; its constituent runs persist in
+**Runs**, with JSON manifest/CSV exports and their identifiers listed below the
+table. Changed orbital controls mark a recorded study out of date.
+
+The worker now supplies positive radial node radii from zeros of
+`L_(n-l-1)^(2l+1)(ρ)` with `r = nρ/(2Z)` via
+[SciPy roots_genlaguerre](https://docs.scipy.org/doc/scipy/reference/generated/scipy.special.roots_genlaguerre.html).
+They are checked against the radial function and independent degree-0/1/2
+closed forms in main. The radial plot and exported radial SVG mark these nodes;
+the origin and angular nodal planes are not counted. The UI defaults to
+0…3⟨r⟩ for readability and can display the full stored radial range; neither
+option changes the profile or its normalization.
+
+`radialNodes` and `cubeProbabilityBounds` are optional additive result fields,
+so older saved orbital results/older workers remain usable. Missing diagnostics
+are marked as not recorded, never synthesized as worker outputs. Tests cover
+1s spherical probabilities, 2s/3s/3p node locations and charge scaling, fixed
+variable invariants, real grid/box studies, saved cases, and legacy results.
+Strict-CSP renderer tests also cover cancellation, retention of completed cases,
+restarting a study, and invalidating the display when the study mode changes.
+No Math3D code, connection or new transport is involved.

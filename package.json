@@ -15,7 +15,7 @@
     "typecheck": "tsc --noEmit",
     "test": "tsx --test tests/*.test.ts",
     "test:worker": "node scripts/python.mjs -m unittest discover -s workers/quantum-python/tests -v",
-    "test:desktop": "node scripts/smoke.mjs",
+    "test:desktop": "npm run build && node scripts/smoke.mjs",
     "test:web": "npm run build && tsx scripts/smoke-web.ts",
     "test:scenes": "tsx scripts/smoke-scenes.ts",
     "test:ssh-ui": "npm run build && node scripts/smoke-ssh-ui.mjs",

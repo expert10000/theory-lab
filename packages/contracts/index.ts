@@ -154,7 +154,8 @@ export interface OrbitalResult {
   data: { schema: "quantum-data/v1"; format: "f64le"; path: string; rows: number;
     columns: ["psi_re", "psi_im"]; bytes: number; sha256: string };
   analysis: { energyHartree: number; gridProbability: number; radialNormalization: number;
-    meanRadius: number; radialRadii: number[]; radialProbability: number[] };
+    meanRadius: number; radialRadii: number[]; radialProbability: number[];
+    radialNodes?: number[]; cubeProbabilityBounds?: [number, number] };
   provenance: SpectrumResult["provenance"];
 }
 export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob;
