@@ -51,6 +51,7 @@ try {
       "manyBody",
       "onProgress",
       "openAtlasSource",
+      "orbital",
       "readData",
       "restart",
       "run",
@@ -616,9 +617,44 @@ try {
     try { await window.quantum.getScene("../outside"); return false; } catch { return true; }
   });
   assert.ok(rejectedScene, "scene IPC rejects renderer path traversal");
+  await page.getByTestId("open-orbitals").click();
+  await page.getByTestId("run-orbital").click();
+  await page.getByTestId("orbital-result").waitFor();
+  assert.equal(await page.getByTestId("orbital-energy").innerText(), "-0.500000");
+  await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-orbital-1s.png",fullPage:true});
+  await page.getByRole("button",{name:"2p",exact:true}).click();
+  assert.ok(await page.getByTestId("orbital-result").getByText("OUT OF DATE").isVisible());
+  await page.getByTestId("run-orbital").click();
+  await page.getByTestId("orbital-result").waitFor();
+  assert.equal(await page.getByTestId("orbital-energy").innerText(), "-0.125000");
+  await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByLabel("Field quantity").selectOption("real");
+  await page.getByRole("checkbox",{name:/^real = [^-]/}).waitFor();
+  await page.getByRole("checkbox",{name:/^real = -/}).waitFor();
+  await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-orbital-2p.png",fullPage:true});
+  await page.getByLabel("Field quantity").selectOption("phase");
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByTestId("field-slice").click();
+  assert.match(await page.getByTestId("field-sample").innerText(),/undefined near a node/);
+  await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-orbital-phase.png",fullPage:true});
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},parent);
+  await page.getByTestId("export-orbital-scene").click();
+  await page.getByRole("status").filter({hasText:"Exported verified scene bundle"}).waitFor();
+  const orbitalRun=(await page.evaluate(()=>window.quantum.listRuns())).find(r=>r.operation==="orbital");
+  assert.ok(orbitalRun);
+  const orbitalBundle=JSON.parse(await readFile(resolve(parent,`${orbitalRun.runId}.qscene`,"scene.json"),"utf8"));
+  assert.equal(orbitalBundle.fields[0].kind,"complex-field");
+  await page.getByTestId("open-scenes").click();
+  await page.getByLabel("Scene saved run").selectOption(orbitalRun.runId);
+  await page.getByTestId("scenes-page").getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native labs, sweeps and six presets; durable runs, workspace restore, CSV/SVG/manifest/scene exports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native labs, sweeps and six presets; orbital 1s/2p fields, signed lobes, phase and slices; durable runs, workspace restore, CSV/SVG/manifest/scene exports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",
   );
 } finally {
   await app.close();

@@ -139,7 +139,25 @@ export interface SweepJob {
     initialIndex: 0 | 1;
   };
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob;
+export interface OrbitalModel {
+  type: "hydrogenic";
+  parameters: { n: number; l: number; m: number; basis: "complex" | "real_cos" | "real_sin";
+    Z: number; radius: number; grid: number };
+}
+export interface OrbitalJob {
+  schema: "quantum-job/v1"; jobId: string; operation: "orbital"; engine: "native"; model: OrbitalModel;
+}
+export interface OrbitalResult {
+  schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
+  operation: "orbital"; model: OrbitalModel;
+  engine: { name: "native"; version: string };
+  data: { schema: "quantum-data/v1"; format: "f64le"; path: string; rows: number;
+    columns: ["psi_re", "psi_im"]; bytes: number; sha256: string };
+  analysis: { energyHartree: number; gridProbability: number; radialNormalization: number;
+    meanRadius: number; radialRadii: number[]; radialProbability: number[] };
+  provenance: SpectrumResult["provenance"];
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -343,7 +361,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -362,7 +380,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -391,6 +409,7 @@ export interface QuantumBridge {
   manyBody(job: ManyBodyJob): Promise<ManyBodyResult>;
   circuit(job: CircuitJob): Promise<CircuitResult>;
   topology(job: TopologyJob): Promise<TopologyResult>;
+  orbital(job: OrbitalJob): Promise<OrbitalResult>;
   openAtlasSource(id: string): Promise<void>;
   cancel(jobId: string): Promise<boolean>;
   readData(jobId: string): Promise<Uint8Array>;
@@ -413,4 +432,9 @@ export function assertJob(value: unknown): asserts value is QuantumJob {
     throw new Error(
       `Invalid quantum-job/v1: ${ajv.errorsText(isQuantumJob.errors)}`,
     );
+  if (value.operation === "orbital") {
+    const { n, l, m, basis } = value.model.parameters;
+    if (l >= n || Math.abs(m) > l || (basis !== "complex" && m < 0) || (basis === "real_sin" && m === 0))
+      throw new Error("Invalid orbital quantum numbers or real-harmonic convention");
+  }
 }

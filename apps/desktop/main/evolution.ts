@@ -13,20 +13,23 @@ import {
   type LindbladResult,
   type SweepJob,
   type SweepResult,
+  type OrbitalJob,
+  type OrbitalResult,
 } from "../../../packages/contracts";
+import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
 import { WorkerSupervisor } from "./worker";
 
 type Active = {
-  job: EvolutionJob | CavityJob | LindbladJob | SweepJob;
+  job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob;
   acknowledged: boolean;
   cancelRequested: boolean;
-  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult) => void;
+  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 export class EvolutionCoordinator {
   private active?: Active;
-  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult>();
+  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult>();
   constructor(
     private worker: WorkerSupervisor,
     private artifactDir: string,
@@ -46,11 +49,12 @@ export class EvolutionCoordinator {
   run(job: CavityJob): Promise<CavityResult>;
   run(job: LindbladJob): Promise<LindbladResult>;
   run(job: SweepJob): Promise<SweepResult>;
-  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult> {
+  run(job: OrbitalJob): Promise<OrbitalResult>;
+  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult> {
     assertJob(job);
-    if (!["evolve", "cavity", "lindblad", "sweep"].includes(job.operation)) throw new Error("Expected quantum data job");
-    const timing = job.operation === "sweep" ? job.sweep : job.solver;
-    if (timing.tStop <= timing.tStart)
+    if (!["evolve", "cavity", "lindblad", "sweep", "orbital"].includes(job.operation)) throw new Error("Expected quantum data job");
+    const timing = job.operation === "orbital" ? null : job.operation === "sweep" ? job.sweep : job.solver;
+    if (timing && timing.tStop <= timing.tStart)
       throw new Error("tStop must exceed tStart");
     if (this.active) throw new Error("A quantum job is already running");
     if (
@@ -138,7 +142,7 @@ export class EvolutionCoordinator {
     const params = value as Record<string, unknown>;
     if (params.jobId !== active.job.jobId) return;
     if (method === "job.progress") {
-      const expectedTotal = active.job.operation === "sweep"
+      const expectedTotal = active.job.operation === "orbital" ? active.job.model.parameters.grid : active.job.operation === "sweep"
         ? active.job.sweep.x.points * (active.job.sweep.y?.points ?? 1)
         : active.job.solver.samples;
       if (
@@ -165,7 +169,11 @@ export class EvolutionCoordinator {
         this.reject(new Error("Worker returned an invalid quantum result"));
         return;
       }
-      if (value.operation === "sweep" && active.job.operation === "sweep") {
+      if (value.operation === "orbital" && active.job.operation === "orbital") {
+        if (!consistentOrbitalResult(active.job,value)) {
+          this.reject(new Error("Worker returned inconsistent orbital data")); return;
+        }
+      } else if (value.operation === "sweep" && active.job.operation === "sweep") {
         const expectedX = active.job.sweep.x.points;
         const expectedY = active.job.sweep.y?.points ?? 1;
         if (value.data.shape.x !== expectedX || value.data.shape.y !== expectedY ||
@@ -175,7 +183,7 @@ export class EvolutionCoordinator {
           this.reject(new Error("Worker returned an invalid sweep result"));
           return;
         }
-      } else if (value.operation !== "sweep" && active.job.operation !== "sweep") {
+      } else if (value.operation !== "sweep" && active.job.operation !== "sweep" && value.operation !== "orbital" && active.job.operation !== "orbital") {
         if (value.data.rows !== active.job.solver.samples ||
             value.data.bytes !== value.data.rows * (value.operation === "cavity" ? 48 : value.operation === "lindblad" ? 56 : 80) ||
             JSON.stringify(value.solver) !== JSON.stringify(active.job.solver) ||
@@ -198,10 +206,13 @@ export class EvolutionCoordinator {
         return;
       }
       void this.worker.fetchArtifact(value.jobId, value.data, this.artifactDir)
-        .then(() => { this.completed.set(value.jobId, value); this.resolve(value); })
+        .then(async () => {
+          if (value.operation === "orbital") checkOrbitalData(value, await readFile(join(this.artifactDir, value.data.path)));
+          this.completed.set(value.jobId, value); this.resolve(value);
+        })
         .catch(error => this.reject(error instanceof Error ? error : new Error(String(error))));
     } else if (method === "job.cancelled")
-      this.reject(new Error(active.job.operation === "cavity" ? "Cavity cancelled" : active.job.operation === "lindblad" ? "Lindblad cancelled" : active.job.operation === "sweep" ? "Sweep cancelled" : "Evolution cancelled"));
+      this.reject(new Error(active.job.operation === "orbital" ? "Orbital cancelled" : active.job.operation === "cavity" ? "Cavity cancelled" : active.job.operation === "lindblad" ? "Lindblad cancelled" : active.job.operation === "sweep" ? "Sweep cancelled" : "Evolution cancelled"));
     else if (method === "job.failed")
       this.reject(
         new Error(
@@ -211,7 +222,7 @@ export class EvolutionCoordinator {
         ),
       );
   }
-  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult) {
+  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult) {
     const active = this.active;
     if (!active) return;
     clearTimeout(active.timer);

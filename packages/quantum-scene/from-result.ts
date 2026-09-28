@@ -2,7 +2,7 @@ import type { QuantumResult } from "../contracts";
 import { assertScene, decodeDataset, verifyScenePayload, type QuantumScene, type SceneObject, type ScenePayload } from "./index";
 
 export function supportsScene(operation: string, model: string): boolean {
-  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz"].includes(model));
+  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz"].includes(model)) || (operation === "orbital" && model === "hydrogenic");
 }
 export async function sceneFromResult(result: QuantumResult, data: Uint8Array | null, resultSha256: string,
   digest: (bytes: Uint8Array) => Promise<string>): Promise<ScenePayload> {
@@ -34,7 +34,21 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
   function object(id: string, label: string, kind: SceneObject["kind"], positions: string, color: string, refs: Partial<SceneObject> = {}) {
     scene.objects.push({ id, label, kind, positions, visible: true, style: { color, opacity: 1, size: kind === "point-cloud" ? .14 : 1 }, ...refs });
   }
-  if (result.operation === "evolve") {
+  if (result.operation === "orbital") {
+    if (!data || data.byteLength !== result.data.bytes || await digest(data) !== result.data.sha256) throw new Error("Orbital source artifact failed integrity check");
+    const p = result.model.parameters, samples = decodeDataset(data);
+    if (samples.length !== p.grid ** 3 * 2 || !samples.every(Number.isFinite)) throw new Error("Invalid orbital source layout");
+    const real: number[] = [], imaginary: number[] = [];
+    for (let i = 0; i < samples.length; i += 2) { real.push(samples[i]); imaginary.push(samples[i + 1]); }
+    scene.coordinates.units = ["a0", "a0", "a0"];
+    const extent = (3 * p.n ** 2 - p.l * (p.l + 1)) / (2 * p.Z);
+    scene.camera = { position: [4 * extent, 3.4 * extent, 3 * extent], target: [0, 0, 0], up: [0, 0, 1] };
+    scene.fields = [{ id: "wavefunction", label: `Hydrogenic ψ · n=${p.n}, l=${p.l}, m=${p.m} · ${p.basis}`, kind: "complex-field",
+      real: await dataset("psi-real", real, 1, "a0^-3/2"), imaginary: await dataset("psi-imaginary", imaginary, 1, "a0^-3/2"),
+      grid: { shape: [p.grid, p.grid, p.grid], origin: [-p.radius, -p.radius, -p.radius],
+        spacing: [2 * p.radius / (p.grid - 1), 2 * p.radius / (p.grid - 1), 2 * p.radius / (p.grid - 1)], order: "xyz-z-fastest" } }];
+    scene.annotations.push({ id: "assumptions", text: `One-electron Coulomb · infinite nuclear mass · E=${result.analysis.energyHartree.toPrecision(5)} Hartree`, position: [0, 0, p.radius] });
+  } else if (result.operation === "evolve") {
     if (!data || data.byteLength !== result.data.bytes || await digest(data) !== result.data.sha256) throw new Error("Evolution source artifact failed integrity check");
     const samples = decodeDataset(data);
     if (samples.length !== result.data.rows * 10 || !samples.every(Number.isFinite)) throw new Error("Invalid evolution source layout");

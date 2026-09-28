@@ -4,6 +4,7 @@ const bridge: QuantumBridge = {
   run: (job) => ipcRenderer.invoke("quantum:run", job),
   evolve: (job) => ipcRenderer.invoke("quantum:evolve", job),
   cavity: (job) => ipcRenderer.invoke("quantum:cavity", job),
+  orbital: (job) => ipcRenderer.invoke("quantum:orbital", job),
   lindblad: (job) => ipcRenderer.invoke("quantum:lindblad", job),
   sweep: (job) => ipcRenderer.invoke("quantum:sweep", job),
   manyBody: (job) => ipcRenderer.invoke("quantum:many-body", job),

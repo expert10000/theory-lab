@@ -4,6 +4,7 @@ import { basename, join } from "node:path";
 import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
+import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
 import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
 import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 
@@ -31,6 +32,8 @@ export class RunStore {
       throw new Error("Cannot persist a mismatched quantum run");
     if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
       throw new Error("Cannot persist inconsistent topology data");
+    if (job.operation === "orbital" && (result.operation !== "orbital" || !consistentOrbitalResult(job, result)))
+      throw new Error("Cannot persist inconsistent orbital data");
     verifyId(result.runId);
     const dir = join(this.root, result.runId);
     await this.ensureRoot();
@@ -45,6 +48,7 @@ export class RunStore {
       const data = await readFile(join(this.artifactDir, name));
       if (!("data" in result) || data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256)
         throw new Error("Run artifact failed integrity check");
+      if (result.operation === "orbital") checkOrbitalData(result, data);
       await copyFile(join(this.artifactDir, name), join(dir, "data.f64"));
     }
     const manifest = { ...summary(result), files: { job: "job.json", result: "result.json", data: name ? "data.f64" : null },
@@ -67,7 +71,7 @@ export class RunStore {
             typeof value.durationMs === "number" && Number.isFinite(value.durationMs) &&
             (value.artifactSha256 === null || (typeof value.artifactSha256 === "string" && /^[a-f0-9]{64}$/.test(value.artifactSha256))) &&
             ["qutip", "native", "dynamiqs", "quspin", "scqubits"].includes(value.engine) &&
-            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology"].includes(value.operation))
+            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital"].includes(value.operation))
           runs.push({ schema: value.schema, runId: value.runId, jobId: value.jobId,
             operation: value.operation, model: value.model, engine: value.engine,
             engineVersion: value.engineVersion, computedAt: value.computedAt,
@@ -96,6 +100,8 @@ export class RunStore {
       throw new Error("Stored run has invalid contracts");
     if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
       throw new Error("Stored topology data failed consistency check");
+    if (job.operation === "orbital" && (result.operation !== "orbital" || !consistentOrbitalResult(job, result)))
+      throw new Error("Stored orbital data failed consistency check");
     let data: Buffer | null = null;
     if ("data" in result) {
       if (manifest.files.data !== "data.f64") throw new Error("Missing run data file");
@@ -103,6 +109,7 @@ export class RunStore {
       if (data.byteLength !== result.data.bytes || sha(data) !== result.data.sha256 ||
           result.data.sha256 !== manifest.artifactSha256)
         throw new Error("Stored numerical data failed integrity check");
+      if (result.operation === "orbital") checkOrbitalData(result, data);
     }
     return { manifest, job, result, data };
   }
@@ -152,6 +159,13 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
   }
   if (!data) throw new Error("Missing run numerical data");
   const rows = rowsOf(result, data);
+  if (result.operation === "orbital") {
+    const p = result.model.parameters, step = 2 * p.radius / (p.grid - 1);
+    return ["x_a0,y_a0,z_a0,psi_re_a0^-3/2,psi_im_a0^-3/2,density_a0^-3", ...rows.map(([re, im], i) => {
+      const x = Math.floor(i / p.grid ** 2), y = Math.floor(i / p.grid) % p.grid, z = i % p.grid;
+      return `${-p.radius + step * x},${-p.radius + step * y},${-p.radius + step * z},${re},${im},${re * re + im * im}`;
+    })].join("\n") + "\n";
+  }
   if (result.operation === "sweep") {
     const x = result.sweep.x, y = result.sweep.y;
     return [`${x.parameter},${y?.parameter ?? "y_index"},final_p1`, ...rows.map(([value], index) => {
@@ -172,6 +186,11 @@ function lineSeries(rows: number[][], col: number, ymin: number, ymax: number) {
 export function numericalSvg(result: QuantumResult, data: Buffer | null): string {
   const title = `${result.model.type} · ${result.engine.name} · ${result.runId}`;
   const head = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img"><rect width="900" height="520" fill="#111b24"/><text x="70" y="42" fill="#eef7f5" font-family="sans-serif" font-size="20">${title}</text><path d="M70 90 V440 H830" fill="none" stroke="#7d929e"/>`;
+  if (result.operation === "orbital") {
+    const a = result.analysis, max = Math.max(...a.radialProbability);
+    const points = a.radialProbability.map((v, i) => `${70 + 760 * a.radialRadii[i] / a.radialRadii[400]},${440 - v * 350 / max}`).join(" ");
+    return head + `<polyline points="${points}" stroke="#79d9c1" fill="none" stroke-width="2"/><text x="70" y="480" fill="white" font-family="sans-serif">Radial probability r²|R(r)|² · r in a0 · E = ${a.energyHartree} Hartree</text></svg>\n`;
+  }
   if (result.operation === "diagonalize") {
     const [low, high] = result.spectrum.eigenvalues;
     return head + `<path d="M250 360 H650 M250 170 H650" stroke="#79d9c1" stroke-width="4"/><text x="670" y="365" fill="white" font-family="sans-serif">E− ${low.toFixed(6)}</text><text x="670" y="175" fill="white" font-family="sans-serif">E+ ${high.toFixed(6)}</text></svg>\n`;

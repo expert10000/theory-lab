@@ -2,6 +2,74 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-job.v1.json",
   "definitions": {
+    "orbitalModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "hydrogenic"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "n": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            },
+            "l": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "m": {
+              "type": "integer",
+              "minimum": -2,
+              "maximum": 2
+            },
+            "basis": {
+              "enum": [
+                "complex",
+                "real_cos",
+                "real_sin"
+              ]
+            },
+            "Z": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 120
+            },
+            "grid": {
+              "enum": [
+                21,
+                31,
+                41,
+                49
+              ]
+            }
+          },
+          "required": [
+            "n",
+            "l",
+            "m",
+            "basis",
+            "Z",
+            "radius",
+            "grid"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "parameters"
+      ]
+    },
     "sweepAxis": {
       "type": "object", "additionalProperties": false,
       "properties": {
@@ -601,6 +669,37 @@
         "operation": { "const": "topology" }, "engine": { "const": "native" },
         "model": { "$ref": "#/definitions/topologyModel" }
       }, "required": ["schema", "jobId", "operation", "engine", "model"]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "quantum-job/v1"
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "operation": {
+          "const": "orbital"
+        },
+        "engine": {
+          "const": "native"
+        },
+        "model": {
+          "$ref": "#/definitions/orbitalModel"
+        }
+      },
+      "required": [
+        "schema",
+        "jobId",
+        "operation",
+        "engine",
+        "model"
+      ]
     }
   ]
 }

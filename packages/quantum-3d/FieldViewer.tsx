@@ -58,6 +58,8 @@ export function FieldViewer({ payload }: { payload: ScenePayload }) {
   const selected=field&&values?gridIndex(field.grid.shape,...xyz):0;
   const position=field?gridPosition(field,...xyz):null;
   const phaseUndefined=quantity==="phase"&&ready&&field&&fieldValues(field,ready,"density")[selected]<=densityMaximum*1e-12;
+  const amplitudeUnit = payload.scene.datasets.find(d=>d.id===field?.real)?.unit;
+  const quantityUnit = quantity==="phase"?"rad":quantity==="density"?(amplitudeUnit==="a0^-3/2"?"a0^-3":amplitudeUnit==="dimensionless"?"dimensionless":`(${amplitudeUnit})²`):amplitudeUnit;
   return <section className="field-viewer" data-testid="field-viewer">
     <div className="scene-run-controls"><label>Field<select aria-label="Scene field" value={fieldId} onChange={e=>setFieldId(e.target.value)}>{payload.scene.fields?.map(f=><option value={f.id} key={f.id}>{f.label}</option>)}</select></label>
       <label>Quantity<select aria-label="Field quantity" value={quantity} onChange={e=>setQuantity(e.target.value as FieldQuantity)}>{(field?.kind==="scalar-field"?["real"]:["density","real","imaginary","phase"]).map(q=><option key={q} value={q}>{q==="density"?"|ψ|² density":q==="real"?"Real component":q==="imaginary"?"Imaginary component":"Phase (density surface)"}</option>)}</select></label>
@@ -68,8 +70,8 @@ export function FieldViewer({ payload }: { payload: ScenePayload }) {
     {ready&&field&&values&&<div className="field-slice-panel"><div className="scene-run-controls"><label>Slice normal<select aria-label="Slice normal" value={axis} onChange={e=>setAxis(Number(e.target.value))}><option value={0}>x</option><option value={1}>y</option><option value={2}>z</option></select></label><label>Slice index {safeSlice}<input aria-label="Field slice" type="range" min={0} max={field.grid.shape[axis]-1} value={safeSlice} onChange={e=>setSlice(Number(e.target.value))}/></label></div>
       <canvas ref={canvas} className="field-slice" data-testid="field-slice" aria-label="Numerical field slice" onClick={e=>{const b=e.currentTarget.getBoundingClientRect();setSample([Math.min(shape![plane[0]]-1,Math.max(0,Math.floor((e.clientX-b.left)/b.width*shape![plane[0]]))),Math.min(shape![plane[1]]-1,Math.max(0,Math.floor((1-(e.clientY-b.top)/b.height)*shape![plane[1]])))]);}}/>
       <p>Horizontal: {payload.scene.coordinates.axes[plane[0]]} · vertical (up): {payload.scene.coordinates.axes[plane[1]]}. Click a pixel to inspect its grid value.</p>
-      <p data-testid="field-sample">({position?.map(v=>v.toPrecision(5)).join(", ")}) · {quantity} = {phaseUndefined?"undefined near a node":values[selected].toPrecision(7)}</p>
-      {range&&<p>Slice color scale: {quantity==="phase"?"cyclic phase −π…π (rad); near-zero density masked":`${range[0].toPrecision(5)} … ${range[1].toPrecision(5)}`} · {quantity==="density"?"amplitude unit squared":quantity==="phase"?"rad":payload.scene.datasets.find(d=>d.id===field.real)?.unit}</p>}
+      <p data-testid="field-sample">({position?.map((v,i)=>`${v.toPrecision(5)} ${payload.scene.coordinates.units[i]}`).join(", ")}) · {quantity} = {phaseUndefined?"undefined near a node":values[selected].toPrecision(7)} {quantityUnit}</p>
+      {range&&<p>Slice color scale: {quantity==="phase"?"cyclic phase −π…π (rad); near-zero density masked":`${range[0].toPrecision(5)} … ${range[1].toPrecision(5)}`} · {quantityUnit}</p>}
     </div>}
     <p className="scene-axis-note">Linear grid interpolation / marching tetrahedra. Threshold is a fraction of the sampled maximum, not an enclosed-probability percentage. Phase uses interpolated complex amplitudes; it is undefined at nodes.</p>
   </section>;

@@ -43,6 +43,9 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     const scene = new THREE.Scene(); scene.background = new THREE.Color("#0d161e");
+    scene.add(new THREE.AmbientLight(0xffffff, 1.4));
+    const light = new THREE.DirectionalLight(0xffffff, 2.0);
+    light.position.set(4, -3, 5); scene.add(light);
     const camera = new THREE.PerspectiveCamera(42, 1, .001, 10000000);
     camera.up.fromArray(payload.scene.camera.up);
     const controls = new OrbitControls(camera, renderer.domElement);
@@ -63,7 +66,10 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
       }
       const style = { color: o.scalars ? "#ffffff" : o.style.color, opacity: o.style.opacity, transparent: o.style.opacity < 1, vertexColors: !!o.scalars };
       let object: THREE.Object3D;
-      if (o.kind === "mesh") object = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ ...style, side: THREE.DoubleSide }));
+      if (o.kind === "mesh") {
+        geometry.computeVertexNormals();
+        object = new THREE.Mesh(geometry, new THREE.MeshStandardMaterial({ ...style, side: THREE.DoubleSide, roughness: .8, metalness: 0 }));
+      }
       else if (o.kind === "point-cloud") object = new THREE.Points(geometry, new THREE.PointsMaterial({ ...style, size: o.style.size }));
       else if (o.kind === "polyline") object = new THREE.Line(geometry, new THREE.LineBasicMaterial(style));
       else {

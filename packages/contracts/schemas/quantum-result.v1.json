@@ -2,6 +2,74 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-result.v1.json",
   "definitions": {
+    "orbitalModel": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "type": {
+          "const": "hydrogenic"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "n": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 3
+            },
+            "l": {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 2
+            },
+            "m": {
+              "type": "integer",
+              "minimum": -2,
+              "maximum": 2
+            },
+            "basis": {
+              "enum": [
+                "complex",
+                "real_cos",
+                "real_sin"
+              ]
+            },
+            "Z": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 6
+            },
+            "radius": {
+              "type": "number",
+              "minimum": 0.5,
+              "maximum": 120
+            },
+            "grid": {
+              "enum": [
+                21,
+                31,
+                41,
+                49
+              ]
+            }
+          },
+          "required": [
+            "n",
+            "l",
+            "m",
+            "basis",
+            "Z",
+            "radius",
+            "grid"
+          ]
+        }
+      },
+      "required": [
+        "type",
+        "parameters"
+      ]
+    },
     "sweepAxis": {
       "type": "object", "additionalProperties": false,
       "properties": {
@@ -985,6 +1053,162 @@
         ] },
         "provenance": { "$ref": "#/oneOf/5/properties/provenance" }
       }, "required": ["schema", "jobId", "runId", "status", "operation", "model", "engine", "analysis", "provenance"]
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "schema": {
+          "const": "quantum-result/v1"
+        },
+        "jobId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "runId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100,
+          "pattern": "^[A-Za-z0-9_-]+$"
+        },
+        "status": {
+          "const": "completed"
+        },
+        "operation": {
+          "const": "orbital"
+        },
+        "model": {
+          "$ref": "#/definitions/orbitalModel"
+        },
+        "engine": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "name": {
+              "const": "native"
+            },
+            "version": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "required": [
+            "name",
+            "version"
+          ]
+        },
+        "data": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "schema": {
+              "const": "quantum-data/v1"
+            },
+            "format": {
+              "const": "f64le"
+            },
+            "path": {
+              "type": "string",
+              "pattern": "^[A-Za-z0-9_-]+\\.f64$"
+            },
+            "rows": {
+              "type": "integer",
+              "minimum": 9261,
+              "maximum": 117649
+            },
+            "columns": {
+              "const": [
+                "psi_re",
+                "psi_im"
+              ]
+            },
+            "bytes": {
+              "type": "integer",
+              "minimum": 148176,
+              "maximum": 1882384
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            }
+          },
+          "required": [
+            "schema",
+            "format",
+            "path",
+            "rows",
+            "columns",
+            "bytes",
+            "sha256"
+          ]
+        },
+        "analysis": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "energyHartree": {
+              "type": "number",
+              "minimum": -18,
+              "maximum": 0
+            },
+            "gridProbability": {
+              "type": "number",
+              "minimum": 0
+            },
+            "radialNormalization": {
+              "type": "number",
+              "minimum": 0
+            },
+            "meanRadius": {
+              "type": "number",
+              "minimum": 0
+            },
+            "radialRadii": {
+              "type": "array",
+              "minItems": 401,
+              "maxItems": 401,
+              "items": {
+                "type": "number",
+                "minimum": 0
+              }
+            },
+            "radialProbability": {
+              "type": "array",
+              "minItems": 401,
+              "maxItems": 401,
+              "items": {
+                "type": "number",
+                "minimum": 0
+              }
+            }
+          },
+          "required": [
+            "energyHartree",
+            "gridProbability",
+            "radialNormalization",
+            "meanRadius",
+            "radialRadii",
+            "radialProbability"
+          ]
+        },
+        "provenance": {
+          "$ref": "#/oneOf/5/properties/provenance"
+        }
+      },
+      "required": [
+        "schema",
+        "jobId",
+        "runId",
+        "status",
+        "operation",
+        "model",
+        "engine",
+        "data",
+        "analysis",
+        "provenance"
+      ]
     }
   ]
 }

@@ -94,6 +94,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             output on the shared time grid. Native cavity dynamics uses a
             Hermitian eigendecomposition and exact spectral phases. The
             Lindblad reference uses a dense Liouvillian and DOP853.
+            Hydrogenic orbitals use analytic Laguerre radial functions and SciPy spherical harmonics, with independent radial quadrature checks.
           </p>
           <small>
             Independent engine · norm left uncorrected for diagnostics
@@ -172,6 +173,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <p><code>quantum-cavity-data/v1</code> stores six Float64 values per row (48 bytes): time, excited population, mean photons, Fock-boundary population, norm, parity.</p>
           <p><code>quantum-lindblad-data/v1</code> stores seven Float64 values per row (56 bytes): time, excited population, photons, purity, coherence, Fock-boundary occupation, trace.</p>
           <p><code>quantum-sweep-data/v1</code> stores row-major final P₁ values as little-endian Float64 cells. The JSON result specifies X/Y shape, cache key and reuse counts. Completed rows are atomically checkpointed so an interrupted grid can resume.</p>
+          <p>Orbital quantum-data/v1 stores a regular Cartesian grid of complex amplitudes as interleaved real/imaginary Float64 pairs (16 bytes per point, x outermost, z fastest). Coordinates are in a₀, amplitude in a₀⁻³ᐟ², energy in Hartree. The cube integral is not renormalized.</p>
           <small>Up to 50,000 two-level or 5,000 cavity samples · SHA-256 verified</small>
         </article>
       </div>

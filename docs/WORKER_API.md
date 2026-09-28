@@ -15,9 +15,21 @@ The Python worker receives newline-delimited JSON-RPC 2.0 through local stdio or
 | `health` | Supervisor liveness check |
 | `resources` | `worker-resources/v1` snapshot |
 | `quantum.run` | Inline spectrum, many-body, circuit or topology result |
-| `quantum.start` | Start evolution, cavity, Lindblad or sweep job |
+| `quantum.start` | Start evolution, cavity, Lindblad, sweep or orbital job |
 | `quantum.cancel` | Request active-job cancellation |
 | `shutdown` | Graceful shutdown |
+
+### Orbital operation (QVIS-004, Electron only)
+
+`quantum.start` accepts a native `orbital` job with a `hydrogenic` model. Its
+parameters are `n`, `l`, `m`, `basis` (`complex`, `real_cos`, `real_sin`), `Z`,
+`radius` (cube half-width in a₀), and `grid` (21/31/41/49). Progress counts x slabs.
+The result carries an interleaved f64le `[psi_re,psi_im]` artifact in
+`xyz-z-fastest` order, analytic energy in Hartree, infinite-domain radial norm
+and mean radius, unrenormalized finite-grid probability and a radial profile.
+The existing trusted preload exposes only `orbital(job)`; no new worker HTTP
+endpoint, gateway operation or Math3D connection is introduced. See
+[FIELDS_ORBITALS.md](FIELDS_ORBITALS.md) for scientific assumptions and formats.
 
 `worker-resources/v1` has `platform.system/machine`, `cpu.logicalCores`, `memory.totalBytes` (nullable), and `job.activeId` (nullable). The shared draft-07 schema validates it in Python and TypeScript.
 

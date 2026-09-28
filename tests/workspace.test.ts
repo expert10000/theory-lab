@@ -11,6 +11,7 @@ import type { CircuitJob, CircuitResult, ManyBodyJob, ManyBodyResult } from "../
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 import { CIRCUIT_DEFAULTS, circuitJob } from "../packages/models/circuit";
 import { TOPOLOGY_DEFAULTS } from "../packages/models/topology";
+import { ORBITAL_DEFAULTS } from "../packages/models/orbital";
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
@@ -58,6 +59,11 @@ test("topology draft is additive to workspace v1", () => {
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "topology", topology: TOPOLOGY_DEFAULTS }));
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "atlas" }));
   assert.equal(isWorkspaceSnapshot({ ...workspace, topology: { ...TOPOLOGY_DEFAULTS, modelId: "weyl" } }), false);
+});
+test("orbital draft is additive and retains basis/box/grid settings", () => {
+  assert.ok(isWorkspaceSnapshot(workspace));
+  assert.ok(isWorkspaceSnapshot({...workspace,tab:"orbital",orbital:ORBITAL_DEFAULTS}));
+  assert.equal(isWorkspaceSnapshot({...workspace,orbital:{...ORBITAL_DEFAULTS,basis:"unknown"}}),false);
 });
 
 test("run store persists provenance and verified data, then exports CSV, SVG and manifest", async () => {

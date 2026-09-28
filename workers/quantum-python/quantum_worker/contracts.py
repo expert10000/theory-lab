@@ -14,3 +14,7 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-job" and value["operation"] == "orbital":
+        p = value["model"]["parameters"]
+        if p["l"] >= p["n"] or abs(p["m"]) > p["l"] or (p["basis"] != "complex" and p["m"] < 0) or (p["basis"] == "real_sin" and p["m"] == 0):
+            raise ValueError("Invalid orbital quantum numbers or real-harmonic convention")

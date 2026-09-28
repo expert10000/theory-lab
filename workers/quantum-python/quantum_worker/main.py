@@ -13,6 +13,7 @@ from quantum_worker.engines.dynamiqs_engine import availability as dynamiqs_avai
 from quantum_worker.engines.many_body import quspin_availability, solve as many_body_solve
 from quantum_worker.engines.circuit import scqubits_availability, solve as circuit_solve
 from quantum_worker.engines.topology import solve as topology_solve
+from quantum_worker.engines.orbital import available as orbital_available
 from quantum_worker.jobs.manager import JobManager
 
 MAX_MESSAGE = 65536
@@ -26,6 +27,8 @@ def capabilities():
               "engines": {"qutip": qutip, "native": native, "dynamiqs": dynamiqs_availability(),
                           "quspin": quspin_availability(), "scqubits": scqubits_availability()},
               "operations": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology"] if qutip["available"] or native["available"] else []}
+    if native["available"] and orbital_available():
+        result["operations"].append("orbital")
     validate("worker-capabilities", result)
     return result
 

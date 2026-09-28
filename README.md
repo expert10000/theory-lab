@@ -75,6 +75,17 @@ Install `workers/quantum-python/requirements-scqubits.txt` into the worker's `.v
 
 Open **Presets** for six source-pinned configurations from the inspected `theory` QuTiP examples: resonant Rabi, Landau–Zener, Jaynes–Cummings vacuum Rabi, T₁ relaxation, pure dephasing, and damped cavity occupation. A card loads the existing lab; review its values, choose QuTiP or native, and run. Five presets show a full-trajectory analytic error and a pass/fail threshold; Landau–Zener shows only the asymptotic reference because its run has finite endpoints. Source revision, basis/frame mappings, and exclusions are detailed in [docs/PRESETS.md](docs/PRESETS.md). Editing a loaded preset creates a variant and disables the exact-preset analytic check.
 
+## Hydrogenic orbitals and sampled fields (QVIS-003–004)
+
+Open **Orbitals** / **Atomic orbitals**, select 1s, 2s, 2p, 3s, 3p or 3d, and
+**Compute orbital**. The existing native Python worker generates analytic
+single-electron Coulomb fields in Bohr/Hartree units. Explore density, signed
+real/imaginary lobes, phase, threshold surfaces and orthogonal slices. Radial
+normalization and the unrenormalized finite-grid integral are shown separately.
+Saved orbital runs replay in **Scenes** and export verified `.qscene` bundles,
+CSV grids or radial SVGs. Math3D is unchanged and is not connected. Scientific
+scope, conventions and tests are in [docs/FIELDS_ORBITALS.md](docs/FIELDS_ORBITALS.md).
+
 ## Saved workspaces and runs
 
 **Save workspace** records the selected tab, preset and all laboratory controls; **Restore** reopens that snapshot after edits or an app restart. Every completed calculation also creates a durable job/result/manifest record under Electron's application user-data directory, with a hash-verified copy of any binary data. Open **Runs** to inspect provenance and export a numerical CSV, an SVG figure, or a JSON manifest using a native save dialog. Stored artifacts are checked again before export. These are development-checkout files; back up the app's user-data directory if you need long-term archival.
