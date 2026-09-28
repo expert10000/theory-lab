@@ -421,6 +421,8 @@ export interface QuantumBridge {
   getScene(runId: string): Promise<import("../quantum-scene").ScenePayload>;
   exportScene(runId: string): Promise<string | null>;
   importScene(): Promise<import("../quantum-scene").ScenePayload | null>;
+  getSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<import("../quantum-scene").ScenePayload>;
+  exportSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<string | null>;
   exportRun(runId: string, format: import("./workspace").RunExportFormat): Promise<string | null>;
 }
 const ajv = new Ajv({ allErrors: true, strict: true });

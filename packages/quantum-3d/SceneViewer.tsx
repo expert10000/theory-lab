@@ -72,6 +72,7 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
       }
       else if (o.kind === "point-cloud") object = new THREE.Points(geometry, new THREE.PointsMaterial({ ...style, size: o.style.size }));
       else if (o.kind === "polyline") object = new THREE.Line(geometry, new THREE.LineBasicMaterial(style));
+      else if (o.kind === "segments") object = new THREE.LineSegments(geometry, new THREE.LineBasicMaterial(style));
       else {
         // Batched line segments bound GPU objects even for large vector fields.
         const vectors = ready.arrays.get(o.values!)!;
@@ -159,6 +160,9 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
   const scalar = object?.scalars && ready?.payload === payload ? ready.arrays.get(object.scalars)?.[safeIndex] : undefined;
   const scalarValues = object?.scalars && ready?.payload === payload ? ready.arrays.get(object.scalars) : undefined;
   const range = scalarValues ? scalarRange(scalarValues) : null;
+  const lattice = payload.scene.lattice;
+  const siteCell = lattice && object?.positions === lattice.sites && ready?.payload === payload ? [...ready.arrays.get(lattice.cells)!.slice(safeIndex*3,safeIndex*3+3)] : null;
+  const siteBasis = siteCell ? ready!.arrays.get(lattice!.basisIndices)![safeIndex] : null;
   useEffect(() => {
     const current = view.current;
     if (!current) return;
@@ -180,6 +184,7 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
         <label>Sample / vertex {safeIndex + 1} / {count}<input aria-label="Scene sample" type="range" min={0} max={Math.max(0, count - 1)} value={safeIndex} disabled={!count} onChange={e => setIndex(Number(e.target.value))} /></label>
         <div data-testid="scene-coordinate">{point && point.map((v, i) => <span key={i}>{payload.scene.coordinates.axes[i]} = {v.toPrecision(7)} {payload.scene.coordinates.units[i]}<br /></span>)}
           {scalar !== undefined && <span>Scalar = {scalar.toPrecision(7)} {payload.scene.datasets.find(d => d.id === object?.scalars)?.unit}</span>}</div>
+        {siteCell && <p data-testid="lattice-site-inspection">Site c({siteCell.join(",")})/b{siteBasis} · basis {lattice!.basis[siteBasis!].label} · open supercell {lattice!.repeats.join("×")}</p>}
       </div>
       {range && <div className="scene-scale" aria-label="Selected object color scale"><span>{object?.colorMap==="phase"?"−π":range[0].toPrecision(5)}</span><span className={`scene-scale-gradient ${object?.colorMap==="phase"?"phase-gradient":""}`} /><span>{object?.colorMap==="phase"?"+π (cyclic)":range[1].toPrecision(5)} {payload.scene.datasets.find(d => d.id === object?.scalars)?.unit}</span>{range[0] === range[1] && <small>Constant field</small>}</div>}
       <fieldset className="scene-visibility"><legend>Object visibility</legend>{payload.scene.objects.map(o => <label key={o.id}><input type="checkbox" checked={!hidden.has(o.id)} onChange={e => setHidden(current => { const next = new Set(current); if (e.target.checked) next.delete(o.id); else next.add(o.id); return next; })} />{o.label}</label>)}</fieldset>

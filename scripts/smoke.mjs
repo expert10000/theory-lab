@@ -41,9 +41,11 @@ try {
       "evolve",
       "exportRun",
       "exportScene",
+      "exportSceneExample",
       "getCapabilities",
       "getResources",
       "getScene",
+      "getSceneExample",
       "getStatus",
       "importScene",
       "lindblad",
@@ -134,7 +136,7 @@ try {
       .getByText("Foundation & first spectrum", { exact: true })
       .isVisible(),
   );
-  assert.match(await page.getByTestId("planned-QVIS-008").innerText(), /Planned/);
+  assert.ok(await page.getByText("Generic lattice cells & bounded supercell fixtures", {exact:true}).isVisible());
   assert.match(await page.getByTestId("planned-QVIS-009").innerText(), /Planned/);
   assert.match(await page.getByTestId("planned-QVIS-010").innerText(), /Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
@@ -728,6 +730,32 @@ try {
   assert.equal(await page.getByTestId("radial-node-marker").count(),1);
   await page.getByRole("img",{name:"Orbital radial probability"}).scrollIntoViewIfNeeded();
   await page.screenshot({path:"artifacts/desktop-orbital-nodes.png",fullPage:true});
+  await page.getByRole("tab",{name:"Scenes",exact:true}).click();
+  const examplePage=page.getByTestId("scenes-page");
+  const beforeExamples=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length));
+  for(const family of ["square","honeycomb","simple_cubic"]) {
+    await page.getByLabel("Geometry family").selectOption(family);
+    await page.getByTestId("open-geometry-example").click();
+    await examplePage.getByTestId("scene-source").filter({hasText:"GEOMETRY FIXTURE"}).waitFor();
+    await examplePage.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+    await examplePage.getByLabel("Inspect scene object").selectOption("lattice-sites-object");
+    await examplePage.getByTestId("lattice-site-inspection").waitFor();
+    await examplePage.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
+    await page.screenshot({path:`artifacts/desktop-lattice-${family}.png`,fullPage:true});
+  }
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length)),beforeExamples);
+  const exampleParent=resolve("artifacts",`lattice-export-${Date.now()}`);
+  await mkdir(exampleParent);
+  await app.evaluate(({dialog},parent)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[parent]});},exampleParent);
+  await examplePage.getByTestId("export-scene").click();
+  await examplePage.getByRole("status").filter({hasText:"Exported verified scene bundle"}).waitFor();
+  const {readdir}=await import("node:fs/promises");
+  const exampleBundle=resolve(exampleParent,(await readdir(exampleParent))[0]);
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},exampleBundle);
+  await examplePage.getByTestId("import-scene").click();
+  await examplePage.getByTestId("scene-source").filter({hasText:"IMPORTED BUNDLE"}).waitFor();
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length)),beforeExamples);
+  assert.ok(await page.evaluate(async()=>{try{await window.quantum.getSceneExample({family:"square",repeats:[99,1,1],path:"../outside"});return false;}catch{return true;}}));
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → QuTiP/Native labs, sweeps and six presets; orbital fields, fixed-box/fixed-spacing studies and radial nodes; durable runs, workspace restore, CSV/SVG/manifest/scene exports and read-only bundle imports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",

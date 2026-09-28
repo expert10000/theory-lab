@@ -6,6 +6,7 @@ import { build } from "esbuild";
 import { chromium } from "playwright";
 import fixture from "../packages/quantum-scene/fixtures/bloch-vector.json";
 import fieldFixture from "../packages/quantum-scene/fixtures/complex-field.json";
+import latticeFixture from "../packages/quantum-scene/fixtures/lattice-honeycomb.json";
 import { assertScene } from "../packages/quantum-scene";
 
 const scene = structuredClone(fixture.scene);
@@ -33,8 +34,9 @@ import {orbitalJob, ORBITAL_DEFAULTS} from './packages/models/orbital';
 import './packages/quantum-3d/scene.css';
 import './packages/ui/theme.css';
 const fields = location.search.includes('fields');
-const scene = fields ? ${JSON.stringify(fieldFixture.scene)} : ${JSON.stringify(complete)};
-const values = fields ? ${JSON.stringify(fieldFixture.values)} : ${JSON.stringify(values)};
+const lattice = location.search.includes('lattice');
+const scene = lattice ? ${JSON.stringify(latticeFixture.scene)} : fields ? ${JSON.stringify(fieldFixture.scene)} : ${JSON.stringify(complete)};
+const values = lattice ? ${JSON.stringify(latticeFixture.values)} : fields ? ${JSON.stringify(fieldFixture.values)} : ${JSON.stringify(values)};
 const artifacts = Object.fromEntries(Object.entries(values).map(([path, values]) => {
   const bytes = new Uint8Array(values.length * 8), view = new DataView(bytes.buffer);
   values.forEach((v, i) => view.setFloat64(i*8, v, true)); return [path, bytes];
@@ -105,6 +107,13 @@ try {
   await page.getByLabel("Field quantity").selectOption("imaginary");
   await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.screenshot({path:"artifacts/field-browser.png",fullPage:true});
+  await page.goto(`${origin}/?lattice`);
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByLabel("Inspect scene object").selectOption("lattice-sites-object");
+  await page.getByRole("slider",{name:"Scene sample"}).focus();
+  await page.getByRole("slider",{name:"Scene sample"}).press("End");
+  assert.match(await page.getByTestId("lattice-site-inspection").innerText(),/c\(1,1,0\)\/b1 · basis B/);
+  await page.getByRole("checkbox",{name:"Primitive cell wireframes"}).uncheck();
   await page.goto(`${origin}/?convergence`);
   await page.getByTestId("run-orbital-study").click();
   await page.getByTestId("orbital-study-row").waitFor();

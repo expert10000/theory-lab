@@ -40,6 +40,7 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 | QVIS-005 | SSH A/B bonds, exact Ising magnetization, QWZ axes/boundary guides | Implemented; commit 74acf92 |
 | QVIS-006 | Read-only verified .qscene import and provenance inspection | Implemented; commit 9092b07 |
 | QVIS-007 | Fixed-box/fixed-spacing orbital studies and positive radial-node diagnostics | Implemented; commit e4afd9a |
+| QVIS-008 | Square/honeycomb/cubic open supercell fixtures, basis/cell inspection and export | Implemented; LATTICE_RECIPROCAL_BANDS.md |
 
 Implemented means code and relevant tests exist, not that every future example
 in the supplied plan is supported. Most recent verification: build/typecheck,
@@ -56,7 +57,7 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 | QVIS-002 reusable renderer | Implemented, browser-compatible package | Product web navigation/import is not yet implemented |
 | QVIS-003 scalar/complex visualization | Implemented, bounded grids | Larger/chunked grids belong to streaming work |
 | QVIS-004 orbital lab | Implemented, analytic hydrogenic examples | No many-electron atom/molecule solver |
-| QVIS-005 lattice/crystal primitives | Partial: SSH/Ising sites/bonds, schematic boundaries | Generic square/honeycomb/cubic fixtures, cells, basis, translations, bounded supercells |
+| QVIS-005 lattice/crystal primitives | Partial: square/honeycomb/cubic open fixtures, cells, basis, translations and supercells now exist | Arbitrary crystals and periodic bonds remain outside the bounded example scope |
 | QVIS-006 reciprocal/BZ visualization | Partial: QWZ square-BZ perimeter and axes | Reciprocal basis, high-symmetry points/paths, k-point inspection |
 | QVIS-007 band integration | Not implemented as portable scene workflow; SSH 2D bands already exist | Supplied band arrays → scene geometry, selected band/k-point/gap inspection |
 | QVIS-008 Berry/topology visualization | Partial: supplied QWZ lower-band curvature and validated invariant | Reusable supplied scalar/vector topology scenes; additional models are future physics work |
@@ -65,9 +66,9 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 | M3D-Q01–Q10 | External / not assessed | No Math3D checkout or integration implementation was inspected in this task |
 | Track A Atlas | Partial: pinned catalog and explicit tested model bindings | Progressively unify model metadata; no claim that the reference's whole family list is computed |
 
-## Next three Lab-only commits (planned, not implemented)
+## Lab continuation milestones (status updated per delivery)
 
-1. **QVIS-008 — generic lattice scenes**
+1. **QVIS-008 — generic lattice scenes (implemented, bounded open examples)**
    `feat(qvis): add bounded lattice cells and supercell scene fixtures`
    Represent sites, basis sites, bonds, unit-cell edges and translations using
    existing portable primitives. Add square, honeycomb and simple-cubic

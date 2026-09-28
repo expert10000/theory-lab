@@ -28,7 +28,7 @@ class Style(TypedDict):
 class SceneObject(TypedDict):
     id: str
     label: str
-    kind: Literal["point-cloud", "polyline", "vectors", "mesh"]
+    kind: Literal["point-cloud", "polyline", "segments", "vectors", "mesh"]
     positions: str
     values: NotRequired[str]
     indices: NotRequired[str]
@@ -45,6 +45,7 @@ class Source(TypedDict):
 
 
 class Provenance(TypedDict):
+    kind: NotRequired[Literal["geometry-fixture", "numerical-result"]]
     runId: str
     jobId: str
     model: str
@@ -91,6 +92,17 @@ class SceneField(TypedDict):
     grid: FieldGrid
 
 
+class SceneLattice(TypedDict):
+    dimensions: Literal[2, 3]
+    basis: list[dict]
+    translations: list[list[float]]
+    repeats: list[int]
+    boundary: Literal["open"]
+    sites: str
+    cells: str
+    basisIndices: str
+
+
 class QuantumScene(TypedDict):
     schema: Literal["quantum-scene/v1"]
     id: str
@@ -101,6 +113,7 @@ class QuantumScene(TypedDict):
     datasets: list[Dataset]
     objects: list[SceneObject]
     fields: NotRequired[list[SceneField]]
+    lattice: NotRequired[SceneLattice]
     annotations: list[Annotation]
 
 
@@ -148,6 +161,8 @@ def validate_scene(scene: QuantumScene):
             raise ValueError("Missing position dataset")
         if o["kind"] == "polyline" and p["count"] < 2:
             raise ValueError("Polyline needs two points")
+        if o["kind"] == "segments" and (p["count"] < 2 or p["count"] % 2):
+            raise ValueError("Segments need endpoint pairs")
         if (o["kind"] == "vectors") != ("values" in o) or (o["kind"] == "mesh") != ("indices" in o):
             raise ValueError("Object kind/reference mismatch")
         for key, components, same_count in (("values", 3, True), ("indices", 3, False), ("scalars", 1, True)):
@@ -156,6 +171,21 @@ def validate_scene(scene: QuantumScene):
             d = datasets.get(o[key])
             if not d or d["components"] != components or (same_count and d["count"] != p["count"]):
                 raise ValueError("Object dataset mismatch")
+    lattice = scene.get("lattice")
+    if lattice:
+        count = math.prod(lattice["repeats"])*len(lattice["basis"])
+        translations = lattice["translations"]
+        if len(translations) != lattice["dimensions"] or (lattice["dimensions"] == 2 and lattice["repeats"][2] != 1):
+            raise ValueError("Lattice dimension mismatch")
+        a, b = translations[:2]
+        cross = [a[1]*b[2]-a[2]*b[1], a[2]*b[0]-a[0]*b[2], a[0]*b[1]-a[1]*b[0]]
+        rank = math.hypot(*cross) if len(translations) == 2 else abs(sum(v*w for v,w in zip(cross,translations[2])))
+        if rank < 1e-9:
+            raise ValueError("Degenerate lattice basis")
+        for key, components in (("sites",3),("cells",3),("basisIndices",1)):
+            d = datasets.get(lattice[key])
+            if not d or d["components"] != components or d["count"] != count:
+                raise ValueError("Lattice dataset mismatch")
     c = scene["camera"]
     direction = [t - p for t, p in zip(c["target"], c["position"])]
     u = c["up"]
@@ -189,4 +219,18 @@ def verify_scene_artifacts(scene: QuantumScene, artifacts: dict[str, bytes]):
             for key in ("real", "imaginary"):
                 if not all(abs(v) <= 1e100 for v in arrays[field[key]]):
                     raise ValueError("Complex amplitude exceeds safe derived-density range")
+    lattice = scene.get("lattice")
+    if lattice:
+        positions, cells, basis = (arrays[lattice[key]] for key in ("sites","cells","basisIndices"))
+        seen = set()
+        for i, k in enumerate(basis):
+            cell = cells[3*i:3*i+3]
+            identity = (*cell,k)
+            if not k.is_integer() or not 0 <= k < len(lattice["basis"]) or any(not v.is_integer() or not 0 <= v < lattice["repeats"][j] for j,v in enumerate(cell)) or identity in seen:
+                raise ValueError("Invalid lattice site identity")
+            seen.add(identity)
+            for axis in range(3):
+                expected = lattice["basis"][int(k)]["position"][axis] + sum(t[axis]*cell[j] for j,t in enumerate(lattice["translations"]))
+                if abs(positions[3*i+axis]-expected) > 1e-9:
+                    raise ValueError("Lattice position disagrees with cell and basis")
     return arrays

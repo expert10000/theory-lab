@@ -15,6 +15,7 @@
         "model": {"$ref": "#/definitions/text"}, "engine": {"$ref": "#/definitions/text"},
         "engineVersion": {"$ref": "#/definitions/text"}, "computedAt": {"$ref": "#/definitions/text"},
         "resultSha256": {"$ref": "#/definitions/hash"}, "adapter": {"const": "qvis/1"},
+        "kind": {"enum": ["geometry-fixture", "numerical-result"]},
         "parameters": {
           "type": "object", "minProperties": 1, "maxProperties": 20,
           "propertyNames": {"type": "string", "pattern": "^[A-Za-z][A-Za-z0-9]{0,40}$"},
@@ -41,6 +42,18 @@
     "datasets": {"type": "array", "minItems": 1, "maxItems": 64, "items": {"$ref": "#/definitions/dataset"}},
     "objects": {"type": "array", "maxItems": 64, "items": {"$ref": "#/definitions/object"}},
     "fields": {"type": "array", "minItems": 1, "maxItems": 4, "items": {"$ref": "#/definitions/field"}},
+    "lattice": {
+      "type": "object", "additionalProperties": false,
+      "required": ["dimensions", "basis", "translations", "repeats", "boundary", "sites", "cells", "basisIndices"],
+      "properties": {
+        "dimensions": {"enum": [2, 3]},
+        "basis": {"type": "array", "minItems": 1, "maxItems": 2, "items": {"type": "object", "additionalProperties": false, "required": ["label", "position"], "properties": {"label": {"$ref": "#/definitions/text"}, "position": {"$ref": "#/definitions/vec3"}}}},
+        "translations": {"type": "array", "minItems": 2, "maxItems": 3, "items": {"$ref": "#/definitions/vec3"}},
+        "repeats": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"type": "integer", "minimum": 1, "maximum": 8}},
+        "boundary": {"const": "open"},
+        "sites": {"$ref": "#/definitions/id"}, "cells": {"$ref": "#/definitions/id"}, "basisIndices": {"$ref": "#/definitions/id"}
+      }
+    },
     "annotations": {
       "type": "array", "maxItems": 32,
       "items": {"type": "object", "additionalProperties": false, "required": ["id", "text", "position"], "properties": {
@@ -84,7 +97,7 @@
       "required": ["id", "label", "kind", "positions", "style", "visible"],
       "properties": {
         "id": {"$ref": "#/definitions/id"}, "label": {"$ref": "#/definitions/text"},
-        "kind": {"enum": ["point-cloud", "polyline", "vectors", "mesh"]},
+        "kind": {"enum": ["point-cloud", "polyline", "segments", "vectors", "mesh"]},
         "positions": {"$ref": "#/definitions/id"}, "values": {"$ref": "#/definitions/id"},
         "indices": {"$ref": "#/definitions/id"}, "scalars": {"$ref": "#/definitions/id"},
         "visible": {"type": "boolean"},

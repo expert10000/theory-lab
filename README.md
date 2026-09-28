@@ -4,7 +4,7 @@ An Electron 44 + React/TypeScript desktop laboratory with a supervised Python wo
 
 The [delivery roadmap](docs/ROADMAP.md) and
 [post-QLAB plan/status map](docs/POST_QLAB_QVIS_M3D_ROADMAP.md) distinguish
-implemented QVIS-001–007 from remaining generic lattice, reciprocal-space,
+implemented QVIS-001–008 from remaining reciprocal-space,
 band and streaming work. The supplied Math3D plan is preserved as a separate
 track; it is not a claim that integration is already implemented.
 
@@ -30,6 +30,12 @@ SSH or QWZ runs. Orbit the geometry, inspect Float64 samples, toggle objects and
 export a verified `quantum-scene/v1` bundle to a new `.qscene` folder. Math3D is
 unchanged; a separate importer comes later. See [the scene contract and usage](docs/QUANTUM_SCENE.md).
 The renderer is browser-compatible, but Scenes is currently a desktop UI feature.
+
+**Scenes → Bounded lattice examples** previews square, honeycomb and simple-cubic
+open supercells with basis sites, nearest-neighbor bonds, cell outlines and
+translation vectors. Inspect stable cell/basis identities and export verified
+geometry bundles without creating worker runs. See
+[lattice/reciprocal/band scope](docs/LATTICE_RECIPROCAL_BANDS.md).
 
 ## First experiment
 

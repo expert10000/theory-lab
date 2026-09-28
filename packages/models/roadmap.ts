@@ -51,15 +51,15 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
     detail:
       "This delivered ID is not the supplied plan's portable-band milestone.",
   },
-];
-export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-008",
     title: "Generic lattice cells & bounded supercell fixtures",
-    state: "Planned",
+    state: "Implemented",
     detail:
       "Square, honeycomb and simple cubic; explicit basis, bonds and translations. Geometry is not a computed physics run.",
   },
+];
+export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-009",
     title: "Reciprocal basis & Brillouin-zone inspection",
@@ -128,7 +128,7 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     title: "Generic lattice/crystal primitives",
     state: "Partial",
     detail:
-      "SSH/Ising sites and bonds exist; square/honeycomb/cubic cells and supercells remain planned.",
+      "Square/honeycomb/cubic open supercells, basis and translations now exist. Arbitrary crystals and periodic bonds are not implemented.",
   },
   {
     id: "QVIS-006",

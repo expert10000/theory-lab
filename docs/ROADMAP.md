@@ -7,7 +7,7 @@ status and the supplied post-QLAB plan are reconciled in
 [POST_QLAB_QVIS_M3D_ROADMAP.md](POST_QLAB_QVIS_M3D_ROADMAP.md), including the full
 planning reference, implemented/partial/planned coverage and separate Math3D track.
 
-QLAB-000–029 and QVIS-001–007 are implemented at their documented bounded scope.
+QLAB-000–029 and QVIS-001–008 are implemented at their documented bounded scope.
 Optional-engine support does not mean those engines are installed. QVIS-006 is
 bundle import and QVIS-007 is orbital convergence; they must not be confused
 with the newly supplied plan's broader reciprocal-space/band milestones.
@@ -15,9 +15,9 @@ Historical IDs are retained; no new QLAB numbers are planned.
 
 Next three **planned, not implemented** Lab commits:
 
-1. QVIS-008 — bounded generic lattice cells/supercells and square/honeycomb/cubic fixtures.
-2. QVIS-009 — reciprocal basis, Brillouin-zone guides and k-point inspection.
-3. QVIS-010 — portable supplied band paths/surfaces and synchronized inspection.
+1. QVIS-009 — reciprocal basis, Brillouin-zone guides and k-point inspection.
+2. QVIS-010 — portable supplied band paths/surfaces and synchronized inspection.
+3. QVIS-011 — supplied Berry/vector/topology scene extensions.
 
 Then QVIS-011 topology extensions, QVIS-012 streaming/LOD, and QVIS-013 release
 acceptance. This explicit extension reconciles the imported 001–010 proposal
@@ -1442,6 +1442,7 @@ QVIS-004   hydrogenic orbital worker, s/p/d fields, radial and grid diagnostics 
 QVIS-005   SSH sublattices/bonds, Ising magnetization and QWZ axes (implemented)
 QVIS-006   read-only verified scene bundle import and provenance inspection (implemented)
 QVIS-007   fixed-box/fixed-spacing orbital studies and radial-node diagnostics (implemented)
+QVIS-008   bounded open lattice cells/supercells, square/honeycomb/cubic fixtures (implemented)
 M3D-Q01    future: importer in the separate Math3D repository (not implemented)
 ```
 
@@ -1449,7 +1450,6 @@ Future Lab-only sequence (planned; detailed acceptance and source-plan mappings
 are in [POST_QLAB_QVIS_M3D_ROADMAP.md](POST_QLAB_QVIS_M3D_ROADMAP.md)):
 
 ```text
-QVIS-008   generic lattice cells, basis, translations and bounded supercell fixtures
 QVIS-009   reciprocal basis, high-symmetry points/paths and Brillouin-zone guides
 QVIS-010   portable supplied band paths/surfaces and synchronized inspection
 QVIS-011   supplied Berry/vector/topology scene extensions
@@ -1459,8 +1459,9 @@ Track A    progressively unify Atlas/model metadata (partial catalog/bindings to
 M3D-Q01–10 separate Math3D integration track (external status not assessed here)
 ```
 
-The imported plan's generic lattice, reciprocal-space and portable band goals
-are not yet complete. QWZ curvature guides are partial topology coverage, not
+Bounded open lattice fixtures are implemented; arbitrary crystals and periodic
+bond wrapping are not. Reciprocal-space and portable-band workflows remain
+planned. QWZ curvature guides are partial topology coverage, not
 a general crystal/BZ/band framework. The independent browser renderer is tested,
 but product web Scenes navigation is still a release-gate gap.
 

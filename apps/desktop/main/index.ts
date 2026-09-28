@@ -9,12 +9,13 @@ import {
 } from "electron";
 import { join } from "node:path";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { randomUUID } from "node:crypto";
+import { randomUUID, createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
-import { readSceneBundle } from "../../../packages/quantum-scene/bundle";
+import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
+import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
@@ -262,6 +263,18 @@ app.whenReady().then(() => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
     return runs.scene(runId);
+  });
+  const sceneDigest = async (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
+  ipcMain.handle("quantum:scene-example", (event, request: unknown) => {
+    trusted(event); assertExampleRequest(request);
+    return sceneExample(request, sceneDigest);
+  });
+  ipcMain.handle("quantum:export-scene-example", async (event, request: unknown) => {
+    trusted(event); assertExampleRequest(request);
+    const payload = await sceneExample(request, sceneDigest);
+    const selection = await dialog.showOpenDialog({title:"Choose parent folder for a geometry fixture bundle",properties:["openDirectory"]});
+    if(selection.canceled || !selection.filePaths[0]) return null;
+    return writeSceneBundle(payload,selection.filePaths[0]);
   });
   ipcMain.handle("quantum:export-scene", async (event, runId: unknown) => {
     trusted(event);

@@ -1,0 +1,507 @@
+{
+  "scene": {
+    "schema": "quantum-scene/v1",
+    "id": "fixture-9ce84b6fd1b29d5c2df80d9d",
+    "title": "honeycomb · 2×2×1 open geometry fixture",
+    "provenance": {
+      "kind": "geometry-fixture",
+      "runId": "fixture-9ce84b6fd1b29d5c2df80d9d",
+      "jobId": "fixture-9ce84b6fd1b29d5c2df80d9d",
+      "model": "honeycomb",
+      "engine": "geometry",
+      "engineVersion": "qvis/1",
+      "computedAt": "not applicable (no calculation)",
+      "resultSha256": "9ce84b6fd1b29d5c2df80d9dc17af76ae9e595a13cd93a53b959e73dbe505d7c",
+      "adapter": "qvis/1",
+      "parameters": {
+        "nx": 2,
+        "ny": 2,
+        "nz": 1
+      }
+    },
+    "coordinates": {
+      "handedness": "right",
+      "axes": [
+        "x",
+        "y",
+        "z"
+      ],
+      "units": [
+        "schematic nearest-neighbor spacing",
+        "schematic nearest-neighbor spacing",
+        "schematic nearest-neighbor spacing"
+      ]
+    },
+    "camera": {
+      "position": [
+        5.299038105676658,
+        -2.75,
+        3.6
+      ],
+      "target": [
+        1.299038105676658,
+        1.25,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ]
+    },
+    "objects": [
+      {
+        "id": "lattice-sites-object",
+        "label": "Sites · color = basis index (A=0, B=1)",
+        "kind": "point-cloud",
+        "positions": "lattice-sites",
+        "visible": true,
+        "style": {
+          "color": "#79d9c1",
+          "opacity": 1,
+          "size": 0.15
+        },
+        "scalars": "site-basis"
+      },
+      {
+        "id": "lattice-bonds",
+        "label": "Nearest-neighbor geometric bonds · no hopping strength",
+        "kind": "segments",
+        "positions": "lattice-bonds",
+        "visible": true,
+        "style": {
+          "color": "#79d9c1",
+          "opacity": 1,
+          "size": 1
+        }
+      },
+      {
+        "id": "unit-cells",
+        "label": "Primitive cell wireframes",
+        "kind": "segments",
+        "positions": "unit-cell-edges",
+        "visible": true,
+        "style": {
+          "color": "#526875",
+          "opacity": 1,
+          "size": 1
+        }
+      },
+      {
+        "id": "translation-0",
+        "label": "Translation a1",
+        "kind": "vectors",
+        "positions": "origin-0",
+        "visible": true,
+        "style": {
+          "color": "#f2b36f",
+          "opacity": 1,
+          "size": 1
+        },
+        "values": "translation-0"
+      },
+      {
+        "id": "translation-1",
+        "label": "Translation a2",
+        "kind": "vectors",
+        "positions": "origin-1",
+        "visible": true,
+        "style": {
+          "color": "#f2b36f",
+          "opacity": 1,
+          "size": 1
+        },
+        "values": "translation-1"
+      }
+    ],
+    "datasets": [
+      {
+        "id": "lattice-sites",
+        "path": "lattice-sites.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 8,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 192,
+        "sha256": "90481d1accd5e1709a10de1ce039402153c06596b7180142b0e33c45bdb4e16b"
+      },
+      {
+        "id": "site-cells",
+        "path": "site-cells.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 8,
+        "unit": "integer primitive cell indices",
+        "bytes": 192,
+        "sha256": "d0d8c628ab224f1e6271161b0ee810998c8545395199ddc151c82537c744bd11"
+      },
+      {
+        "id": "site-basis",
+        "path": "site-basis.f64",
+        "format": "f64le",
+        "components": 1,
+        "count": 8,
+        "unit": "integer basis index",
+        "bytes": 64,
+        "sha256": "27a63e4295f3ec3ec98e42652ebec9e1f2ecf67ce8dcfd69f9980ef228d01144"
+      },
+      {
+        "id": "lattice-bonds",
+        "path": "lattice-bonds.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 14,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 336,
+        "sha256": "72b1ddbb885bc1e8cac937b0952a86f6ca8a193c42e2ff626b6330ca671f40e1"
+      },
+      {
+        "id": "unit-cell-edges",
+        "path": "unit-cell-edges.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 32,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 768,
+        "sha256": "ed7c04d20dc17e0ebdaf44de5a8e6a4c23597e333399ff90e1ff9a00ff28cf1a"
+      },
+      {
+        "id": "origin-0",
+        "path": "origin-0.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+      },
+      {
+        "id": "translation-0",
+        "path": "translation-0.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "f8375c7672c176e35068778daff03c99b3a5d634b8711bf2ea7b5053ecbfe31c"
+      },
+      {
+        "id": "origin-1",
+        "path": "origin-1.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+      },
+      {
+        "id": "translation-1",
+        "path": "translation-1.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "d2acde0333204e991ce881126d50833fe433c7998ce750bed7707bdb1bdd024d"
+      }
+    ],
+    "annotations": [
+      {
+        "id": "translation-label-0",
+        "text": "a1",
+        "position": [
+          1.7320508075688772,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "translation-label-1",
+        "text": "a2",
+        "position": [
+          0.8660254037844386,
+          1.5,
+          0
+        ]
+      },
+      {
+        "id": "fixture-note",
+        "text": "Geometry fixture · open boundaries · no Hamiltonian, atom species or worker job",
+        "position": [
+          1.299038105676658,
+          1.25,
+          1
+        ]
+      }
+    ],
+    "lattice": {
+      "dimensions": 2,
+      "translations": [
+        [
+          1.7320508075688772,
+          0,
+          0
+        ],
+        [
+          0.8660254037844386,
+          1.5,
+          0
+        ]
+      ],
+      "basis": [
+        {
+          "label": "A",
+          "position": [
+            0,
+            0,
+            0
+          ]
+        },
+        {
+          "label": "B",
+          "position": [
+            0,
+            1,
+            0
+          ]
+        }
+      ],
+      "repeats": [
+        2,
+        2,
+        1
+      ],
+      "boundary": "open",
+      "sites": "lattice-sites",
+      "cells": "site-cells",
+      "basisIndices": "site-basis"
+    }
+  },
+  "values": {
+    "lattice-sites.f64": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      0.8660254037844386,
+      2.5,
+      0,
+      1.7320508075688772,
+      0,
+      0,
+      1.7320508075688772,
+      1,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      2.598076211353316,
+      2.5,
+      0
+    ],
+    "site-cells.f64": [
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      1,
+      1,
+      0
+    ],
+    "site-basis.f64": [
+      0,
+      1,
+      0,
+      1,
+      0,
+      1,
+      0,
+      1
+    ],
+    "lattice-bonds.f64": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      0.8660254037844386,
+      2.5,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      0,
+      1,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      1.7320508075688772,
+      1,
+      0,
+      1.7320508075688772,
+      0,
+      0,
+      1.7320508075688772,
+      1,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      2.598076211353316,
+      2.5,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      1.7320508075688772,
+      1,
+      0
+    ],
+    "unit-cell-edges.f64": [
+      0,
+      0,
+      0,
+      1.7320508075688772,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      1.7320508075688772,
+      0,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      0.8660254037844386,
+      1.5,
+      0,
+      1.7320508075688772,
+      3,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      3.4641016151377544,
+      3,
+      0,
+      1.7320508075688772,
+      3,
+      0,
+      3.4641016151377544,
+      3,
+      0,
+      1.7320508075688772,
+      0,
+      0,
+      3.4641016151377544,
+      0,
+      0,
+      1.7320508075688772,
+      0,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      3.4641016151377544,
+      0,
+      0,
+      4.330127018922193,
+      1.5,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      4.330127018922193,
+      1.5,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      4.330127018922193,
+      1.5,
+      0,
+      2.598076211353316,
+      1.5,
+      0,
+      3.4641016151377544,
+      3,
+      0,
+      4.330127018922193,
+      1.5,
+      0,
+      5.196152422706632,
+      3,
+      0,
+      3.4641016151377544,
+      3,
+      0,
+      5.196152422706632,
+      3,
+      0
+    ],
+    "origin-0.f64": [
+      0,
+      0,
+      0
+    ],
+    "translation-0.f64": [
+      1.7320508075688772,
+      0,
+      0
+    ],
+    "origin-1.f64": [
+      0,
+      0,
+      0
+    ],
+    "translation-1.f64": [
+      0.8660254037844386,
+      1.5,
+      0
+    ]
+  }
+}

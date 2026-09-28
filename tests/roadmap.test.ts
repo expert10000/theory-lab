@@ -11,7 +11,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
   assert.deepEqual(
     DELIVERED_QVIS.map((r) => r.id),
     Array.from(
-      { length: 7 },
+      { length: 8 },
       (_, i) => `QVIS-${String(i + 1).padStart(3, "0")}`,
     ),
   );
@@ -20,7 +20,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
   assert.match(DELIVERED_QVIS[6].title, /convergence/);
   assert.deepEqual(
     POST_QVIS.slice(0, 3).map((r) => r.id),
-    ["QVIS-008", "QVIS-009", "QVIS-010"],
+    ["QVIS-009", "QVIS-010", "QVIS-011"],
   );
   assert.ok(POST_QVIS.every((r) => r.state === "Planned"));
   assert.equal(
@@ -56,5 +56,5 @@ test("tracked post-QLAB document keeps the source plan and a separate status ove
   for (const row of [...DELIVERED_QVIS, ...POST_QVIS])
     assert.ok(doc.includes(row.id));
   assert.match(doc, /commit e4afd9a/);
-  assert.match(doc, /planned, not implemented/);
+  assert.match(doc, /Lab continuation milestones \(status updated per delivery\)/);
 });

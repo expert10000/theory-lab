@@ -1,0 +1,453 @@
+{
+  "scene": {
+    "schema": "quantum-scene/v1",
+    "id": "fixture-89c2cd2dbfdc4b0e526a5a0b",
+    "title": "square · 2×2×1 open geometry fixture",
+    "provenance": {
+      "kind": "geometry-fixture",
+      "runId": "fixture-89c2cd2dbfdc4b0e526a5a0b",
+      "jobId": "fixture-89c2cd2dbfdc4b0e526a5a0b",
+      "model": "square",
+      "engine": "geometry",
+      "engineVersion": "qvis/1",
+      "computedAt": "not applicable (no calculation)",
+      "resultSha256": "89c2cd2dbfdc4b0e526a5a0b248df131e2bc85219a446896744db6d4e9a98ef7",
+      "adapter": "qvis/1",
+      "parameters": {
+        "nx": 2,
+        "ny": 2,
+        "nz": 1
+      }
+    },
+    "coordinates": {
+      "handedness": "right",
+      "axes": [
+        "x",
+        "y",
+        "z"
+      ],
+      "units": [
+        "schematic nearest-neighbor spacing",
+        "schematic nearest-neighbor spacing",
+        "schematic nearest-neighbor spacing"
+      ]
+    },
+    "camera": {
+      "position": [
+        4.5,
+        -3.5,
+        3.6
+      ],
+      "target": [
+        0.5,
+        0.5,
+        0
+      ],
+      "up": [
+        0,
+        0,
+        1
+      ]
+    },
+    "objects": [
+      {
+        "id": "lattice-sites-object",
+        "label": "Sites · color = basis index (A=0, B=1)",
+        "kind": "point-cloud",
+        "positions": "lattice-sites",
+        "visible": true,
+        "style": {
+          "color": "#79d9c1",
+          "opacity": 1,
+          "size": 0.15
+        },
+        "scalars": "site-basis"
+      },
+      {
+        "id": "lattice-bonds",
+        "label": "Nearest-neighbor geometric bonds · no hopping strength",
+        "kind": "segments",
+        "positions": "lattice-bonds",
+        "visible": true,
+        "style": {
+          "color": "#79d9c1",
+          "opacity": 1,
+          "size": 1
+        }
+      },
+      {
+        "id": "unit-cells",
+        "label": "Primitive cell wireframes",
+        "kind": "segments",
+        "positions": "unit-cell-edges",
+        "visible": true,
+        "style": {
+          "color": "#526875",
+          "opacity": 1,
+          "size": 1
+        }
+      },
+      {
+        "id": "translation-0",
+        "label": "Translation a1",
+        "kind": "vectors",
+        "positions": "origin-0",
+        "visible": true,
+        "style": {
+          "color": "#f2b36f",
+          "opacity": 1,
+          "size": 1
+        },
+        "values": "translation-0"
+      },
+      {
+        "id": "translation-1",
+        "label": "Translation a2",
+        "kind": "vectors",
+        "positions": "origin-1",
+        "visible": true,
+        "style": {
+          "color": "#f2b36f",
+          "opacity": 1,
+          "size": 1
+        },
+        "values": "translation-1"
+      }
+    ],
+    "datasets": [
+      {
+        "id": "lattice-sites",
+        "path": "lattice-sites.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 4,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 96,
+        "sha256": "83b45099542a4a6c11935ac868079d681ef05b7ab3880102abc68ce2cf0d6645"
+      },
+      {
+        "id": "site-cells",
+        "path": "site-cells.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 4,
+        "unit": "integer primitive cell indices",
+        "bytes": 96,
+        "sha256": "83b45099542a4a6c11935ac868079d681ef05b7ab3880102abc68ce2cf0d6645"
+      },
+      {
+        "id": "site-basis",
+        "path": "site-basis.f64",
+        "format": "f64le",
+        "components": 1,
+        "count": 4,
+        "unit": "integer basis index",
+        "bytes": 32,
+        "sha256": "66687aadf862bd776c8fc18b8e9f8e20089714856ee233b3902a591d0d5f2925"
+      },
+      {
+        "id": "lattice-bonds",
+        "path": "lattice-bonds.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 8,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 192,
+        "sha256": "d20b9164d0e294dcfb82c9cc8640a87fa1acb3658c2f2783ce8383eb3baff30f"
+      },
+      {
+        "id": "unit-cell-edges",
+        "path": "unit-cell-edges.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 32,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 768,
+        "sha256": "ba0aaf131e3b185ee10863b40f32832e9f4e1c390c5905d81e713fd827194fb0"
+      },
+      {
+        "id": "origin-0",
+        "path": "origin-0.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+      },
+      {
+        "id": "translation-0",
+        "path": "translation-0.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "725c4777db328932b197731b1c986c84913a069a2090deb3667b697624551c8b"
+      },
+      {
+        "id": "origin-1",
+        "path": "origin-1.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "9d908ecfb6b256def8b49a7c504e6c889c4b0e41fe6ce3e01863dd7b61a20aa0"
+      },
+      {
+        "id": "translation-1",
+        "path": "translation-1.f64",
+        "format": "f64le",
+        "components": 3,
+        "count": 1,
+        "unit": "schematic nearest-neighbor spacing",
+        "bytes": 24,
+        "sha256": "17550ce418055ff4cd54b803e704300eac4212c3edcef00f92f1e6e506a5b069"
+      }
+    ],
+    "annotations": [
+      {
+        "id": "translation-label-0",
+        "text": "a1",
+        "position": [
+          1,
+          0,
+          0
+        ]
+      },
+      {
+        "id": "translation-label-1",
+        "text": "a2",
+        "position": [
+          0,
+          1,
+          0
+        ]
+      },
+      {
+        "id": "fixture-note",
+        "text": "Geometry fixture · open boundaries · no Hamiltonian, atom species or worker job",
+        "position": [
+          0.5,
+          0.5,
+          1
+        ]
+      }
+    ],
+    "lattice": {
+      "dimensions": 2,
+      "translations": [
+        [
+          1,
+          0,
+          0
+        ],
+        [
+          0,
+          1,
+          0
+        ]
+      ],
+      "basis": [
+        {
+          "label": "A",
+          "position": [
+            0,
+            0,
+            0
+          ]
+        }
+      ],
+      "repeats": [
+        2,
+        2,
+        1
+      ],
+      "boundary": "open",
+      "sites": "lattice-sites",
+      "cells": "site-cells",
+      "basisIndices": "site-basis"
+    }
+  },
+  "values": {
+    "lattice-sites.f64": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "site-cells.f64": [
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "site-basis.f64": [
+      0,
+      0,
+      0,
+      0
+    ],
+    "lattice-bonds.f64": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0
+    ],
+    "unit-cell-edges.f64": [
+      0,
+      0,
+      0,
+      1,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      1,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      1,
+      1,
+      0,
+      0,
+      1,
+      0,
+      0,
+      2,
+      0,
+      1,
+      1,
+      0,
+      1,
+      2,
+      0,
+      0,
+      2,
+      0,
+      1,
+      2,
+      0,
+      1,
+      0,
+      0,
+      2,
+      0,
+      0,
+      1,
+      0,
+      0,
+      1,
+      1,
+      0,
+      2,
+      0,
+      0,
+      2,
+      1,
+      0,
+      1,
+      1,
+      0,
+      2,
+      1,
+      0,
+      1,
+      1,
+      0,
+      2,
+      1,
+      0,
+      1,
+      1,
+      0,
+      1,
+      2,
+      0,
+      2,
+      1,
+      0,
+      2,
+      2,
+      0,
+      1,
+      2,
+      0,
+      2,
+      2,
+      0
+    ],
+    "origin-0.f64": [
+      0,
+      0,
+      0
+    ],
+    "translation-0.f64": [
+      1,
+      0,
+      0
+    ],
+    "origin-1.f64": [
+      0,
+      0,
+      0
+    ],
+    "translation-1.f64": [
+      0,
+      1,
+      0
+    ]
+  }
+}

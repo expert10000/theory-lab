@@ -12,11 +12,15 @@ shape, identity, camera and memory constraints. The TypeScript reader interprets
 this fixed schema's vocabulary without eval, AJV code generation or Node APIs,
 so it can run under the web client's CSP.
 
-Initial supported primitives: point clouds, polylines, vectors and indexed
+Initial supported primitives: point clouds, polylines, paired line segments, vectors and indexed
 triangle meshes. Scalars optionally color vertices/points. Labels are positioned
 annotations. QVIS-003 adds regular scalar/complex fields, slices, isosurfaces and
 cyclic phase coloring; see [FIELDS_ORBITALS.md](FIELDS_ORBITALS.md). Unknown
 kinds and future versions fail closed rather than rendering incorrectly.
+
+QVIS-008 adds bounded open geometry examples and optional lattice metadata,
+including original site/cell/basis inspection. They are explicitly fixtures,
+not worker results. See [LATTICE_RECIPROCAL_BANDS.md](LATTICE_RECIPROCAL_BANDS.md).
 
 Coordinates are right-handed `(x,y,z)` in declared axis order. Axis labels and
 units are explicit, including mixed reciprocal-coordinate/scalar-height scenes.
