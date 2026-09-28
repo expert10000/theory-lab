@@ -1415,7 +1415,9 @@ QVIS-001   strict portable quantum-scene/v1 contract, TS/Python and binary verif
 QVIS-002   independent scene viewer, saved Bloch/SSH/QWZ adapters and bundle export
 QVIS-003   regular scalar/complex fields, signed isosurfaces, slices and phase (implemented)
 QVIS-004   hydrogenic orbital worker, s/p/d fields, radial and grid diagnostics (implemented)
-QVIS-005   next: richer lattice scene adapters (not implemented)
+QVIS-005   SSH sublattices/bonds, Ising magnetization and QWZ axes (implemented)
+QVIS-006   next: verified scene bundle import (not implemented)
+QVIS-007   planned: orbital convergence and radial-node diagnostics (not implemented)
 M3D-Q01    future: importer in the separate Math3D repository (not implemented)
 ```
 

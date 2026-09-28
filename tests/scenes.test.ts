@@ -9,6 +9,7 @@ import { WorkerSupervisor } from "../apps/desktop/main/worker";
 import { EvolutionCoordinator } from "../apps/desktop/main/evolution";
 import { evolutionJob, defaultsFor, spectrumJob } from "../packages/models";
 import { TOPOLOGY_DEFAULTS, topologyJob } from "../packages/models/topology";
+import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 import { isQuantumResult } from "../packages/contracts";
 import { verifyScenePayload } from "../packages/quantum-scene";
 import { readSceneBundle } from "../packages/quantum-scene/bundle";
@@ -37,12 +38,18 @@ test("real saved SSH/QWZ results produce portable verified geometry, not inferre
         assert.deepEqual([...arrays.get("density")!], result.analysis.edgeDensity);
         assert.equal(arrays.get("sites")![3], 1);
         assert.match(payload.scene.annotations[0].text, /Winding 1/);
+        assert.equal(arrays.get("t1-bond-vertices")!.length / 12, result.model.type === "ssh" ? result.model.parameters.cells : 0);
+        assert.equal(arrays.get("t2-bond-vertices")!.length / 12, result.model.type === "ssh" ? result.model.parameters.cells - 1 : 0);
+        assert.equal(payload.scene.objects.find(o => o.id === "chain")!.visible, false);
+        assert.deepEqual([...arrays.get("sublattice-A")!].filter((_, i) => i % 3 === 0), Array.from({length: aCellCount(result)}, (_, i) => 2 * i));
       } else {
         assert.deepEqual([...arrays.get("curvature")!], result.analysis.berryCurvature);
         assert.equal(arrays.get("curvature-grid")![2], result.analysis.berryCurvature[0]);
         assert.ok(Math.abs(arrays.get("curvature-grid")![0] - (-Math.PI + Math.PI / 21)) < 1e-12);
         assert.equal(arrays.get("triangles")!.length / 3, 2 * 20 * 20);
         assert.match(payload.scene.annotations[0].text, /Chern -1/);
+        assert.ok(payload.scene.objects.some(o => o.id === "brillouin-boundary"));
+        assert.ok(payload.scene.annotations.some(a => a.text === "kx: −π → +π (rad/a)"));
       }
       const directory = await store.exportScene(result.runId, root);
       assert.deepEqual((await readSceneBundle(directory)).scene, payload.scene);
@@ -65,6 +72,39 @@ test("real saved SSH/QWZ results produce portable verified geometry, not inferre
     await assert.rejects(store.scene(result.runId), /no QVIS-002 scene adapter/);
     await assert.rejects(store.scene("../outside"), /Invalid run ID/);
   } finally { await worker.stop(); await rm(root, { recursive: true, force: true }); }
+});
+function aCellCount(result: import("../packages/contracts").TopologyResult) {
+  return result.model.type === "ssh" ? result.model.parameters.cells : 0;
+}
+
+test("lattice scenes preserve signed Ising observables and batch maximum SSH bonds", async () => {
+  const worker = new WorkerSupervisor(process.cwd());
+  try {
+    await worker.start();
+    for (const boundary of ["open", "periodic"] as const) {
+      const job = manyBodyJob(`qvis-ising-${boundary}`, {...MANY_BODY_DEFAULTS, longitudinal:"-.3"}, boundary, "native");
+      const result = await worker.request("quantum.run", job);
+      assert.ok(isQuantumResult(result) && result.operation === "many_body");
+      const payload = await sceneFromResult(result, null, "a".repeat(64), digest);
+      const arrays = await verifyScenePayload(payload, digest);
+      assert.deepEqual([...arrays.get("magnetization")!], result.groundState.siteMagnetization);
+      assert.deepEqual([...arrays.get("magnetization-height")!].filter((_, i) => i % 3 === 2), result.groundState.siteMagnetization);
+      assert.equal(arrays.get("bonds")!.length / 3, result.model.parameters.sites + (boundary === "periodic" ? 1 : 0));
+      assert.deepEqual(payload.scene.provenance.parameters, result.model.parameters);
+      const bad = {...result, groundState:{...result.groundState, siteMagnetization:[0]}};
+      await assert.rejects(sceneFromResult(bad, null, "a".repeat(64), digest), /site magnetization layout/);
+    }
+    for (const t1 of [0, -1]) {
+      const result = await worker.request("quantum.run", topologyJob(`qvis-ssh-${t1===0?"zero":"negative"}`, {...TOPOLOGY_DEFAULTS, cells:"40", t1:String(t1)}));
+      assert.ok(isQuantumResult(result) && result.operation === "topology");
+      const payload = await sceneFromResult(result, null, "b".repeat(64), digest);
+      const arrays = await verifyScenePayload(payload, digest);
+      assert.ok(payload.scene.objects.length <= 64 && payload.scene.datasets.length <= 64);
+      assert.equal(payload.scene.objects.some(o => o.id === "ssh-t1-bonds"), t1 !== 0);
+      assert.equal(arrays.get("t2-bond-vertices")!.length / 12, 39);
+      if(t1 !== 0) assert.match(payload.scene.objects.find(o=>o.id==="ssh-t1-bonds")!.label, /−?\-1/);
+    }
+  } finally { await worker.stop(); }
 });
 
 test("Bloch adapter preserves every verified evolution row and exports offline", async () => {

@@ -2,7 +2,7 @@ import type { QuantumResult } from "../contracts";
 import { assertScene, decodeDataset, verifyScenePayload, type QuantumScene, type SceneObject, type ScenePayload } from "./index";
 
 export function supportsScene(operation: string, model: string): boolean {
-  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz"].includes(model)) || (operation === "orbital" && model === "hydrogenic");
+  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
 }
 export async function sceneFromResult(result: QuantumResult, data: Uint8Array | null, resultSha256: string,
   digest: (bytes: Uint8Array) => Promise<string>): Promise<ScenePayload> {
@@ -70,8 +70,27 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
       object(`sphere-${id}`, `Unit-sphere ${id} guide`, "polyline", await dataset(`guide-${id}`, points, 3, "dimensionless"), "#435d6b");
     }
     scene.annotations.push({ id: "north", text: "sigma_z = +1", position: [0, 0, 1.1] });
-  } else if (result.operation === "topology" && result.analysis.kind === "ssh") {
+  } else if (result.operation === "many_body") {
+    const p = result.model.parameters, n = p.sites, m = result.groundState.siteMagnetization;
+    if (m.length !== n || !m.every(v => Number.isFinite(v) && Math.abs(v) <= 1 + 1e-10)) throw new Error("Invalid Ising site magnetization layout");
+    const points = Array.from({ length: n }, (_, i) => p.boundary === "periodic"
+      ? [n / (2 * Math.PI) * Math.cos(2 * Math.PI * i / n), n / (2 * Math.PI) * Math.sin(2 * Math.PI * i / n), 0] : [i, 0, 0]);
+    const positions = await dataset("sites", points.flat(), 3, "schematic lattice spacing");
+    const magnetization = await dataset("magnetization", m, 1, "dimensionless Pauli sigma_z expectation");
+    const bonds = p.boundary === "periodic" ? [...points, points[0]] : points;
+    object("ising-bonds", `${p.boundary} Ising chain · J=${p.interaction}`, "polyline", await dataset("bonds", bonds.flat(), 3, "schematic lattice spacing"), "#617888");
+    object("ising-sites", "Ground-state site magnetization (color)", "point-cloud", positions, "#79d9c1", { scalars: magnetization });
+    scene.objects[scene.objects.length - 1].style.size = .25;
+    object("magnetization-height", "Pauli σz expectation as height (not a spatial spin vector)", "vectors", positions, "#f2b36f", {
+      values: await dataset("magnetization-height", m.flatMap(v => [0, 0, v]), 3, "dimensionless Pauli sigma_z expectation"), scalars: magnetization });
+    scene.coordinates = { handedness: "right", axes: ["schematic x", "schematic y", "sigma_z display height"], units: ["schematic spacing", "schematic spacing", "dimensionless"] };
+    const center = p.boundary === "open" ? (n - 1) / 2 : 0;
+    scene.camera = { position: [center + n * .35, -n * .9, n * .7], target: [center, 0, 0], up: [0, 0, 1] };
+    points.forEach((v, i) => scene.annotations.push({ id: `site-label-${i}`, text: `site ${i}`, position: [v[0], v[1], -.3] }));
+    scene.annotations.push({ id: "ising-convention", text: "Finite-chain ground state · Pauli σz (not σz/2) · geometry is schematic", position: [center, 0, 1.35] });
+  } else if (result.operation === "topology" && result.model.type === "ssh" && result.analysis.kind === "ssh") {
     const a = result.analysis, n = a.edgeDensity.length;
+    if (n !== 2 * result.model.parameters.cells) throw new Error("Invalid SSH site count");
     const positions = await dataset("sites", a.edgeDensity.flatMap((_, i) => [i, 0, 0]), 3, "site index");
     const scalars = await dataset("density", a.edgeDensity, 1, "probability per site");
     object("chain", "Open SSH chain", "polyline", positions, "#617888");
@@ -81,6 +100,29 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
     const center = (n - 1) / 2;
     scene.camera = { position: [center, -n * .45, n * .3], target: [center, 0, 0], up: [0, 0, 1] };
     scene.annotations.push({ id: "invariant", text: `Winding ${a.winding ?? "undefined"} · bulk gap ${a.bulkGap.toPrecision(5)} (normalized)`, position: [center, 0, 1] });
+    // Two indexed ribbon meshes batch up to 79 bonds within the 64-object budget.
+    // Width is categorical, not proportional to hopping, and implies no direction.
+    for (const [parity, key, color] of [[0, "t1", "#f2b36f"], [1, "t2", "#79d9c1"]] as const) {
+      const hopping = result.model.parameters[key];
+      if (hopping === 0) continue;
+      const vertices: number[] = [], triangles: number[] = [];
+      for (let i = parity; i < n - 1; i += 2) {
+        const offset = vertices.length / 3;
+        vertices.push(i + .12, -.07, 0, i + .88, -.07, 0, i + .88, .07, 0, i + .12, .07, 0);
+        triangles.push(offset, offset + 1, offset + 2, offset, offset + 2, offset + 3);
+      }
+      object(`ssh-${key}-bonds`, `${key === "t1" ? "Intracell A–B / t₁" : "Intercell B–A / t₂"} = ${hopping}`, "mesh",
+        await dataset(`${key}-bond-vertices`, vertices, 3, "site index / schematic width"), color,
+        { indices: await dataset(`${key}-bond-triangles`, triangles, 3, "vertex index") });
+    }
+    // Hide the old unweighted connecting line: zero hoppings must leave gaps.
+    scene.objects.find(o => o.id === "chain")!.visible = false;
+    for (const [parity, label, color] of [[0, "A", "#f2b36f"], [1, "B", "#79d9c1"]] as const) {
+      object(`sublattice-${label}`, `Sublattice ${label} guide (display row offset)`, "point-cloud",
+        await dataset(`sublattice-${label}`, Array.from({ length: n / 2 }, (_, i) => [2 * i + parity, -.45, 0]).flat(), 3, "site index / display row offset"), color);
+      scene.objects[scene.objects.length - 1].style.size = .2;
+    }
+    scene.annotations.push({ id: "sublattice-key", text: "A₀ B₀ | A₁ B₁ … · orange t₁, teal t₂ · bond width not hopping magnitude", position: [center, 0, -1.5] });
   } else if (result.operation === "topology" && result.model.type === "qwz" && result.analysis.kind === "qwz") {
     const a = result.analysis, grid = result.model.parameters.grid;
     if (a.gapClosed || a.berryCurvature.length !== grid * grid) throw new Error("QWZ field undefined at gap closure; no scene can be exported");
@@ -96,6 +138,16 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
     const height = Math.max(1, ...a.berryCurvature.map(Math.abs));
     scene.camera = { position: [8 + height, 6 + height, 6 + height], target: [0, 0, 0], up: [0, 0, 1] };
     scene.annotations.push({ id: "invariant", text: `Chern ${a.chern ?? "unresolved"} · mesh ${grid}×${grid} · no periodic seam interpolation`, position: [0, 0, height] });
+    object("brillouin-boundary", "Brillouin-zone boundary at curvature height 0 (not a mesh seam)", "polyline",
+      await dataset("bz-boundary", [-Math.PI, -Math.PI, 0, Math.PI, -Math.PI, 0, Math.PI, Math.PI, 0, -Math.PI, Math.PI, 0, -Math.PI, -Math.PI, 0], 3, "kx, ky, zero display height"), "#617888");
+    for (const [id, values, label, position] of [
+      ["kx-guide", [-Math.PI, -Math.PI, 0, Math.PI, -Math.PI, 0], "kx: −π → +π (rad/a)", [0, -Math.PI - .5, 0]],
+      ["ky-guide", [-Math.PI, -Math.PI, 0, -Math.PI, Math.PI, 0], "ky: −π → +π (rad/a)", [-Math.PI - .5, 0, 0]],
+      ["curvature-guide", [-Math.PI, -Math.PI, -height, -Math.PI, -Math.PI, height], "height = Berry curvature (a=1)", [-Math.PI, -Math.PI, height]],
+    ] as const) {
+      object(id, label, "polyline", await dataset(id, [...values], 3, "declared mixed scene units"), "#a7bbc4");
+      scene.annotations.push({ id: `${id}-label`, text: label, position: [...position] });
+    }
   } else throw new Error("Result/model analysis mismatch");
   assertScene(scene);
   const payload = { scene, artifacts };

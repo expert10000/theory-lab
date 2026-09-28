@@ -40,7 +40,8 @@ The shared Bloch-vector fixture tests TypeScript/Python compatibility.
 
 Open **Scenes** (or **Portable scenes** in the sidebar), select a saved Dynamics
 or Topology run, and inspect its verified geometry. Refresh after computing a
-new run. Saved runs work without a live worker. Changing lab controls never
+new run. QVIS-005 also adapts saved Many-body Ising runs; Orbitals supply field scenes.
+Saved runs work without a live worker. Changing lab controls never
 mutates an old scene: choose the new saved run after recalculating.
 
 `packages/quantum-3d/SceneViewer.tsx` is an independent React/Three.js consumer.
@@ -63,6 +64,21 @@ Initial result adapters do not compute new physics:
   periodic seam. The invariant annotation is copied from the validated result:
   under-resolved meshes remain unresolved, and exact gap closures have no field
   scene. A mesh is a visualization, not an independent Chern-number calculation.
+
+QVIS-005 enriches these adapters without adding physics or changing the scene
+schema. SSH shows A/B guides and two batched bond meshes: t₁ connects A–B inside
+each cell and t₂ connects B–A between cells. Zero hoppings leave gaps; signed
+hoppings are shown in labels/provenance, not inferred from bond length or width.
+The old unweighted connecting line is hidden by default. Site spacing and guide
+offsets are schematic, not atomic coordinates. Density remains the supplied
+averaged midgap-pair observable.
+
+Ising scenes copy the exact ground-state Pauli ⟨σz⟩ at every site into color and
+vertical-height arrows. These are not classical spatial spin orientations or
+σz/2. Open chains are linear; periodic chains use a schematic ring with a closing
+bond. QWZ adds a zero-height Brillouin boundary and explicitly labelled kx, ky
+and curvature-height guides. Those guides do not interpolate the periodic seam
+or make an unresolved/undefined Chern invariant valid.
 
 **Export scene bundle** asks for a parent folder, then exclusively creates
 `<runId>.qscene/` containing `bundle.json`, `scene.json`, and the referenced

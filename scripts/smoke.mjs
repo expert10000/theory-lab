@@ -609,7 +609,17 @@ try {
     await page.getByTestId("scene-verification").filter({ hasText: "SHA-256 VERIFIED" }).waitFor();
     await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
     await page.screenshot({ path: `artifacts/desktop-scene-${run.model}.png`, fullPage: true });
+    if (run.model === "ssh") assert.ok(await page.getByRole("checkbox", {name:/Intracell A–B/}).isChecked());
+    else assert.ok(await page.getByRole("checkbox", {name:/Brillouin-zone boundary/}).isChecked());
   }
+  const isingSceneRun = savedRuns.find(r => r.model === "ising_chain");
+  assert.ok(isingSceneRun);
+  await page.getByLabel("Scene saved run").selectOption(isingSceneRun.runId);
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByLabel("Inspect scene object").selectOption("ising-sites");
+  assert.match(await page.getByTestId("scene-coordinate").innerText(), /Scalar/);
+  await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-scene-ising.png",fullPage:true});
   await app.evaluate(({ dialog }) => { dialog.showOpenDialog = async () => ({ canceled: true, filePaths: [] }); });
   await page.getByTestId("export-scene").click();
   await page.getByRole("status").filter({ hasText: "Scene export cancelled" }).waitFor();
