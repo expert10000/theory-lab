@@ -126,6 +126,7 @@ class QuantumScene(TypedDict):
     fields: NotRequired[list[SceneField]]
     lattice: NotRequired[SceneLattice]
     reciprocal: NotRequired[SceneReciprocal]
+    bands: NotRequired[dict]
     annotations: list[Annotation]
 
 
@@ -219,6 +220,19 @@ def validate_scene(scene: QuantumScene):
                 raise ValueError("Reciprocal path mismatch")
         if any(objects.get(o,{}).get("kind") not in ("polyline","segments") for o in r["boundaryObjects"]):
             raise ValueError("Reciprocal boundary mismatch")
+    bands = scene.get("bands")
+    if bands:
+        b = bands
+        unique(b["energies"]); unique(b["objects"])
+        k = datasets.get(b["coordinates"])
+        grid = b.get("grid")
+        if not k or k["components"] != 3 or k["count"] > 961 or len(b["energies"]) != len(b["objects"]) or len(b["labels"]) != len(b["objects"]) or (b["kind"] == "surface") != bool(grid) or (grid and math.prod(grid) != k["count"]):
+            raise ValueError("Band layout mismatch")
+        for i, id in enumerate(b["objects"]):
+            o = next((o for o in scene["objects"] if o["id"] == id), None)
+            e = datasets.get(b["energies"][i])
+            if not o or o["kind"] != ("polyline" if b["kind"] == "path" else "mesh") or datasets[o["positions"]]["count"] != k["count"] or not e or e["components"] != 1 or e["count"] != k["count"] or e["unit"] != b["energyUnit"]:
+                raise ValueError("Band object/dataset mismatch")
     c = scene["camera"]
     direction = [t - p for t, p in zip(c["target"], c["position"])]
     u = c["up"]
@@ -277,4 +291,36 @@ def verify_scene_artifacts(scene: QuantumScene, artifacts: dict[str, bytes]):
         check_points(r["pointObject"], [p["position"] for p in r["points"]])
         for path in r["paths"]:
             check_points(path["object"], [next(p["position"] for p in r["points"] if p["id"] == id) for id in path["points"]])
+    bands = scene.get("bands")
+    if bands:
+        b = bands
+        k = arrays[b["coordinates"]]
+        energies = [arrays[id] for id in b["energies"]]
+        objects = {o["id"]: o for o in scene["objects"]}
+        for i in range(len(k)//3):
+            if k[3*i+2] != 0 or (b["kind"] == "path" and (k[3*i+1] != 0 or (i > 0 and k[3*i] <= k[3*(i-1)]))):
+                raise ValueError("Invalid band coordinates")
+            if "grid" in b:
+                ny = b["grid"][1]
+                x, y = divmod(i, ny)
+                if k[3*i] != k[3*x*ny] or k[3*i+1] != k[3*y+1] or (x > 0 and k[3*x*ny] <= k[3*(x-1)*ny]) or (y > 0 and k[3*y+1] <= k[3*(y-1)+1]):
+                    raise ValueError("Invalid band grid order")
+            if any(e[i] < energies[j-1][i] for j,e in enumerate(energies) if j > 0):
+                raise ValueError("Unordered bands")
+            if energies[-1][i]-energies[0][i] < b["bulkGap"]-1e-9:
+                raise ValueError("Reported bulk gap exceeds sampled separation")
+            for j,id in enumerate(b["objects"]):
+                p = arrays[objects[id]["positions"]]
+                expected = [k[3*i],energies[j][i],0] if b["kind"] == "path" else [k[3*i],k[3*i+1],energies[j][i]]
+                if any(abs(v-p[3*i+a]) > 1e-9 for a,v in enumerate(expected)):
+                    raise ValueError("Band geometry disagrees with supplied energies")
+        if "grid" in b:
+            ny = b["grid"][1]
+            for id in b["objects"]:
+                indices = arrays[objects[id]["indices"]]
+                for i in range(0,len(indices),3):
+                    t = indices[i:i+3]
+                    xs,ys = [int(v)//ny for v in t],[int(v)%ny for v in t]
+                    if len(set(t)) != 3 or max(xs)-min(xs) != 1 or max(ys)-min(ys) != 1:
+                        raise ValueError("Invalid band surface triangle/seam")
     return arrays

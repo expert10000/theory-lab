@@ -43,12 +43,16 @@ def qwz_analysis(np, parameters):
     kx, ky = np.meshgrid(k, k, indexing="ij")
     dx, dy = np.sin(kx), np.sin(ky)
     dz = mass + np.cos(kx) + np.cos(ky)
-    sampled_gap = float(2 * np.min(np.sqrt(dx * dx + dy * dy + dz * dz)))
+    band = np.sqrt(dx * dx + dy * dy + dz * dz)
+    sampled_gap = float(2 * np.min(band))
+    # Exact two-band eigenvalues at the FHS vertices, NOT curvature cell centers.
+    bands = {"bandKValues": k.tolist(), "lowerBand": (-band).ravel().tolist(),
+             "upperBand": band.ravel().tolist()}
     if gap < 1e-10:
         return {"kind": "qwz", "bulkGap": 0.0, "sampledGap": 0.0,
                 "gapClosed": True, "chern": None, "latticeChern": None,
                 "analyticChern": None, "meshResolved": False, "chernIntegral": None,
-                "berryCurvature": []}
+                "berryCurvature": [], **bands}
     matrix = np.empty((grid, grid, 2, 2), dtype=np.complex128)
     matrix[..., 0, 0] = dz
     matrix[..., 1, 1] = -dz
@@ -84,7 +88,7 @@ def qwz_analysis(np, parameters):
             "gapClosed": False, "chern": chern if resolved else None,
             "latticeChern": chern, "analyticChern": analytic_chern,
             "meshResolved": resolved, "chernIntegral": integral,
-            "berryCurvature": curvature.ravel().tolist()}
+            "berryCurvature": curvature.ravel().tolist(), **bands}
 
 
 def solve(job):

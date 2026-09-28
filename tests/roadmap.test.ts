@@ -11,7 +11,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
   assert.deepEqual(
     DELIVERED_QVIS.map((r) => r.id),
     Array.from(
-      { length: 9 },
+      { length: 10 },
       (_, i) => `QVIS-${String(i + 1).padStart(3, "0")}`,
     ),
   );
@@ -20,7 +20,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
   assert.match(DELIVERED_QVIS[6].title, /convergence/);
   assert.deepEqual(
     POST_QVIS.slice(0, 3).map((r) => r.id),
-    ["QVIS-010", "QVIS-011", "QVIS-012"],
+    ["QVIS-011", "QVIS-012", "QVIS-013"],
   );
   assert.ok(POST_QVIS.every((r) => r.state === "Planned"));
   assert.equal(
@@ -37,7 +37,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
   );
   assert.equal(
     SOURCE_PLAN_COVERAGE.find((r) => r.id === "QVIS-007")!.state,
-    "Planned",
+    "Implemented (bounded)",
   );
   assert.equal(
     SOURCE_PLAN_COVERAGE.find((r) => r.id === "M3D-Q01–Q10")!.state,

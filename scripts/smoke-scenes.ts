@@ -8,6 +8,7 @@ import fixture from "../packages/quantum-scene/fixtures/bloch-vector.json";
 import fieldFixture from "../packages/quantum-scene/fixtures/complex-field.json";
 import latticeFixture from "../packages/quantum-scene/fixtures/lattice-honeycomb.json";
 import reciprocalFixture from "../packages/quantum-scene/fixtures/reciprocal-honeycomb.json";
+import bandFixture from "../packages/quantum-scene/fixtures/bands-ssh.json";
 import { assertScene } from "../packages/quantum-scene";
 
 const scene = structuredClone(fixture.scene);
@@ -37,8 +38,9 @@ import './packages/ui/theme.css';
 const fields = location.search.includes('fields');
 const lattice = location.search.includes('lattice');
 const reciprocal = location.search.includes('reciprocal');
-const scene = reciprocal ? ${JSON.stringify(reciprocalFixture.scene)} : lattice ? ${JSON.stringify(latticeFixture.scene)} : fields ? ${JSON.stringify(fieldFixture.scene)} : ${JSON.stringify(complete)};
-const values = reciprocal ? ${JSON.stringify(reciprocalFixture.values)} : lattice ? ${JSON.stringify(latticeFixture.values)} : fields ? ${JSON.stringify(fieldFixture.values)} : ${JSON.stringify(values)};
+const bands = location.search.includes('bands');
+const scene = bands ? ${JSON.stringify(bandFixture.scene)} : reciprocal ? ${JSON.stringify(reciprocalFixture.scene)} : lattice ? ${JSON.stringify(latticeFixture.scene)} : fields ? ${JSON.stringify(fieldFixture.scene)} : ${JSON.stringify(complete)};
+const values = bands ? ${JSON.stringify(bandFixture.values)} : reciprocal ? ${JSON.stringify(reciprocalFixture.values)} : lattice ? ${JSON.stringify(latticeFixture.values)} : fields ? ${JSON.stringify(fieldFixture.values)} : ${JSON.stringify(values)};
 const artifacts = Object.fromEntries(Object.entries(values).map(([path, values]) => {
   const bytes = new Uint8Array(values.length * 8), view = new DataView(bytes.buffer);
   values.forEach((v, i) => view.setFloat64(i*8, v, true)); return [path, bytes];
@@ -109,6 +111,15 @@ try {
   await page.getByLabel("Field quantity").selectOption("imaginary");
   await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.screenshot({path:"artifacts/field-browser.png",fullPage:true});
+  await page.goto(`${origin}/?bands`);
+  await page.getByTestId("band-inspection").waitFor();
+  await page.getByLabel("Band",{exact:true}).selectOption("band-1");
+  await page.getByLabel("Scene sample").focus();await page.getByLabel("Scene sample").press("End");
+  assert.match(await page.getByTestId("band-sample").innerText(),/Sample 20.*Upper band E=0\.4000000/);
+  await page.getByTestId("band-plot").click({position:{x:350,y:80}});
+  assert.match(await page.getByTestId("band-sample").innerText(),/Sample 10/);
+  assert.equal(await page.getByLabel("Inspect scene object").inputValue(),"band-1");
+  await page.screenshot({path:"artifacts/scene-bands-browser.png",fullPage:true});
   await page.goto(`${origin}/?reciprocal`);
   await page.getByTestId("reciprocal-inspection").waitFor();
   await page.getByLabel("Reciprocal point").selectOption("K");
@@ -154,8 +165,13 @@ try {
   await fallback.getByRole("slider", { name: "Scene sample" }).focus();
   await fallback.getByRole("slider", { name: "Scene sample" }).press("End");
   assert.match(await fallback.getByTestId("scene-coordinate").innerText(), /sigma_y = 1\.000000/);
+  await fallback.goto(`${origin}/?bands`);
+  await fallback.getByText(/WebGL unavailable/).waitFor();
+  await fallback.getByLabel("Band",{exact:true}).selectOption("band-1");
+  await fallback.getByLabel("Scene sample").focus();await fallback.getByLabel("Scene sample").press("End");
+  assert.match(await fallback.getByTestId("band-sample").innerText(),/Sample 20.*separation=0\.8000000/);
   assert.deepEqual(errors, []);
-  console.log("PASS: independent web renderer, four primitives, strict CSP, convergence cancellation/retained cases, verification, inspection, visibility, camera, corruption rejection and WebGL fallback.");
+  console.log("PASS: independent web renderer, lattice/reciprocal/band inspection, strict CSP, convergence cancellation/retained cases, verification, visibility, camera, corruption rejection and WebGL fallback.");
 } finally {
   await browser.close(); await new Promise<void>((resolve, reject) => server.close(error => error ? reject(error) : resolve()));
 }

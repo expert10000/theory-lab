@@ -9,6 +9,19 @@ from jsonschema.exceptions import ValidationError
 
 
 class SceneTests(unittest.TestCase):
+    def test_shared_band_fixture_and_energy_geometry(self):
+        fixture = json.loads((Path(__file__).resolve().parents[3] / "packages/quantum-scene/fixtures/bands-ssh.json").read_text(encoding="utf-8"))
+        scene = fixture["scene"]
+        artifacts = {p:struct.pack(f"<{len(v)}d",*v) for p,v in fixture["values"].items()}
+        arrays = verify_scene_artifacts(scene,artifacts)
+        self.assertEqual(list(arrays["band-energy-0"]),fixture["result"]["analysis"]["lowerBand"])
+        d = next(d for d in scene["datasets"] if d["id"] == "band-energy-0")
+        values = list(arrays[d["id"]]); values[0] = -123
+        artifacts[d["path"]] = struct.pack(f"<{len(values)}d",*values)
+        d["sha256"] = hashlib.sha256(artifacts[d["path"]]).hexdigest()
+        with self.assertRaisesRegex(ValueError,"Band geometry"):
+            verify_scene_artifacts(scene,artifacts)
+
     def test_shared_reciprocal_fixtures(self):
         root = Path(__file__).resolve().parents[3] / "packages/quantum-scene/fixtures"
         for family in ("square","honeycomb","simple_cubic"):

@@ -45,8 +45,26 @@ Both validators check duality, references and stored point/path coordinates;
 bundles retain these guides offline. Coordinates use rad per declared spacing.
 No arbitrary-crystal Wigner–Seitz construction or implicit coordinate conversion.
 
-## QVIS-010 — portable band scenes (planned)
+## QVIS-010 — portable band scenes (implemented, SSH/QWZ)
 
-Verified supplied SSH paths and QWZ surfaces, with band/k-point/gap inspection.
+Select a saved topology run and **Saved view → SSH / QWZ energy bands**.
+The band dropdown, original-coordinate slider, 3D pick and SSH plot share one
+stored sample; QWZ has explicit kx/ky index controls. Both energies and their
+separation are inspected from verified Float64 datasets. The minimum sampled
+separation is not the worker's exact global bulk gap: finite grids can miss a
+closing point. Lines/triangles are display connections, not extra physics data.
+
+New QWZ results optionally carry `bandKValues`, `lowerBand` and `upperBand` as a
+complete set, x-major/y-fastest at k=-π+2πi/N, unlike curvature's cell centers.
+The existing v1 shape without this optional set remains accepted; older QWZ
+band previews request a re-run instead of synthesizing missing energies.
+SSH uses its existing supplied samples including ±π. Closed-gap band scenes
+remain valid, but no invariant or curvature is invented at the closure.
+Optional `bands` metadata links k coordinates, ordered energies, objects, grid,
+units and reported bulk gap. TS/Python check shapes, ordering, geometry/energy
+agreement and adjacent-cell triangles; surfaces never connect periodic seams.
+Exports retain source hashes/parameters and reopen read-only without a worker.
+Maximum QWZ result sizes remain below the existing 64 KiB worker line budget.
+
 No new topology inference or periodic seam interpolation. No Math3D code or live
 application connection is part of any of these Lab-only milestones.

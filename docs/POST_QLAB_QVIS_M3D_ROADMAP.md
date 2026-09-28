@@ -19,7 +19,7 @@ crystals. Delivered QVIS-006 imports verified bundles; delivered QVIS-007 adds
 orbital convergence and radial nodes. Those last two are not the reference
 plan's reciprocal-space and band milestones.
 
-Consequently the next Lab commits fill those gaps as QVIS-008–010. The
+Consequently Lab commits QVIS-008–010 fill those gaps at a bounded scope. The
 reference's remaining topology, streaming and release goals move to
 QVIS-011–013. This explicitly extends the proposed 001–010 numbering freeze
 rather than relabelling historical commits or prematurely claiming the release.
@@ -42,6 +42,7 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 | QVIS-007 | Fixed-box/fixed-spacing orbital studies and positive radial-node diagnostics | Implemented; commit e4afd9a |
 | QVIS-008 | Square/honeycomb/cubic open supercell fixtures, basis/cell inspection and export | Implemented; LATTICE_RECIPROCAL_BANDS.md |
 | QVIS-009 | Explicit dual bases, primitive square/hexagonal/cubic zones, named points and paths | Implemented, bounded fixtures; LATTICE_RECIPROCAL_BANDS.md |
+| QVIS-010 | Supplied SSH band paths/QWZ energy surfaces, synchronized sample/gap inspection and offline bundles | Implemented, bounded two-band models; LATTICE_RECIPROCAL_BANDS.md |
 
 Implemented means code and relevant tests exist, not that every future example
 in the supplied plan is supported. Verification uses build/typecheck, Node and
@@ -60,7 +61,7 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 | QVIS-004 orbital lab | Implemented, analytic hydrogenic examples | No many-electron atom/molecule solver |
 | QVIS-005 lattice/crystal primitives | Partial: square/honeycomb/cubic open fixtures, cells, basis, translations and supercells now exist | Arbitrary crystals and periodic bonds remain outside the bounded example scope |
 | QVIS-006 reciprocal/BZ visualization | Partial: explicit square/honeycomb/cubic dual bases, zones, named points/paths and inspection | General arbitrary-crystal zone construction remains outside bounded fixtures |
-| QVIS-007 band integration | Not implemented as portable scene workflow; SSH 2D bands already exist | Supplied band arrays → scene geometry, selected band/k-point/gap inspection |
+| QVIS-007 band integration | Implemented, bounded: supplied SSH paths/QWZ surfaces, shared band/k-point/gap selection and verified bundles | Arbitrary-crystal bands and additional physics models remain outside this delivery |
 | QVIS-008 Berry/topology visualization | Partial: supplied QWZ lower-band curvature and validated invariant | Reusable supplied scalar/vector topology scenes; additional models are future physics work |
 | QVIS-009 streaming/LOD | Not implemented; current 16 MiB/grid budgets are limits, not streaming | Chunk manifests, lazy verification, bounded memory, cancellation, cache and progressive display |
 | QVIS-010 release freeze | Not complete | Close the remaining acceptance gaps and publish tested compatibility/limitations |
@@ -82,7 +83,7 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
    and paths, boundaries and k-point inspection. Establish conventions and
    bounded fixtures first; do not infer a general Wigner–Seitz zone from an
    arbitrary model or silently identify real/reciprocal selections.
-3. **QVIS-010 — portable band scenes**
+3. **QVIS-010 — portable band scenes (implemented, bounded SSH/QWZ)**
    `feat(qvis): integrate supplied band paths and surfaces with scene inspection`
    Start with verified existing SSH/QWZ results, preserve supplied energies
    and k coordinates, and synchronize selected band/k-point and gap readouts.

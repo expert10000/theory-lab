@@ -23,7 +23,7 @@ npm start
 
 On Linux, create `.venv` with `python3.12 -m venv .venv`, then `.venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python`, followed by `npm ci`, `npm run build`, and `npm start`. Ubuntu 22.04 under WSL2/WSLg passed the v0.1 desktop acceptance suite; see [the release record](docs/RELEASE_V0.1.md) for the tested environment and caveats. `QLAB_PYTHON` may specify an alternate interpreter.
 
-## Portable scenes (QVIS-001–002)
+## Portable scenes (QVIS-001–010)
 
 Open **Scenes** or **Portable scenes** in the sidebar to preview saved Dynamics,
 SSH or QWZ runs. Orbit the geometry, inspect Float64 samples, toggle objects and
@@ -36,6 +36,13 @@ open supercells with basis sites, nearest-neighbor bonds, cell outlines and
 translation vectors. Inspect stable cell/basis identities and export verified
 geometry bundles without creating worker runs. See
 [lattice/reciprocal/band scope](docs/LATTICE_RECIPROCAL_BANDS.md).
+
+**Geometry view → Primitive reciprocal zone** adds explicit dual bases, named
+symmetry points/paths and square, hexagonal or cubic boundaries. For a saved SSH
+or QWZ run, choose **Saved view → SSH / QWZ energy bands** for portable energy
+paths/surfaces, shared sample selection and gap inspection. New QWZ calculations
+include band arrays; older saved QWZ results require a re-run for this view.
+The Roadmap tab marks QVIS-008–010 implemented; no Math3D files are changed.
 
 ## First experiment
 

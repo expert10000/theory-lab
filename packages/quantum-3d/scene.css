@@ -39,3 +39,4 @@
 .convergence-table th, .convergence-table td { border-bottom: 1px solid #2c414d; padding: 12px 9px; text-align: left; }
 .convergence-table th { color: #a7bbc4; }
 @media (max-width: 1000px) { .scene-inspection { grid-template-columns: 1fr; } }
+.band-plot { display:block; width:100%; max-width:700px; margin:1rem 0; background:#0d161e; border:1px solid #435d6b; cursor:crosshair; }

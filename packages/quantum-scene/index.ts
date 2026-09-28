@@ -29,6 +29,7 @@ export interface QuantumScene {
   fields?: SceneField[];
   lattice?: SceneLattice;
   reciprocal?: SceneReciprocal;
+  bands?: SceneBands;
   annotations: { id: string; text: string; position: Vec3 }[];
 }
 export interface SceneLattice {
@@ -45,6 +46,11 @@ export interface SceneReciprocal {
   points: {id: string; label: string; position: Vec3}[];
   paths: {object: string; label: string; points: string[]}[];
   boundaryObjects: string[];
+}
+export interface SceneBands {
+  kind: "path" | "surface"; coordinates: string; energies: string[];
+  objects: string[]; labels: string[]; energyUnit: string; bulkGap: number;
+  grid?: [number, number];
 }
 export interface ScenePayload { scene: QuantumScene; artifacts: Record<string, Uint8Array> }
 export const MAX_SCENE_BYTES = 16 * 1024 * 1024;
@@ -140,6 +146,15 @@ export function assertScene(value: unknown): asserts value is QuantumScene {
     }
     for(const id of r.boundaryObjects) if(!["polyline","segments"].includes(objects.get(id)?.kind??"")) throw new Error("Reciprocal boundary mismatch");
   }
+  if(scene.bands) {
+    const b=scene.bands, k=datasets.get(b.coordinates);
+    unique(b.energies);unique(b.objects);
+    if(!k||k.components!==3||k.count>961||b.energies.length!==b.objects.length||b.labels.length!==b.objects.length||(b.kind==="surface")!==!!b.grid||(b.grid && b.grid[0]*b.grid[1]!==k.count)) throw new Error("Band layout mismatch");
+    b.objects.forEach((id,i)=>{
+      const o=scene.objects.find(o=>o.id===id), e=datasets.get(b.energies[i]);
+      if(!o||o.kind!==(b.kind==="path"?"polyline":"mesh")||datasets.get(o.positions)!.count!==k.count||!e||e.components!==1||e.count!==k.count||e.unit!==b.energyUnit) throw new Error("Band object/dataset mismatch");
+    });
+  }
   const { position: p, target: t, up } = scene.camera;
   const direction = t.map((v, i) => v - p[i]);
   const cross = [direction[1] * up[2] - direction[2] * up[1], direction[2] * up[0] - direction[0] * up[2], direction[0] * up[1] - direction[1] * up[0]];
@@ -193,6 +208,32 @@ export async function verifyScenePayload(payload: ScenePayload, digest: (bytes: 
     };
     checkPoints(r.pointObject,r.points.map(p=>p.position));
     for(const path of r.paths) checkPoints(path.object,path.points.map(id=>r.points.find(p=>p.id===id)!.position));
+  }
+  const bands=payload.scene.bands;
+  if(bands) {
+    const k=arrays.get(bands.coordinates)!, energies=bands.energies.map(id=>arrays.get(id)!), n=k.length/3;
+    for(let i=0;i<n;i++) {
+      if(k[i*3+2]!==0 || (bands.kind==="path" && (k[i*3+1]!==0 || (i>0 && k[i*3]<=k[(i-1)*3])))) throw new Error("Invalid band coordinates");
+      if(bands.grid) {
+        const ny=bands.grid[1], x=Math.floor(i/ny),y=i%ny;
+        if(k[i*3]!==k[x*ny*3]||k[i*3+1]!==k[y*3+1]||(x>0 && k[x*ny*3]<=k[(x-1)*ny*3])||(y>0 && k[y*3+1]<=k[(y-1)*3+1])) throw new Error("Invalid band grid order");
+      }
+      if(energies.some((e,j)=>j>0 && e[i]<energies[j-1][i])) throw new Error("Unordered bands");
+      if(energies[energies.length-1][i]-energies[0][i]<bands.bulkGap-1e-9) throw new Error("Reported bulk gap exceeds sampled separation");
+      bands.objects.forEach((id,j)=>{
+        const o=payload.scene.objects.find(o=>o.id===id)!, p=arrays.get(o.positions)!;
+        const expected=bands.kind==="path"?[k[i*3],energies[j][i],0]:[k[i*3],k[i*3+1],energies[j][i]];
+        if(expected.some((v,a)=>Math.abs(p[i*3+a]-v)>1e-9)) throw new Error("Band geometry disagrees with supplied energies");
+      });
+    }
+    // Surface triangles must use adjacent grid cells, never close a periodic seam.
+    if(bands.grid) for(const id of bands.objects) {
+      const o=payload.scene.objects.find(o=>o.id===id)!, indices=arrays.get(o.indices!)!, ny=bands.grid[1];
+      for(let i=0;i<indices.length;i+=3) {
+        const t=[...indices.slice(i,i+3)], xs=t.map(v=>Math.floor(v/ny)), ys=t.map(v=>v%ny);
+        if(new Set(t).size!==3||Math.max(...xs)-Math.min(...xs)!==1||Math.max(...ys)-Math.min(...ys)!==1) throw new Error("Invalid band surface triangle/seam");
+      }
+    }
   }
   return arrays;
 }

@@ -35,12 +35,24 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
       a.winding === (gap < 1e-10 ? null : Number(Math.abs(t2) > Math.abs(t1))) &&
       Math.abs(a.edgeDensity.reduce((sum, value) => sum + value, 0) - 1) < 1e-7 &&
       Math.abs(a.edgeWeight - a.edgeDensity[0] - a.edgeDensity[a.edgeDensity.length - 1]) < 1e-7 &&
-      Math.abs(a.lowerBand[0] + a.upperBand[0]) < 1e-8;
+      a.kValues.every((k,i)=>Number.isFinite(k)&&Math.abs(k-(-Math.PI+2*Math.PI*i/(kPoints-1)))<1e-10 &&
+        Number.isFinite(a.lowerBand[i])&&Number.isFinite(a.upperBand[i])&&Math.abs(a.upperBand[i]-Math.hypot(t1+t2*Math.cos(k),t2*Math.sin(k)))<1e-10&&Math.abs(a.lowerBand[i]+a.upperBand[i])<1e-10);
   }
   if (job.model.type === "qwz" && a.kind === "qwz") {
     const { mass, grid } = job.model.parameters;
     const gap = 2 * Math.min(Math.abs(mass + 2), Math.abs(mass), Math.abs(mass - 2));
     if (Math.abs(a.bulkGap - gap) > 1e-8 || a.gapClosed !== (gap < 1e-10)) return false;
+    if ([a.bandKValues,a.lowerBand,a.upperBand].some(v=>v!==undefined)) {
+      if (!a.bandKValues || !a.lowerBand || !a.upperBand || a.bandKValues.length!==grid || a.lowerBand.length!==grid*grid || a.upperBand.length!==grid*grid) return false;
+      for(let x=0;x<grid;x++) {
+        const k=-Math.PI+2*Math.PI*x/grid;
+        if(!Number.isFinite(a.bandKValues[x]) || Math.abs(a.bandKValues[x]-k)>1e-10) return false;
+        for(let y=0;y<grid;y++) {
+          const ky=-Math.PI+2*Math.PI*y/grid, e=Math.hypot(Math.sin(k),Math.sin(ky),mass+Math.cos(k)+Math.cos(ky)), i=x*grid+y;
+          if(!Number.isFinite(a.lowerBand[i]) || !Number.isFinite(a.upperBand[i]) || Math.abs(a.lowerBand[i]+e)>1e-10 || Math.abs(a.upperBand[i]-e)>1e-10) return false;
+        }
+      }
+    }
     if (a.gapClosed) return a.chern === null && a.latticeChern === null && a.analyticChern === null &&
       !a.meshResolved && a.chernIntegral === null && a.berryCurvature.length === 0;
     const expected = mass > -2 && mass < 0 ? -1 : mass > 0 && mass < 2 ? 1 : 0;
@@ -79,6 +91,7 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
   } else {
     const { grid } = job.model.parameters;
     const phase = (item: unknown) => item === null || item === -1 || item === 0 || item === 1;
+    if ([a.bandKValues,a.lowerBand,a.upperBand].some(v=>v!==undefined) && (!numericArray(a.bandKValues,grid)||!numericArray(a.lowerBand,grid*grid)||!numericArray(a.upperBand,grid*grid))) return false;
     if (a.kind !== "qwz" || !finite(a.bulkGap) || a.bulkGap < 0 ||
         !finite(a.sampledGap) || a.sampledGap < 0 || typeof a.gapClosed !== "boolean" ||
         typeof a.meshResolved !== "boolean" || !phase(a.chern) || !phase(a.latticeChern) ||

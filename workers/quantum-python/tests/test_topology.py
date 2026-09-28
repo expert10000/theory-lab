@@ -87,8 +87,13 @@ class QWZTests(unittest.TestCase):
 
     def test_protocol_result_stays_below_worker_line_limit(self):
         import json
-        result = solve(qwz_job(1, 31))
-        self.assertLess(len(json.dumps(result).encode("utf-8")), 65536)
+        for mass in (-6, -2, -1.99, -1, 0, 0.01, 1, 1.99, 2, 6):
+            result = solve(qwz_job(mass, 31))
+            self.assertLess(len(json.dumps(result).encode("utf-8")), 65536)
+            a = result["analysis"]
+            self.assertEqual(len(a["bandKValues"]), 31)
+            self.assertEqual(len(a["upperBand"]), 31**2)
+            self.assertEqual(a["lowerBand"], [-v for v in a["upperBand"]])
 
 
 if __name__ == "__main__":

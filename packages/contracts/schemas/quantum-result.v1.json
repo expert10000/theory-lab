@@ -1048,7 +1048,11 @@
               "chern": { "enum": [-1, 0, 1, null] }, "latticeChern": { "enum": [-1, 0, 1, null] },
               "analyticChern": { "enum": [-1, 0, 1, null] }, "meshResolved": { "type": "boolean" },
               "chernIntegral": { "type": ["number", "null"] },
-              "berryCurvature": { "type": "array", "items": { "type": "number" }, "maxItems": 961 } },
+              "berryCurvature": { "type": "array", "items": { "type": "number" }, "maxItems": 961 },
+              "bandKValues": { "type": "array", "items": { "type": "number" }, "minItems": 11, "maxItems": 31 },
+              "lowerBand": { "type": "array", "items": { "type": "number" }, "minItems": 121, "maxItems": 961 },
+              "upperBand": { "type": "array", "items": { "type": "number" }, "minItems": 121, "maxItems": 961 } },
+            "dependencies": { "bandKValues": ["lowerBand", "upperBand"], "lowerBand": ["bandKValues", "upperBand"], "upperBand": ["bandKValues", "lowerBand"] },
             "required": ["kind", "bulkGap", "sampledGap", "gapClosed", "chern", "latticeChern", "analyticChern", "meshResolved", "chernIntegral", "berryCurvature"] }
         ] },
         "provenance": { "$ref": "#/oneOf/5/properties/provenance" }

@@ -11,13 +11,13 @@ export function PostRoadmapPanel() {
       <p>
         The supplied post-QLAB plan is saved in
         docs/POST_QLAB_QVIS_M3D_ROADMAP.md with its original text and an
-        implementation-status map. Historical QLAB-025–029 and QVIS-001–009 IDs
+        implementation-status map. Historical QLAB-025–029 and QVIS-001–010 IDs
         are retained. The web client shipped as QLAB-029 here, not the reference
         plan's QLAB-025.
       </p>
       <p>
         Bounded lattice and primitive reciprocal-space fixtures are implemented.
-        Portable band workflows follow. Topology extensions, streaming and release
+        Portable SSH/QWZ band workflows are implemented. Topology extensions, streaming and release
         follow as QVIS-011–013. These are plans, not implemented features.
         Math3D remains a separate track: QuantumResult → QuantumScene →
         independent viewers.

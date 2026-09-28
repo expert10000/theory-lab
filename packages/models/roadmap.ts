@@ -65,15 +65,15 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
     detail:
       "Supplied high-symmetry points/paths, boundaries and k-point inspection.",
   },
-];
-export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-010",
     title: "Portable band paths & surfaces",
-    state: "Planned",
+    state: "Implemented",
     detail:
-      "Start with verified SSH/QWZ energies and synchronize band/k-point/gap inspection.",
+      "Verified supplied SSH/QWZ energies, synchronized band/k-point/gap inspection and offline bundles. No inferred topology.",
   },
+];
+export const POST_QVIS: RoadmapEntry[] = [
   {
     id: "QVIS-011",
     title: "Supplied Berry/vector/topology scene extensions",
@@ -140,8 +140,8 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
   {
     id: "QVIS-007",
     title: "Portable band integration",
-    state: "Planned",
-    detail: "SSH has a 2D band plot, not a portable band-scene workflow.",
+    state: "Implemented (bounded)",
+    detail: "Portable SSH paths and QWZ surfaces with supplied worker energies, shared selection and offline inspection; no arbitrary-crystal bands.",
   },
   {
     id: "QVIS-008",

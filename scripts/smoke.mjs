@@ -138,11 +138,11 @@ try {
   );
   assert.ok(await page.getByText("Generic lattice cells & bounded supercell fixtures", {exact:true}).isVisible());
   assert.ok(await page.getByText("Reciprocal basis & Brillouin-zone inspection",{exact:true}).isVisible());
-  assert.match(await page.getByTestId("planned-QVIS-010").innerText(), /Planned/);
+  assert.match(await page.getByTestId("planned-QVIS-011").innerText(), /Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
-  assert.match(await page.getByTestId("plan-coverage-QVIS-007").innerText(), /Planned/);
+  assert.match(await page.getByTestId("plan-coverage-QVIS-007").innerText(), /Implemented \(bounded\)/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   await page.getByTestId("post-roadmap").scrollIntoViewIfNeeded();
   await page.screenshot({path:"artifacts/desktop-post-roadmap.png", fullPage:true});
@@ -625,6 +625,39 @@ try {
     if (run.model === "ssh") assert.ok(await page.getByRole("checkbox", {name:/Intracell A–B/}).isChecked());
     else assert.ok(await page.getByRole("checkbox", {name:"Brillouin-zone boundary at curvature height 0 (not a mesh seam)",exact:true}).isChecked());
   }
+  await page.getByLabel("Saved scene view").selectOption("bands");
+  for(const run of [savedRuns.find(r=>r.model==="ssh"),qwzRuns[1],qwzRuns[0]]) {
+    assert.ok(run);
+    await page.getByLabel("Scene saved run").selectOption(run.runId);
+    await page.getByTestId("scene-run-id").filter({hasText:run.runId}).waitFor();
+    await page.getByTestId("band-inspection").waitFor();
+    await page.getByLabel("Band",{exact:true}).selectOption("band-1");
+    await page.getByLabel("Scene sample").focus();await page.getByLabel("Scene sample").press("End");
+    assert.match(await page.getByTestId("band-sample").innerText(),/Upper band E=.*separation=/);
+    if(run.model==="qwz") {
+      await page.getByLabel("Band kx index").selectOption("0");
+      await page.getByLabel("Band ky index").selectOption("0");
+      assert.match(await page.getByTestId("band-sample").innerText(),/Sample 0/);
+    } else {
+      await page.getByTestId("band-plot").click();
+      assert.match(await page.getByTestId("band-sample").innerText(),/Sample 50/);
+    }
+    await page.getByTestId("band-inspection").scrollIntoViewIfNeeded();
+    await page.screenshot({path:`artifacts/desktop-bands-${run.model}-${run.runId.slice(-6)}.png`,fullPage:true});
+  }
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},parent);
+  await page.getByTestId("export-scene").click();
+  await page.getByRole("status").filter({hasText:"Exported verified scene bundle"}).waitFor();
+  const bandFolder=resolve(parent,`${qwzRuns[0].runId}-bands.qscene`);
+  const bandBundle=JSON.parse(await readFile(resolve(bandFolder,"scene.json"),"utf8"));
+  assert.equal(bandBundle.bands.kind,"surface");assert.equal(bandBundle.bands.bulkGap,0);
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},bandFolder);
+  await page.getByTestId("import-scene").click();
+  await page.getByTestId("scene-source").filter({hasText:"IMPORTED BUNDLE"}).waitFor();
+  await page.getByTestId("band-inspection").waitFor();
+  assert.ok(await page.getByTestId("export-scene").isDisabled());
+  await page.getByRole("button",{name:"Return to saved run"}).click();
+  await page.getByLabel("Saved scene view").selectOption("standard");
   const isingSceneRun = savedRuns.find(r => r.model === "ising_chain");
   assert.ok(isingSceneRun);
   await page.getByLabel("Scene saved run").selectOption(isingSceneRun.runId);
@@ -770,7 +803,7 @@ try {
   assert.ok(await page.evaluate(async()=>{try{await window.quantum.getSceneExample({family:"square",repeats:[99,1,1],path:"../outside"});return false;}catch{return true;}}));
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native labs, sweeps and six presets; orbital fields, fixed-box/fixed-spacing studies and radial nodes; durable runs, workspace restore, CSV/SVG/manifest/scene exports and read-only bundle imports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native labs, sweeps and presets; orbital studies; lattice/reciprocal fixtures, supplied SSH/QWZ bands including gap closure, shared sample selection, verified export/import; durable runs, workspace restore, integrity, cancellation, restart and sandbox.",
   );
 } catch (error) {
   console.error("Renderer errors:", errors);

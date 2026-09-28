@@ -212,6 +212,7 @@ export interface SSHAnalysis {
   edgeDensity: number[]; edgeWeight: number;
 }
 export interface QWZAnalysis {
+  bandKValues?: number[]; lowerBand?: number[]; upperBand?: number[];
   kind: "qwz"; bulkGap: number; sampledGap: number; gapClosed: boolean;
   chern: number | null; latticeChern: number | null; analyticChern: number | null;
   meshResolved: boolean; chernIntegral: number | null; berryCurvature: number[];
@@ -418,8 +419,8 @@ export interface QuantumBridge {
   saveWorkspace(snapshot: import("./workspace").WorkspaceSnapshot): Promise<void>;
   loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
   listRuns(): Promise<import("./workspace").RunSummary[]>;
-  getScene(runId: string): Promise<import("../quantum-scene").ScenePayload>;
-  exportScene(runId: string): Promise<string | null>;
+  getScene(runId: string, view?: "standard" | "bands"): Promise<import("../quantum-scene").ScenePayload>;
+  exportScene(runId: string, view?: "standard" | "bands"): Promise<string | null>;
   importScene(): Promise<import("../quantum-scene").ScenePayload | null>;
   getSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<import("../quantum-scene").ScenePayload>;
   exportSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<string | null>;

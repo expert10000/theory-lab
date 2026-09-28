@@ -259,10 +259,11 @@ app.whenReady().then(() => {
     trusted(event);
     return runs.list();
   });
-  ipcMain.handle("quantum:scene", (event, runId: unknown) => {
+  ipcMain.handle("quantum:scene", (event, runId: unknown, view: unknown) => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
-    return runs.scene(runId);
+    if(view!==undefined&&view!=="standard"&&view!=="bands") throw new Error("Unsupported scene view");
+    return runs.scene(runId,view);
   });
   const sceneDigest = async (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
   ipcMain.handle("quantum:scene-example", (event, request: unknown) => {
@@ -276,14 +277,15 @@ app.whenReady().then(() => {
     if(selection.canceled || !selection.filePaths[0]) return null;
     return writeSceneBundle(payload,selection.filePaths[0]);
   });
-  ipcMain.handle("quantum:export-scene", async (event, runId: unknown) => {
+  ipcMain.handle("quantum:export-scene", async (event, runId: unknown, view: unknown) => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
     // Validate saved metadata/data before prompting. Never accept renderer paths/data.
-    await runs.scene(runId);
+    if(view!==undefined&&view!=="standard"&&view!=="bands") throw new Error("Unsupported scene view");
+    await runs.scene(runId,view);
     const selection = await dialog.showOpenDialog({ title: "Choose parent folder for a new scene bundle", properties: ["openDirectory"] });
     if (selection.canceled || !selection.filePaths[0]) return null;
-    return runs.exportScene(runId, selection.filePaths[0]);
+    return runs.exportScene(runId, selection.filePaths[0],view);
   });
   ipcMain.handle("quantum:import-scene", async (event, ...args: unknown[]) => {
     trusted(event);

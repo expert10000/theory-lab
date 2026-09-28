@@ -6,6 +6,7 @@ import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult,
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
 import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
+import { bandSceneFromResult } from "../../../packages/quantum-scene/bands";
 import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
@@ -122,12 +123,14 @@ export class RunStore {
     else throw new Error("Unsupported run export format");
     await writeFile(target, output, "utf8");
   }
-  async scene(runId: string) {
+  async scene(runId: string, view: "standard"|"bands" = "standard") {
+    if(view!=="standard"&&view!=="bands") throw new Error("Unsupported scene view");
     const { manifest, result, data } = await this.load(runId);
+    if(view==="bands") return bandSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));
     return sceneFromResult(result, data, manifest.hashes.result, async bytes => sha(bytes));
   }
-  async exportScene(runId: string, parent: string) {
-    return writeSceneBundle(await this.scene(runId), parent);
+  async exportScene(runId: string, parent: string, view?: "standard"|"bands") {
+    return writeSceneBundle(await this.scene(runId,view), parent);
   }
 }
 

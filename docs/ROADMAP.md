@@ -7,7 +7,7 @@ status and the supplied post-QLAB plan are reconciled in
 [POST_QLAB_QVIS_M3D_ROADMAP.md](POST_QLAB_QVIS_M3D_ROADMAP.md), including the full
 planning reference, implemented/partial/planned coverage and separate Math3D track.
 
-QLAB-000–029 and QVIS-001–009 are implemented at their documented bounded scope.
+QLAB-000–029 and QVIS-001–010 are implemented at their documented bounded scope.
 Optional-engine support does not mean those engines are installed. QVIS-006 is
 bundle import and QVIS-007 is orbital convergence; they must not be confused
 with the newly supplied plan's broader reciprocal-space/band milestones.
@@ -15,9 +15,9 @@ Historical IDs are retained; no new QLAB numbers are planned.
 
 Next three **planned, not implemented** Lab commits:
 
-1. QVIS-010 — portable supplied band paths/surfaces and synchronized inspection.
-2. QVIS-011 — supplied Berry/vector/topology scene extensions.
-3. QVIS-012 — streaming and level-of-detail delivery.
+1. QVIS-011 — supplied Berry/vector/topology scene extensions.
+2. QVIS-012 — streaming and level-of-detail delivery.
+3. QVIS-013 — portable visualization release acceptance gate.
 
 Then QVIS-011 topology extensions, QVIS-012 streaming/LOD, and QVIS-013 release
 acceptance. This explicit extension reconciles the imported 001–010 proposal

@@ -120,6 +120,19 @@ existing web client's navigation does not yet expose Scenes. The first
 integration is file-based; no Math3D launch, importer or live worker bridge is
 part of these milestones.
 
+## QVIS-008–010: bounded lattices, reciprocal guides and bands
+
+Scenes now provides geometry-only open supercell fixtures and primitive
+reciprocal-zone fixtures, without creating fake numerical runs. Optional
+`lattice`, `reciprocal` and `bands` metadata are validated in TS and Python.
+Trusted `getScene(runId, "bands")` / `exportScene(runId, "bands")` adapt verified
+saved SSH/QWZ energies; omitted view keeps existing behavior. Unknown views are
+rejected. Original Float64 energies, k coordinates and source hashes survive
+offline bundle import. See [scope, conventions and UI controls](LATTICE_RECIPROCAL_BANDS.md).
+Older strict consumers must update their schema before accepting these optional
+fields or the `segments` primitive. This does not change worker routing or add
+a live Math3D connection.
+
 ## Acceptance
 
 `npm run typecheck`, `npm test`, `npm run test:worker`, `npm run test:scenes`,

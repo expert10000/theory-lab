@@ -23,6 +23,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   const [family, setFamily] = useState<LatticeFamily>("square"),
     [repeats, setRepeats] = useState(["3", "3", "1"]);
   const [view,setView]=useState<"real"|"reciprocal">("real");
+  const [savedView,setSavedView]=useState<"standard"|"bands">("standard");
   const payload =
     source === "example"
       ? (example?.payload ?? null)
@@ -61,7 +62,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
     }
     setBusy(true);
     void bridge
-      .getScene(runId)
+      .getScene(runId,savedView)
       .then((value) => {
         if (request === sequence.current) setPayload(value);
       })
@@ -75,7 +76,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
     return () => {
       sequence.current++;
     };
-  }, [bridge, runId, source]);
+  }, [bridge, runId, source,savedView]);
   async function importScene() {
     setBusy(true);
     setMessage("");
@@ -99,7 +100,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
       const path =
         source === "example" && example
           ? await bridge.exportSceneExample(example.request)
-          : await bridge.exportScene(current);
+          : await bridge.exportScene(current,savedView);
       setMessage(
         path
           ? `Exported verified scene bundle: ${path}`
@@ -134,11 +135,11 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   return (
     <section className="scene-lab" data-testid="scenes-page">
       <div className="panel scene-intro">
-        <p className="eyebrow">QVIS-001–009 · PORTABLE VISUALIZATION</p>
+        <p className="eyebrow">QVIS-001–010 · PORTABLE VISUALIZATION</p>
         <h2>One result. A portable scene.</h2>
         <p>
           Preview verified saved Bloch trajectories, SSH sublattices and bonds,
-          Ising magnetization, QWZ curvature and hydrogenic orbital fields.
+          Ising magnetization, QWZ curvature, supplied SSH/QWZ bands and hydrogenic orbital fields.
           Export the scene and binary datasets as a new .qscene folder. This Lab
           has no Math3D connection.
         </p>
@@ -164,6 +165,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
               ))}
             </select>
           </label>
+          <label>Saved view<select aria-label="Saved scene view" value={savedView} disabled={busy} onChange={e=>{setSavedView(e.target.value as "standard"|"bands");setSource("saved");}}><option value="standard">Standard result scene</option><option value="bands">SSH / QWZ energy bands</option></select></label>
           <button type="button" disabled={busy} onClick={() => void refresh()}>
             Refresh runs
           </button>

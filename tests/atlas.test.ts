@@ -77,7 +77,7 @@ test("browser topology guard validates bounded inline arrays without code genera
   const density = [0.5, 0, 0, 0, 0, 0, 0, 0.5];
   const value = { schema: "quantum-result/v1", jobId: job.jobId, runId: "run-guard", status: "completed",
     operation: "topology", model: job.model, engine: { name: "native", version: "1.18" },
-    analysis: { kind: "ssh", bulkGap: 2, winding: 1, kValues: Array(21).fill(0),
+    analysis: { kind: "ssh", bulkGap: 2, winding: 1, kValues: Array.from({length:21},(_,i)=>-Math.PI+2*Math.PI*i/20),
       lowerBand: Array(21).fill(-1), upperBand: Array(21).fill(1), edgeEnergies: [0, 0],
       edgeDensity: density, edgeWeight: 1 },
     provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:00Z", durationMs: 1 } };
