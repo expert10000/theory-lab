@@ -248,6 +248,20 @@ app.whenReady().then(() => {
     trusted(event);
     return runs.list();
   });
+  ipcMain.handle("quantum:scene", (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
+    return runs.scene(runId);
+  });
+  ipcMain.handle("quantum:export-scene", async (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
+    // Validate saved metadata/data before prompting. Never accept renderer paths/data.
+    await runs.scene(runId);
+    const selection = await dialog.showOpenDialog({ title: "Choose parent folder for a new scene bundle", properties: ["openDirectory"] });
+    if (selection.canceled || !selection.filePaths[0]) return null;
+    return runs.exportScene(runId, selection.filePaths[0]);
+  });
   ipcMain.handle("quantum:export-run", async (event, runId: unknown, format: unknown) => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId) ||

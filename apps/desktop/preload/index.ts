@@ -25,6 +25,8 @@ const bridge: QuantumBridge = {
   saveWorkspace: (snapshot) => ipcRenderer.invoke("quantum:save-workspace", snapshot),
   loadWorkspace: () => ipcRenderer.invoke("quantum:load-workspace"),
   listRuns: () => ipcRenderer.invoke("quantum:list-runs"),
+  getScene: (runId) => ipcRenderer.invoke("quantum:scene", runId),
+  exportScene: (runId) => ipcRenderer.invoke("quantum:export-scene", runId),
   exportRun: (runId, format) => ipcRenderer.invoke("quantum:export-run", runId, format),
 };
 contextBridge.exposeInMainWorld("quantum", Object.freeze(bridge));

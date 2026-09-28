@@ -1408,12 +1408,18 @@ QLAB-028   QWZ Berry curvature and Chern laboratory (implemented)
 QLAB-029   web client foundation, pinned Atlas and SSH/QWZ labs (implemented)
 ```
 
-Only then begin:
+Portable visualization milestones now implemented:
 
 ```text
-QVIS-001
-M3D-Q01...
+QVIS-001   strict portable quantum-scene/v1 contract, TS/Python and binary verification
+QVIS-002   independent scene viewer, saved Bloch/SSH/QWZ adapters and bundle export
+QVIS-003   next: scalar/complex fields (not implemented)
+M3D-Q01    future: importer in the separate Math3D repository (not implemented)
 ```
+
+See [QUANTUM_SCENE.md](QUANTUM_SCENE.md) for the implemented subset, usage,
+artifact conventions and acceptance. No Math3D source changes or direct worker
+connection are required for QVIS-001/002.
 
 ---
 

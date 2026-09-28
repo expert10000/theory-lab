@@ -17,6 +17,14 @@ npm start
 
 On Linux, create `.venv` with `python3.12 -m venv .venv`, then `.venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python`, followed by `npm ci`, `npm run build`, and `npm start`. Ubuntu 22.04 under WSL2/WSLg passed the v0.1 desktop acceptance suite; see [the release record](docs/RELEASE_V0.1.md) for the tested environment and caveats. `QLAB_PYTHON` may specify an alternate interpreter.
 
+## Portable scenes (QVIS-001–002)
+
+Open **Scenes** or **Portable scenes** in the sidebar to preview saved Dynamics,
+SSH or QWZ runs. Orbit the geometry, inspect Float64 samples, toggle objects and
+export a verified `quantum-scene/v1` bundle to a new `.qscene` folder. Math3D is
+unchanged; a separate importer comes later. See [the scene contract and usage](docs/QUANTUM_SCENE.md).
+The renderer is browser-compatible, but Scenes is currently a desktop UI feature.
+
 ## First experiment
 
 The startup example automatically computes the static Hamiltonian **H = (Δ σz + Ω σx)/2**, in normalized energy units with **ħ = 1**. Δ = 1 and Ω = 0.8 give **E± = ±0.640312423743…**. QuTiP builds the operator and computes its eigenenergies. The renderer compares them with the exact formula ±√(Δ² + Ω²)/2.

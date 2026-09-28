@@ -27,6 +27,7 @@ const workspace: WorkspaceSnapshot = {
 };
 test("workspace v1 accepts all lab drafts and rejects unknown or unsafe fields", () => {
   assert.ok(isWorkspaceSnapshot(workspace));
+  assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "scenes" }));
   assert.equal(isWorkspaceSnapshot({ ...workspace, schema: "quantum-workspace/v2" }), false);
   assert.equal(isWorkspaceSnapshot({ ...workspace, extra: true }), false);
   assert.equal(isWorkspaceSnapshot({ ...workspace, sweep: { ...workspace.sweep, x: { ...workspace.sweep.x, points: 20000 } } }), false);

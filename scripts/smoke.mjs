@@ -40,8 +40,10 @@ try {
       "circuit",
       "evolve",
       "exportRun",
+      "exportScene",
       "getCapabilities",
       "getResources",
+      "getScene",
       "getStatus",
       "lindblad",
       "listRuns",
@@ -220,9 +222,11 @@ try {
     .getByTestId("result-state")
     .filter({ hasText: "COMPUTED" })
     .waitFor();
-  await app.evaluate(({ BrowserWindow }) =>
-    BrowserWindow.getAllWindows()[0].setSize(1050, 700),
-  );
+  await app.evaluate(({ BrowserWindow }) => {
+    const window = BrowserWindow.getAllWindows()[0];
+    window.unmaximize();
+    window.setSize(1050, 700);
+  });
   await page.waitForFunction(() => innerWidth < 1100);
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > innerWidth,
@@ -572,9 +576,49 @@ try {
     if (format === "manifest") assert.equal(JSON.parse(exported).result.runId, latest);
   }
   await page.screenshot({ path: "artifacts/desktop-runs.png", fullPage: true });
+  await page.getByTestId("open-scenes").click();
+  await page.getByTestId("scenes-page").waitFor();
+  const sceneRun = savedRuns.find(r => r.operation === "evolve");
+  assert.ok(sceneRun, "a saved evolution run is available to QVIS");
+  await page.getByLabel("Scene saved run").selectOption(sceneRun.runId);
+  await page.getByTestId("scene-verification").filter({ hasText: "SHA-256 VERIFIED" }).waitFor();
+  assert.ok(await page.locator(".scene-canvas canvas").isVisible() || await page.locator(".scene-fallback").isVisible());
+  await page.getByLabel("Inspect scene object").selectOption("bloch-trajectory");
+  await page.getByRole("slider", { name: "Scene sample" }).focus();
+  await page.getByRole("slider", { name: "Scene sample" }).press("End");
+  assert.match(await page.getByTestId("scene-coordinate").innerText(), /sigma_z/);
+  const parent = resolve("artifacts/exports");
+  await app.evaluate(({ dialog }, folder) => { dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [folder] }); }, parent);
+  await page.getByTestId("export-scene").click();
+  await page.getByRole("status").filter({ hasText: "Exported verified scene bundle" }).waitFor();
+  const bundle = JSON.parse(await readFile(resolve(parent, `${sceneRun.runId}.qscene`, "scene.json"), "utf8"));
+  assert.equal(bundle.schema, "quantum-scene/v1");
+  assert.equal(bundle.provenance.runId, sceneRun.runId);
+  assert.ok(bundle.datasets.some(d => d.id === "trajectory"));
+  await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
+  await page.screenshot({ path: "artifacts/desktop-scenes.png", fullPage: true });
+  const qwzRuns = savedRuns.filter(r => r.model === "qwz");
+  await page.getByLabel("Scene saved run").selectOption(qwzRuns[0].runId);
+  await page.getByRole("status").filter({ hasText: "undefined at gap closure" }).waitFor();
+  assert.ok(await page.getByTestId("export-scene").isDisabled());
+  for (const run of [savedRuns.find(r => r.model === "ssh"), qwzRuns[1]]) {
+    assert.ok(run);
+    await page.getByLabel("Scene saved run").selectOption(run.runId);
+    await page.getByTestId("scene-run-id").filter({ hasText: run.runId }).waitFor();
+    await page.getByTestId("scene-verification").filter({ hasText: "SHA-256 VERIFIED" }).waitFor();
+    await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
+    await page.screenshot({ path: `artifacts/desktop-scene-${run.model}.png`, fullPage: true });
+  }
+  await app.evaluate(({ dialog }) => { dialog.showOpenDialog = async () => ({ canceled: true, filePaths: [] }); });
+  await page.getByTestId("export-scene").click();
+  await page.getByRole("status").filter({ hasText: "Scene export cancelled" }).waitFor();
+  const rejectedScene = await page.evaluate(async () => {
+    try { await window.quantum.getScene("../outside"); return false; } catch { return true; }
+  });
+  assert.ok(rejectedScene, "scene IPC rejects renderer path traversal");
   assert.deepEqual(errors, []);
   console.log(
-    "PASS: Electron → QuTiP/Native labs, sweeps and six Volume VIII presets; durable runs, workspace restore, CSV/SVG/manifest exports, integrity, cancellation, restart and sandbox.",
+    "PASS: Electron → QuTiP/Native labs, sweeps and six presets; durable runs, workspace restore, CSV/SVG/manifest/scene exports, Bloch/SSH/QWZ scenes, gap-closure rejection, integrity, cancellation, restart and sandbox.",
   );
 } finally {
   await app.close();

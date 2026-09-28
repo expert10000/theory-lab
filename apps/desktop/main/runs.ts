@@ -4,6 +4,8 @@ import { basename, join } from "node:path";
 import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
+import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
+import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const sha = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
@@ -90,7 +92,7 @@ export class RunStore {
     const result: unknown = JSON.parse(resultText);
     assertJob(job);
     if (!isQuantumResult(result) || result.runId !== runId || result.jobId !== job.jobId ||
-        result.operation !== job.operation || result.engine.name !== job.engine)
+        result.operation !== job.operation || result.engine.name !== job.engine || JSON.stringify(result.model) !== JSON.stringify(job.model))
       throw new Error("Stored run has invalid contracts");
     if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
       throw new Error("Stored topology data failed consistency check");
@@ -112,6 +114,13 @@ export class RunStore {
     else if (format === "svg") output = numericalSvg(result, data);
     else throw new Error("Unsupported run export format");
     await writeFile(target, output, "utf8");
+  }
+  async scene(runId: string) {
+    const { manifest, result, data } = await this.load(runId);
+    return sceneFromResult(result, data, manifest.hashes.result, async bytes => sha(bytes));
+  }
+  async exportScene(runId: string, parent: string) {
+    return writeSceneBundle(await this.scene(runId), parent);
   }
 }
 

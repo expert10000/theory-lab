@@ -17,6 +17,7 @@ import { CircuitLab } from "./CircuitLab";
 import { PresetPanel } from "./PresetPanel";
 import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets";
 import { RunHistory } from "./RunHistory";
+import { SceneLab } from "./SceneLab";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
@@ -239,10 +240,10 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QLAB-029</span>
+          <span className="version">V0.1+ · QVIS-002</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
-          {tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
+          {tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -257,7 +258,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
+      <div className={`layout ${tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
             LABORATORIES <span>13 / 13</span>
@@ -292,6 +293,7 @@ export function App() {
           <button className="lab-selected" onClick={() => setTab("circuit")}><span>◈</span> Transmon circuit <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("presets")}><span>▣</span> Volume VIII presets <span className="live-dot" /></button>
           <button className="lab-selected" onClick={() => setTab("runs")}><span>◷</span> Saved runs <span className="live-dot" /></button>
+          <button className="lab-selected" data-testid="open-scenes" onClick={() => setTab("scenes")}><span>◈</span> Portable scenes <span className="live-dot" /></button>
           <button className="lab-selected" data-testid="open-atlas" onClick={() => setTab("atlas")}><span>◇</span> Hamiltonian Atlas <span className="live-dot" /></button>
           <p className="sidebar-note">
             From two levels to finite chains.
@@ -300,7 +302,7 @@ export function App() {
           </p>
           <p className="eyebrow planned-label">NEXT MILESTONE</p>
           <nav aria-label="Planned laboratories">
-            <div className="future-lab"><span>QVIS</span> 3D visualization</div>
+            <div className="future-lab"><span>003</span> Scalar & complex fields</div>
           </nav>
           <div className="sidebar-bottom">
             <p className="eyebrow">ARCHITECTURE MILESTONE</p>
@@ -316,8 +318,8 @@ export function App() {
         </aside>
         <main className="workspace">
           <div className="breadcrumb">
-            {tab === "backend" ? "SYSTEM" : tab === "atlas" ? "REFERENCE" : "MODELS"} <span>/</span>{" "}
-            {tab === "backend"
+            {tab === "scenes" ? "VISUALIZATION" : tab === "backend" ? "SYSTEM" : tab === "atlas" ? "REFERENCE" : "MODELS"} <span>/</span>{" "}
+            {tab === "scenes" ? "PORTABLE QUANTUM SCENES" : tab === "backend"
               ? "BACKEND METHODS & FORMATS"
               : tab === "atlas" ? "HAMILTONIAN ATLAS"
               : tab === "dynamics"
@@ -342,7 +344,7 @@ export function App() {
           <div className="workspace-title">
             <div>
               <p className="eyebrow accent">
-                {tab === "backend"
+                {tab === "scenes" ? "PORTABLE VISUALIZATION / QVIS-001–002" : tab === "backend"
                   ? "ARCHITECTURE / 008–009"
                   : tab === "atlas" ? "PINNED THEORY REFERENCE / 025"
                   : tab === "dynamics"
@@ -365,7 +367,7 @@ export function App() {
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
-                {tab === "backend"
+                {tab === "scenes" ? "A result becomes a scene." : tab === "backend"
                   ? "Under the hood."
                   : tab === "atlas" ? "The map of Hamiltonians."
                   : tab === "dynamics"
@@ -388,7 +390,7 @@ export function App() {
                     : "A two-level universe."}
               </h1>
               <p>
-                {tab === "backend"
+                {tab === "scenes" ? "Inspect verified numerical data and export application-independent scene bundles." : tab === "backend"
                   ? "Independent numerical engines behind versioned, verified results."
                   : tab === "atlas" ? "Browse source-pinned definitions and explicit laboratory bindings."
                   : tab === "dynamics"
@@ -411,7 +413,7 @@ export function App() {
                     : "Explore the spectrum of a coupled quantum two-state system."}
               </p>
             </div>
-            <span className="pill">{tab === "atlas" ? "48 SOURCE ENTRIES" : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+            <span className="pill">{tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? "48 SOURCE ENTRIES" : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
           </div>
           <div className="tabs" role="tablist" aria-label="Workspace">
             <button
@@ -443,6 +445,7 @@ export function App() {
             <button role="tab" aria-selected={tab === "circuit"} onClick={() => setTab("circuit")}>Circuit</button>
             <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>Presets</button>
             <button role="tab" aria-selected={tab === "runs"} onClick={() => setTab("runs")}>Runs</button>
+            <button role="tab" aria-selected={tab === "scenes"} onClick={() => setTab("scenes")}>Scenes</button>
             <button role="tab" aria-selected={tab === "atlas"} onClick={() => setTab("atlas")}>Atlas</button>
             <button
               role="tab"
@@ -476,7 +479,7 @@ export function App() {
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} /></div>
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
-          {tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
+          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -525,6 +528,8 @@ export function App() {
                 ["027", "SSH-chain bands, winding & finite edges", "Implemented"],
                 ["028", "QWZ Berry curvature & Chern laboratory", "Implemented"],
                 ["029", "Web Atlas & topology client", "Implemented"],
+                ["QVIS-001", "Portable quantum-scene/v1 contract", "Implemented"],
+                ["QVIS-002", "Reusable scene renderer & verified bundle export", "Implemented"],
               ].map(([id, title, state]) => (
                 <div className="roadmap-row" key={id}>
                   <code>{id}</code>

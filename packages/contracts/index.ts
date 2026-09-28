@@ -398,6 +398,8 @@ export interface QuantumBridge {
   saveWorkspace(snapshot: import("./workspace").WorkspaceSnapshot): Promise<void>;
   loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
   listRuns(): Promise<import("./workspace").RunSummary[]>;
+  getScene(runId: string): Promise<import("../quantum-scene").ScenePayload>;
+  exportScene(runId: string): Promise<string | null>;
   exportRun(runId: string, format: import("./workspace").RunExportFormat): Promise<string | null>;
 }
 const ajv = new Ajv({ allErrors: true, strict: true });
