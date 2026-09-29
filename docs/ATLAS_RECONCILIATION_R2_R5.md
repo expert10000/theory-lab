@@ -173,4 +173,108 @@ Evidence: `tests/atlas.test.ts`, `workers/quantum-python/tests/test_atlas_mappin
 
 Source review: pinned examples/python/qutip/adapters/dispersive_jc.py and tavis_cummings.py. Their rotating-frame/tensor conventions above are not silently substituted for Lab's existing closed cavity convention.
 
-R3–R5 remain planned until their review artifacts and acceptance gates land.
+## R3 — C2–C8 to existing quantum-scene/v1 (implemented)
+
+Seven ideas reviewed against the real QVIS vocabulary. Compatible scope does not imply a new model solver or automatic import of the B/C request envelopes. The additive grid-order utility converts only supplied bounded regular data; it does not resample, infer wavefunctions, normalize or modify existing adapters.
+
+### C2 — Bloch vectors and trajectories
+
+Pinned source: [TRACK_C_C2_BLOCH_QVIS.md](https://github.com/expert10000/theory/blob/48e2036ba7c7dd5c79d54749341a79d41770cbb7/docs/theory-lab/TRACK_C_C2_BLOCH_QVIS.md).
+
+Existing vocabulary: objects.vectors, objects.polyline. Modules: `packages/quantum-scene/from-result.ts`.
+
+Compatible scope: Existing verified two-level evolution supplies Bloch observables and time-ordered trajectory samples.
+
+Conversion: Preserve dimensionless coordinates, sample order and supplied vectors; no density-matrix or Ramsey solver inferred.
+
+Additive gap: B's free-form states/series envelopes are not accepted worker results. Other producers need explicit validated numerical adapters.
+
+Evidence: `tests/scenes.test.ts`.
+
+### C3 — Finite sites, bonds and observables
+
+Pinned source: [TRACK_C_C3_LATTICE_QVIS.md](https://github.com/expert10000/theory/blob/48e2036ba7c7dd5c79d54749341a79d41770cbb7/docs/theory-lab/TRACK_C_C3_LATTICE_QVIS.md).
+
+Existing vocabulary: objects.point-cloud, objects.segments, objects.scalars, lattice. Modules: `packages/quantum-scene/examples.ts`, `packages/quantum-scene/from-result.ts`.
+
+Compatible scope: Existing bounded open geometry, Ising magnetization and SSH site density/bonds are already portable.
+
+Conversion: Resolve site IDs to explicit positions and bond endpoints; carry scalar units, no distance-inferred hopping/connectivity.
+
+Additive gap: Arbitrary site labels, multiple observable dictionaries and QEC semantics need explicit authored adapters/metadata; generic objects are not a solver.
+
+Evidence: `tests/lattice-scenes.test.ts`.
+
+### C4 — Momentum-resolved bands
+
+Pinned source: [TRACK_C_C4_BAND_QVIS.md](https://github.com/expert10000/theory/blob/48e2036ba7c7dd5c79d54749341a79d41770cbb7/docs/theory-lab/TRACK_C_C4_BAND_QVIS.md).
+
+Existing vocabulary: bands, reciprocal, objects.polyline, objects.mesh. Modules: `packages/quantum-scene/bands.ts`.
+
+Compatible scope: Supplied SSH paths and QWZ surfaces already use explicit momentum, energies and energy units.
+
+Conversion: C 2D arrays are [ky][kx]; Lab's QWZ arrays are kx-major/ky-fastest. Explicitly reorder coordinates and every energy band together. Preserve energy reference as a declared conversion, not an invented offset.
+
+Additive gap: Additional model band solvers, arbitrary band counts/domain conventions and dedicated Fermi-reference metadata need reviewed adapters/extensions.
+
+Evidence: `tests/band-scenes.test.ts`.
+
+### C5 — Berry, vectors and invariants
+
+Pinned source: [TRACK_C_C5_BERRY_QVIS.md](https://github.com/expert10000/theory/blob/48e2036ba7c7dd5c79d54749341a79d41770cbb7/docs/theory-lab/TRACK_C_C5_BERRY_QVIS.md).
+
+Existing vocabulary: topology.quantities, topology.invariants, objects.vectors, objects.scalars. Modules: `packages/quantum-scene/from-result.ts`, `packages/quantum-scene/index.ts`.
+
+Compatible scope: Supplied QWZ curvature, SSH Berry phase and explicit vector quantities are already supported.
+
+Conversion: Preserve grid ordering, gauge/convention text, units, method and supplied/verified/undefined/unresolved invariant status. Never round or compute topology in the viewer.
+
+Additive gap: Broader Hall/Weyl/BHZ/Haldane results need worker calculations; arbitrary gauge metadata needs explicit mapping, not silent defaults.
+
+Evidence: `tests/topology-scenes.test.ts`.
+
+### C6 — Spatial density and phase
+
+Pinned source: [TRACK_C_C6_WAVEFUNCTION_QVIS.md](https://github.com/expert10000/theory/blob/48e2036ba7c7dd5c79d54749341a79d41770cbb7/docs/theory-lab/TRACK_C_C6_WAVEFUNCTION_QVIS.md).
+
+Existing vocabulary: fields.scalar-field, fields.complex-field, objects.polyline, objects.mesh. Modules: `packages/quantum-scene/grid-order.ts`, `packages/quantum-scene/from-result.ts`.
+
+Compatible scope: Bounded regular 3D densities map to scalar fields; existing orbital results already supply real/imaginary complex amplitudes.
+
+Conversion: Transpose [z][y][x] to xyz-z-fastest with the tested grid utility. Density alone stays scalar: no amplitude, phase, normalization or rescaling is inferred. Explicit density+phase requires a separately tested amplitude reconstruction if wanted.
+
+Additive gap: Nonuniform grids and 1D/2D fields need separate curve/mesh adapters. Generic Fock/eigenvector coefficients are not spatial wavefunctions.
+
+Evidence: `tests/grid-order.test.ts`, `tests/orbital.test.ts`.
+
+### C7 — Atomic state density
+
+Pinned source: [TRACK_C_C7_ATOMIC_DENSITY_QVIS.md](https://github.com/expert10000/theory/blob/48e2036ba7c7dd5c79d54749341a79d41770cbb7/docs/theory-lab/TRACK_C_C7_ATOMIC_DENSITY_QVIS.md).
+
+Existing vocabulary: fields.scalar-field, annotations, provenance.parameters. Modules: `packages/quantum-scene/grid-order.ts`, `packages/models/orbital.ts`.
+
+Compatible scope: Existing single-electron analytic orbitals and supplied regular density grids fit bounded fields; labels are descriptive, not calculations.
+
+Conversion: Keep absolute x/y/z origin, length/density units and state provenance. State/nucleus metadata must be explicit; annotations do not replace typed chemistry semantics.
+
+Additive gap: Species, nuclei, arbitrary quantum-number/nodal dictionaries and multi-state comparison need additive typed semantics/UI. No many-electron atomic solver exists.
+
+Evidence: `tests/grid-order.test.ts`, `tests/orbital.test.ts`.
+
+### C8 — Periodic crystal geometry
+
+Pinned source: [TRACK_C_C8_CRYSTAL_QVIS.md](https://github.com/expert10000/theory/blob/48e2036ba7c7dd5c79d54749341a79d41770cbb7/docs/theory-lab/TRACK_C_C8_CRYSTAL_QVIS.md).
+
+Existing vocabulary: lattice, reciprocal, objects.segments. Modules: `packages/quantum-scene/examples.ts`, `packages/quantum-scene/reciprocal.ts`.
+
+Compatible scope: Open square/honeycomb/cubic fixtures and 2pi-dual reciprocal guides already exist; C8 has a broader periodic structure scope.
+
+Conversion: Fractional-to-Cartesian conversion requires an explicit basis. Validate duality a_i dot b_j=2pi delta_ij; expand integer target-cell offsets without guessing bonds.
+
+Additive gap: Periodic bonds, species/orbital metadata and arbitrary crystal construction are genuinely new additive extensions. Do not flatten them into open lattice fixtures and claim equivalence.
+
+Evidence: `tests/lattice-scenes.test.ts`, `tests/reciprocal-scenes.test.ts`.
+
+Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/Python validators, hashes, 16 MiB regular-scene budget, four fields and 3..49 grid axes; larger/chunked data retains the separate existing stream contract. No direct Lab-to-Math3D worker calls.
+
+R4–R5 remain planned until their review artifacts and acceptance gates land.

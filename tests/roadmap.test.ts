@@ -29,7 +29,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
     [
       ["R1", "Implemented"],
       ["R2", "Implemented"],
-      ["R3", "Planned"],
+      ["R3", "Implemented"],
       ["R4", "Planned"],
       ["R5", "Planned"],
     ],

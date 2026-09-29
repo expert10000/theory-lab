@@ -28,7 +28,9 @@ See [ATLAS_RECONCILIATION_R1.md](ATLAS_RECONCILIATION_R1.md) for the full invent
 R2 executable mapping review is implemented: all entries have dispositions,
 scientific conventions and evidence for the nine preserved bindings. No new
 binding is enabled by the review. See [R2–R5 review](ATLAS_RECONCILIATION_R2_R5.md).
-R3 QVIS vocabulary review, R4 genuine model gaps and R5 the reconciled contract
+R3 QVIS vocabulary review is implemented: C2–C8 compatibility, conversions and
+gaps are recorded; a tested regular-grid utility preserves supplied z/y/x data
+in the existing scene order. R4 genuine model gaps and R5 the reconciled contract
 freeze remain planned. D1 is not started.
 
 ## 1. Technology decision

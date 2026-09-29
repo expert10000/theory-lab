@@ -1,6 +1,7 @@
 import React from "react";
 import { reconcileAtlas } from "../atlas/reconciliation";
 import { executableReview } from "../atlas/executable-review";
+import { SCENE_COMPATIBILITY_REVIEWS } from "../atlas/scene-review";
 import "./atlas-capabilities.css";
 
 /** Shared read-only explanation. Never creates a Run action or worker job. */
@@ -69,6 +70,15 @@ export function AtlasCapabilities({ id }: { id: string }) {
           <p>{review.scientificMapping.boundedScope}</p>
         </>}
         <p>{review.nextRequirement}</p>
+      </details>
+      <details data-testid="atlas-scene-review">
+        <summary>R3 scene compatibility · C2–C8 retained</summary>
+        {SCENE_COMPATIBILITY_REVIEWS.map(idea => <div key={idea.id}>
+          <h4>{idea.id} · {idea.title}</h4>
+          <p>{idea.compatibleScope}</p>
+          <p>{idea.requiredConversion}</p>
+          <p>Additive gap: {idea.remainingGap}</p>
+        </div>)}
       </details>
       <p>
         Generic scene primitives do not mean this Hamiltonian has a numerical

@@ -1,5 +1,6 @@
 import { ATLAS_REVISION } from "./index";
 import { EXECUTABLE_REVIEWS } from "./executable-review";
+import { SCENE_COMPATIBILITY_REVIEWS } from "./scene-review";
 
 export function reconciliationReviewReport(): string {
   return [
@@ -25,7 +26,20 @@ export function reconciliationReviewReport(): string {
     ]),
     "Source review: pinned examples/python/qutip/adapters/dispersive_jc.py and tavis_cummings.py. Their rotating-frame/tensor conventions above are not silently substituted for Lab's existing closed cavity convention.",
     "",
-    "R3–R5 remain planned until their review artifacts and acceptance gates land.",
+    "## R3 — C2–C8 to existing quantum-scene/v1 (implemented)",
+    "",
+    "Seven ideas reviewed against the real QVIS vocabulary. Compatible scope does not imply a new model solver or automatic import of the B/C request envelopes. The additive grid-order utility converts only supplied bounded regular data; it does not resample, infer wavefunctions, normalize or modify existing adapters.",
+    "",
+    ...SCENE_COMPATIBILITY_REVIEWS.flatMap(r => [
+      `### ${r.id} — ${r.title}`, "",
+      `Pinned source: [${r.sourceDocument}](https://github.com/expert10000/theory/blob/${ATLAS_REVISION}/docs/theory-lab/${r.sourceDocument}).`, "",
+      `Existing vocabulary: ${r.vocabulary.join(", ")}. Modules: ${r.existingModules.map(p => `\`${p}\``).join(", ")}.`, "",
+      `Compatible scope: ${r.compatibleScope}`, "", `Conversion: ${r.requiredConversion}`, "",
+      `Additive gap: ${r.remainingGap}`, "", `Evidence: ${r.evidence.map(p => `\`${p}\``).join(", ")}.`, "",
+    ]),
+    "Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/Python validators, hashes, 16 MiB regular-scene budget, four fields and 3..49 grid axes; larger/chunked data retains the separate existing stream contract. No direct Lab-to-Math3D worker calls.",
+    "",
+    "R4–R5 remain planned until their review artifacts and acceptance gates land.",
     "",
   ].join("\n");
 }

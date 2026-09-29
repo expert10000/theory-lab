@@ -79,7 +79,8 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 nine preserved tested Lab bindings and explicit desktop/web/gateway/scene
 coverage. See ATLAS_RECONCILIATION_R1.md. R2 executable mapping review is
 implemented (nine bindings preserved; candidates remain disabled), recorded in
-ATLAS_RECONCILIATION_R2_R5.md. R3 C/QVIS vocabulary review, R4 genuine physics
+ATLAS_RECONCILIATION_R2_R5.md. R3 C/QVIS vocabulary review is implemented
+(seven ideas retained, regular-grid conversion tested). R4 genuine physics
 gaps and R5 reconciled contract freeze remain planned.
 B/C scaffolding is not imported as a parallel architecture;
 no D1 physics model or Math3D integration has been started.

@@ -113,9 +113,9 @@ export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {
     id: "R3",
     title: "C2–C8 ideas mapped to quantum-scene/v1",
-    state: "Planned",
+    state: "Implemented",
     detail:
-      "Reuse QVIS vocabulary; identify genuine compatible adapter/schema extensions.",
+      "Seven compatibility reviews and tested regular-grid reordering. Existing scenes unchanged; nonuniform grids, chemistry and periodic-crystal semantics remain additive gaps.",
   },
   {
     id: "R4",
