@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { OscillatorDynamics } from "./OscillatorDynamics";
+import { DrivenOscillator } from "./DrivenOscillator";
 import type { OscillatorDynamicsDraft } from "../../../packages/models/oscillator-dynamics";
 import type {
   OscillatorResult,
@@ -101,10 +102,10 @@ export function OscillatorLab({
   onSnapshot?: (draft: OscillatorDraft) => void;
   restoredMotion?: OscillatorDynamicsDraft;
   onMotionSnapshot?: (draft: OscillatorDynamicsDraft) => void;
-  restoredMode?: "static" | "dynamics";
-  onModeSnapshot?: (mode: "static" | "dynamics") => void;
+  restoredMode?: "static" | "dynamics" | "driven";
+  onModeSnapshot?: (mode: "static" | "dynamics" | "driven") => void;
 }) {
-  const [view, setView] = useState<"static" | "dynamics">("static");
+  const [view, setView] = useState<"static" | "dynamics" | "driven">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
   const [result, setResult] = useState<OscillatorResult | null>(null),
     [reference, setReference] = useState<OscillatorResult | null>(null);
@@ -218,6 +219,13 @@ export function OscillatorLab({
           onClick={() => setView("dynamics")}
         >
           Free dynamics
+        </button>
+        <button
+          role="tab"
+          aria-selected={view === "driven"}
+          onClick={() => setView("driven")}
+        >
+          Driven dynamics
         </button>
       </div>
       <div hidden={view !== "static"}>
@@ -431,6 +439,9 @@ export function OscillatorLab({
           restoreEpoch={restoreEpoch}
           onSnapshot={onMotionSnapshot}
         />
+      </div>
+      <div hidden={view !== "driven"}>
+        <DrivenOscillator bridge={bridge} status={status} />
       </div>
     </div>
   );

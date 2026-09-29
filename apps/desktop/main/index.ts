@@ -96,6 +96,15 @@ app.whenReady().then(() => {
     await runs.record(value,result);
     return result;
   });
+  ipcMain.handle("quantum:oscillator-drive", async (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if(value.operation!=="oscillator_drive")throw new Error("Expected monochromatic oscillator drive");
+    if(running)throw new Error("A spectrum calculation is already running");
+    const result=await evolution.run(value);
+    await runs.record(value,result);
+    return result;
+  });
   ipcMain.handle("quantum:orbital", async (event, value: unknown) => {
     trusted(event);
     assertJob(value);

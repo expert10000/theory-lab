@@ -31,7 +31,7 @@ export interface WorkspaceSnapshot {
   orbital?: { n: string; l: string; m: string; basis: "complex" | "real_cos" | "real_sin"; Z: string; radius: string; grid: string };
   oscillator?: import("../models/oscillator").OscillatorDraft;
   oscillatorDynamics?: import("../models/oscillator-dynamics").OscillatorDynamicsDraft;
-  oscillatorMode?: "static" | "dynamics";
+  oscillatorMode?: "static" | "dynamics" | "driven";
 }
 export interface RunSummary {
   schema: "quantum-run-manifest/v1";
@@ -101,7 +101,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
     omega: shortText, cutoff: shortText, levels: shortText, state: shortText, extent: shortText, points: shortText,
     engine: { enum: ["qutip", "native", "compare"] },
   }),
-  oscillatorMode: { enum: ["static", "dynamics"] },
+  oscillatorMode: { enum: ["static", "dynamics", "driven"] },
   oscillatorDynamics: block(["omega", "cutoff", "extent", "points", "initial", "index", "alphaRe", "alphaIm", "start", "stop", "samples", "engine"], {
     omega: shortText, cutoff: shortText, extent: shortText, points: shortText,
     initial: { enum: ["fock", "coherent"] }, index: shortText, alphaRe: shortText, alphaIm: shortText,

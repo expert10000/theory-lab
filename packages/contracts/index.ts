@@ -459,6 +459,7 @@ export interface QuantumBridge {
   circuit(job: CircuitJob): Promise<CircuitResult>;
   oscillator(job: OscillatorJob): Promise<OscillatorResult>;
   oscillatorEvolve(job: OscillatorEvolutionJob): Promise<OscillatorEvolutionResult>;
+  oscillatorDrive(job: DrivenOscillatorJob): Promise<DrivenOscillatorResult>;
   topology(job: TopologyJob): Promise<TopologyResult>;
   orbital(job: OrbitalJob): Promise<OrbitalResult>;
   openAtlasSource(id: string): Promise<void>;

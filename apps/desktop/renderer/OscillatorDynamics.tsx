@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import type {
   EvolutionProgress,
   OscillatorEvolutionResult,
+  DrivenOscillatorResult,
   QuantumBridge,
   WorkerStatus,
 } from "../../../packages/contracts";
@@ -16,13 +17,17 @@ import {
 import { oscillatorAmplitude } from "../../../packages/models/oscillator";
 
 type Computed = { result: OscillatorEvolutionResult; data: Float64Array };
-function MotionFigures({
+export type OscillatorComputed = {
+  result: OscillatorEvolutionResult | DrivenOscillatorResult;
+  data: Float64Array;
+};
+export function MotionFigures({
   computed,
   reference,
   selected,
 }: {
-  computed: Computed;
-  reference: Computed | null;
+  computed: OscillatorComputed;
+  reference: OscillatorComputed | null;
   selected: number;
 }) {
   const { result: r, data } = computed,
@@ -45,7 +50,7 @@ function MotionFigures({
     qe = data[o + 8];
   const exact = field.q.map((q) =>
     i.type === "fock"
-      ? oscillatorAmplitude(i.index, q) ** 2
+      ? oscillatorAmplitude(i.index, q - qe) ** 2
       : Math.exp(-((q - qe) ** 2)) / Math.sqrt(Math.PI),
   );
   const line = (values: number[]) =>
@@ -55,11 +60,12 @@ function MotionFigures({
           `${k ? "L" : "M"}${50 + (680 * k) / (values.length - 1)},${200 - 160 * v}`,
       )
       .join(" ");
+  const quadratureRange = r.operation === "oscillator_drive" ? 6 : 3;
   const trajectory = (col: number) =>
     Array.from(
       { length: r.data.rows },
       (_, k) =>
-        `${k ? "L" : "M"}${50 + (680 * k) / (r.data.rows - 1)},${130 - 30 * data[k * stride + col]}`,
+        `${k ? "L" : "M"}${50 + (680 * k) / (r.data.rows - 1)},${130 - (90 / quadratureRange) * data[k * stride + col]}`,
     ).join(" ");
   return (
     <>
@@ -166,8 +172,14 @@ function MotionFigures({
             stroke="#eef7f5"
             strokeDasharray="2 3"
           />
-          {[-3, 0, 3].map((v) => (
-            <text key={v} x="20" y={134 - 30 * v} fill="#acc1ca" fontSize="12">
+          {[-quadratureRange, 0, quadratureRange].map((v) => (
+            <text
+              key={v}
+              x="20"
+              y={134 - (90 / quadratureRange) * v}
+              fill="#acc1ca"
+              fontSize="12"
+            >
               {v}
             </text>
           ))}

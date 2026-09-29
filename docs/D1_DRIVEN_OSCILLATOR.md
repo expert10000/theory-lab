@@ -3,7 +3,7 @@
 | Milestone | Delivery | Status |
 | --- | --- | --- |
 | D1-008 | Strict contracts, supervised worker, independent engines, analytic/finite reference checks | Implemented |
-| D1-009 | Driven mode in existing Electron Oscillator lab | Planned |
+| D1-009 | Driven mode in existing Electron Oscillator lab | Implemented |
 | D1-010 | Reviewed Atlas binding, durable runs/exports, restore and acceptance | Planned |
 
 Static and free motion remain unchanged. This is a bounded subset of the

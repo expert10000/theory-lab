@@ -58,6 +58,7 @@ try {
       "openAtlasSource",
       "orbital",
       "oscillator",
+      "oscillatorDrive",
       "oscillatorEvolve",
       "readData",
       "readSceneChunk",
@@ -179,6 +180,37 @@ try {
   await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
   assert.equal(await page.getByLabel("Oscillator state",{exact:true}).inputValue(),"2");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
+  await page.getByRole("tab",{name:"Driven dynamics",exact:true}).click();
+  await page.getByLabel("Drive epsilonRe",{exact:true}).fill(".5");
+  await page.getByLabel("Drive epsilonIm",{exact:true}).fill(".5");
+  assert.ok(await page.getByTestId("run-oscillator-drive").isDisabled());
+  await page.getByLabel("Drive epsilonRe",{exact:true}).fill(".2");
+  await page.getByLabel("Drive epsilonIm",{exact:true}).fill("0");
+  await page.getByTestId("run-oscillator-drive").click();
+  await page.getByTestId("oscillator-drive-state").filter({hasText:"COMPLETE"}).waitFor();
+  assert.ok(await page.getByTestId("oscillator-drive-compare").isVisible());
+  assert.ok(Number(await page.getByTestId("drive-compare-q").innerText())<1e-7);
+  await page.getByRole("slider",{name:"Driven oscillator time cursor"}).fill("50");
+  assert.equal(await page.getByTestId("drive-number").innerText(),"0.098696");
+  assert.equal(await page.getByTestId("drive-energy").innerText(),"0.598696");
+  await page.getByRole("img",{name:"Driven oscillator occupation",exact:true}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-oscillator-drive.png",fullPage:true});
+  await page.getByLabel("Drive engine",{exact:true}).selectOption("native");
+  await page.getByLabel("Drive epsilonRe",{exact:true}).fill(".4");
+  await page.getByLabel("Drive cutoff",{exact:true}).fill("8");
+  await page.getByTestId("drive-result-state").filter({hasText:"OUT OF DATE"}).waitFor();
+  await page.getByTestId("run-oscillator-drive").click();
+  await page.getByTestId("oscillator-drive-state").filter({hasText:"COMPLETE"}).waitFor();
+  assert.ok(await page.getByTestId("drive-truncation-warning").isVisible());
+  assert.ok(Number(await page.getByTestId("drive-number-error").innerText())>.5);
+  await page.getByLabel("Drive engine",{exact:true}).selectOption("qutip");
+  await page.getByLabel("Drive cutoff",{exact:true}).fill("64");
+  await page.getByLabel("Drive stop",{exact:true}).fill("10");
+  await page.getByLabel("Drive samples",{exact:true}).fill("1001");
+  await page.evaluate(async()=>{document.querySelector('[data-testid="run-oscillator-drive"]').click();await new Promise(resolve=>requestAnimationFrame(resolve));const cancel=document.querySelector('[data-testid="cancel-oscillator-drive"]');if(!cancel)throw new Error("Missing drive cancellation UI");cancel.click();});
+  await page.getByTestId("oscillator-drive-state").filter({hasText:"CANCELLED"}).waitFor();
+  assert.ok(await page.getByRole("img",{name:"Driven oscillator occupation",exact:true}).isVisible());
+  await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({
     path: "artifacts/desktop-spectrum.png",
@@ -238,7 +270,7 @@ try {
   await page.getByRole("tab", { name: "Backend", exact: true }).click();
   assert.ok(await page.getByTestId("backend-page").isVisible());
   assert.ok(
-    await page.getByText("Native NumPy / SciPy", { exact: true }).isVisible(),
+    await page.getByRole("heading", {name:"Native NumPy / SciPy", exact: true}).isVisible(),
   );
   assert.ok(
     await page.getByText("quantum-data/v1", { exact: true }).isVisible(),
