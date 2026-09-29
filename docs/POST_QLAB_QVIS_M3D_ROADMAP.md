@@ -42,6 +42,13 @@ CSV/SVG/manifest export and additive workspace restoration. All three are
 implemented; see [D1_OSCILLATOR_DYNAMICS.md](D1_OSCILLATOR_DYNAMICS.md).
 No existing scope is reduced; the broader G02 and external Math3D goals remain.
 
+D1-008–010 add bounded monochromatic forcing, analytic/finite evolution checks,
+drive controls and q/p/occupation/work diagnostics, an explicitly chosen eleventh
+Atlas preset, verified exports and backward-compatible restoration. All three
+are implemented. All preceding bindings are preserved; general envelopes,
+pulses, damping and broader oscillator physics remain separate work. See
+[D1_DRIVEN_OSCILLATOR.md](D1_DRIVEN_OSCILLATOR.md). Math3D is unchanged.
+
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |
 | QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |

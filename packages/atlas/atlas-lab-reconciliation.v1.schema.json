@@ -38,7 +38,7 @@
     "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,99}$"},
     "groupId": {"type": "string", "pattern": "^G[0-9]{2}$"},
     "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "operation": {"enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "orbital", "circuit", "many_body", "topology", "oscillator"]},
+    "operation": {"enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "orbital", "circuit", "many_body", "topology", "oscillator", "oscillator_drive"]},
     "sourcePath": {"type": "string", "pattern": "^examples/python/qutip/[A-Za-z0-9_/-]+\\.py$"},
     "sourceExample": {
       "type": "object", "additionalProperties": false, "required": ["kind", "adapter", "example", "notes"],

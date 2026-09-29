@@ -99,7 +99,12 @@ try {
   await page.getByRole("button",{name:/^Quantum harmonic oscillator harmonic_oscillator/}).click();
   assert.match(await page.getByTestId("atlas-lab-coverage").innerText(),/Bound operation: oscillator.*Web compute control: not available/);
   assert.equal(await page.getByTestId("web-atlas-load").count(),0,"new oscillator binding remains desktop-only");
-  assert.match(await page.getByTestId("web-atlas").innerText(),/10 tested lab bindings/);
+  assert.match(await page.getByTestId("web-atlas").innerText(),/11 tested lab bindings/);
+  await page.getByLabel("Search Atlas").fill("driven_harmonic_oscillator");
+  await page.getByRole("button",{name:/driven_harmonic_oscillator/}).click();
+  assert.match(await page.getByTestId("atlas-capability-status").innerText(),/Lab executable binding: tested subspace/);
+  assert.equal(await page.getByTestId("web-atlas-load").count(),0,"driven Atlas is descriptive, not browser compute permission");
+  assert.match(await page.getByTestId("web-atlas").innerText(),/Bounded monochromatic subset only/);
   await page.getByLabel("Search Atlas").fill("Su-Schrieffer-Heeger");
   await page
     .getByRole("button", { name: /Su-Schrieffer-Heeger model/ })
@@ -298,6 +303,9 @@ try {
     dataDir,
   );
   await page.getByLabel("Open scene folder").setInputFiles(orbitalFolder);
+  // The previous verified field is deliberately retained while import runs.
+  // Wait for this bundle's provenance before inspecting its controls.
+  await page.getByTestId("web-scenes").filter({hasText:orbitalResult.runId}).waitFor();
   await page
     .getByTestId("field-verification")
     .filter({ hasText: "SHA-256 VERIFIED" })

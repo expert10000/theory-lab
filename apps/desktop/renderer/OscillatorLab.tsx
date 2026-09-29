@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { OscillatorDynamics } from "./OscillatorDynamics";
 import { DrivenOscillator } from "./DrivenOscillator";
+import type { DrivenOscillatorDraft } from "../../../packages/models/oscillator-drive";
 import type { OscillatorDynamicsDraft } from "../../../packages/models/oscillator-dynamics";
 import type {
   OscillatorResult,
@@ -92,6 +93,10 @@ export function OscillatorLab({
   onMotionSnapshot,
   restoredMode,
   onModeSnapshot,
+  restoredDriven,
+  onDrivenSnapshot,
+  atlasDrivenDraft,
+  atlasDrivenEpoch,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -104,6 +109,10 @@ export function OscillatorLab({
   onMotionSnapshot?: (draft: OscillatorDynamicsDraft) => void;
   restoredMode?: "static" | "dynamics" | "driven";
   onModeSnapshot?: (mode: "static" | "dynamics" | "driven") => void;
+  restoredDriven?: DrivenOscillatorDraft;
+  onDrivenSnapshot?: (draft: DrivenOscillatorDraft) => void;
+  atlasDrivenDraft?: DrivenOscillatorDraft;
+  atlasDrivenEpoch?: number;
 }) {
   const [view, setView] = useState<"static" | "dynamics" | "driven">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
@@ -130,6 +139,9 @@ export function OscillatorLab({
   useEffect(() => {
     if (atlasEpoch && atlasDraft) reset(atlasDraft);
   }, [atlasEpoch]);
+  useEffect(() => {
+    if (atlasDrivenEpoch && atlasDrivenDraft) setView("driven");
+  }, [atlasDrivenEpoch]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
   useEffect(() => onModeSnapshot?.(view), [view, onModeSnapshot]);
   let preview: ReturnType<typeof oscillatorJob> | null = null;
@@ -441,7 +453,15 @@ export function OscillatorLab({
         />
       </div>
       <div hidden={view !== "driven"}>
-        <DrivenOscillator bridge={bridge} status={status} />
+        <DrivenOscillator
+          bridge={bridge}
+          status={status}
+          restored={restoredDriven}
+          restoreEpoch={restoreEpoch}
+          onSnapshot={onDrivenSnapshot}
+          atlasDraft={atlasDrivenDraft}
+          atlasEpoch={atlasDrivenEpoch}
+        />
       </div>
     </div>
   );

@@ -19,6 +19,14 @@ def calculate(j):
         return r,d
 
 class DrivenOscillatorTests(unittest.TestCase):
+    def test_work_balance_refines_with_time_sampling(self):
+        j=job(initial={"type":"coherent","alphaRe":.7,"alphaIm":.4},omega=1.3,driveFrequency=.7,epsilonRe=.1,epsilonIm=.15,cutoff=32)
+        coarse,_=calculate(j)
+        j["solver"]["samples"]=401
+        fine,_=calculate(j)
+        self.assertGreater(coarse["analysis"]["maxWorkBalanceError"],1e-7)
+        self.assertLess(fine["analysis"]["maxWorkBalanceError"],coarse["analysis"]["maxWorkBalanceError"]/8)
+
     def test_resonant_displacement_and_independent_engines(self):
         datasets=[]
         for backend in ("native","qutip"):

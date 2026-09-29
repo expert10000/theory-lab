@@ -8,6 +8,7 @@ delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
 let preservedMotionRunId = null;
+let preservedDriveRunId = null;
 const errors = [];
 try {
   const page = await app.firstWindow();
@@ -180,6 +181,14 @@ try {
   await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
   assert.equal(await page.getByLabel("Oscillator state",{exact:true}).inputValue(),"2");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
+  await page.getByRole("tab",{name:"Atlas",exact:true}).click();
+  await page.getByLabel("Search Atlas").fill("driven_harmonic_oscillator");
+  await page.getByRole("button",{name:/^Linearly driven harmonic oscillator driven_harmonic_oscillator/}).click();
+  await page.getByTestId("open-atlas-binding").click();
+  await page.getByRole("tab",{name:"Driven dynamics",exact:true}).and(page.locator('[aria-selected="true"]')).waitFor();
+  assert.equal(await page.getByRole("tab",{name:"Driven dynamics",exact:true}).getAttribute("aria-selected"),"true");
+  assert.equal(await page.getByLabel("Drive epsilonRe",{exact:true}).inputValue(),"0.2");
+  const initialDriveRuns=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_drive").length));
   await page.getByRole("tab",{name:"Driven dynamics",exact:true}).click();
   await page.getByLabel("Drive epsilonRe",{exact:true}).fill(".5");
   await page.getByLabel("Drive epsilonIm",{exact:true}).fill(".5");
@@ -210,6 +219,16 @@ try {
   await page.evaluate(async()=>{document.querySelector('[data-testid="run-oscillator-drive"]').click();await new Promise(resolve=>requestAnimationFrame(resolve));const cancel=document.querySelector('[data-testid="cancel-oscillator-drive"]');if(!cancel)throw new Error("Missing drive cancellation UI");cancel.click();});
   await page.getByTestId("oscillator-drive-state").filter({hasText:"CANCELLED"}).waitFor();
   assert.ok(await page.getByRole("img",{name:"Driven oscillator occupation",exact:true}).isVisible());
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_drive").length)),initialDriveRuns+3,"cancelled drive is never saved");
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
+  await page.getByLabel("Drive epsilonRe",{exact:true}).fill(".1");
+  await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Drive epsilonRe"]')?.value===".4");
+  assert.equal(await page.getByRole("tab",{name:"Driven dynamics",exact:true}).getAttribute("aria-selected"),"true");
+  assert.equal(await page.getByLabel("Drive samples",{exact:true}).inputValue(),"1001");
+  assert.equal(await page.getByTestId("oscillator-drive-result").count(),0);
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({
@@ -725,9 +744,22 @@ try {
   const motionRun=savedRuns.find(r=>r.operation==="oscillator_evolve");
   assert.ok(motionRun,"free motion is listed in durable runs");
   preservedMotionRunId=motionRun.runId;
+  const driveRun=savedRuns.find(r=>r.operation==="oscillator_drive");
+  assert.ok(driveRun,"driven motion is listed in durable runs");
+  preservedDriveRunId=driveRun.runId;
   const latest = savedRuns[0].runId;
   preservedRunId = latest;
   await mkdir("artifacts/exports", { recursive: true });
+  for(const format of ["csv","svg","manifest"]){
+    const destination=resolve(`artifacts/exports/oscillator-drive.${format}`);
+    await app.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},destination);
+    await page.getByRole("button",{name:`Export ${format.toUpperCase()} ${driveRun.runId}`}).click();
+    await page.getByRole("status").filter({hasText:`Exported ${format.toUpperCase()}`}).waitFor();
+    const v=await readFile(destination,"utf8");
+    if(format==="csv")assert.match(v,/number_exact,energy,power,c0_re,c0_im/);
+    if(format==="svg"){assert.match(v,/q_mean/);assert.match(v,/p_mean/);}
+    if(format==="manifest"){const m=JSON.parse(v);assert.equal(m.result.operation,"oscillator_drive");assert.equal(m.result.analysis.energyOffset,.5);assert.equal(m.result.data.sha256,driveRun.artifactSha256);}
+  }
   for(const format of ["csv","svg","manifest"]) {
     const destination=resolve(`artifacts/exports/oscillator-motion.${format}`);
     await app.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},destination);
@@ -998,6 +1030,12 @@ try {
   const runIds = await page.evaluate(() => window.quantum.listRuns().then(runs => runs.map(run => run.runId)));
   assert.ok(runIds.includes(preservedRunId), "saved run must survive app restart");
   assert.ok(runIds.includes(preservedMotionRunId),"saved motion amplitudes survive full restart");
+  assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
+  const driveExport=resolve("artifacts/exports/oscillator-drive-restarted.csv");
+  await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},driveExport);
+  await page.getByRole("button",{name:`Export CSV ${preservedDriveRunId}`}).click();
+  await page.getByRole("status").filter({hasText:"Exported CSV"}).waitFor();
+  assert.match(await readFile(driveExport,"utf8"),/number_exact,energy,power,c0_re,c0_im/);
   const motionExport=resolve("artifacts/exports/oscillator-motion-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},motionExport);
   await page.getByRole("button",{name:`Export CSV ${preservedMotionRunId}`}).click();
@@ -1014,8 +1052,14 @@ try {
   assert.equal(await page.getByLabel("Motion stop",{exact:true}).inputValue(),"100");
   assert.equal(await page.getByLabel("Motion samples",{exact:true}).inputValue(),"1001");
   assert.equal(await page.getByTestId("oscillator-motion-result").count(),0);
+  await page.getByRole("tab",{name:"Driven dynamics",exact:true}).click();
+  assert.equal(await page.getByLabel("Drive epsilonRe",{exact:true}).inputValue(),".4");
+  assert.equal(await page.getByLabel("Drive cutoff",{exact:true}).inputValue(),"64");
+  assert.equal(await page.getByLabel("Drive stop",{exact:true}).inputValue(),"10");
+  assert.equal(await page.getByLabel("Drive samples",{exact:true}).inputValue(),"1001");
+  assert.equal(await page.getByTestId("oscillator-drive-result").count(),0);
   await page.getByRole("tab",{name:"Roadmap",exact:true}).click();
-  for(const id of ["D1-001","D1-002","D1-003","D1-004","D1-005","D1-006","D1-007"]) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
+  for(const id of Array.from({length:10},(_,i)=>`D1-${String(i+1).padStart(3,"0")}`)) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {
   await reopened.close();

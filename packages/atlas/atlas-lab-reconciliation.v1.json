@@ -44,7 +44,7 @@
     }
   ],
   "catalogSha256": "f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a",
-  "reviewSha256": "82ce3a0c2f2ac58be3e242f03eaf35a41fd772e288979a52443e73704404ce45",
+  "reviewSha256": "a6f8444f4885b1312b878994576a4b2c7dc273e752988d62c977f2c8d805425e",
   "sceneReviewIds": [
     "C2",
     "C3",
@@ -369,12 +369,29 @@
       "relatedModelIds": [
         "open_jaynes_cummings"
       ],
-      "binding": null,
-      "executionReview": "new-model-required",
+      "binding": {
+        "modelId": "driven_harmonic_oscillator",
+        "operation": "oscillator_drive",
+        "parameters": {
+          "omega": 1,
+          "cutoff": 24,
+          "extent": 8,
+          "points": 201,
+          "epsilonRe": 0.2,
+          "epsilonIm": 0,
+          "driveFrequency": 1
+        },
+        "convention": "Bounded monochromatic subset only: hbar=1, epsilon(t)=epsilon0 exp[-i nu(t-tStart)], |epsilon0|<=.5. Atlas epsilon is model-defined, not a numeric default: Lab explicitly chooses epsilon0=.2, nu=1, projected vacuum/coherent input and finite cutoff/time/grid. Lab H includes omega/2 identity relative to Atlas omega N; subtract omega/2 for absolute energy and retain the associated global phase. No general envelope, damping, parametric/anharmonic/ND model, web compute or scene adapter.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "accepted-binding",
       "physicsGap": {
-        "status": "new-model",
-        "groupId": "G02",
-        "priority": 2
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
       }
     },
     {

@@ -2,15 +2,15 @@
 
 Pinned theory revision: `48e2036ba7c7dd5c79d54749341a79d41770cbb7` (https://github.com/expert10000/theory).
 
-68 reference definitions; 7 declared theory-example bindings; 10 tested Lab bindings; 4 web compute bindings; 6 bound models with saved scene adapters.
+68 reference definitions; 7 declared theory-example bindings; 11 tested Lab bindings; 4 web compute bindings; 6 bound models with saved scene adapters.
 
 R1 is implemented: the catalog, capability map and UI explanations are reconciled. No new physics executor, job/result protocol, scene format or Math3D integration is introduced. The canonical Atlas remains the metadata source; Lab owns its explicit tested parameter adapters. This map is an implementation inventory, not an execution authorization registry or the R5 contract freeze.
 
-D1 amendment: the current inventory additionally includes the accepted standalone static 1D oscillator. R1's original nine bindings remain unchanged; the tenth is an additive tested mapping. Historical R5 metadata is preserved in packages/atlas/fixtures/reconciliation-r5.v1.json. D1 adds job/result variants, not a scene format or parallel architecture.
+D1 amendment: the current inventory includes static/free 1D oscillator motion and bounded monochromatic forcing. R1's original nine bindings and the tenth static oscillator binding remain unchanged; the eleventh explicitly chooses a tested monochromatic drive preset, not a general-envelope default. Historical R5 metadata is preserved in packages/atlas/fixtures/reconciliation-r5.v1.json. D1 adds job/result variants, not a scene format or parallel architecture.
 
 ## Reading the map
 
-Reference means browseable. Theory example means declared adapter/program paths exist at the pinned source revision, not that they were run or accepted here. A reference_lab binding is a related QEC program, not a one-to-one Hamiltonian executor. Lab-bound means a tested bounded mapping (nine original plus D1 oscillator). Related-only means an existing physical family is relevant but no parameter binding is enabled. Engines are implemented integrations, not a claim that optional packages/devices are installed. Runtime worker capabilities still gate execution.
+Reference means browseable. Theory example means declared adapter/program paths exist at the pinned source revision, not that they were run or accepted here. A reference_lab binding is a related QEC program, not a one-to-one Hamiltonian executor. Lab-bound means a tested bounded mapping (nine original plus two D1 oscillator bindings). Related-only means an existing physical family is relevant but no parameter binding is enabled. Engines are implemented integrations, not a claim that optional packages/devices are installed. Runtime worker capabilities still gate execution.
 
 ## Complete 68-entry inventory
 
@@ -29,7 +29,7 @@ Reference means browseable. Theory example means declared adapter/program paths 
 | `rotating_frame_qubit` | related-only | — | — | driven_two_level |
 | `ramsey_sequence_effective` | related-only | — | — | driven_two_level |
 | `floquet_two_level` | lab-bound | — | `strong_drive` / evolve | — |
-| `driven_harmonic_oscillator` | related-only | — | — | open_jaynes_cummings |
+| `driven_harmonic_oscillator` | lab-bound | — | `driven_harmonic_oscillator` / oscillator_drive | open_jaynes_cummings |
 | `parametric_oscillator` | reference | — | — | — |
 | `tavis_cummings` | theory-example | direct | — | — |
 | `dicke` | related-only | — | — | quantum_rabi |
@@ -98,6 +98,7 @@ All nine bindings and the original 48 formula/basis/parameter definitions are pr
 | `landau_zener` | yes | no | evolve | standard | Atlas H = vt σz/2 + Δ σx/2; lab sweepRate = v, gap = Δ, bias = 0. Finite simulation window does not equal asymptotic LZ scattering. |
 | `semiclassical_rabi_drive` | yes | yes | evolve | standard | ħ = 1; lab Δ = ω₀, A = 2Ω, ω = ωd, φ unchanged. This is a classical drive, not the quantum Rabi cavity model. |
 | `floquet_two_level` | yes | no | evolve | standard | Lab uses A_lab cos(ωt + φ) σx/2: A_lab = 2A_Atlas, φ = 0, ħ = 1. Quasienergies are modulo ω. |
+| `driven_harmonic_oscillator` | yes | no | not accepted | — | Bounded monochromatic subset only: hbar=1, epsilon(t)=epsilon0 exp[-i nu(t-tStart)], \|epsilon0\|<=.5. Atlas epsilon is model-defined, not a numeric default: Lab explicitly chooses epsilon0=.2, nu=1, projected vacuum/coherent input and finite cutoff/time/grid. Lab H includes omega/2 identity relative to Atlas omega N; subtract omega/2 for absolute energy and retain the associated global phase. No general envelope, damping, parametric/anharmonic/ND model, web compute or scene adapter. |
 | `qwz` | yes | yes | topology | standard, bands | Atlas H(k)=sin kₓ σx+sin kᵧ σy+(m+cos kₓ+cos kᵧ)σz, with lattice spacing, hopping scale and ħ set to 1. The lab computes the lower-band FHS Chern number and an independent midpoint Berry-curvature integral; at m=−2, 0, 2 the invariant is undefined. |
 | `two_level_pauli` | yes | yes | diagonalize | — | Subspace d₀ = dᵧ = 0; lab Δ = 2d_z and Ω = 2d_x. Atlas's full four-parameter model is not implemented. |
 | `ising_chain` | yes | no | not accepted | standard | Finite open chain, four sites, zero longitudinal field. Lab H = −JΣσᶻᵢσᶻᵢ₊₁ − hΣσˣᵢ; no thermodynamic-limit claim. |

@@ -9,6 +9,7 @@ import { manyBodyJob } from "../packages/models/many_body";
 import { consistentTopologyResult, isTopologyResponse, topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 import { isQuantumJob } from "../packages/contracts";
 import { oscillatorJob, OSCILLATOR_DEFAULTS } from "../packages/models/oscillator";
+import { drivenOscillatorJob, DRIVEN_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-drive";
 
 test("pinned Atlas snapshot is complete, connected and reference-only", () => {
   assert.equal(ATLAS_REVISION, "48e2036ba7c7dd5c79d54749341a79d41770cbb7");
@@ -28,12 +29,17 @@ test("pinned Atlas snapshot is complete, connected and reference-only", () => {
 });
 
 test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian coefficients", () => {
-  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain", "ssh", "qwz", "harmonic_oscillator"];
+  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain", "ssh", "qwz", "harmonic_oscillator", "driven_harmonic_oscillator"];
   for (const id of ids) {
     const binding = atlasBinding(id);
     assert.ok(binding, id);
     let job;
-    if (binding.kind === "spectrum") {
+    if(binding.kind === "oscillator_drive") {
+      job=drivenOscillatorJob("atlas-drive",{...DRIVEN_OSCILLATOR_DEFAULTS,...Object.fromEntries(Object.entries(binding.parameters).map(([k,v])=>[k,String(v)]))},"native");
+      assert.equal(job.model.parameters.omega,atlasEntry(id)!.parameters.find(p=>p.symbol==="omega")!.default);
+      assert.equal(atlasEntry(id)!.parameters.find(p=>p.symbol==="epsilon")!.default,"model-defined");
+      assert.equal(job.model.parameters.epsilonRe,.2); assert.match(binding.convention,/omega\/2/);
+    } else if (binding.kind === "spectrum") {
       job = spectrumJob("atlas-test", Object.fromEntries(Object.entries(binding.parameters).map(([key, value]) => [key, String(value)])), "native");
       assert.equal(job.model.parameters.delta / 2, 1);
       assert.equal(job.model.parameters.omega / 2, 0);

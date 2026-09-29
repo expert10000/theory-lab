@@ -103,6 +103,9 @@ export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
   {id:"D1-005",title:"Bounded free oscillator dynamics worker",state:"Implemented",detail:"Append-only contracts; QuTiP integration and native spectral phases; verified complex amplitudes, moments, norm/energy drift, projection loss and cancellation."},
   {id:"D1-006",title:"Electron free dynamics and comparison",state:"Implemented",detail:"Fock/projected-coherent controls, moving density/time cursor, q/p trajectories and reference curves; stale labels, independent engine comparison and cancellation."},
   {id:"D1-007",title:"Durable dynamics, exports and acceptance",state:"Implemented",detail:"Verified saved amplitudes/provenance, q/p SVG and CSV/manifest, optional backward-compatible workspace draft/mode; restart and regression acceptance. No driven/anharmonic/ND or scene/Math3D expansion."},
+  {id:"D1-008",title:"Bounded monochromatic driven oscillator worker",state:"Implemented",detail:"Append-only contracts; independent QuTiP lab-frame integration/native rotating eigensystem; analytic displacement and independent finite-amplitude, energy/power checks. Explicit omega/2 Atlas offset."},
+  {id:"D1-009",title:"Electron driven oscillator mode",state:"Implemented",detail:"Complex drive controls, moving density, q/p, occupation, work/cutoff diagnostics, independent comparison and cancellation alongside static/free modes."},
+  {id:"D1-010",title:"Driven Atlas binding, durability and acceptance",state:"Implemented",detail:"Eleventh restricted Atlas mapping with explicit Lab preset, all ten preceding bindings unchanged; verified exports, optional input/mode restoration, restart/regression and release record. No arbitrary envelope, damping, parametric/anharmonic/ND, web compute or Math3D extension."},
 ];
 export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {

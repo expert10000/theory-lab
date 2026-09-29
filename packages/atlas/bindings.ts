@@ -1,6 +1,7 @@
 import { atlasEntry } from "./index";
 
 export type AtlasBinding =
+  | {kind:"oscillator_drive";atlasId:"driven_harmonic_oscillator";modelId:"driven_harmonic_oscillator";parameters:{omega:number;cutoff:number;extent:number;points:number;epsilonRe:number;epsilonIm:number;driveFrequency:number};convention:string}
   | { kind: "oscillator"; atlasId: "harmonic_oscillator"; modelId: "harmonic_oscillator"; parameters: { omega:number; cutoff:number; levels:number; state:number; extent:number; points:number }; convention:string }
   | { kind: "spectrum"; atlasId: "two_level_pauli"; modelId: "two_level"; parameters: { delta: number; omega: number }; convention: string }
   | { kind: "dynamics"; atlasId: "semiclassical_rabi_drive" | "landau_zener" | "floquet_two_level"; modelId: "driven_two_level" | "landau_zener" | "strong_drive"; parameters: Record<string, number>; convention: string }
@@ -19,6 +20,10 @@ function value(id: string, symbol: string): number {
 // Atlas itself does not mark any entry runnable. The app owns and tests these adapters.
 export function atlasBinding(id: string): AtlasBinding | null {
   switch (id) {
+    case "driven_harmonic_oscillator":
+      return {kind:"oscillator_drive",atlasId:id,modelId:id,
+        parameters:{omega:value(id,"omega"),cutoff:24,extent:8,points:201,epsilonRe:.2,epsilonIm:0,driveFrequency:1},
+        convention:"Bounded monochromatic subset only: hbar=1, epsilon(t)=epsilon0 exp[-i nu(t-tStart)], |epsilon0|<=.5. Atlas epsilon is model-defined, not a numeric default: Lab explicitly chooses epsilon0=.2, nu=1, projected vacuum/coherent input and finite cutoff/time/grid. Lab H includes omega/2 identity relative to Atlas omega N; subtract omega/2 for absolute energy and retain the associated global phase. No general envelope, damping, parametric/anharmonic/ND model, web compute or scene adapter."};
     case "harmonic_oscillator":
       return {kind:"oscillator",atlasId:id,modelId:"harmonic_oscillator",
         parameters:{omega:value(id,"omega"),cutoff:16,levels:6,state:0,extent:8,points:201},

@@ -56,6 +56,15 @@ restoration. All three are implemented; see
 driven, parametric, anharmonic or multidimensional oscillators, arbitrary states,
 web oscillator computation or any new QVIS/Math3D boundary.
 
+D1-008–010 subsequently add bounded monochromatic forcing within that same lab:
+independent QuTiP/native evolution, analytic displacement and finite-phase checks,
+q/p/occupation and energy/power/work diagnostics, verified persistence/exports,
+optional workspace restoration, and a reviewed eleventh Atlas binding. The prior
+ten bindings remain unchanged. The drive preset is an explicit Lab choice, not
+an inferred Atlas envelope. Arbitrary envelopes/pulses and all wider G02 goals
+remain planned; no web compute, scene or Math3D expansion. See
+[D1_DRIVEN_OSCILLATOR.md](D1_DRIVEN_OSCILLATOR.md).
+
 ## 1. Technology decision
 
 ### V1

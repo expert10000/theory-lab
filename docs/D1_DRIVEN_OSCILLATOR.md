@@ -4,7 +4,7 @@
 | --- | --- | --- |
 | D1-008 | Strict contracts, supervised worker, independent engines, analytic/finite reference checks | Implemented |
 | D1-009 | Driven mode in existing Electron Oscillator lab | Implemented |
-| D1-010 | Reviewed Atlas binding, durable runs/exports, restore and acceptance | Planned |
+| D1-010 | Reviewed Atlas binding, durable runs/exports, restore and acceptance | Implemented |
 
 Static and free motion remain unchanged. This is a bounded subset of the
 Atlas's general complex envelope, not a pulse/source-code interpreter:
@@ -57,3 +57,37 @@ in addition to byte/hash checks. It does not infer correctness from QuTiP/native
 agreement alone. Variances use finite projected q/p operators, as in free motion.
 No arbitrary envelope, parametric/anharmonic/ND solver, new scene vocabulary,
 web compute permission or Math3D connection is introduced.
+
+## UI, Atlas and durable data
+
+Open **Harmonic oscillator → Driven dynamics**. The existing stationary and free
+modes remain available. Controls select finite Fock/coherent initial data, complex
+drive amplitude, frequency, cutoff and sampling, with QuTiP/native comparison.
+The computed-sample cursor synchronizes density, q/p and occupation; energy,
+power, projection loss and truncation diagnostics remain visible. Cancellation
+uses the existing supervised job lifecycle and does not save an incomplete run.
+
+The reviewed `driven_harmonic_oscillator` binding loads this bounded mode.
+Its epsilon0=0.2, nu=1 setting is an explicit Lab preset, not an Atlas default:
+the canonical Atlas leaves its envelope model-defined. All ten preceding Atlas
+bindings are tested against the pre-drive snapshot and remain unchanged.
+
+Workspace restoration saves only inputs and the selected mode, never an
+unverified computed plot. Completed runs retain their job, result, provenance
+and checked numerical bytes independently of live worker artifacts. CSV exports
+all columns; SVG exports q/p trajectories; the manifest preserves the energy
+offset and drive parameters. Loading/exporting rechecks scientific content as
+well as hashes, including rejecting tampered data with recomputed hashes.
+
+## Acceptance
+
+Automated checks cover resonance, detuned complex forcing, Fock/coherent inputs,
+zero-drive coefficient phases, constant-drive energy, time-quadrature refinement,
+finite-cutoff convergence, cancellation and schema compatibility. TypeScript
+also independently checks the finite dynamics and durable artifact integrity.
+The complete Node suite passes 100 tests (one opt-in SSH skip); the Python suite
+passes 70 (four unavailable optional-engine skips). Electron acceptance exercises
+Atlas loading, comparison, sample selection, cancellation, restoration, exports
+and full restart alongside existing labs. Authenticated web and portable-scene
+acceptance retain their existing permissions and scene vocabulary. The pinned
+68-model Atlas and reconciliation/freeze reports pass deterministic checks.

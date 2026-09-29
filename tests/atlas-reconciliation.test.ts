@@ -59,7 +59,7 @@ test("R1 preserves scientific definitions for all 48 legacy IDs and all nine exa
     ATLAS_ENTRIES.map((e) => [e.id, atlasBinding(e.id)]).filter(([, b]) => b),
   );
   assert.deepEqual(Object.fromEntries(Object.keys(legacy.bindings).map(id=>[id,actual[id]])), legacy.bindings);
-  assert.equal(Object.keys(actual).length,10,"nine original bindings plus one reviewed oscillator addition");
+  assert.equal(Object.keys(actual).length,11,"nine original bindings plus static and driven oscillator additions");
 });
 
 test("R1 covers all 68 IDs and separates source examples, related physics, binding and scene capabilities", () => {
@@ -72,7 +72,7 @@ test("R1 covers all 68 IDs and separates source examples, related physics, bindi
   );
   assert.equal(ATLAS_RECONCILIATION.length, 68);
   assert.equal(new Set(ATLAS_RECONCILIATION.map((r) => r.atlasId)).size, 68);
-  assert.equal(ATLAS_RECONCILIATION.filter((r) => r.lab).length, 10);
+  assert.equal(ATLAS_RECONCILIATION.filter((r) => r.lab).length, 11);
   assert.equal(
     ATLAS_RECONCILIATION.filter((r) => r.lab?.implementation.webControl).length,
     4,

@@ -11,6 +11,12 @@ export interface ScientificMappingReview {
 }
 /** Review evidence only. The existing atlasBinding switch remains execution authority. */
 export const BINDING_REVIEWS: Record<string, ScientificMappingReview> = {
+  driven_harmonic_oscillator:{
+    conversion:"omega unchanged, hbar=1; epsilon(t)=epsilon0 exp[-i nu(t-tStart)] is an explicitly chosen Lab subset of the model-defined Atlas envelope. Lab adds omega/2 identity; energies/coefficients retain its energy/global-phase offset.",
+    basis:"Finite Fock |n>, normalized initial coherent projection or n<=10. q,p are dimensionless finite projected ladder operators; selected density uses shared Hermite reconstruction.",
+    boundedScope:"omega .1..5; cutoff 8..64; |epsilon0|<=.5, nu 0..5; duration<=20, omega*duration<=50, |alpha|+|epsilon0|*duration<=4. No arbitrary envelope, damping, parametric/anharmonic/ND, physical-length calibration, web computation or scene adapter. Drive .2/nu=1 is a declared Lab preset, not inferred Atlas data.",
+    evidence:["tests/oscillator-drive.test.ts","workers/quantum-python/tests/test_oscillator_drive.py","scripts/smoke.mjs"],
+  },
   harmonic_oscillator: {
     conversion:"omega=omega_Atlas, hbar=1; H=omega(N+1/2), including zero-point energy.",
     basis:"Fock |n>; stationary Hermite amplitude in dimensionless q=(a+a†)/sqrt(2). No mass/physical-length calibration inferred.",
@@ -140,7 +146,7 @@ export const ADDITIONAL_MAPPING_REVIEWS: Record<string, string> = {
   harmonic_oscillator:
     "D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted via the unchanged static Atlas binding. The same lab adds bounded free Fock/projected-coherent dynamics with verified amplitudes, q/p diagnostics and persistence. Broader arbitrary-state/driven/parametric/anharmonic/ND/physical-coordinate scope remains additive; a JC component remains a separate related path.",
   driven_harmonic_oscillator:
-    "Standalone drive/displacement and truncation diagnostics are needed; open JC has an additional qubit and dissipation.",
+    "D1 now delivers the bounded monochromatic standalone drive with analytic displacement, finite-phase checks, boundary/reference errors and durable data. General envelopes, pulses and broader driven scope remain missing; open JC includes an additional qubit/dissipation and remains separate.",
   dispersive_jc:
     "Source uses atom x cavity and rotating-frame H_eff=(Delta+chi)Pe+chi*n*sigma_z, chi=g^2/Delta, sigma_z=2Pe-I. At hbar=1: Delta=omega_q-omega_c; H_source=H_Atlas-omega_c*(n+Pe)+(omega_q+chi)*I/2 after tensor conversion. Inferring g from Atlas chi requires chi*Delta>=0 and an explicit coupling-sign convention, not a unique default. Freeze nonzero detuning, |g/Delta|<<1, n<<n_crit and compare to full JC before integration.",
   tavis_cummings:
@@ -176,7 +182,7 @@ function review(row: AtlasReconciliationEntry): ExecutableReview {
   return {
     atlasId: row.atlasId,
     disposition: row.lab
-      ? row.atlasId === "harmonic_oscillator" ? "accepted-binding" : "preserved-binding"
+      ? ["harmonic_oscillator","driven_harmonic_oscillator"].includes(row.atlasId) ? "accepted-binding" : "preserved-binding"
       : ["coulomb_one_body", "spin_half_zeeman"].includes(row.atlasId)
         ? "adapter-candidate"
         : ADDITIONAL_MAPPING_REVIEWS[row.atlasId]

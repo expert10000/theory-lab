@@ -21,7 +21,7 @@ test("R2 reviews every entry, preserves all binding permissions and records scie
     EXECUTABLE_REVIEWS.map((r) => r.atlasId),
     ATLAS_ENTRIES.map((e) => e.id),
   );
-  assert.equal(Object.keys(BINDING_REVIEWS).length, 10);
+  assert.equal(Object.keys(BINDING_REVIEWS).length, 11);
   assert.equal(
     EXECUTABLE_REVIEWS.filter((r) => r.disposition === "adapter-candidate")
       .length,
@@ -58,7 +58,7 @@ test("R4 ranks every genuine gap exactly once without downgrading existing bindi
   assert.equal(PHYSICS_GAP_REVIEWS.length, 68);
   assert.equal(
     PHYSICS_GAP_REVIEWS.filter((r) => r.status === "covered-subspace").length,
-    10,
+    11,
   );
   assert.equal(
     PHYSICS_GAP_REVIEWS.filter((r) => r.status === "parameter-adapter").length,
@@ -66,11 +66,13 @@ test("R4 ranks every genuine gap exactly once without downgrading existing bindi
   );
   assert.equal(
     PHYSICS_GAP_REVIEWS.filter((r) => r.status === "new-model").length,
-    56,
+    55,
   );
   const ids = PHYSICS_GAP_GROUPS.flatMap((g) => [...g.atlasIds]);
-  assert.equal(ids.length, 58);
-  assert.equal(new Set(ids).size, 58);
+  assert.equal(ids.length, 57);
+  assert.equal(new Set(ids).size, 57);
+  assert.ok(PHYSICS_GAP_GROUPS.find(g=>g.id==="G02")?.deliveredSubspaces?.some(s=>s.includes("driven_harmonic_oscillator")));
+  assert.match(PHYSICS_GAP_GROUPS.find(g=>g.id==="G02")!.missing,/general driven envelopes\/pulses/);
   assert.ok(PHYSICS_GAP_GROUPS.find(g=>g.id==="G02")?.deliveredSubspaces?.some(s=>s.includes("harmonic_oscillator")));
   const groups = new Map(PHYSICS_GAP_GROUPS.map((g) => [g.id, g]));
   assert.equal(groups.size, 12);

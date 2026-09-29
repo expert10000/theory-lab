@@ -4,11 +4,11 @@ Canonical source: `48e2036ba7c7dd5c79d54749341a79d41770cbb7`. R1's complete inve
 
 No existing lab, source definition, binding, engine, host control or scene vocabulary is removed. These milestones complete the review and freeze; they do not claim implementation of unbound physics. Source programs are evidence, not execution permission.
 
-D1 amendment: tables and digests below represent the current additive inventory, including the accepted static 1D oscillator. The historical R5 baseline at 4159d2e is preserved in packages/atlas/fixtures/reconciliation-r5.v1.json. Original protocol branches/definitions are fingerprint-tested against that baseline; new oscillator enum/variants require updated strict consumers. No existing scene schema changed.
+D1 amendment: tables and digests below represent the current additive inventory, including static/free 1D oscillator motion and bounded monochromatic forcing. The historical R5 baseline at 4159d2e is preserved in packages/atlas/fixtures/reconciliation-r5.v1.json. Original protocol branches/definitions are fingerprint-tested against that baseline; new oscillator enum/variants require updated strict consumers. No existing scene schema changed.
 
 ## R2 — Executable mapping review (implemented)
 
-All 68 entries have an explicit disposition. The nine original bindings remain unchanged; D1 adds one accepted oscillator binding through the existing atlasBinding switch. Two restricted adapter candidates remain disabled pending unit/parameter acceptance. Every new model must extend existing contracts and worker supervision, not create a parallel executor.
+All 68 entries have an explicit disposition. The nine original bindings and tenth static oscillator binding remain unchanged; D1 adds a reviewed eleventh binding for an explicitly chosen bounded monochromatic drive preset through the existing atlasBinding switch. Two restricted adapter candidates remain disabled pending unit/parameter acceptance. Every new model must extend existing contracts and worker supervision, not create a parallel executor.
 
 | Atlas ID | Disposition | Enabled existing binding | Next requirement |
 | --- | --- | --- | --- |
@@ -25,7 +25,7 @@ All 68 entries have an explicit disposition. The nine original bindings remain u
 | `rotating_frame_qubit` | new-model-required | no | New effective-model path required: specify frame, detuning sign, rotation and RWA validity. A lab-frame cosine solver is not the same result contract semantics. |
 | `ramsey_sequence_effective` | new-model-required | no | Pulse schedule and phase conventions are missing; continuous drive must not substitute for a Ramsey sequence. |
 | `floquet_two_level` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
-| `driven_harmonic_oscillator` | new-model-required | no | Standalone drive/displacement and truncation diagnostics are needed; open JC has an additional qubit and dissipation. |
+| `driven_harmonic_oscillator` | accepted-binding | yes | D1 now delivers the bounded monochromatic standalone drive with analytic displacement, finite-phase checks, boundary/reference errors and durable data. General envelopes, pulses and broader driven scope remain missing; open JC includes an additional qubit/dissipation and remains separate. |
 | `parametric_oscillator` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `tavis_cummings` | new-model-required | no | Source uses emitters x cavity, rotating-frame Delta*sum(Pe)+g*(a^dag J_-+a J_+). At hbar=1, J_z=sum(Pe)-N/2 and Delta=omega_q-omega_c: H_source=H_Atlas-omega_c*(n+sum(Pe))+N*omega_q*I/2. Atlas has no default emitter count, so N/basis/cutoff must be explicit new model data. Bound 2^N*cutoff and result shapes; test N=1, sqrt(N) bright coupling and dark states. Do not map to single-emitter JC. |
 | `dicke` | new-model-required | no | Collective model required; one-qubit Rabi is only the N=1 restriction, not an enabled mapping. |
@@ -152,6 +152,16 @@ Pauli basis; quasienergies modulo omega; evolution wire operation is unchanged.
 Existing strong-drive evolution and period-propagator diagnostics, not a new floquet job.
 
 Evidence: `tests/atlas.test.ts`, `workers/quantum-python/tests/test_atlas_mapping.py`, `workers/quantum-python/tests/test_floquet.py`.
+
+#### driven_harmonic_oscillator
+
+omega unchanged, hbar=1; epsilon(t)=epsilon0 exp[-i nu(t-tStart)] is an explicitly chosen Lab subset of the model-defined Atlas envelope. Lab adds omega/2 identity; energies/coefficients retain its energy/global-phase offset.
+
+Finite Fock |n>, normalized initial coherent projection or n<=10. q,p are dimensionless finite projected ladder operators; selected density uses shared Hermite reconstruction.
+
+omega .1..5; cutoff 8..64; |epsilon0|<=.5, nu 0..5; duration<=20, omega*duration<=50, |alpha|+|epsilon0|*duration<=4. No arbitrary envelope, damping, parametric/anharmonic/ND, physical-length calibration, web computation or scene adapter. Drive .2/nu=1 is a declared Lab preset, not inferred Atlas data.
+
+Evidence: `tests/oscillator-drive.test.ts`, `workers/quantum-python/tests/test_oscillator_drive.py`, `scripts/smoke.mjs`.
 
 #### qwz
 
@@ -291,7 +301,7 @@ Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/
 
 ## R4 — Genuine physics/model gaps (implemented review)
 
-Every Atlas ID is classified exactly once: 10 covered subspaces, 2 parameter-adapter candidates and 56 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.
+Every Atlas ID is classified exactly once: 11 covered subspaces, 2 parameter-adapter candidates and 55 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.
 
 | Atlas ID | Gap status | Group | Priority |
 | --- | --- | --- | --- |
@@ -308,7 +318,7 @@ Every Atlas ID is classified exactly once: 10 covered subspaces, 2 parameter-ada
 | `rotating_frame_qubit` | new-model | G05 | 2 |
 | `ramsey_sequence_effective` | new-model | G05 | 2 |
 | `floquet_two_level` | covered-subspace | — | preserve |
-| `driven_harmonic_oscillator` | new-model | G02 | 2 |
+| `driven_harmonic_oscillator` | covered-subspace | — | preserve |
 | `parametric_oscillator` | new-model | G02 | 2 |
 | `tavis_cummings` | new-model | G06 | 3 |
 | `dicke` | new-model | G06 | 3 |
@@ -381,13 +391,13 @@ Acceptance requirements:
 
 ### G02 — Standalone oscillator family (priority 2)
 
-Entries: `harmonic_oscillator_nd`, `driven_harmonic_oscillator`, `parametric_oscillator`, `anharmonic_oscillator`, `double_well`. Dependencies: none.
+Entries: `harmonic_oscillator_nd`, `parametric_oscillator`, `anharmonic_oscillator`, `double_well`. Dependencies: none.
 
 Reuse: Cavity Fock mathematics, existing supervised jobs, binary artifacts, sweeps, native/QuTiP comparisons and scalar/complex viewers.
 
-Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below.
+Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below; driven_harmonic_oscillator: D1 bounded monochromatic complex forcing only; general envelopes/pulses and broader driven requirements remain missing below.
 
-Missing: D1 now delivers standalone static 1D and bounded free Fock/projected-coherent jobs/results/controls with analytic basis-to-q plotting, progress/cancel, projection loss and verified persistence. Arbitrary-state dynamics, driven displacement, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. JC oscillator components remain distinct.
+Missing: D1 now delivers static/free 1D and bounded monochromatic complex forcing with displacement/truncation diagnostics and persistence. Arbitrary-state dynamics, general driven envelopes/pulses, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. Partial driven coverage is recorded in deliveredSubspaces, not a full-envelope completion. JC components remain distinct.
 
 Acceptance requirements:
 
@@ -546,13 +556,13 @@ Acceptance requirements:
 - Known syndrome/error/decoder limiting cases
 - Distinguish Hamiltonian spectrum, syndrome observations and Monte Carlo failure rates
 
-D1 now delivers the bounded standalone static 1D oscillator and free Fock/projected-coherent dynamics within G02; the static Atlas binding is unchanged and the group retains all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.
+D1 now delivers bounded static/free 1D motion and monochromatic coherent forcing within G02; the static binding is unchanged and a reviewed eleventh binding loads the explicitly chosen drive preset. The group retains arbitrary envelopes/pulses and all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.
 
 ## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `82ce3a0c2f2ac58be3e242f03eaf35a41fd772e288979a52443e73704404ce45`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `a6f8444f4885b1312b878994576a4b2c7dc273e752988d62c977f2c8d805425e`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 
@@ -560,8 +570,8 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
-| packages/contracts/schemas/quantum-job.v1.json | `37ea77ca15ccf64f3b84933f9cee138127ed2b9f8ca5fec428e21cf6337c93e2` |
-| packages/contracts/schemas/quantum-result.v1.json | `0383dceb2c29bf1a5e549260a0b6b6a8a3a5c2419afad59df3906f8d924d06a4` |
+| packages/contracts/schemas/quantum-job.v1.json | `1f05c7b144d8caf33ddb8e2dc1696f5bee4a03418f1c909b5d570cada1ae979a` |
+| packages/contracts/schemas/quantum-result.v1.json | `3e2d947093a1d50ce6beb228176d983e99385645dbc8eb266b25db6b1d6c94b2` |
 | packages/contracts/schemas/worker-capabilities.v1.json | `51c7f98b1089a945287d5752daa85caec64db9a73746cfd6c664209b222f8090` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
 | packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |

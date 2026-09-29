@@ -14,6 +14,7 @@ import { TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 import { ORBITAL_DEFAULTS } from "../packages/models/orbital";
 import { OSCILLATOR_DEFAULTS } from "../packages/models/oscillator";
 import { OSCILLATOR_DYNAMICS_DEFAULTS } from "../packages/models/oscillator-dynamics";
+import { DRIVEN_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-drive";
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
@@ -78,7 +79,7 @@ test("free oscillator draft and mode extend workspace v1 without invalidating le
   const value = {...workspace, tab: "oscillator", oscillatorDynamics: OSCILLATOR_DYNAMICS_DEFAULTS, oscillatorMode: "dynamics"};
   assert.ok(isWorkspaceSnapshot(value));
   assert.ok(isWorkspaceSnapshot({...value, oscillator: OSCILLATOR_DEFAULTS}));
-  assert.equal(isWorkspaceSnapshot({...value, oscillatorMode: "driven"}), false);
+  assert.equal(isWorkspaceSnapshot({...value, oscillatorMode: "parametric"}), false);
   assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, initial: "arbitrary"}}), false);
   assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, engine: "dynamiqs"}}), false);
   assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, alphaRe: "x".repeat(101)}}), false);
@@ -125,6 +126,12 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
     await writeFile(join(root, "runs", result.runId, "data.f64"), Buffer.alloc(binary.byteLength));
     await assert.rejects(store.export(result.runId, "csv", join(root, "bad.csv")), /integrity check/);
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+test("driven workspace settings are optional, bounded strings and reject executable or unsupported fields",()=>{
+  assert.ok(isWorkspaceSnapshot(workspace));
+  const extended={...workspace,tab:"oscillator",oscillator:OSCILLATOR_DEFAULTS,oscillatorDynamics:OSCILLATOR_DYNAMICS_DEFAULTS,oscillatorDriven:DRIVEN_OSCILLATOR_DEFAULTS,oscillatorMode:"driven"};
+  assert.ok(isWorkspaceSnapshot(extended));
+  for(const d of [{epsilonRe:"x".repeat(101)},{envelope:"t=>code"},{initial:"arbitrary"},{engine:"dynamiqs"}])assert.equal(isWorkspaceSnapshot({...extended,oscillatorDriven:{...DRIVEN_OSCILLATOR_DEFAULTS,...d}}),false);
 });
 
 test("run store persists inline many-body results and exports spectra", async () => {

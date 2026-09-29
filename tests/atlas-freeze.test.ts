@@ -12,6 +12,7 @@ import {
 import { assertAtlasLabFreeze } from "../packages/atlas/freeze-validation";
 import legacy from "../packages/atlas/fixtures/legacy-48.v1.json";
 import r5 from "../packages/atlas/fixtures/reconciliation-r5.v1.json";
+import freeBaseline from "../packages/atlas/fixtures/bindings-d1-free.v1.json";
 const digest = (v: unknown) =>
   createHash("sha256").update(JSON.stringify(v)).digest("hex");
 
@@ -27,14 +28,16 @@ test("R5 freezes complete additive metadata without changing existing scientific
   );
   assert.deepEqual(frozen, actual);
   assert.equal(frozen.entries.length, 68);
-  assert.equal(frozen.entries.filter((e) => e.binding).length, 10);
+  assert.equal(frozen.entries.filter((e) => e.binding).length, 11);
   assert.equal(frozen.entries.filter((e) => e.binding?.webLoad).length, 4);
   assert.equal(frozen.entries.filter((e) => e.sourceExample).length, 7);
   assert.equal(frozen.catalogSha256,r5.catalogSha256,"all 68 source definitions and source-example references unchanged");
+  assert.equal(freeBaseline.bindings.length,10);
+  for(const previous of freeBaseline.bindings)assert.deepEqual(actual.entries.find(e=>e.atlasId===previous.atlasId),previous,`preserve all ten previously delivered bindings: ${previous.atlasId}`);
   for(const row of r5.entries){
     const current=actual.entries.find(e=>e.atlasId===row.atlasId)!;
-    if(row.atlasId!=="harmonic_oscillator")assert.deepEqual(current,row,`preserve R5 row ${row.atlasId}`);
-    else {assert.equal(current.binding?.operation,"oscillator");assert.equal(current.executionReview,"accepted-binding");assert.deepEqual(current.relatedModelIds,row.relatedModelIds);}
+    if(!["harmonic_oscillator","driven_harmonic_oscillator"].includes(row.atlasId))assert.deepEqual(current,row,`preserve R5 row ${row.atlasId}`);
+    else {assert.equal(current.binding?.operation,row.atlasId==="harmonic_oscillator"?"oscillator":"oscillator_drive");assert.equal(current.executionReview,"accepted-binding");assert.deepEqual(current.relatedModelIds,row.relatedModelIds);}
   }
   for (const [id, binding] of Object.entries(legacy.bindings)) {
     const row = actual.entries.find((e) => e.atlasId === id)!.binding!;

@@ -72,7 +72,7 @@ export function PostRoadmapPanel() {
         </div>
       ))}
       <h3>D1 · standalone harmonic oscillator</h3>
-      <p>D1-001–007 deliver the static 1D Fock spectrum plus bounded free Fock/projected-coherent motion, verified saved amplitudes and q/p exports. Dimensionless q, ℏ=1; no driven/anharmonic/ND dynamics, oscillator 3D scene or Math3D connection. See docs/D1_OSCILLATOR.md and docs/D1_OSCILLATOR_DYNAMICS.md.</p>
+      <p>D1-001–010 deliver static/free 1D motion plus bounded monochromatic forcing, verified saved amplitudes, q/p/occupation and energy/power diagnostics. Eleven reviewed Atlas bindings; all preceding mappings retained. Dimensionless q, ℏ=1; no arbitrary drive envelope, damping, parametric/anharmonic/ND, oscillator scene or Math3D connection. See docs/D1_DRIVEN_OSCILLATOR.md.</p>
       {D1_OSCILLATOR_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`oscillator-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
       <details data-testid="source-plan-coverage">
         <summary>

@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -11,6 +11,7 @@ import baseline from "../packages/contracts/fixtures/protocols-d1-free.v1.json";
 import { assertJob } from "../packages/contracts";
 import { WorkerSupervisor } from "../apps/desktop/main/worker";
 import { EvolutionCoordinator } from "../apps/desktop/main/evolution";
+import { RunStore } from "../apps/desktop/main/runs";
 import {
   DRIVEN_OSCILLATOR_DEFAULTS,
   drivenOscillatorJob,
@@ -158,6 +159,106 @@ test("real supervised drive verifies phases, displacement, density, energy/power
       /cancelled/,
     );
     await assert.rejects(coordinator.readData(cancel), /No completed/);
+    const store = new RunStore(join(root, "runs"), root);
+    for (const output of outputs) {
+      const input = drivenOscillatorJob(
+        output.result.jobId,
+        DRIVEN_OSCILLATOR_DEFAULTS,
+        output.result.engine.name,
+      );
+      await assert.rejects(
+        store.record(
+          { ...input, solver: { ...input.solver, tStop: 1 } },
+          output.result,
+        ),
+        /inconsistent driven/,
+      );
+      await store.record(input, output.result);
+    }
+    const restarted = new RunStore(
+        join(root, "runs"),
+        join(root, "absent-worker-artifacts"),
+      ),
+      saved = outputs[0].result;
+    assert.equal(
+      (await restarted.list()).filter((r) => r.operation === "oscillator_drive")
+        .length,
+      2,
+    );
+    for (const format of ["csv", "svg", "manifest"] as const)
+      await restarted.export(
+        saved.runId,
+        format,
+        join(root, `drive.${format}`),
+      );
+    const csv = await readFile(join(root, "drive.csv"), "utf8");
+    assert.ok(csv.startsWith(saved.data.columns.join(",")));
+    assert.equal(csv.trim().split("\n").length, saved.data.rows + 1);
+    const svg = await readFile(join(root, "drive.svg"), "utf8");
+    assert.match(svg, /q_mean/);
+    assert.match(svg, /p_mean/);
+    assert.doesNotMatch(svg, /q_variance/);
+    const exported = JSON.parse(
+      await readFile(join(root, "drive.manifest"), "utf8"),
+    );
+    assert.deepEqual(exported.result.analysis, saved.analysis);
+    assert.equal(exported.manifest.artifactSha256, saved.data.sha256);
+    assert.equal(exported.job.model.parameters.epsilonRe, 0.2);
+    await assert.rejects(
+      restarted.scene(saved.runId),
+      /no QVIS-002 scene adapter/,
+    );
+    const dir = join(root, "runs", saved.runId),
+      corrupt = await readFile(join(dir, "data.f64"));
+    corrupt.writeDoubleLE(99, 11 * 8);
+    await writeFile(join(dir, "data.f64"), corrupt);
+    await assert.rejects(
+      restarted.export(saved.runId, "csv", join(root, "invalid.csv")),
+      /integrity/,
+    );
+    const sha = createHash("sha256").update(corrupt).digest("hex"),
+      forged = { ...saved, data: { ...saved.data, sha256: sha } },
+      resultText = JSON.stringify(forged, null, 2) + "\n",
+      manifest = JSON.parse(await readFile(join(dir, "manifest.json"), "utf8"));
+    manifest.artifactSha256 = sha;
+    manifest.hashes.result = createHash("sha256")
+      .update(resultText)
+      .digest("hex");
+    await writeFile(join(dir, "result.json"), resultText);
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(
+      restarted.export(saved.runId, "csv", join(root, "forged.csv")),
+      /driven oscillator/,
+    );
+    await writeFile(join(root, saved.data.path), corrupt);
+    await assert.rejects(
+      store.record(
+        drivenOscillatorJob(saved.jobId, DRIVEN_OSCILLATOR_DEFAULTS, "native"),
+        { ...forged, runId: "run-invalid-drive" },
+      ),
+      /driven oscillator/,
+    );
+    assert.ok(
+      !(await readdir(join(root, "runs"))).includes("run-invalid-drive"),
+    );
+    const edge = drivenOscillatorJob(
+        "drive-edge",
+        {
+          ...DRIVEN_OSCILLATOR_DEFAULTS,
+          omega: ".1",
+          driveFrequency: "5",
+          epsilonRe: ".01",
+          cutoff: "64",
+          stop: "20",
+          samples: "3",
+        },
+        "native",
+      ),
+      edgeResult = await coordinator.run(edge);
+    checkDrivenOscillatorData(
+      edgeResult,
+      await coordinator.readData(edge.jobId),
+    );
     assert.deepEqual(await worker.request("health"), { status: "ok" });
   } finally {
     await worker.stop();
