@@ -7,11 +7,11 @@ D1-001–010 remain implemented. This extends the existing oscillator lab, typed
 contracts, worker supervision and durable numerical pipeline; it creates no
 parallel architecture.
 
-| Milestone | Commit sequence | Status |
-| --- | --- | --- |
-| D1-011 | `feat(worker): add bounded Gaussian oscillator pulses` | Implemented |
-| D1-012 | `feat(desktop): add pulse controls and oscillator convergence inspection` | Implemented |
-| D1-013 | `feat(lab): persist pulsed oscillator runs and record acceptance` | Implemented |
+| Milestone | Commit sequence | Commit | Status |
+| --- | --- | --- | --- |
+| D1-011 | `feat(worker): add bounded Gaussian oscillator pulses` | `cae4615` | Implemented |
+| D1-012 | `feat(desktop): add pulse controls and oscillator convergence inspection` | `90d17bc` | Implemented |
+| D1-013 | `feat(lab): persist pulsed oscillator runs and record acceptance` | `e9bdede` | Implemented |
 
 ## D1-011 — contracts and independent worker engines
 
@@ -27,8 +27,8 @@ leaves every previously delivered schema branch and definition unchanged.
 
 Native uses SciPy DOP853; QuTiP uses lab-frame SESolver with its own Verner9
 integrator, avoiding the SciPy/Fortran callback exception wrapper. Both retain
-raw output,
-rtol=1e-10, atol=1e-12 and bounded internal steps independent of plotted samples.
+raw output, rtol=1e-10, atol=1e-12 and bounded internal steps independent of
+plotted samples.
 Displacement uses adaptive scalar quadrature with explicit peak breakpoints.
 The host independently checks finite coefficients with interaction-picture RK4
 and displacement with composite Simpson quadrature, without renormalization.
@@ -132,8 +132,9 @@ its monochromatic preset. Pulse presets must be explicit Lab choices,
 not inferred defaults for the Atlas's model-defined envelope. Preserve all
 eleven current bindings and all 68 canonical definitions.
 
-Acceptance: 105 Node tests pass (one opt-in SSH skip); 77 Python tests pass
-(four unavailable optional-engine skips). Tests cover resonance, detuned complex
+Acceptance recorded on 2026-09-29 for the delivery commits above: 182 tests
+passed (105 Node and 77 Python); five were skipped (one opt-in SSH and four
+unavailable optional-engine tests). Tests cover resonance, detuned complex
 forcing, Fock/coherent states, a narrow pulse between observation times,
 zero-drive phase, nonzero time origin, envelope-derivative power, work sampling,
 cutoff/solver-step refinement, integration-budget exhaustion and cancellation.

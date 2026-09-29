@@ -54,7 +54,10 @@ QuTiP-Verner9/native-DOP853 evolution and finite/displacement verification,
 pulse controls and bounded cutoff/solver-step comparisons, endpoint tails,
 verified persistence/exports and input-only restoration. All eleven existing
 Atlas load presets remain unchanged; Gaussian is an additional explicit Lab
-choice. See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md).
+choice. Delivery commits: `cae4615` (D1-011), `90d17bc` (D1-012), `e9bdede`
+(D1-013). Acceptance recorded on 2026-09-29: 182 tests passed plus typecheck
+and Electron/web/scene regression gates. See
+[D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md).
 
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |

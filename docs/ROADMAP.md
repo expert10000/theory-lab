@@ -71,7 +71,10 @@ D1-011 adds a bounded declarative Gaussian pulse and independently verified
 worker evolution; D1-012 adds pulse controls and cutoff/time-resolution
 inspection in the existing Electron lab; D1-013 adds durable envelope data,
 exports/restoration, reviewed Atlas coverage and acceptance. All three are
-implemented. See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md)
+implemented in `cae4615`, `90d17bc` and `e9bdede`, respectively. Open
+**Harmonic oscillator → Gaussian pulse** in Electron. Acceptance recorded on
+2026-09-29: 182 tests passed, with typecheck and Electron/web/scene regression
+gates passing. See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md)
 for delivery, scientific gates and limits. All previous modes and eleven Atlas
 load presets remain unchanged; Gaussian is a separate explicit Lab choice.
 Arbitrary waveforms and all broader G02 goals remain planned. No Math3D, new
