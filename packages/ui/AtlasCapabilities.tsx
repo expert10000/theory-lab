@@ -2,6 +2,7 @@ import React from "react";
 import { reconcileAtlas } from "../atlas/reconciliation";
 import { executableReview } from "../atlas/executable-review";
 import { SCENE_COMPATIBILITY_REVIEWS } from "../atlas/scene-review";
+import { physicsGapReview, PHYSICS_GAP_GROUPS } from "../atlas/physics-gaps";
 import "./atlas-capabilities.css";
 
 /** Shared read-only explanation. Never creates a Run action or worker job. */
@@ -10,6 +11,8 @@ export function AtlasCapabilities({ id }: { id: string }) {
   if (!row) return null;
   const lab = row.lab;
   const review = executableReview(id)!;
+  const gap = physicsGapReview(id)!;
+  const group = PHYSICS_GAP_GROUPS.find(g => g.id === gap.groupId);
   return (
     <section
       className="atlas-binding atlas-bridge atlas-capabilities"
@@ -70,6 +73,17 @@ export function AtlasCapabilities({ id }: { id: string }) {
           <p>{review.scientificMapping.boundedScope}</p>
         </>}
         <p>{review.nextRequirement}</p>
+      </details>
+      <details data-testid="atlas-gap-review">
+        <summary>R4 physics gaps · {gap.status}{group ? ` · priority ${gap.priority}` : ""}</summary>
+        <p>{gap.scope}</p>
+        {group && <>
+          <h4>{group.id} · {group.title}</h4>
+          <p>Reuse: {group.reuse}</p>
+          <p>Missing: {group.missing}</p>
+          <p>Acceptance requirements: {group.acceptance.join(" · ")}</p>
+        </>}
+        <p>Reviewed backlog only; no existing feature removed or new Run action enabled.</p>
       </details>
       <details data-testid="atlas-scene-review">
         <summary>R3 scene compatibility · C2–C8 retained</summary>

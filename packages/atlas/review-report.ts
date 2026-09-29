@@ -1,6 +1,7 @@
 import { ATLAS_REVISION } from "./index";
 import { EXECUTABLE_REVIEWS } from "./executable-review";
 import { SCENE_COMPATIBILITY_REVIEWS } from "./scene-review";
+import { PHYSICS_GAP_GROUPS, PHYSICS_GAP_REVIEWS } from "./physics-gaps";
 
 export function reconciliationReviewReport(): string {
   return [
@@ -39,7 +40,23 @@ export function reconciliationReviewReport(): string {
     ]),
     "Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/Python validators, hashes, 16 MiB regular-scene budget, four fields and 3..49 grid axes; larger/chunked data retains the separate existing stream contract. No direct Lab-to-Math3D worker calls.",
     "",
-    "R4–R5 remain planned until their review artifacts and acceptance gates land.",
+    "## R4 — Genuine physics/model gaps (implemented review)",
+    "",
+    "Every Atlas ID is classified exactly once: nine covered subspaces, two parameter-adapter candidates and 57 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.",
+    "",
+    "| Atlas ID | Gap status | Group | Priority |",
+    "| --- | --- | --- | --- |",
+    ...PHYSICS_GAP_REVIEWS.map(r => `| \`${r.atlasId}\` | ${r.status} | ${r.groupId ?? "—"} | ${r.priority || "preserve"} |`),
+    "",
+    ...PHYSICS_GAP_GROUPS.flatMap(g => [
+      `### ${g.id} — ${g.title} (priority ${g.priority})`, "",
+      `Entries: ${g.atlasIds.map(id => `\`${id}\``).join(", ")}. Dependencies: ${g.dependencies.join(", ") || "none"}.`, "",
+      `Reuse: ${g.reuse}`, "", `Missing: ${g.missing}`, "", "Acceptance requirements:", "",
+      ...g.acceptance.map(a => `- ${a}`), "",
+    ]),
+    "Recommended next physics milestone after reconciliation: an additive standalone 1D harmonic-oscillator lab within G02, with analytic ladder and cutoff acceptance. G01 adapter candidates can be handled independently. Rice–Mele and XY/Heisenberg are further bounded candidates. No D1 solver is implemented by this review; all current labs remain available.",
+    "",
+    "R5 remains planned until its freeze artifact and acceptance gates land.",
     "",
   ].join("\n");
 }

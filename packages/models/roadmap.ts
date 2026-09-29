@@ -120,9 +120,9 @@ export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {
     id: "R4",
     title: "Genuinely missing physics and model inventory",
-    state: "Planned",
+    state: "Implemented",
     detail:
-      "Rank model gaps after binding and scene reconciliation, not by scaffold names.",
+      "All 68 IDs classified: nine covered subspaces, two adapter candidates, 57 new-model entries in 12 ranked groups with acceptance criteria. Review completed, not 59 new solvers.",
   },
   {
     id: "R5",

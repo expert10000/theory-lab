@@ -277,4 +277,261 @@ Evidence: `tests/lattice-scenes.test.ts`, `tests/reciprocal-scenes.test.ts`.
 
 Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/Python validators, hashes, 16 MiB regular-scene budget, four fields and 3..49 grid axes; larger/chunked data retains the separate existing stream contract. No direct Lab-to-Math3D worker calls.
 
-R4–R5 remain planned until their review artifacts and acceptance gates land.
+## R4 — Genuine physics/model gaps (implemented review)
+
+Every Atlas ID is classified exactly once: nine covered subspaces, two parameter-adapter candidates and 57 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.
+
+| Atlas ID | Gap status | Group | Priority |
+| --- | --- | --- | --- |
+| `harmonic_oscillator` | new-model | G02 | 2 |
+| `rabi` | covered-subspace | — | preserve |
+| `jaynes_cummings` | covered-subspace | — | preserve |
+| `ssh` | covered-subspace | — | preserve |
+| `rice_mele` | new-model | G07 | 2 |
+| `hubbard` | new-model | G10 | 4 |
+| `kitaev_chain` | new-model | G11 | 4 |
+| `surface_code_stabilizer` | new-model | G12 | 4 |
+| `landau_zener` | covered-subspace | — | preserve |
+| `semiclassical_rabi_drive` | covered-subspace | — | preserve |
+| `rotating_frame_qubit` | new-model | G05 | 2 |
+| `ramsey_sequence_effective` | new-model | G05 | 2 |
+| `floquet_two_level` | covered-subspace | — | preserve |
+| `driven_harmonic_oscillator` | new-model | G02 | 2 |
+| `parametric_oscillator` | new-model | G02 | 2 |
+| `tavis_cummings` | new-model | G06 | 3 |
+| `dicke` | new-model | G06 | 3 |
+| `dispersive_jc` | new-model | G06 | 3 |
+| `free_particle` | new-model | G03 | 3 |
+| `particle_in_box` | new-model | G03 | 3 |
+| `finite_square_well` | new-model | G03 | 3 |
+| `delta_potential` | new-model | G03 | 3 |
+| `harmonic_oscillator_nd` | new-model | G02 | 2 |
+| `anharmonic_oscillator` | new-model | G02 | 2 |
+| `double_well` | new-model | G02 | 2 |
+| `linear_potential` | new-model | G03 | 3 |
+| `central_potential` | new-model | G03 | 3 |
+| `coulomb_one_body` | parameter-adapter | G01 | 1 |
+| `tight_binding_generic` | new-model | G07 | 2 |
+| `bloch_two_band` | new-model | G07 | 2 |
+| `graphene_nn` | new-model | G07 | 2 |
+| `dirac_2d` | new-model | G07 | 2 |
+| `qwz` | covered-subspace | — | preserve |
+| `haldane` | new-model | G07 | 2 |
+| `bhz` | new-model | G07 | 2 |
+| `bbh` | new-model | G07 | 2 |
+| `weyl_minimal` | new-model | G07 | 2 |
+| `nodal_line_two_band` | new-model | G07 | 2 |
+| `two_level_pauli` | covered-subspace | — | preserve |
+| `spin_half_zeeman` | parameter-adapter | G01 | 1 |
+| `pauli_particle_em` | new-model | G04 | 3 |
+| `linear_stark` | new-model | G04 | 3 |
+| `spin_orbit_ls` | new-model | G04 | 3 |
+| `hyperfine_dipole` | new-model | G04 | 3 |
+| `ising_chain` | covered-subspace | — | preserve |
+| `xy_chain` | new-model | G08 | 2 |
+| `heisenberg_chain` | new-model | G08 | 2 |
+| `spin_one_zfs` | new-model | G04 | 3 |
+| `landau_continuum` | new-model | G09 | 3 |
+| `hofstadter` | new-model | G09 | 3 |
+| `integer_qh_effective` | new-model | G09 | 3 |
+| `bose_hubbard` | new-model | G10 | 4 |
+| `extended_hubbard` | new-model | G10 | 4 |
+| `t_j_model` | new-model | G10 | 4 |
+| `heisenberg_from_hubbard` | new-model | G10 | 4 |
+| `bcs_reduced` | new-model | G11 | 4 |
+| `bdg_swave` | new-model | G11 | 4 |
+| `anderson_impurity` | new-model | G10 | 4 |
+| `repetition_code_ising` | new-model | G12 | 4 |
+| `toric_code` | new-model | G12 | 4 |
+| `surface_code_planar` | new-model | G12 | 4 |
+| `surface_code_with_fields` | new-model | G12 | 4 |
+| `color_code_stabilizer` | new-model | G12 | 4 |
+| `bacon_shor_gauge` | new-model | G12 | 4 |
+| `stabilizer_penalty_generic` | new-model | G12 | 4 |
+| `encoded_adiabatic_penalty` | new-model | G12 | 4 |
+| `logical_pauli_effective` | new-model | G12 | 4 |
+| `syndrome_defect_effective` | new-model | G12 | 4 |
+
+### G01 — Restricted Coulomb/Zeeman parameter adapters (priority 1)
+
+Entries: `coulomb_one_body`, `spin_half_zeeman`. Dependencies: none.
+
+Reuse: Existing hydrogenic orbital and real two-level jobs, result verification and desktop controls.
+
+Missing: Explicit physical unit, reduced-mass and gyromagnetic conventions; full vector/mass scope is not supported by current jobs.
+
+Acceptance requirements:
+
+- Reject unsupported mass, charge, y-field and unit conventions
+- Verify E_n=-Z^2/(2n^2) and radial moments
+- Verify Zeeman signs and Pauli factors independently
+- Enable only the tested restricted mapping
+
+### G02 — Standalone oscillator family (priority 2)
+
+Entries: `harmonic_oscillator`, `harmonic_oscillator_nd`, `driven_harmonic_oscillator`, `parametric_oscillator`, `anharmonic_oscillator`, `double_well`. Dependencies: none.
+
+Reuse: Cavity Fock mathematics, existing supervised jobs, binary artifacts, sweeps, native/QuTiP comparisons and scalar/complex viewers.
+
+Missing: Standalone job/results and controls; oscillator component in JC is not an independent solver. Spatial outputs need an explicit basis transform.
+
+Acceptance requirements:
+
+- Start with one-dimensional harmonic E_n=hbar*omega*(n+1/2)
+- Declare finite cutoff and show convergence/boundary occupation
+- Independent QuTiP/native spectrum and dynamics checks
+- Add driven/parametric/anharmonic/ND/double-well scope only with its own tests
+
+### G03 — Spatial potentials and scattering (priority 3)
+
+Entries: `free_particle`, `particle_in_box`, `finite_square_well`, `delta_potential`, `linear_potential`, `central_potential`. Dependencies: none.
+
+Reuse: Validated field/binary pipeline and offline scene views; no replacement workspace.
+
+Missing: Grid/basis operators, boundary conditions, bound-versus-continuum semantics, discretization/error controls and solver jobs.
+
+Acceptance requirements:
+
+- Box analytic spectrum and mesh convergence
+- Separate bound-state normalization from scattering normalization
+- Explicit potential/length/mass/hbar units
+- No finite-grid eigenvalues claimed as continuum scattering data
+
+### G04 — Atomic/spin operators beyond restricted qubits (priority 3)
+
+Entries: `pauli_particle_em`, `linear_stark`, `spin_orbit_ls`, `hyperfine_dipole`, `spin_one_zfs`. Dependencies: none.
+
+Reuse: Existing bounded spectra, hydrogenic basis references and scalar-field visualization.
+
+Missing: Spin-1/angular-momentum/operator products, EM gauge and atomic perturbation bases; hydrogenic labels do not calculate these effects.
+
+Acceptance requirements:
+
+- Explicit basis, degeneracies and spin normalization
+- Hermiticity and selection-rule tests
+- Gauge/unit and perturbative-domain documentation
+- No many-electron chemistry claim
+
+### G05 — Rotating frames and Ramsey sequences (priority 2)
+
+Entries: `rotating_frame_qubit`, `ramsey_sequence_effective`. Dependencies: none.
+
+Reuse: Existing evolution solvers, Bloch adapters and comparison diagnostics.
+
+Missing: Effective frame/RWA semantics, pulse schedule and phase controls; existing continuous-drive lab stays available unchanged.
+
+Acceptance requirements:
+
+- Frame/sign/phase transformation tests
+- RWA validity range against full drive
+- Ramsey fringe phase and limiting pulse checks
+- Explicit time/pulse resolution without invented interpolation
+
+### G06 — Dispersive and collective light–matter models (priority 3)
+
+Entries: `dispersive_jc`, `tavis_cummings`, `dicke`. Dependencies: none.
+
+Reuse: Existing JC/Rabi labs and pinned source programs as numerical references, not source-path dispatch.
+
+Missing: Effective-domain controls, emitter counts, collective basis, bounded new jobs/results and observable adapters.
+
+Acceptance requirements:
+
+- Dispersive error scaling versus full JC and n_crit
+- Tavis N=1 restriction and sqrt(N) bright/dark sectors
+- Dicke counter-rotating terms and parity
+- Hilbert dimension/time/cutoff limits and independent engine checks
+
+### G07 — Additional lattice and band Hamiltonians (priority 2)
+
+Entries: `rice_mele`, `tight_binding_generic`, `bloch_two_band`, `graphene_nn`, `dirac_2d`, `haldane`, `bhz`, `bbh`, `weyl_minimal`, `nodal_line_two_band`. Dependencies: none.
+
+Reuse: Existing SSH/QWZ topology, band/reciprocal/vector scenes and verified export/import.
+
+Missing: Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters. Rice–Mele is a natural first extension, not already implemented.
+
+Acceptance requirements:
+
+- Rice–Mele zero-staggering SSH limit
+- Hermitian band matrices and independent analytic points
+- Mesh convergence and gapless/undefined invariant handling
+- No discrete spectrum relabeled as bands; no automatic topology inference
+
+### G08 — XY and Heisenberg chains (priority 2)
+
+Entries: `xy_chain`, `heisenberg_chain`. Dependencies: none.
+
+Reuse: Existing finite-chain native/optional QuSpin path, sweeps and site scenes.
+
+Missing: XX/YY/ZZ operators and model-specific spin/Pauli conventions; Ising execution remains intact.
+
+Acceptance requirements:
+
+- Small-chain analytic spectra
+- Spin versus Pauli factor tests
+- Independent native/QuSpin when installed
+- Finite-size/open/periodic boundary convergence, no thermodynamic claim
+
+### G09 — Hall and magnetic lattice models (priority 3)
+
+Entries: `landau_continuum`, `hofstadter`, `integer_qh_effective`. Dependencies: G07.
+
+Reuse: Momentum/band/Berry displays and existing verified/unresolved topology conventions.
+
+Missing: Magnetic flux/gauge, magnetic unit cells, continuum-versus-lattice basis, occupied bands and transport semantics.
+
+Acceptance requirements:
+
+- Landau ladder and flux/gauge equivalence
+- Rational-flux magnetic-cell budget
+- Band/Chern convergence where defined
+- Do not claim conductivity from a viewer annotation alone
+
+### G10 — Correlated particles and impurity models (priority 4)
+
+Entries: `hubbard`, `bose_hubbard`, `extended_hubbard`, `t_j_model`, `heisenberg_from_hubbard`, `anderson_impurity`. Dependencies: none.
+
+Reuse: Existing job supervision, persistence, finite-chain controls and native comparison pattern.
+
+Missing: Fermion/boson statistics, particle sectors, onsite occupancy cutoffs and interaction/operator result shapes; Ising basis is not a Hubbard solver.
+
+Acceptance requirements:
+
+- Noninteracting and isolated-site limits
+- Fermionic signs and number conservation
+- Bounded sector/cutoff scaling
+- Large-U effective exchange checks for the derived Heisenberg entry
+
+### G11 — Superconducting and BdG models (priority 4)
+
+Entries: `kitaev_chain`, `bcs_reduced`, `bdg_swave`. Dependencies: none.
+
+Reuse: Spectra, finite-site/band displays and topology status semantics; transmon remains a distinct existing circuit lab.
+
+Missing: Nambu basis, pairing conventions, particle-hole redundancy, finite-chain versus mean-field many-body interpretation.
+
+Acceptance requirements:
+
+- Particle-hole spectral symmetry
+- Pairing-zero normal-state limit
+- Finite-size edge versus bulk-gap diagnostics
+- No transmon-to-BCS equivalence or unsupported self-consistency claim
+
+### G12 — QEC stabilizers, defects and logical Hamiltonians (priority 4)
+
+Entries: `surface_code_stabilizer`, `repetition_code_ising`, `toric_code`, `surface_code_planar`, `surface_code_with_fields`, `color_code_stabilizer`, `bacon_shor_gauge`, `stabilizer_penalty_generic`, `encoded_adiabatic_penalty`, `logical_pauli_effective`, `syndrome_defect_effective`. Dependencies: none.
+
+Reuse: Existing scene primitives for supplied layouts and pinned reference_lab programs; no new QEC workbench framework.
+
+Missing: Stabilizer/gauge/logical operator jobs, code geometry, defects/noise/decoding semantics and bounded statistical result contracts.
+
+Acceptance requirements:
+
+- Commutation/gauge tests and code-space dimension
+- Logical versus physical Pauli conventions
+- Known syndrome/error/decoder limiting cases
+- Distinguish Hamiltonian spectrum, syndrome observations and Monte Carlo failure rates
+
+Recommended next physics milestone after reconciliation: an additive standalone 1D harmonic-oscillator lab within G02, with analytic ladder and cutoff acceptance. G01 adapter candidates can be handled independently. Rice–Mele and XY/Heisenberg are further bounded candidates. No D1 solver is implemented by this review; all current labs remain available.
+
+R5 remains planned until its freeze artifact and acceptance gates land.

@@ -80,8 +80,9 @@ nine preserved tested Lab bindings and explicit desktop/web/gateway/scene
 coverage. See ATLAS_RECONCILIATION_R1.md. R2 executable mapping review is
 implemented (nine bindings preserved; candidates remain disabled), recorded in
 ATLAS_RECONCILIATION_R2_R5.md. R3 C/QVIS vocabulary review is implemented
-(seven ideas retained, regular-grid conversion tested). R4 genuine physics
-gaps and R5 reconciled contract freeze remain planned.
+(seven ideas retained, regular-grid conversion tested). R4 genuine physics gap
+review is implemented (all 68 entries classified; 12 additive backlog groups).
+R5 reconciled contract freeze remains planned.
 B/C scaffolding is not imported as a parallel architecture;
 no D1 physics model or Math3D integration has been started.
 

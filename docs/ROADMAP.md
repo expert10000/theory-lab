@@ -30,8 +30,10 @@ scientific conventions and evidence for the nine preserved bindings. No new
 binding is enabled by the review. See [R2–R5 review](ATLAS_RECONCILIATION_R2_R5.md).
 R3 QVIS vocabulary review is implemented: C2–C8 compatibility, conversions and
 gaps are recorded; a tested regular-grid utility preserves supplied z/y/x data
-in the existing scene order. R4 genuine model gaps and R5 the reconciled contract
-freeze remain planned. D1 is not started.
+in the existing scene order. R4 gap review is implemented: every Atlas ID is
+classified, with 12 ranked additive groups and scientific acceptance criteria.
+The existing nine bindings remain intact; 59 entries are not newly implemented.
+R5 reconciled contract freeze remains planned. D1 is not started.
 
 ## 1. Technology decision
 
