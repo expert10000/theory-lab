@@ -86,7 +86,7 @@
     "operations": {
       "type": "array",
       "items": {
-        "enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital", "oscillator", "oscillator_evolve"]
+        "enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital", "oscillator", "oscillator_evolve", "oscillator_drive"]
       },
       "uniqueItems": true
     }

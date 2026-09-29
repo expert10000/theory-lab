@@ -37,6 +37,7 @@ import { topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 import { orbitalJob, ORBITAL_DEFAULTS } from "../packages/models/orbital";
 import { oscillatorJob, OSCILLATOR_DEFAULTS } from "../packages/models/oscillator";
 import { oscillatorEvolutionJob, OSCILLATOR_DYNAMICS_DEFAULTS } from "../packages/models/oscillator-dynamics";
+import { drivenOscillatorJob, DRIVEN_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-drive";
 
 test("R1 preserves scientific definitions for all 48 legacy IDs and all nine exact Lab bindings", () => {
   assert.equal(Object.keys(legacy.fingerprints).length, 48);
@@ -161,8 +162,9 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
     orbitalJob("r1", ORBITAL_DEFAULTS),
     oscillatorJob("d1", OSCILLATOR_DEFAULTS, "native"),
     oscillatorEvolutionJob("d1-motion", OSCILLATOR_DYNAMICS_DEFAULTS, "native"),
+    drivenOscillatorJob("d1-drive", DRIVEN_OSCILLATOR_DEFAULTS, "native"),
   ];
-  assert.equal(jobs.length, 15);
+  assert.equal(jobs.length, 16);
   assert.deepEqual(
     new Set(jobs.map((j) => j.model.type)),
     new Set(Object.keys(LAB_IMPLEMENTATIONS)),

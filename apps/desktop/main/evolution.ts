@@ -17,22 +17,25 @@ import {
   type OrbitalResult,
   type OscillatorEvolutionJob,
   type OscillatorEvolutionResult,
+  type DrivenOscillatorJob,
+  type DrivenOscillatorResult,
 } from "../../../packages/contracts";
 import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
 import { consistentOscillatorEvolutionResult, checkOscillatorEvolutionData } from "../../../packages/models/oscillator-dynamics";
+import { consistentDrivenOscillatorResult, checkDrivenOscillatorData } from "../../../packages/models/oscillator-drive";
 import { WorkerSupervisor } from "./worker";
 
 type Active = {
-  job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob;
+  job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob | DrivenOscillatorJob;
   acknowledged: boolean;
   cancelRequested: boolean;
-  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult) => void;
+  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 export class EvolutionCoordinator {
   private active?: Active;
-  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult>();
+  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult>();
   constructor(
     private worker: WorkerSupervisor,
     private artifactDir: string,
@@ -54,9 +57,10 @@ export class EvolutionCoordinator {
   run(job: SweepJob): Promise<SweepResult>;
   run(job: OrbitalJob): Promise<OrbitalResult>;
   run(job: OscillatorEvolutionJob): Promise<OscillatorEvolutionResult>;
-  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult> {
+  run(job: DrivenOscillatorJob): Promise<DrivenOscillatorResult>;
+  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob | DrivenOscillatorJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult> {
     assertJob(job);
-    if (!["evolve", "cavity", "lindblad", "sweep", "orbital", "oscillator_evolve"].includes(job.operation)) throw new Error("Expected quantum data job");
+    if (!["evolve", "cavity", "lindblad", "sweep", "orbital", "oscillator_evolve", "oscillator_drive"].includes(job.operation)) throw new Error("Expected quantum data job");
     const timing = job.operation === "orbital" ? null : job.operation === "sweep" ? job.sweep : job.solver;
     if (timing && timing.tStop <= timing.tStart)
       throw new Error("tStop must exceed tStart");
@@ -173,7 +177,9 @@ export class EvolutionCoordinator {
         this.reject(new Error("Worker returned an invalid quantum result"));
         return;
       }
-      if (value.operation === "oscillator_evolve" && active.job.operation === "oscillator_evolve") {
+      if (value.operation === "oscillator_drive" && active.job.operation === "oscillator_drive") {
+        if(!consistentDrivenOscillatorResult(active.job,value)) {this.reject(new Error("Worker returned inconsistent driven oscillator data"));return;}
+      } else if (value.operation === "oscillator_evolve" && active.job.operation === "oscillator_evolve") {
         if(!consistentOscillatorEvolutionResult(active.job,value)) {
           this.reject(new Error("Worker returned inconsistent oscillator dynamics"));return;
         }
@@ -216,6 +222,7 @@ export class EvolutionCoordinator {
       void this.worker.fetchArtifact(value.jobId, value.data, this.artifactDir)
         .then(async () => {
           if (value.operation === "orbital") checkOrbitalData(value, await readFile(join(this.artifactDir, value.data.path)));
+          if (value.operation === "oscillator_drive") checkDrivenOscillatorData(value, await readFile(join(this.artifactDir, value.data.path)));
           if (value.operation === "oscillator_evolve") checkOscillatorEvolutionData(value, await readFile(join(this.artifactDir, value.data.path)));
           this.completed.set(value.jobId, value); this.resolve(value);
         })
@@ -231,7 +238,7 @@ export class EvolutionCoordinator {
         ),
       );
   }
-  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult) {
+  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult) {
     const active = this.active;
     if (!active) return;
     clearTimeout(active.timer);

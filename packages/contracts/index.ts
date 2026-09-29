@@ -189,7 +189,23 @@ export interface OscillatorEvolutionResult {
   analysis:{projectionProbability:number;omittedProbability:number;maxNormDrift:number;maxBoundaryOccupation:number;maxQError:number;maxPError:number;maxEnergyDrift:number};
   provenance:SpectrumResult["provenance"];
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob;
+export interface DrivenOscillatorModel {
+  type:"driven_harmonic_oscillator";
+  parameters:OscillatorEvolutionModel["parameters"] & {epsilonRe:number;epsilonIm:number;driveFrequency:number};
+}
+export interface DrivenOscillatorJob {
+  schema:"quantum-job/v1";jobId:string;operation:"oscillator_drive";engine:EngineName;
+  model:DrivenOscillatorModel;initialState:OscillatorInitialState;solver:EvolutionSolver;
+}
+export interface DrivenOscillatorResult {
+  schema:"quantum-result/v1";jobId:string;runId:string;status:"completed";operation:"oscillator_drive";
+  model:DrivenOscillatorModel;initialState:OscillatorInitialState;solver:EvolutionSolver;
+  engine:{name:EngineName;version:string};
+  data:Omit<OscillatorEvolutionResult["data"],"schema"> & {schema:"quantum-driven-oscillator-data/v1"};
+  analysis:Omit<OscillatorEvolutionResult["analysis"],"maxEnergyDrift"> & {maxNumberError:number;maxWorkBalanceError:number;energyOffset:number};
+  provenance:SpectrumResult["provenance"];
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -394,7 +410,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -413,7 +429,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -488,5 +504,12 @@ export function assertJob(value: unknown): asserts value is QuantumJob {
     if(p.points%2!==1 || s.tStop<=s.tStart || p.omega*(s.tStop-s.tStart)>100 ||
        (i.type==="fock" ? i.index>=p.cutoff-1 : i.alphaRe**2+i.alphaIm**2>4))
       throw new Error("Oscillator evolution requires an odd grid, 0<omega*duration<=100 and bounded initial state");
+  }
+  if(value.operation==="oscillator_drive"){
+    const p=value.model.parameters,s=value.solver,i=value.initialState,dt=s.tStop-s.tStart;
+    const alpha=i.type==="coherent"?Math.hypot(i.alphaRe,i.alphaIm):0;
+    if(p.points%2!==1 || dt<=0 || dt>20 || p.omega*dt>50 || Math.hypot(p.epsilonRe,p.epsilonIm)>0.5 ||
+       alpha>2 || alpha+Math.hypot(p.epsilonRe,p.epsilonIm)*dt>4 || (i.type==="fock"&&i.index>=p.cutoff-1))
+      throw new Error("Unsupported bounded monochromatic oscillator drive");
   }
 }

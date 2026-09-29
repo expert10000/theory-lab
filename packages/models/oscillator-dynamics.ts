@@ -3,6 +3,7 @@ import type {
   OscillatorEvolutionJob,
   OscillatorEvolutionResult,
   OscillatorInitialState,
+  DrivenOscillatorResult,
 } from "../contracts";
 import { oscillatorAmplitude } from "./oscillator";
 
@@ -285,7 +286,7 @@ export function checkOscillatorEvolutionData(
   return values;
 }
 export function oscillatorDensity(
-  r: OscillatorEvolutionResult,
+  r: OscillatorEvolutionResult | DrivenOscillatorResult,
   data: Float64Array,
   row: number,
 ) {
@@ -297,7 +298,8 @@ export function oscillatorDensity(
   )
     throw new Error("Invalid oscillator time cursor");
   const p = r.model.parameters,
-    o = row * (10 + 2 * p.cutoff),
+    o = row * r.data.columns.length,
+    coefficientStart = r.operation === "oscillator_drive" ? 13 : 10,
     q = Array.from(
       { length: p.points },
       (_, k) => -p.extent + (2 * p.extent * k) / (p.points - 1),
@@ -307,8 +309,8 @@ export function oscillatorDensity(
       im = 0;
     for (let n = 0; n < p.cutoff; n++) {
       const basis = oscillatorAmplitude(n, x);
-      re += basis * data[o + 10 + 2 * n];
-      im += basis * data[o + 11 + 2 * n];
+      re += basis * data[o + coefficientStart + 2 * n];
+      im += basis * data[o + coefficientStart + 1 + 2 * n];
     }
     return re * re + im * im;
   });
@@ -323,13 +325,13 @@ export function oscillatorDensity(
 }
 
 export function compareOscillatorMotion(
-  left: OscillatorEvolutionResult,
+  left: OscillatorEvolutionResult | DrivenOscillatorResult,
   a: Float64Array,
-  right: OscillatorEvolutionResult,
+  right: OscillatorEvolutionResult | DrivenOscillatorResult,
   b: Float64Array,
 ) {
   if (
-    JSON.stringify(left.model) !== JSON.stringify(right.model) ||
+    left.operation !== right.operation || JSON.stringify(left.model) !== JSON.stringify(right.model) ||
     JSON.stringify(left.initialState) !== JSON.stringify(right.initialState) ||
     JSON.stringify(left.solver) !== JSON.stringify(right.solver) ||
     a.length !== b.length ||
@@ -338,7 +340,8 @@ export function compareOscillatorMotion(
   )
     throw new Error("Cannot compare mismatched oscillator jobs");
   const n = left.model.parameters.cutoff,
-    stride = 10 + 2 * n;
+    start = left.operation === "oscillator_drive" ? 13 : 10,
+    stride = start + 2 * n;
   let q = 0,
     p = 0,
     infidelity = 0;
@@ -353,10 +356,10 @@ export function compareOscillatorMotion(
       na = 0,
       nb = 0;
     for (let k = 0; k < n; k++) {
-      const ar = a[o + 10 + 2 * k],
-        ai = a[o + 11 + 2 * k],
-        br = b[o + 10 + 2 * k],
-        bi = b[o + 11 + 2 * k];
+      const ar = a[o + start + 2 * k],
+        ai = a[o + start + 1 + 2 * k],
+        br = b[o + start + 2 * k],
+        bi = b[o + start + 1 + 2 * k];
       re += ar * br + ai * bi;
       im += ar * bi - ai * br;
       na += ar * ar + ai * ai;
