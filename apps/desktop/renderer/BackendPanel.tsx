@@ -76,6 +76,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           </p>
           <small>Reference engine · per-step output normalized</small>
           <p>D1 oscillator: <code>num</code>, <code>destroy</code>, <code>eigenenergies</code> and quadrature expectations give the static Fock ladder and moments. The native path constructs independent NumPy matrices. Both use shared SciPy Hermite functions for stationary plotting.</p>
+          <p>Free oscillator motion: QuTiP <code>SESolver</code> independently integrates the number Hamiltonian (output normalization disabled, atol=1e-12, rtol=1e-10); native evolves exact spectral phases. Inputs are Fock states or explicitly normalized finite coherent-state projections with retained/omitted Poisson probability. No solver-output or finite-box correction hides cutoff error. Dimensionless q/p, ℏ=1, elapsed time t−tStart; both preserve the zero-point phase.</p>
         </article>
         <article className="panel backend-card">
           <div className="backend-card-title">
@@ -137,6 +138,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           </p>
           <small>hello · capabilities · health · run · cancel · shutdown</small>
           <p>Oscillator uses synchronous <code>quantum.run</code> through typed <code>quantum:oscillator</code> IPC: omega, cutoff, levels, selected state, q extent and odd grid points. Result carries bounded inline energies/q/amplitude/density, diagnostics and provenance; no binary artifact or scene is fabricated.</p>
+          <p>Free motion adds <code>quantum:oscillator-evolve</code> / <code>oscillator_evolve</code> through the existing asynchronous <code>quantum.start</code>, progress, cancel and artifact path. <code>quantum-oscillator-data/v1</code> is SHA-256 verified row-major f64le: time, q/p means and variances, mean number, boundary occupation, norm, full-coherent q/p references, then complex Fock coefficients. At most 1001 rows × 138 columns (1,105,104 bytes). The host independently checks amplitudes/readouts/diagnostics; the UI reconstructs Hermite density at a supplied sample, with no density volume or new scene vocabulary. Saved exports revalidate the same physics. Browser compute remains disabled for oscillator jobs.</p>
         </article>
         <article className="panel backend-card" data-testid="worker-resources">
           <p className="eyebrow">LIVE WORKER RESOURCES</p>

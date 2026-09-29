@@ -58,3 +58,8 @@ Reproduce with `npm run typecheck`, `npm test`, `npm run test:worker`,
 `sync-atlas`, `freeze-atlas`, `report-atlas`, `report-reconciliation` check
 scripts recorded in the reconciliation report. Screenshots are local acceptance
 artifacts, not source-controlled scientific results.
+
+Continuation: D1-005–007 subsequently add bounded free Fock/projected-coherent
+motion alongside this stationary lab. The acceptance counts above are the
+historical static milestone; current scope, formats, restoration and regression
+results are recorded in [D1_OSCILLATOR_DYNAMICS.md](D1_OSCILLATOR_DYNAMICS.md).

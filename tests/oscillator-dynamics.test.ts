@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp } from "node:fs/promises";
+import { mkdtemp, readFile, writeFile, readdir } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -15,6 +15,7 @@ import resultSchema from "../packages/contracts/schemas/quantum-result.v1.json";
 import baseline from "../packages/contracts/fixtures/protocols-d1-static.v1.json";
 import { WorkerSupervisor } from "../apps/desktop/main/worker";
 import { EvolutionCoordinator } from "../apps/desktop/main/evolution";
+import { RunStore } from "../apps/desktop/main/runs";
 import {
   oscillatorEvolutionJob,
   OSCILLATOR_DYNAMICS_DEFAULTS,
@@ -164,18 +165,41 @@ test("supervised dynamics provides scientifically verified binary amplitudes, mo
     results[0].data.forEach((v, k) =>
       assert.ok(Math.abs(v - results[1].data[k]) < 1e-7, `sample ${k}`),
     );
-    const comparison = compareOscillatorMotion(results[0].result, results[0].data, results[1].result, results[1].data);
-    assert.ok(Object.values(comparison).every(v => v < 1e-7));
+    const comparison = compareOscillatorMotion(
+      results[0].result,
+      results[0].data,
+      results[1].result,
+      results[1].data,
+    );
+    assert.ok(Object.values(comparison).every((v) => v < 1e-7));
     const phased = results[0].data.slice();
     const stride = results[0].result.data.columns.length;
     for (let row = 0; row < results[0].result.data.rows; row++)
       for (let col = 10; col < stride; col += 2) {
-        const k = row * stride + col, re = phased[k];
-        phased[k] = -phased[k + 1]; phased[k + 1] = re;
+        const k = row * stride + col,
+          re = phased[k];
+        phased[k] = -phased[k + 1];
+        phased[k + 1] = re;
       }
-    assert.ok(compareOscillatorMotion(results[0].result, results[0].data, results[0].result, phased).infidelity < 1e-12);
-    assert.throws(() => compareOscillatorMotion(results[0].result, results[0].data,
-      {...results[1].result, solver: {...results[1].result.solver, tStop: 1}}, results[1].data));
+    assert.ok(
+      compareOscillatorMotion(
+        results[0].result,
+        results[0].data,
+        results[0].result,
+        phased,
+      ).infidelity < 1e-12,
+    );
+    assert.throws(() =>
+      compareOscillatorMotion(
+        results[0].result,
+        results[0].data,
+        {
+          ...results[1].result,
+          solver: { ...results[1].result.solver, tStop: 1 },
+        },
+        results[1].data,
+      ),
+    );
     assert.ok(progress.includes(0) && progress.includes(201));
     cancelId = "motion-cancel";
     const cancelled = oscillatorEvolutionJob(
@@ -193,6 +217,86 @@ test("supervised dynamics provides scientifically verified binary amplitudes, mo
     assert.equal(coordinator.isRunning, false);
     await assert.rejects(coordinator.readData(cancelId), /No completed/);
     assert.deepEqual(await worker.request("health"), { status: "ok" });
+    const store = new RunStore(join(root, "runs"), root);
+    const saved = results[0].result;
+    const input = oscillatorEvolutionJob(
+      saved.jobId,
+      OSCILLATOR_DYNAMICS_DEFAULTS,
+      "native",
+    );
+    await assert.rejects(
+      store.record(
+        { ...input, initialState: { type: "fock", index: 0 } },
+        saved,
+      ),
+      /inconsistent oscillator motion/,
+    );
+    await store.record(input, saved);
+    assert.deepEqual(
+      (await store.list()).map((v) => v.operation),
+      ["oscillator_evolve"],
+    );
+    const restarted = new RunStore(
+      join(root, "runs"),
+      join(root, "no-live-worker"),
+    );
+    for (const format of ["csv", "svg", "manifest"] as const)
+      await restarted.export(
+        saved.runId,
+        format,
+        join(root, `motion.${format}`),
+      );
+    const csv = await readFile(join(root, "motion.csv"), "utf8");
+    assert.ok(csv.startsWith(saved.data.columns.join(",") + "\n"));
+    assert.equal(csv.trim().split("\n").length, saved.data.rows + 1);
+    const svg = await readFile(join(root, "motion.svg"), "utf8");
+    assert.match(svg, /q_mean/);
+    assert.match(svg, /p_mean/);
+    assert.doesNotMatch(svg, /q_variance/);
+    const exported = JSON.parse(
+      await readFile(join(root, "motion.manifest"), "utf8"),
+    );
+    assert.deepEqual(exported.job.initialState, input.initialState);
+    assert.deepEqual(exported.result.analysis, saved.analysis);
+    assert.deepEqual(exported.result.provenance, saved.provenance);
+    assert.equal(exported.manifest.artifactSha256, saved.data.sha256);
+    await assert.rejects(
+      restarted.scene(saved.runId),
+      /no QVIS-002 scene adapter/,
+    );
+    assert.ok(!(await readdir(root)).some((name) => name.startsWith(cancelId)));
+    const binary = await readFile(join(root, "runs", saved.runId, "data.f64"));
+    const corrupt = Buffer.from(binary);
+    corrupt.writeDoubleLE(99, 8);
+    await writeFile(join(root, "runs", saved.runId, "data.f64"), corrupt);
+    await assert.rejects(
+      restarted.export(saved.runId, "csv", join(root, "bad.csv")),
+      /integrity check/,
+    );
+    // Rehash a scientifically forged file: hashes alone cannot establish its physics.
+    const digest = createHash("sha256").update(corrupt).digest("hex");
+    const forged = { ...saved, data: { ...saved.data, sha256: digest } };
+    const resultText = JSON.stringify(forged, null, 2) + "\n";
+    const manifestPath = join(root, "runs", saved.runId, "manifest.json");
+    const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
+    manifest.artifactSha256 = digest;
+    manifest.hashes.result = createHash("sha256")
+      .update(resultText)
+      .digest("hex");
+    await writeFile(join(root, "runs", saved.runId, "result.json"), resultText);
+    await writeFile(manifestPath, JSON.stringify(manifest));
+    await assert.rejects(
+      restarted.export(saved.runId, "csv", join(root, "forged.csv")),
+      /oscillator/i,
+    );
+    await writeFile(join(root, saved.data.path), corrupt);
+    await assert.rejects(
+      store.record(input, { ...forged, runId: "run-invalid-motion" }),
+      /oscillator/i,
+    );
+    assert.ok(
+      !(await readdir(join(root, "runs"))).includes("run-invalid-motion"),
+    );
   } finally {
     await worker.stop();
   }

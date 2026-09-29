@@ -13,6 +13,7 @@ import { CIRCUIT_DEFAULTS, circuitJob } from "../packages/models/circuit";
 import { TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 import { ORBITAL_DEFAULTS } from "../packages/models/orbital";
 import { OSCILLATOR_DEFAULTS } from "../packages/models/oscillator";
+import { OSCILLATOR_DYNAMICS_DEFAULTS } from "../packages/models/oscillator-dynamics";
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,
@@ -71,6 +72,17 @@ test("oscillator workspace draft is optional and rejects unsupported engines/fie
   assert.ok(isWorkspaceSnapshot({...workspace,tab:"oscillator",oscillator:OSCILLATOR_DEFAULTS}));
   assert.equal(isWorkspaceSnapshot({...workspace,oscillator:{...OSCILLATOR_DEFAULTS,engine:"dynamiqs"}}),false);
   assert.equal(isWorkspaceSnapshot({...workspace,oscillator:{...OSCILLATOR_DEFAULTS,mass:"1"}}),false);
+});
+test("free oscillator draft and mode extend workspace v1 without invalidating legacy snapshots", () => {
+  assert.ok(isWorkspaceSnapshot(workspace));
+  const value = {...workspace, tab: "oscillator", oscillatorDynamics: OSCILLATOR_DYNAMICS_DEFAULTS, oscillatorMode: "dynamics"};
+  assert.ok(isWorkspaceSnapshot(value));
+  assert.ok(isWorkspaceSnapshot({...value, oscillator: OSCILLATOR_DEFAULTS}));
+  assert.equal(isWorkspaceSnapshot({...value, oscillatorMode: "driven"}), false);
+  assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, initial: "arbitrary"}}), false);
+  assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, engine: "dynamiqs"}}), false);
+  assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, alphaRe: "x".repeat(101)}}), false);
+  assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, script: "anything"}}), false);
 });
 
 test("run store persists provenance and verified data, then exports CSV, SVG and manifest", async () => {

@@ -7,6 +7,7 @@ import { startGateway } from "../apps/gateway/server";
 import { spectrumJob, evolutionJob, defaultsFor } from "../packages/models";
 import { TOPOLOGY_DEFAULTS, topologyJob } from "../packages/models/topology";
 import { OSCILLATOR_DEFAULTS, oscillatorJob } from "../packages/models/oscillator";
+import { OSCILLATOR_DYNAMICS_DEFAULTS, oscillatorEvolutionJob } from "../packages/models/oscillator-dynamics";
 
 const token = "gateway-test-token-0123456789-abcdef";
 
@@ -42,6 +43,10 @@ test("gateway enforces authentication and origin before running versioned jobs",
       headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
       body:JSON.stringify(oscillatorJob("desktop-only",OSCILLATOR_DEFAULTS,"native")) });
     assert.equal(desktopOnly.status,400,"new worker capability must not silently broaden gateway permissions");
+    const motion = await fetch(`${gateway.origin}/api/jobs`, { method:"POST",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(oscillatorEvolutionJob("desktop-motion-only",OSCILLATOR_DYNAMICS_DEFAULTS,"native")) });
+    assert.equal(motion.status,400,"free oscillator dynamics remains desktop-only");
     const runs = await fetch(`${gateway.origin}/api/runs`, { headers: { Authorization: `Bearer ${token}` } });
     assert.equal(runs.status, 200);
     assert.equal((await runs.json())[0].jobId, job.jobId);

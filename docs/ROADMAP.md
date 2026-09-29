@@ -47,6 +47,15 @@ The R5 historical freeze is preserved; broader oscillator-family requirements
 remain in G02. See [D1_OSCILLATOR.md](D1_OSCILLATOR.md). No Math3D, web compute
 form, new scene vocabulary or parallel architecture is added.
 
+D1-005–007 extend the existing Oscillator tab with bounded free motion of Fock
+and finite projected coherent states, QuTiP/native comparison, a moving-density
+time cursor, q/p/reference curves, progress/cancellation, verified saved binary
+amplitudes, CSV/q-p SVG/manifest exports and backward-compatible workspace mode
+restoration. All three are implemented; see
+[D1_OSCILLATOR_DYNAMICS.md](D1_OSCILLATOR_DYNAMICS.md). This does not implement
+driven, parametric, anharmonic or multidimensional oscillators, arbitrary states,
+web oscillator computation or any new QVIS/Math3D boundary.
+
 ## 1. Technology decision
 
 ### V1

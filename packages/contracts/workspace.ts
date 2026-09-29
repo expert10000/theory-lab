@@ -30,6 +30,8 @@ export interface WorkspaceSnapshot {
   topology?: { modelId: "ssh" | "qwz"; t1: string; t2: string; cells: string; kPoints: string; mass: string; grid: string };
   orbital?: { n: string; l: string; m: string; basis: "complex" | "real_cos" | "real_sin"; Z: string; radius: string; grid: string };
   oscillator?: import("../models/oscillator").OscillatorDraft;
+  oscillatorDynamics?: import("../models/oscillator-dynamics").OscillatorDynamicsDraft;
+  oscillatorMode?: "static" | "dynamics";
 }
 export interface RunSummary {
   schema: "quantum-run-manifest/v1";
@@ -97,6 +99,13 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   }),
   oscillator: block(["omega", "cutoff", "levels", "state", "extent", "points", "engine"], {
     omega: shortText, cutoff: shortText, levels: shortText, state: shortText, extent: shortText, points: shortText,
+    engine: { enum: ["qutip", "native", "compare"] },
+  }),
+  oscillatorMode: { enum: ["static", "dynamics"] },
+  oscillatorDynamics: block(["omega", "cutoff", "extent", "points", "initial", "index", "alphaRe", "alphaIm", "start", "stop", "samples", "engine"], {
+    omega: shortText, cutoff: shortText, extent: shortText, points: shortText,
+    initial: { enum: ["fock", "coherent"] }, index: shortText, alphaRe: shortText, alphaIm: shortText,
+    start: shortText, stop: shortText, samples: shortText,
     engine: { enum: ["qutip", "native", "compare"] },
   }),
 });

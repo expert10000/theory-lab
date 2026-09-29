@@ -12,7 +12,7 @@ All 68 entries have an explicit disposition. The nine original bindings remain u
 
 | Atlas ID | Disposition | Enabled existing binding | Next requirement |
 | --- | --- | --- | --- |
-| `harmonic_oscillator` | accepted-binding | yes | D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted. Broader arbitrary-state/time-dependent/physical-coordinate oscillator scope remains additive; a JC component remains a separate related path. |
+| `harmonic_oscillator` | accepted-binding | yes | D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted via the unchanged static Atlas binding. The same lab adds bounded free Fock/projected-coherent dynamics with verified amplitudes, q/p diagnostics and persistence. Broader arbitrary-state/driven/parametric/anharmonic/ND/physical-coordinate scope remains additive; a JC component remains a separate related path. |
 | `rabi` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `jaynes_cummings` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `ssh` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
@@ -385,9 +385,9 @@ Entries: `harmonic_oscillator_nd`, `driven_harmonic_oscillator`, `parametric_osc
 
 Reuse: Cavity Fock mathematics, existing supervised jobs, binary artifacts, sweeps, native/QuTiP comparisons and scalar/complex viewers.
 
-Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; broader scope remains below.
+Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below.
 
-Missing: D1 now delivers standalone static 1D jobs/results/controls and analytic basis-to-q plotting. Arbitrary-state dynamics, drive/displacement, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. JC oscillator components remain distinct.
+Missing: D1 now delivers standalone static 1D and bounded free Fock/projected-coherent jobs/results/controls with analytic basis-to-q plotting, progress/cancel, projection loss and verified persistence. Arbitrary-state dynamics, driven displacement, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. JC oscillator components remain distinct.
 
 Acceptance requirements:
 
@@ -546,13 +546,13 @@ Acceptance requirements:
 - Known syndrome/error/decoder limiting cases
 - Distinguish Hamiltonian spectrum, syndrome observations and Monte Carlo failure rates
 
-D1 now delivers the bounded standalone static 1D oscillator within G02; the group retains all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.
+D1 now delivers the bounded standalone static 1D oscillator and free Fock/projected-coherent dynamics within G02; the static Atlas binding is unchanged and the group retains all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.
 
 ## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `dda5df8da41b9ef6cd494eec6f41d635733437d97aea87849d318c90b1c46289`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `e270f1291deeb21c38f4569c66ac4169a4560a31c8e107e519dc42f29e795229`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 

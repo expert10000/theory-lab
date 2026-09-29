@@ -138,7 +138,7 @@ export const ADDITIONAL_MAPPING_REVIEWS: Record<string, string> = {
   ramsey_sequence_effective:
     "Pulse schedule and phase conventions are missing; continuous drive must not substitute for a Ramsey sequence.",
   harmonic_oscillator:
-    "D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted. Broader arbitrary-state/time-dependent/physical-coordinate oscillator scope remains additive; a JC component remains a separate related path.",
+    "D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted via the unchanged static Atlas binding. The same lab adds bounded free Fock/projected-coherent dynamics with verified amplitudes, q/p diagnostics and persistence. Broader arbitrary-state/driven/parametric/anharmonic/ND/physical-coordinate scope remains additive; a JC component remains a separate related path.",
   driven_harmonic_oscillator:
     "Standalone drive/displacement and truncation diagnostics are needed; open JC has an additional qubit and dissipation.",
   dispersive_jc:

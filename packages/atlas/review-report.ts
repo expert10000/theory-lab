@@ -89,7 +89,7 @@ export function reconciliationReviewReport(): string {
       ...g.acceptance.map((a) => `- ${a}`),
       "",
     ]),
-    "D1 now delivers the bounded standalone static 1D oscillator within G02; the group retains all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.",
+    "D1 now delivers the bounded standalone static 1D oscillator and free Fock/projected-coherent dynamics within G02; the static Atlas binding is unchanged and the group retains all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.",
     "",
     "## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)",
     "",

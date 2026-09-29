@@ -89,6 +89,8 @@ export function OscillatorLab({
   onSnapshot,
   restoredMotion,
   onMotionSnapshot,
+  restoredMode,
+  onModeSnapshot,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -99,6 +101,8 @@ export function OscillatorLab({
   onSnapshot?: (draft: OscillatorDraft) => void;
   restoredMotion?: OscillatorDynamicsDraft;
   onMotionSnapshot?: (draft: OscillatorDynamicsDraft) => void;
+  restoredMode?: "static" | "dynamics";
+  onModeSnapshot?: (mode: "static" | "dynamics") => void;
 }) {
   const [view, setView] = useState<"static" | "dynamics">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
@@ -117,12 +121,16 @@ export function OscillatorLab({
     setOutcome("READY TO CALCULATE");
   }
   useEffect(() => {
-    if (restoreEpoch) reset(restored ?? OSCILLATOR_DEFAULTS);
+    if (restoreEpoch) {
+      reset(restored ?? OSCILLATOR_DEFAULTS);
+      setView(restoredMode ?? "static");
+    }
   }, [restoreEpoch]);
   useEffect(() => {
     if (atlasEpoch && atlasDraft) reset(atlasDraft);
   }, [atlasEpoch]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
+  useEffect(() => onModeSnapshot?.(view), [view, onModeSnapshot]);
   let preview: ReturnType<typeof oscillatorJob> | null = null;
   try {
     preview = oscillatorJob(

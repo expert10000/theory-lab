@@ -16,6 +16,7 @@ import { ManyBodyLab } from "./ManyBodyLab";
 import { CircuitLab } from "./CircuitLab";
 import { OscillatorLab } from "./OscillatorLab";
 import { OSCILLATOR_DEFAULTS } from "../../../packages/models/oscillator";
+import { OSCILLATOR_DYNAMICS_DEFAULTS } from "../../../packages/models/oscillator-dynamics";
 import { PresetPanel } from "./PresetPanel";
 import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets";
 import { RunHistory } from "./RunHistory";
@@ -62,7 +63,7 @@ export function App() {
     useState<EvolutionModelId>("driven_two_level");
   const [cavityModel, setCavityModel] = useState<CavityModelId>("jaynes_cummings");
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
-  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator">>>({});
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
@@ -78,6 +79,8 @@ export function App() {
   const collectTopology = useCallback((value: NonNullable<WorkspaceSnapshot["topology"]>) => { workspaceParts.current.topology = value; }, []);
   const collectOrbital = useCallback((value: NonNullable<WorkspaceSnapshot["orbital"]>) => { workspaceParts.current.orbital = value; }, []);
   const collectOscillator = useCallback((value: NonNullable<WorkspaceSnapshot["oscillator"]>) => { workspaceParts.current.oscillator = value; }, []);
+  const collectOscillatorDynamics = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorDynamics"]>) => { workspaceParts.current.oscillatorDynamics = value; }, []);
+  const collectOscillatorMode = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorMode"]>) => { workspaceParts.current.oscillatorMode = value; }, []);
   function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody && workspaceParts.current.circuit) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
@@ -226,7 +229,9 @@ export function App() {
       spectrum: { parameters, engine: engineMode }, dynamics: parts.dynamics,
       cavity: parts.cavity, open: parts.open, sweep: parts.sweep, manyBody: parts.manyBody, circuit: parts.circuit,
       topology: parts.topology ?? TOPOLOGY_DEFAULTS, orbital: parts.orbital ?? ORBITAL_DEFAULTS,
-      oscillator: parts.oscillator ?? OSCILLATOR_DEFAULTS };
+      oscillator: parts.oscillator ?? OSCILLATOR_DEFAULTS,
+      oscillatorDynamics: parts.oscillatorDynamics ?? OSCILLATOR_DYNAMICS_DEFAULTS,
+      oscillatorMode: parts.oscillatorMode ?? "static" };
     try { await window.quantum.saveWorkspace(snapshot); setWorkspaceMessage("Workspace saved"); }
     catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
   }
@@ -360,7 +365,7 @@ export function App() {
           <div className="workspace-title">
             <div>
               <p className="eyebrow accent">
-                {tab === "oscillator" ? "STATIONARY OSCILLATOR / D1" : tab === "orbital" ? "ATOMIC ORBITALS / QVIS-004" : tab === "scenes" ? "PORTABLE VISUALIZATION / QVIS-001–004" : tab === "backend"
+                {tab === "oscillator" ? "STATIONARY & FREE OSCILLATOR / D1" : tab === "orbital" ? "ATOMIC ORBITALS / QVIS-004" : tab === "scenes" ? "PORTABLE VISUALIZATION / QVIS-001–004" : tab === "backend"
                   ? "ARCHITECTURE / 008–009"
                   : tab === "atlas" ? "PINNED THEORY REFERENCE / 025"
                   : tab === "dynamics"
@@ -406,7 +411,7 @@ export function App() {
                     : "A two-level universe."}
               </h1>
               <p>
-                {tab === "oscillator" ? "Explore the exact 1D Fock spectrum and stationary Hermite states." : tab === "orbital" ? "Explore normalized hydrogenic s, p and d states with explicit units and basis conventions." : tab === "scenes" ? "Inspect verified numerical data and export application-independent scene bundles." : tab === "backend"
+                {tab === "oscillator" ? "Explore the 1D Fock spectrum, stationary Hermite states and bounded free coherent/Fock motion." : tab === "orbital" ? "Explore normalized hydrogenic s, p and d states with explicit units and basis conventions." : tab === "scenes" ? "Inspect verified numerical data and export application-independent scene bundles." : tab === "backend"
                   ? "Independent numerical engines behind versioned, verified results."
                   : tab === "atlas" ? "Browse source-pinned definitions and explicit laboratory bindings."
                   : tab === "dynamics"
@@ -498,7 +503,7 @@ export function App() {
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
-          <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} /></div>
+          <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} /></div>
           {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (

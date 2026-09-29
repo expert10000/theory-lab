@@ -7,6 +7,7 @@ const env = { ...process.env };
 delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
+let preservedMotionRunId = null;
 const errors = [];
 try {
   const page = await app.firstWindow();
@@ -129,6 +130,7 @@ try {
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(()=>document.querySelector('input[aria-label="Oscillator state"]')?.value==="2");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
+  const initialMotionRuns=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_evolve").length));
   await page.getByLabel("Motion points",{exact:true}).fill("200");
   assert.ok(await page.getByTestId("run-oscillator-motion").isDisabled());
   await page.getByLabel("Motion points",{exact:true}).fill("201");
@@ -163,8 +165,20 @@ try {
   });
   await page.getByTestId("oscillator-motion-state").filter({hasText:"CANCELLED"}).waitFor();
   assert.ok(await page.getByRole("img",{name:"Moving oscillator density",exact:true}).isVisible(),"last verified plot survives cancellation");
+  const beforeCancelRuns=await page.evaluate(()=>window.quantum.listRuns());
+  assert.equal(beforeCancelRuns.filter(r=>r.operation==="oscillator_evolve").length,initialMotionRuns+3,"cancelled work creates no fourth saved motion run");
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
+  await page.getByLabel("Motion alphaRe",{exact:true}).fill("1");
+  await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Motion alphaRe"]')?.value==="2");
+  assert.equal(await page.getByRole("tab",{name:"Free dynamics",exact:true}).getAttribute("aria-selected"),"true");
+  assert.equal(await page.getByLabel("Motion samples",{exact:true}).inputValue(),"1001");
+  assert.equal(await page.getByTestId("oscillator-motion-result").count(),0,"workspace restores inputs, never an unverified plot");
   await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
   assert.equal(await page.getByLabel("Oscillator state",{exact:true}).inputValue(),"2");
+  await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({
     path: "artifacts/desktop-spectrum.png",
@@ -676,9 +690,22 @@ try {
   await page.getByTestId("saved-run").first().waitFor();
   const savedRuns = await page.evaluate(() => window.quantum.listRuns());
   assert.ok(savedRuns.length >= 6);
+  const motionRun=savedRuns.find(r=>r.operation==="oscillator_evolve");
+  assert.ok(motionRun,"free motion is listed in durable runs");
+  preservedMotionRunId=motionRun.runId;
   const latest = savedRuns[0].runId;
   preservedRunId = latest;
   await mkdir("artifacts/exports", { recursive: true });
+  for(const format of ["csv","svg","manifest"]) {
+    const destination=resolve(`artifacts/exports/oscillator-motion.${format}`);
+    await app.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},destination);
+    await page.getByRole("button",{name:`Export ${format.toUpperCase()} ${motionRun.runId}`}).click();
+    await page.getByRole("status").filter({hasText:`Exported ${format.toUpperCase()}`}).waitFor();
+    const exported=await readFile(destination,"utf8");
+    if(format==="csv")assert.match(exported,/^time,q_mean,p_mean,q_variance,p_variance,/);
+    if(format==="svg"){assert.match(exported,/q_mean/);assert.match(exported,/p_mean/);}
+    if(format==="manifest"){const v=JSON.parse(exported);assert.equal(v.result.operation,"oscillator_evolve");assert.equal(v.result.data.sha256,motionRun.artifactSha256);}
+  }
   for (const [format, extension] of [["csv", "csv"], ["svg", "svg"], ["manifest", "json"]]) {
     const destination = resolve(`artifacts/exports/smoke-${format}.${extension}`);
     await app.evaluate(({ dialog }, output) => { dialog.showSaveDialog = async () => ({ canceled: false, filePath: output }); }, destination);
@@ -938,12 +965,25 @@ try {
   await page.getByRole("tab", { name: "Runs" }).click();
   const runIds = await page.evaluate(() => window.quantum.listRuns().then(runs => runs.map(run => run.runId)));
   assert.ok(runIds.includes(preservedRunId), "saved run must survive app restart");
+  assert.ok(runIds.includes(preservedMotionRunId),"saved motion amplitudes survive full restart");
+  const motionExport=resolve("artifacts/exports/oscillator-motion-restarted.csv");
+  await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},motionExport);
+  await page.getByRole("button",{name:`Export CSV ${preservedMotionRunId}`}).click();
+  await page.getByRole("status").filter({hasText:"Exported CSV"}).waitFor();
+  assert.match(await readFile(motionExport,"utf8"),/^time,q_mean,p_mean,/);
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
   await page.waitForFunction(() => document.querySelector('input[aria-label="Oscillator state"]')?.value === "2");
   assert.ok(await page.getByTestId("preset-loaded").getByText(/Damped cavity occupation/).isVisible());
+  await page.getByRole("tab",{name:"Oscillator",exact:true}).click();
+  assert.equal(await page.getByRole("tab",{name:"Free dynamics",exact:true}).getAttribute("aria-selected"),"true");
+  assert.equal(await page.getByLabel("Motion alphaRe",{exact:true}).inputValue(),"2");
+  assert.equal(await page.getByLabel("Motion cutoff",{exact:true}).inputValue(),"64");
+  assert.equal(await page.getByLabel("Motion stop",{exact:true}).inputValue(),"100");
+  assert.equal(await page.getByLabel("Motion samples",{exact:true}).inputValue(),"1001");
+  assert.equal(await page.getByTestId("oscillator-motion-result").count(),0);
   await page.getByRole("tab",{name:"Roadmap",exact:true}).click();
-  for(const id of ["D1-001","D1-002","D1-003","D1-004"]) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
+  for(const id of ["D1-001","D1-002","D1-003","D1-004","D1-005","D1-006","D1-007"]) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {
   await reopened.close();

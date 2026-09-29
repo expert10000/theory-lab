@@ -639,7 +639,9 @@ export function OscillatorDynamics({
             Projection retention:{" "}
             {computed.result.analysis.projectionProbability.toFixed(9)}. Solver
             norm and cutoff diagnostics do not establish spatial-grid
-            convergence.
+            convergence. Variances use the finite-basis q/p operators; at
+            non-negligible boundary occupation they differ from continuum
+            Hermite-space variances.
           </p>
           <div className="plot-caption">
             <span>

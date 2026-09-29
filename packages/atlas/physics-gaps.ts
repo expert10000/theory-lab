@@ -38,7 +38,7 @@ export const PHYSICS_GAP_GROUPS: PhysicsGapGroup[] = [
     title: "Standalone oscillator family",
     priority: 2,
     kind: "new-model",
-    deliveredSubspaces: ["harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; broader scope remains below"],
+    deliveredSubspaces: ["harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below"],
     atlasIds: [
       "harmonic_oscillator_nd",
       "driven_harmonic_oscillator",
@@ -50,7 +50,7 @@ export const PHYSICS_GAP_GROUPS: PhysicsGapGroup[] = [
     reuse:
       "Cavity Fock mathematics, existing supervised jobs, binary artifacts, sweeps, native/QuTiP comparisons and scalar/complex viewers.",
     missing:
-      "D1 now delivers standalone static 1D jobs/results/controls and analytic basis-to-q plotting. Arbitrary-state dynamics, drive/displacement, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. JC oscillator components remain distinct.",
+      "D1 now delivers standalone static 1D and bounded free Fock/projected-coherent jobs/results/controls with analytic basis-to-q plotting, progress/cancel, projection loss and verified persistence. Arbitrary-state dynamics, driven displacement, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. JC oscillator components remain distinct.",
     acceptance: [
       "Start with one-dimensional harmonic E_n=hbar*omega*(n+1/2)",
       "Declare finite cutoff and show convergence/boundary occupation",

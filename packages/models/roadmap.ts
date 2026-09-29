@@ -100,6 +100,9 @@ export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
   {id:"D1-002",title:"QuTiP/native stationary oscillator worker",state:"Implemented",detail:"Independent Fock operators, zero-point ladder, quadrature moments; shared analytic Hermite plotting."},
   {id:"D1-003",title:"Electron oscillator lab and persistence",state:"Implemented",detail:"Density/amplitude plots, engine comparison, strict IPC, stale labels, saved CSV/SVG/manifest and workspace restore."},
   {id:"D1-004",title:"Reviewed oscillator Atlas binding and acceptance",state:"Implemented",detail:"Tenth bounded binding; all 68 references and nine original bindings retained. Desktop-first, dimensionless q, no new scene/Math3D path."},
+  {id:"D1-005",title:"Bounded free oscillator dynamics worker",state:"Implemented",detail:"Append-only contracts; QuTiP integration and native spectral phases; verified complex amplitudes, moments, norm/energy drift, projection loss and cancellation."},
+  {id:"D1-006",title:"Electron free dynamics and comparison",state:"Implemented",detail:"Fock/projected-coherent controls, moving density/time cursor, q/p trajectories and reference curves; stale labels, independent engine comparison and cancellation."},
+  {id:"D1-007",title:"Durable dynamics, exports and acceptance",state:"Implemented",detail:"Verified saved amplitudes/provenance, q/p SVG and CSV/manifest, optional backward-compatible workspace draft/mode; restart and regression acceptance. No driven/anharmonic/ND or scene/Math3D expansion."},
 ];
 export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {

@@ -27,6 +27,21 @@ def calculate(j):
 
 
 class OscillatorDynamicsTests(unittest.TestCase):
+    def test_complex_displacement_and_nonzero_origin(self):
+        alpha = .7 + 1.1j
+        outputs = []
+        for backend in ("native", "qutip"):
+            j = job(backend, {"type": "coherent", "alphaRe": alpha.real, "alphaIm": alpha.imag}, omega=1.3, cutoff=32)
+            j["solver"].update(tStart=-4., tStop=1., samples=51)
+            _, d = calculate(j)
+            reference = alpha*np.exp(-1.3j*(d[:, 0]+4.))
+            np.testing.assert_allclose(d[:, 1], np.sqrt(2)*reference.real, atol=3e-8)
+            np.testing.assert_allclose(d[:, 2], np.sqrt(2)*reference.imag, atol=3e-8)
+            np.testing.assert_allclose(d[:, 3:5], .5, atol=3e-8)
+            np.testing.assert_allclose(d[:, 5], abs(alpha)**2, atol=3e-8)
+            outputs.append(d)
+        np.testing.assert_allclose(outputs[0], outputs[1], atol=3e-8)
+
     def test_coherent_motion_signs_period_and_independent_engines(self):
         results=[]
         for backend in ("native","qutip"):
