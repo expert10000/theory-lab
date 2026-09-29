@@ -61,6 +61,7 @@ try {
       "oscillator",
       "oscillatorDrive",
       "oscillatorEvolve",
+      "oscillatorPulse",
       "readData",
       "readSceneChunk",
       "releaseSceneStream",
@@ -229,6 +230,34 @@ try {
   assert.equal(await page.getByRole("tab",{name:"Driven dynamics",exact:true}).getAttribute("aria-selected"),"true");
   assert.equal(await page.getByLabel("Drive samples",{exact:true}).inputValue(),"1001");
   assert.equal(await page.getByTestId("oscillator-drive-result").count(),0);
+  await page.getByRole("tab",{name:"Gaussian pulse",exact:true}).click();
+  await page.getByLabel("Pulse pulseWidth",{exact:true}).fill(".05");
+  assert.ok(await page.getByTestId("run-oscillator-pulse").isDisabled(),"a narrow pulse requires a resolved internal step");
+  await page.getByLabel("Pulse pulseWidth",{exact:true}).fill("1");
+  await page.getByTestId("run-oscillator-pulse").click();
+  await page.getByTestId("oscillator-pulse-state").filter({hasText:"COMPLETE"}).waitFor();
+  assert.ok(Number(await page.getByTestId("pulse-compare-q").innerText())<1e-7);
+  await page.getByRole("slider",{name:"Pulsed oscillator time cursor"}).fill("100");
+  assert.equal(await page.getByTestId("pulse-number").innerText(),"0.062832");
+  assert.ok(await page.getByRole("img",{name:"Gaussian pulse drive",exact:true}).isVisible());
+  assert.match(await page.getByTestId("pulse-endpoint-tails").innerText(),/3.727e-6/);
+  await page.getByLabel("Pulse alphaRe",{exact:true}).fill("1.8");
+  await page.getByLabel("Pulse epsilonRe",{exact:true}).fill(".5");
+  await page.getByLabel("Pulse pulseWidth",{exact:true}).fill("1.5");
+  await page.getByLabel("Pulse cutoff",{exact:true}).fill("8");
+  await page.getByLabel("Pulse engine",{exact:true}).selectOption("native");
+  await page.getByTestId("study-oscillator-pulse").click();
+  await page.getByTestId("pulse-convergence").waitFor();
+  assert.ok(Number(await page.getByTestId("pulse-cutoff-q").innerText())>1e-5);
+  assert.ok(Number(await page.getByTestId("pulse-step-q").innerText())<1e-7);
+  assert.ok(await page.getByTestId("pulse-truncation-warning").isVisible());
+  await page.getByRole("img",{name:"Gaussian pulse drive",exact:true}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-oscillator-pulse.png",fullPage:true});
+  await page.getByLabel("Pulse cutoff",{exact:true}).fill("64");
+  await page.getByLabel("Pulse samples",{exact:true}).fill("1001");
+  await page.evaluate(async()=>{document.querySelector('[data-testid="run-oscillator-pulse"]').click();await new Promise(resolve=>requestAnimationFrame(resolve));const cancel=document.querySelector('[data-testid="cancel-oscillator-pulse"]');if(!cancel)throw new Error("Missing pulse cancellation UI");cancel.click();});
+  await page.getByTestId("oscillator-pulse-state").filter({hasText:"CANCELLED"}).waitFor();
+  assert.ok(await page.getByTestId("pulse-convergence").isVisible(),"cancelled study/run retains the last verified comparison");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({

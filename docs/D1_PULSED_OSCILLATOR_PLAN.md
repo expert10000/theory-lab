@@ -1,13 +1,13 @@
 # D1-011–013 — bounded Gaussian drive pulses (planned)
 
-Status: D1-011 worker implemented; D1-012–013 remain planned until acceptance.
+Status: D1-011–012 implemented; D1-013 remains planned until acceptance.
 D1-001–010 remain implemented. This extends the existing oscillator lab, typed contracts, worker
 supervision and durable numerical pipeline; it creates no parallel architecture.
 
 | Milestone | Proposed commit | Status |
 | --- | --- | --- |
 | D1-011 | `feat(worker): add bounded Gaussian oscillator pulses` | Implemented |
-| D1-012 | `feat(desktop): add pulse controls and oscillator convergence inspection` | Planned |
+| D1-012 | `feat(desktop): add pulse controls and oscillator convergence inspection` | Implemented |
 | D1-013 | `feat(lab): persist pulsed oscillator runs and record acceptance` | Planned |
 
 ## D1-011 — contracts and independent worker engines
@@ -66,6 +66,20 @@ includes zero amplitude, complex forcing, pulse-width/time-step refinement,
 finite-cutoff convergence, phase conventions and cancellation cleanup.
 
 ## D1-012 — pulse mode in the existing Electron lab
+
+Delivered UI: **Harmonic oscillator → Gaussian pulse** shares the existing
+forced-oscillator controller, verified readouts and density/trajectory/occupation
+plots. Width, elapsed center and maximum solver step have explicit controls;
+the drive plot distinguishes the declared analytic field from computed states.
+Its marker shares the computed-sample cursor. Endpoint tails are visible.
+
+The bounded study uses one engine at identical observation times: N→N+8, then
+maxStep→maxStep/2 with N fixed. It reports q/p/number differences and
+phase-independent coefficient infidelity, with a separate initial-projection
+change. It requires N<=56 and a valid refined step. Engine Compare selects
+QuTiP for this same-engine study; normal runs retain QuTiP/native comparison.
+Failures/cancellation retain the last verified plots/study with stale labels.
+Windows Electron acceptance verifies these paths and all preceding labs.
 
 Add envelope width/center controls, a clearly labelled drive plot, shared
 computed-sample selection, density/q-p/occupation, energy/power and comparison.

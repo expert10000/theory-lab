@@ -3,6 +3,7 @@ import type {
   QuantumBridge,
   WorkerStatus,
   DrivenOscillatorResult,
+  PulsedOscillatorResult,
   EvolutionProgress,
 } from "../../../packages/contracts";
 import {
@@ -13,8 +14,19 @@ import {
 } from "../../../packages/models/oscillator-drive";
 import { compareOscillatorMotion } from "../../../packages/models/oscillator-dynamics";
 import { MotionFigures } from "./OscillatorDynamics";
+import {
+  PULSED_OSCILLATOR_DEFAULTS,
+  pulsedOscillatorJob,
+  checkPulsedOscillatorData,
+  pulseEnvelope,
+  comparePulseConvergence,
+  type PulsedOscillatorDraft,
+} from "../../../packages/models/oscillator-pulse";
 
-type Computed = { result: DrivenOscillatorResult; data: Float64Array };
+type Computed = {
+  result: DrivenOscillatorResult | PulsedOscillatorResult;
+  data: Float64Array;
+};
 export function DrivenOscillator({
   bridge,
   status,
@@ -23,6 +35,9 @@ export function DrivenOscillator({
   onSnapshot,
   atlasDraft,
   atlasEpoch,
+  forcing,
+  restoredPulse,
+  onPulseSnapshot,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -31,10 +46,26 @@ export function DrivenOscillator({
   onSnapshot?: (draft: DrivenOscillatorDraft) => void;
   atlasDraft?: DrivenOscillatorDraft;
   atlasEpoch?: number;
+  forcing?: "gaussian";
+  restoredPulse?: PulsedOscillatorDraft;
+  onPulseSnapshot?: (draft: PulsedOscillatorDraft) => void;
 }) {
-  const [draft, setDraft] = useState(DRIVEN_OSCILLATOR_DEFAULTS),
+  const gaussian = forcing === "gaussian",
+    prefix = gaussian ? "pulse" : "drive",
+    controlPrefix = gaussian ? "Pulse" : "Drive";
+  const defaults: PulsedOscillatorDraft = gaussian
+    ? PULSED_OSCILLATOR_DEFAULTS
+    : { ...PULSED_OSCILLATOR_DEFAULTS, ...DRIVEN_OSCILLATOR_DEFAULTS };
+  const [draft, setDraft] = useState(defaults),
     [computed, setComputed] = useState<Computed | null>(null),
     [reference, setReference] = useState<Computed | null>(null);
+  const [study, setStudy] = useState<{
+    cutoff: ReturnType<typeof comparePulseConvergence>;
+    step: ReturnType<typeof comparePulseConvergence>;
+    engine: string;
+    cutoffs: number[];
+    steps: number[];
+  } | null>(null);
   const [mode, setMode] = useState<DrivenOscillatorDraft["engine"] | null>(
       null,
     ),
@@ -61,39 +92,60 @@ export function DrivenOscillator({
     },
     [bridge],
   );
-  function reset(value: DrivenOscillatorDraft, message: string) {
+  function reset(
+    value: DrivenOscillatorDraft | PulsedOscillatorDraft,
+    message: string,
+  ) {
     generation.current++;
     cancelled.current = true;
     if (active.current) void bridge.cancel(active.current).catch(() => {});
-    setDraft(value);
+    setDraft({ ...defaults, ...value });
     setComputed(null);
     setReference(null);
+    setStudy(null);
     setSelected(0);
     setError("");
     setOutcome(message);
   }
   useEffect(() => {
     if (restoreEpoch)
-      reset(restored ?? DRIVEN_OSCILLATOR_DEFAULTS, "WORKSPACE RESTORED");
+      reset(
+        gaussian
+          ? (restoredPulse ?? PULSED_OSCILLATOR_DEFAULTS)
+          : (restored ?? DRIVEN_OSCILLATOR_DEFAULTS),
+        "WORKSPACE RESTORED",
+      );
   }, [restoreEpoch]);
   useEffect(() => {
     if (atlasEpoch && atlasDraft) reset(atlasDraft, "ATLAS PRESET LOADED");
   }, [atlasEpoch]);
-  useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
-  let preview: ReturnType<typeof drivenOscillatorJob> | null = null;
+  useEffect(() => {
+    if (gaussian) onPulseSnapshot?.(draft);
+    else {
+      const { pulseWidth, pulseCenter, maxStep, ...monochromatic } = draft;
+      onSnapshot?.(monochromatic);
+    }
+  }, [draft, onSnapshot, onPulseSnapshot]);
+  let preview:
+      | ReturnType<typeof drivenOscillatorJob>
+      | ReturnType<typeof pulsedOscillatorJob>
+      | null = null,
+    validation = "";
   try {
-    preview = drivenOscillatorJob(
+    preview = (gaussian ? pulsedOscillatorJob : drivenOscillatorJob)(
       "preview",
       draft,
       draft.engine === "compare" ? "qutip" : draft.engine,
     );
-  } catch {
-    /* bounded validation displayed below */
+  } catch (e) {
+    validation = e instanceof Error ? e.message : String(e);
   }
   const c = status.capabilities,
     ready =
       status.state === "READY" &&
-      !!c?.operations.includes("oscillator_drive") &&
+      !!c?.operations.includes(
+        gaussian ? "oscillator_pulse" : "oscillator_drive",
+      ) &&
       (draft.engine === "compare"
         ? c.engines.qutip.available && c.engines.native.available
         : !!c.engines[draft.engine].available);
@@ -116,7 +168,18 @@ export function DrivenOscillator({
           reference.data,
         )
       : null;
-  async function run() {
+  let studyAllowed = false;
+  if (gaussian && preview && Number(draft.cutoff) <= 56) {
+    try {
+      pulsedOscillatorJob(
+        "study-preview",
+        { ...draft, maxStep: String(Number(draft.maxStep) / 2) },
+        "native",
+      );
+      studyAllowed = true;
+    } catch {}
+  }
+  async function run(convergence = false) {
     if (!preview || !ready || running) return;
     const epoch = ++generation.current;
     cancelled.current = false;
@@ -125,27 +188,77 @@ export function DrivenOscillator({
     setOutcome("RUNNING");
     setProgress(null);
     try {
-      async function solve(engine: "qutip" | "native") {
-        const j = drivenOscillatorJob(
+      async function solve(
+        engine: "qutip" | "native",
+        change: Partial<PulsedOscillatorDraft> = {},
+      ) {
+        const j = (gaussian ? pulsedOscillatorJob : drivenOscillatorJob)(
           `job-${crypto.randomUUID()}`,
-          draft,
+          { ...draft, ...change },
           engine,
         );
         active.current = j.jobId;
-        const result = await bridge.oscillatorDrive(j),
+        const result = await (j.operation === "oscillator_pulse"
+            ? bridge.oscillatorPulse(j)
+            : bridge.oscillatorDrive(j)),
           bytes = await bridge.readData(j.jobId);
-        return { result, data: checkDrivenOscillatorData(result, bytes) };
+        return {
+          result,
+          data:
+            result.operation === "oscillator_pulse"
+              ? checkPulsedOscillatorData(result, bytes)
+              : checkDrivenOscillatorData(result, bytes),
+        };
       }
       const first = await solve(
         draft.engine === "compare" ? "qutip" : draft.engine,
       );
       if (generation.current !== epoch) return;
       if (cancelled.current) throw new Error("Driven evolution cancelled");
-      const second = draft.engine === "compare" ? await solve("native") : null;
+      const second =
+        draft.engine === "compare" && !convergence
+          ? await solve("native")
+          : null;
       if (generation.current !== epoch) return;
       if (cancelled.current) throw new Error("Driven evolution cancelled");
+      let nextStudy: typeof study = null;
+      if (convergence && first.result.operation === "oscillator_pulse") {
+        const cutoff = await solve(first.result.engine.name, {
+          cutoff: String(Number(draft.cutoff) + 8),
+        });
+        if (generation.current !== epoch) return;
+        if (cancelled.current) throw new Error("Pulse study cancelled");
+        const step = await solve(first.result.engine.name, {
+          maxStep: String(Number(draft.maxStep) / 2),
+        });
+        if (generation.current !== epoch) return;
+        if (cancelled.current) throw new Error("Pulse study cancelled");
+        if (
+          cutoff.result.operation !== "oscillator_pulse" ||
+          step.result.operation !== "oscillator_pulse"
+        )
+          throw new Error("Unexpected convergence result");
+        nextStudy = {
+          cutoff: comparePulseConvergence(
+            first.result,
+            first.data,
+            cutoff.result,
+            cutoff.data,
+          ),
+          step: comparePulseConvergence(
+            first.result,
+            first.data,
+            step.result,
+            step.data,
+          ),
+          engine: first.result.engine.name,
+          cutoffs: [Number(draft.cutoff), Number(draft.cutoff) + 8],
+          steps: [Number(draft.maxStep), Number(draft.maxStep) / 2],
+        };
+      }
       setComputed(first);
       setReference(second);
+      setStudy(nextStudy);
       setMode(draft.engine);
       setSelected(0);
       setOutcome("COMPLETE");
@@ -169,7 +282,9 @@ export function DrivenOscillator({
       setError(String(e));
     }
   }
-  const fields = [
+  const fields: ReadonlyArray<
+    readonly [keyof PulsedOscillatorDraft, string, number, number, number]
+  > = [
     ["omega", "Mode frequency ω", 0.1, 5, 0.01],
     ["epsilonRe", "Re ε₀", -0.5, 0.5, 0.01],
     ["epsilonIm", "Im ε₀", -0.5, 0.5, 0.01],
@@ -180,24 +295,46 @@ export function DrivenOscillator({
     ["start", "Start time", -100, 100, 0.1],
     ["stop", "End time", -100, 100, 0.1],
     ["samples", "Time samples", 3, 1001, 1],
-  ] as const;
+    ...(gaussian
+      ? ([
+          ["pulseWidth", "Gaussian width σ", 0.05, 5, 0.01],
+          ["pulseCenter", "Center (elapsed time)", 0, 20, 0.1],
+          ["maxStep", "Maximum solver step", 0.001, 0.05, 0.001],
+        ] as const)
+      : []),
+  ];
   const row = computed ? Math.min(selected, computed.result.data.rows - 1) : 0,
     o = computed ? row * computed.result.data.columns.length : 0;
   return (
-    <div data-testid="driven-oscillator">
+    <div data-testid={gaussian ? "pulsed-oscillator" : "driven-oscillator"}>
       <section className="panel dynamics-settings">
         <div>
-          <p className="eyebrow">MONOCHROMATIC COHERENT FORCING / D1-008–009</p>
-          <h2>A linear drive displaces the oscillator.</h2>
-          <p>
-            H=ω(N+½)+ε(t)a†+ε*(t)a, ε(t)=ε₀ exp[−iν(t−t₀)], ℏ=1. Lab energy adds
-            ω/2 to Atlas; the global phase is retained. This mode does not
-            accept arbitrary envelopes, damping or parametric drives.
+          <p className="eyebrow">
+            {gaussian
+              ? "GAUSSIAN PULSE / D1-011–012"
+              : "MONOCHROMATIC COHERENT FORCING / D1-008–009"}
           </p>
+          <h2>A linear drive displaces the oscillator.</h2>
+          {gaussian ? (
+            <p>
+              H=ω(N+½)+ε(t)a†+ε*(t)a, ε(t)=ε₀ exp[−(τ−center)²/(2σ²)] exp[−iντ],
+              τ=t−t₀. Center is elapsed time; σ is amplitude-envelope width.
+              Gaussian tails are retained, not a compact pulse. ℏ=1; Lab adds
+              ω/2 to Atlas energy.
+            </p>
+          ) : (
+            <p>
+              H=ω(N+½)+ε(t)a†+ε*(t)a, ε(t)=ε₀ exp[−iν(t−t₀)], ℏ=1. Lab energy
+              adds ω/2 to Atlas; the global phase is retained. This mode does
+              not accept arbitrary envelopes, damping or parametric drives.
+            </p>
+          )}
           <p>
             Initial coherent input is an explicitly normalized finite-Fock
             projection; solver and box density are never renormalized. Native
-            uses a finite rotating-frame eigensystem; QuTiP independently
+            {gaussian
+              ? "uses adaptive DOP853 coefficient integration; QuTiP independently"
+              : "uses a finite rotating-frame eigensystem; QuTiP independently"}
             integrates the lab-frame Hamiltonian.
           </p>
         </div>
@@ -206,7 +343,7 @@ export function DrivenOscillator({
             <label key={key}>
               {label}
               <input
-                aria-label={`Drive ${key}`}
+                aria-label={`${controlPrefix} ${key}`}
                 type="number"
                 min={min}
                 max={max}
@@ -222,7 +359,7 @@ export function DrivenOscillator({
           <label>
             Initial state
             <select
-              aria-label="Drive initial state"
+              aria-label={`${controlPrefix} initial state`}
               value={draft.initial}
               disabled={running}
               onChange={(e) =>
@@ -240,7 +377,7 @@ export function DrivenOscillator({
             <label>
               Number state n
               <input
-                aria-label="Drive index"
+                aria-label={`${controlPrefix} index`}
                 type="number"
                 min="0"
                 max="10"
@@ -257,7 +394,7 @@ export function DrivenOscillator({
               <label key={key}>
                 {key === "alphaRe" ? "Re α" : "Im α"}
                 <input
-                  aria-label={`Drive ${key}`}
+                  aria-label={`${controlPrefix} ${key}`}
                   type="number"
                   min="-2"
                   max="2"
@@ -274,7 +411,7 @@ export function DrivenOscillator({
           <label>
             Engine
             <select
-              aria-label="Drive engine"
+              aria-label={`${controlPrefix} engine`}
               value={draft.engine}
               disabled={running}
               onChange={(e) =>
@@ -293,27 +430,51 @@ export function DrivenOscillator({
         <div className="run-bar">
           <button
             className="primary-button"
-            data-testid="run-oscillator-drive"
+            data-testid={`run-oscillator-${prefix}`}
             disabled={!preview || !ready || running}
             onClick={() => void run()}
           >
-            ▶ Run driven oscillator
+            {gaussian ? "▶ Run Gaussian pulse" : "▶ Run driven oscillator"}
           </button>
+          {gaussian && (
+            <button
+              data-testid="study-oscillator-pulse"
+              disabled={!preview || !ready || running || !studyAllowed}
+              onClick={() => void run(true)}
+            >
+              Compare cutoff / solver step
+            </button>
+          )}
           {running && (
             <button
-              data-testid="cancel-oscillator-drive"
+              data-testid={`cancel-oscillator-${prefix}`}
               onClick={() => void cancel()}
             >
               Cancel
             </button>
           )}
-          <span data-testid="oscillator-drive-state">{outcome}</span>
+          <span data-testid={`oscillator-${prefix}-state`}>{outcome}</span>
         </div>
         {!preview && (
           <p className="validation">
-            Check ω .1–5, cutoff 8–64, |ε₀|≤.5, ν 0–5, |α|≤2 or n 0–10 below
-            cutoff−1; duration≤20, ω duration≤50, |α|+|ε₀| duration≤4; 3–1001
-            samples, extent 2–12 and odd points 101–401.
+            {gaussian ? (
+              validation
+            ) : (
+              <>
+                Check ω .1–5, cutoff 8–64, |ε₀|≤.5, ν 0–5, |α|≤2 or n 0–10 below
+                cutoff−1; duration≤20, ω duration≤50, |α|+|ε₀| duration≤4;
+                3–1001 samples, extent 2–12 and odd points 101–401.
+              </>
+            )}
+          </p>
+        )}
+        {gaussian && (
+          <p>
+            Solver maxStep≤σ/8 resolves the pulse independently of plot samples.
+            Convergence uses the same pulse and observation times: cutoff N→N+8,
+            then maxStep→maxStep/2 with cutoff fixed. Requires N≤56 and a valid
+            refined step. “Compare” engine selects QuTiP for this same-engine
+            study.
           </p>
         )}
         {status.state === "READY" && !ready && (
@@ -325,7 +486,7 @@ export function DrivenOscillator({
         {running && (
           <div className="progress-wrap">
             <progress max="1" value={progress?.fraction ?? 0} />
-            <span data-testid="drive-progress">
+            <span data-testid={`${prefix}-progress`}>
               {progress
                 ? `${progress.completed} / ${progress.total}`
                 : "Starting…"}
@@ -341,7 +502,7 @@ export function DrivenOscillator({
       {computed && (
         <section
           className="panel cavity-result"
-          data-testid="oscillator-drive-result"
+          data-testid={`oscillator-${prefix}-result`}
         >
           <div className="panel-heading">
             <div>
@@ -349,11 +510,11 @@ export function DrivenOscillator({
                 VERIFIED FOCK AMPLITUDES /{" "}
                 {computed.result.engine.name.toUpperCase()}
               </p>
-              <h2>Driven evolution</h2>
+              <h2>{gaussian ? "Pulsed evolution" : "Driven evolution"}</h2>
             </div>
             <span
               className={`result-badge ${stale ? "stale" : ""}`}
-              data-testid="drive-result-state"
+              data-testid={`${prefix}-result-state`}
             >
               {stale
                 ? "OUT OF DATE"
@@ -365,7 +526,7 @@ export function DrivenOscillator({
           <div className="cavity-metrics">
             <div>
               <span>MAX BOUNDARY OCCUPATION</span>
-              <strong data-testid="drive-boundary">
+              <strong data-testid={`${prefix}-boundary`}>
                 {computed.result.analysis.maxBoundaryOccupation.toExponential(
                   3,
                 )}
@@ -373,7 +534,7 @@ export function DrivenOscillator({
             </div>
             <div>
               <span>MAX FULL-STATE OCCUPATION ERROR</span>
-              <strong data-testid="drive-number-error">
+              <strong data-testid={`${prefix}-number-error`}>
                 {computed.result.analysis.maxNumberError.toExponential(3)}
               </strong>
             </div>
@@ -385,7 +546,7 @@ export function DrivenOscillator({
             </div>
             <div>
               <span>WORK BALANCE / TRAPEZOID ERROR</span>
-              <strong data-testid="drive-work-error">
+              <strong data-testid={`${prefix}-work-error`}>
                 {computed.result.analysis.maxWorkBalanceError.toExponential(3)}
               </strong>
             </div>
@@ -393,7 +554,10 @@ export function DrivenOscillator({
           {(computed.result.analysis.maxBoundaryOccupation > 1e-4 ||
             computed.result.analysis.maxNumberError > 1e-3 ||
             computed.result.analysis.omittedProbability > 1e-5) && (
-            <p className="validation" data-testid="drive-truncation-warning">
+            <p
+              className="validation"
+              data-testid={`${prefix}-truncation-warning`}
+            >
               Finite cutoff differs from the full-space driven reference.
               Increase cutoff and compare; zero initial projection loss does not
               guarantee later convergence.
@@ -407,7 +571,11 @@ export function DrivenOscillator({
               </strong>
             </div>
             <input
-              aria-label="Driven oscillator time cursor"
+              aria-label={
+                gaussian
+                  ? "Pulsed oscillator time cursor"
+                  : "Driven oscillator time cursor"
+              }
               type="range"
               min="0"
               max={computed.result.data.rows - 1}
@@ -420,6 +588,48 @@ export function DrivenOscillator({
             reference={reference}
             selected={row}
           />
+          {computed.result.operation === "oscillator_pulse" && (
+            <>
+              <PulseDriveFigure result={computed.result} selected={row} />
+              <p data-testid="pulse-endpoint-tails">
+                Envelope tails (relative amplitude): start{" "}
+                {computed.result.analysis.startEnvelope.toExponential(3)} · end{" "}
+                {computed.result.analysis.endEnvelope.toExponential(3)}. Neither
+                endpoint is forcibly zeroed.
+              </p>
+            </>
+          )}
+          {study && (
+            <div className="comparison-report" data-testid="pulse-convergence">
+              <h3>Bounded convergence inspection · {study.engine}</h3>
+              <p>
+                Cutoff {study.cutoffs.join(" → ")}: max Δq{" "}
+                <span data-testid="pulse-cutoff-q">
+                  {study.cutoff.q.toExponential(3)}
+                </span>{" "}
+                · Δp {study.cutoff.p.toExponential(3)} · ΔN{" "}
+                {study.cutoff.number.toExponential(3)} · infidelity{" "}
+                {study.cutoff.infidelity.toExponential(3)}.
+              </p>
+              <p>
+                Solver maxStep {study.steps.join(" → ")}, fixed cutoff: max Δq{" "}
+                <span data-testid="pulse-step-q">
+                  {study.step.q.toExponential(3)}
+                </span>{" "}
+                · Δp {study.step.p.toExponential(3)} · ΔN{" "}
+                {study.step.number.toExponential(3)} · infidelity{" "}
+                {study.step.infidelity.toExponential(3)}.
+              </p>
+              <p>
+                Initial projection probability changes by{" "}
+                {study.cutoff.initialProjectionDifference.toExponential(3)}{" "}
+                between cutoffs; this is distinct from propagation accuracy.
+                These are finite comparisons, not proof of infinite-space
+                convergence. Work-balance sampling error requires separately
+                refining Time samples.
+              </p>
+            </div>
+          )}
           <div className="sweep-visual">
             <p className="eyebrow">OCCUPATION / COMPUTED SAMPLES</p>
             <Occupation
@@ -431,19 +641,19 @@ export function DrivenOscillator({
           <div className="cavity-readouts">
             <span>
               ⟨N⟩{" "}
-              <strong data-testid="drive-number">
+              <strong data-testid={`${prefix}-number`}>
                 {computed.data[o + 5].toFixed(6)}
               </strong>
             </span>
             <span>
               Lab energy{" "}
-              <strong data-testid="drive-energy">
+              <strong data-testid={`${prefix}-energy`}>
                 {computed.data[o + 11].toFixed(6)}
               </strong>
             </span>
             <span>
               Drive power{" "}
-              <strong data-testid="drive-power">
+              <strong data-testid={`${prefix}-power`}>
                 {computed.data[o + 12].toFixed(6)}
               </strong>
             </span>
@@ -451,12 +661,12 @@ export function DrivenOscillator({
           {comparison && (
             <div
               className="comparison-report"
-              data-testid="oscillator-drive-compare"
+              data-testid={`oscillator-${prefix}-compare`}
             >
               <h3>QuTiP versus Native</h3>
               <p>
                 Max |Δ⟨q⟩|{" "}
-                <span data-testid="drive-compare-q">
+                <span data-testid={`${prefix}-compare-q`}>
                   {comparison.q.toExponential(3)}
                 </span>{" "}
                 · max |Δ⟨p⟩| {comparison.p.toExponential(3)} · max
@@ -467,9 +677,9 @@ export function DrivenOscillator({
             </div>
           )}
           <p>
-            Energy is not conserved under rotating forcing. Work-balance error
-            includes time-sample trapezoid error; refine samples to check it.
-            Initial omitted probability{" "}
+            Energy is not conserved under time-dependent forcing. Work-balance
+            error includes time-sample trapezoid error; refine samples to check
+            it. Initial omitted probability{" "}
             {computed.result.analysis.omittedProbability.toExponential(3)}.
             Variances use finite projected q/p operators. No box correction or
             spatial-grid convergence claim.
@@ -487,6 +697,61 @@ export function DrivenOscillator({
           </div>
         </section>
       )}
+    </div>
+  );
+}
+function PulseDriveFigure({
+  result,
+  selected,
+}: {
+  result: PulsedOscillatorResult;
+  selected: number;
+}) {
+  const p = result.model.parameters,
+    duration = result.solver.tStop - result.solver.tStart,
+    count = Math.min(
+      2001,
+      Math.max(201, Math.ceil((duration / p.pulseWidth) * 16) + 1),
+    ),
+    peak = Math.max(0.01, Math.hypot(p.epsilonRe, p.epsilonIm));
+  const line = (component: "re" | "im") =>
+    Array.from({ length: count }, (_, k) => {
+      const tau = (duration * k) / (count - 1),
+        e = pulseEnvelope(p, tau);
+      return `${k ? "L" : "M"}${50 + (680 * k) / (count - 1)},${130 - (85 * e[component]) / peak}`;
+    }).join(" ");
+  return (
+    <div className="sweep-visual">
+      <p className="eyebrow">
+        DECLARED DRIVE / ELAPSED TIME · NOT INTERPOLATED QUANTUM STATES
+      </p>
+      <svg viewBox="0 0 800 260" role="img" aria-label="Gaussian pulse drive">
+        <path d="M50 35 V225 H730 M50 130 H730" stroke="#506575" fill="none" />
+        <path d={line("re")} stroke="#79d9c1" fill="none" />
+        <path d={line("im")} stroke="#edae8f" fill="none" />
+        <path
+          d={`M${50 + (680 * selected) / (result.data.rows - 1)} 35 V225`}
+          stroke="#eef7f5"
+          strokeDasharray="2 3"
+        />
+        <text x="10" y="40" fill="#acc1ca">
+          {peak.toFixed(3)}
+        </text>
+        <text x="15" y="135" fill="#acc1ca">
+          0
+        </text>
+        <text x="50" y="250" fill="#acc1ca">
+          0
+        </text>
+        <text x="730" y="250" fill="#acc1ca" textAnchor="end">
+          {duration.toFixed(4)} elapsed time
+        </text>
+      </svg>
+      <p>
+        Mint: Re ε(t) · peach: Im ε(t). Marker shares the computed-sample
+        cursor; σ={p.pulseWidth}, center={p.pulseCenter}, carrier ν=
+        {p.driveFrequency}.
+      </p>
     </div>
   );
 }
@@ -518,7 +783,11 @@ function Occupation({
       <svg
         viewBox="0 0 800 245"
         role="img"
-        aria-label="Driven oscillator occupation"
+        aria-label={
+          r.operation === "oscillator_pulse"
+            ? "Pulsed oscillator occupation"
+            : "Driven oscillator occupation"
+        }
       >
         <path d="M50 35 V200 H730" stroke="#506575" fill="none" />
         <path

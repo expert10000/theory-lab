@@ -3,6 +3,7 @@ import type {
   EvolutionProgress,
   OscillatorEvolutionResult,
   DrivenOscillatorResult,
+  PulsedOscillatorResult,
   QuantumBridge,
   WorkerStatus,
 } from "../../../packages/contracts";
@@ -18,7 +19,7 @@ import { oscillatorAmplitude } from "../../../packages/models/oscillator";
 
 type Computed = { result: OscillatorEvolutionResult; data: Float64Array };
 export type OscillatorComputed = {
-  result: OscillatorEvolutionResult | DrivenOscillatorResult;
+  result: OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult;
   data: Float64Array;
 };
 export function MotionFigures({
@@ -60,7 +61,7 @@ export function MotionFigures({
           `${k ? "L" : "M"}${50 + (680 * k) / (values.length - 1)},${200 - 160 * v}`,
       )
       .join(" ");
-  const quadratureRange = r.operation === "oscillator_drive" ? 6 : 3;
+  const quadratureRange = r.operation !== "oscillator_evolve" ? 6 : 3;
   const trajectory = (col: number) =>
     Array.from(
       { length: r.data.rows },

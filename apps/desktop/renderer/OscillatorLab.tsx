@@ -107,14 +107,14 @@ export function OscillatorLab({
   onSnapshot?: (draft: OscillatorDraft) => void;
   restoredMotion?: OscillatorDynamicsDraft;
   onMotionSnapshot?: (draft: OscillatorDynamicsDraft) => void;
-  restoredMode?: "static" | "dynamics" | "driven";
-  onModeSnapshot?: (mode: "static" | "dynamics" | "driven") => void;
+  restoredMode?: "static" | "dynamics" | "driven" | "pulse";
+  onModeSnapshot?: (mode: "static" | "dynamics" | "driven" | "pulse") => void;
   restoredDriven?: DrivenOscillatorDraft;
   onDrivenSnapshot?: (draft: DrivenOscillatorDraft) => void;
   atlasDrivenDraft?: DrivenOscillatorDraft;
   atlasDrivenEpoch?: number;
 }) {
-  const [view, setView] = useState<"static" | "dynamics" | "driven">("static");
+  const [view, setView] = useState<"static" | "dynamics" | "driven" | "pulse">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
   const [result, setResult] = useState<OscillatorResult | null>(null),
     [reference, setReference] = useState<OscillatorResult | null>(null);
@@ -238,6 +238,9 @@ export function OscillatorLab({
           onClick={() => setView("driven")}
         >
           Driven dynamics
+        </button>
+        <button role="tab" aria-selected={view === "pulse"} onClick={() => setView("pulse")}>
+          Gaussian pulse
         </button>
       </div>
       <div hidden={view !== "static"}>
@@ -462,6 +465,9 @@ export function OscillatorLab({
           atlasDraft={atlasDrivenDraft}
           atlasEpoch={atlasDrivenEpoch}
         />
+      </div>
+      <div hidden={view !== "pulse"}>
+        <DrivenOscillator bridge={bridge} status={status} forcing="gaussian" />
       </div>
     </div>
   );
