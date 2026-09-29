@@ -38,7 +38,7 @@
     "id": {"type": "string", "pattern": "^[a-z][a-z0-9_]{0,99}$"},
     "groupId": {"type": "string", "pattern": "^G[0-9]{2}$"},
     "hash": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
-    "operation": {"enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "orbital", "circuit", "many_body", "topology"]},
+    "operation": {"enum": ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "orbital", "circuit", "many_body", "topology", "oscillator"]},
     "sourcePath": {"type": "string", "pattern": "^examples/python/qutip/[A-Za-z0-9_/-]+\\.py$"},
     "sourceExample": {
       "type": "object", "additionalProperties": false, "required": ["kind", "adapter", "example", "notes"],
@@ -63,7 +63,7 @@
         "sourceExample": {"anyOf": [{"type": "null"}, {"$ref": "#/definitions/sourceExample"}]},
         "relatedModelIds": {"type": "array", "maxItems": 16, "uniqueItems": true, "items": {"$ref": "#/definitions/id"}},
         "binding": {"anyOf": [{"type": "null"}, {"$ref": "#/definitions/binding"}]},
-        "executionReview": {"enum": ["preserved-binding", "adapter-candidate", "new-model-required", "reference-only"]},
+        "executionReview": {"enum": ["preserved-binding", "adapter-candidate", "new-model-required", "reference-only", "accepted-binding"]},
         "physicsGap": {
           "type": "object", "additionalProperties": false, "required": ["status", "groupId", "priority"],
           "properties": {

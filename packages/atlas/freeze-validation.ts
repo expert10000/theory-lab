@@ -158,7 +158,7 @@ export function assertAtlasLabFreeze(
       )
         throw new Error("Host/scene capability changed");
       if (
-        entry.executionReview !== "preserved-binding" ||
+        !["preserved-binding","accepted-binding"].includes(entry.executionReview) ||
         entry.physicsGap.status !== "covered-subspace" ||
         entry.physicsGap.groupId !== null ||
         entry.physicsGap.priority !== 0
@@ -166,7 +166,7 @@ export function assertAtlasLabFreeze(
         throw new Error("Bound subspace misclassified");
     } else {
       if (
-        entry.executionReview === "preserved-binding" ||
+        ["preserved-binding","accepted-binding"].includes(entry.executionReview) ||
         entry.physicsGap.status === "covered-subspace" ||
         entry.physicsGap.priority === 0 ||
         !entry.physicsGap.groupId ||

@@ -38,6 +38,15 @@ frozen with full coverage/digests and schema/semantic compatibility tests.
 Existing scientific protocols and all feature paths are retained. Future
 physics extensions remain available; D1 is not started by reconciliation.
 
+D1-001–004 now extend that baseline with a standalone static 1D harmonic
+oscillator: contracts/model, independent QuTiP/native Fock engines, Electron
+stationary-state plots/persistence, and reviewed Atlas binding/acceptance.
+All four are implemented. The inventory now has ten tested Atlas bindings,
+with the nine original mappings unchanged and all 68 definitions retained.
+The R5 historical freeze is preserved; broader oscillator-family requirements
+remain in G02. See [D1_OSCILLATOR.md](D1_OSCILLATOR.md). No Math3D, web compute
+form, new scene vocabulary or parallel architecture is added.
+
 ## 1. Technology decision
 
 ### V1

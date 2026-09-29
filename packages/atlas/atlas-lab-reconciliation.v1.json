@@ -44,7 +44,7 @@
     }
   ],
   "catalogSha256": "f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a",
-  "reviewSha256": "b12fb7ffc6e61b44e5cd047bea0be3a8fecab31c141cdd4a06b95c0fddd47ec9",
+  "reviewSha256": "765dc57e1489bbcfa90746b2d29265aa39c9fc5d50a66c4e7911c40a1be37e67",
   "sceneReviewIds": [
     "C2",
     "C3",
@@ -76,12 +76,28 @@
       "relatedModelIds": [
         "jaynes_cummings"
       ],
-      "binding": null,
-      "executionReview": "new-model-required",
+      "binding": {
+        "modelId": "harmonic_oscillator",
+        "operation": "oscillator",
+        "parameters": {
+          "omega": 1,
+          "cutoff": 16,
+          "levels": 6,
+          "state": 0,
+          "extent": 8,
+          "points": 201
+        },
+        "convention": "Atlas omega unchanged; hbar=1, H=omega(N+1/2), Fock |n>. Cutoff, reported levels, number state and Hermite grid are explicit Lab choices. q=(a+a†)/sqrt(2) is dimensionless, not physical x. Static 1D spectrum and stationary density only; no driven/anharmonic/ND dynamics or 3D scene.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "accepted-binding",
       "physicsGap": {
-        "status": "new-model",
-        "groupId": "G02",
-        "priority": 2
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
       }
     },
     {

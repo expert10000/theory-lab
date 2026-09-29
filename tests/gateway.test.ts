@@ -6,6 +6,7 @@ import { join } from "node:path";
 import { startGateway } from "../apps/gateway/server";
 import { spectrumJob, evolutionJob, defaultsFor } from "../packages/models";
 import { TOPOLOGY_DEFAULTS, topologyJob } from "../packages/models/topology";
+import { OSCILLATOR_DEFAULTS, oscillatorJob } from "../packages/models/oscillator";
 
 const token = "gateway-test-token-0123456789-abcdef";
 
@@ -37,6 +38,10 @@ test("gateway enforces authentication and origin before running versioned jobs",
     const invalid = await fetch(`${gateway.origin}/api/jobs`, { method: "POST",
       headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" }, body: "{}" });
     assert.equal(invalid.status, 400);
+    const desktopOnly = await fetch(`${gateway.origin}/api/jobs`, { method:"POST",
+      headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},
+      body:JSON.stringify(oscillatorJob("desktop-only",OSCILLATOR_DEFAULTS,"native")) });
+    assert.equal(desktopOnly.status,400,"new worker capability must not silently broaden gateway permissions");
     const runs = await fetch(`${gateway.origin}/api/runs`, { headers: { Authorization: `Bearer ${token}` } });
     assert.equal(runs.status, 200);
     assert.equal((await runs.json())[0].jobId, job.jobId);

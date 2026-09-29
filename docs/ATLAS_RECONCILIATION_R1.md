@@ -2,19 +2,21 @@
 
 Pinned theory revision: `48e2036ba7c7dd5c79d54749341a79d41770cbb7` (https://github.com/expert10000/theory).
 
-68 reference definitions; 7 declared theory-example bindings; 9 tested Lab bindings; 4 web compute bindings; 6 bound models with saved scene adapters.
+68 reference definitions; 7 declared theory-example bindings; 10 tested Lab bindings; 4 web compute bindings; 6 bound models with saved scene adapters.
 
 R1 is implemented: the catalog, capability map and UI explanations are reconciled. No new physics executor, job/result protocol, scene format or Math3D integration is introduced. The canonical Atlas remains the metadata source; Lab owns its explicit tested parameter adapters. This map is an implementation inventory, not an execution authorization registry or the R5 contract freeze.
 
+D1 amendment: the current inventory additionally includes the accepted standalone static 1D oscillator. R1's original nine bindings remain unchanged; the tenth is an additive tested mapping. Historical R5 metadata is preserved in packages/atlas/fixtures/reconciliation-r5.v1.json. D1 adds job/result variants, not a scene format or parallel architecture.
+
 ## Reading the map
 
-Reference means browseable. Theory example means declared adapter/program paths exist at the pinned source revision, not that they were run or accepted here. A reference_lab binding is a related QEC program, not a one-to-one Hamiltonian executor. Lab-bound means one of the nine existing tested subspace mappings. Related-only means an existing physical family is relevant but no parameter binding is enabled. Engines are implemented integrations, not a claim that optional packages/devices are installed. Runtime worker capabilities still gate execution.
+Reference means browseable. Theory example means declared adapter/program paths exist at the pinned source revision, not that they were run or accepted here. A reference_lab binding is a related QEC program, not a one-to-one Hamiltonian executor. Lab-bound means a tested bounded mapping (nine original plus D1 oscillator). Related-only means an existing physical family is relevant but no parameter binding is enabled. Engines are implemented integrations, not a claim that optional packages/devices are installed. Runtime worker capabilities still gate execution.
 
 ## Complete 68-entry inventory
 
 | Atlas ID | Status | Theory example kind | Bound Lab model / operation | Related existing Lab (not bound) |
 | --- | --- | --- | --- | --- |
-| `harmonic_oscillator` | related-only | — | — | jaynes_cummings |
+| `harmonic_oscillator` | lab-bound | — | `harmonic_oscillator` / oscillator | jaynes_cummings |
 | `rabi` | lab-bound | — | `quantum_rabi` / cavity | — |
 | `jaynes_cummings` | lab-bound | direct | `jaynes_cummings` / cavity | — |
 | `ssh` | lab-bound | — | `ssh` / topology | — |
@@ -89,6 +91,7 @@ All nine bindings and the original 48 formula/basis/parameter definitions are pr
 
 | Atlas ID | Desktop load | Web compute load | Bound gateway operation | Saved scene views | Convention |
 | --- | --- | --- | --- | --- | --- |
+| `harmonic_oscillator` | yes | no | not accepted | — | Atlas omega unchanged; hbar=1, H=omega(N+1/2), Fock \|n>. Cutoff, reported levels, number state and Hermite grid are explicit Lab choices. q=(a+a†)/sqrt(2) is dimensionless, not physical x. Static 1D spectrum and stationary density only; no driven/anharmonic/ND dynamics or 3D scene. |
 | `rabi` | yes | no | not accepted | — | ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq\|e⟩⟨e\| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice. |
 | `jaynes_cummings` | yes | no | not accepted | — | ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq\|e⟩⟨e\| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice. |
 | `ssh` | yes | yes | topology | standard, bands | Atlas t₁/t₂ are the lab intracell/intercell hoppings. Bloch H(k)=(t₁+t₂ cos k)σx+t₂ sin k σy; open chain uses \|n,A⟩,\|n,B⟩ and 16 cells. Winding requires nonzero bulk gap. |

@@ -100,6 +100,12 @@ try {
   assert.ok(rejected, "IPC must validate renderer input");
   await mkdir("artifacts", { recursive: true });
   await page.getByTestId("open-oscillator").click();
+  await page.getByTestId("open-atlas").click();
+  await page.getByLabel("Search Atlas").fill("harmonic_oscillator");
+  await page.getByRole("button",{name:/^Quantum harmonic oscillator harmonic_oscillator/}).click();
+  await page.getByTestId("open-atlas-binding").click();
+  assert.ok(await page.getByTestId("oscillator-lab").isVisible());
+  assert.equal(await page.getByLabel("Oscillator omega",{exact:true}).inputValue(),"1");
   await page.getByTestId("run-oscillator").click();
   await page.getByTestId("oscillator-state").filter({hasText:"COMPLETE"}).waitFor();
   assert.equal(await page.getByTestId("oscillator-e0").innerText(),"0.500000");
@@ -114,6 +120,8 @@ try {
   await page.getByTestId("oscillator-state").filter({hasText:"COMPLETE"}).waitFor();
   assert.equal(await page.getByTestId("oscillator-variance").innerText(),"2.500000");
   await page.screenshot({path:"artifacts/desktop-oscillator.png",fullPage:true});
+  await page.getByRole("img",{name:"Oscillator stationary density and real amplitude"}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-oscillator-density.png",fullPage:true});
   await page.getByTestId("save-workspace").click();
   await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
   await page.getByLabel("Oscillator state",{exact:true}).fill("1");
@@ -896,6 +904,8 @@ try {
   await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
   await page.waitForFunction(() => document.querySelector('input[aria-label="Oscillator state"]')?.value === "2");
   assert.ok(await page.getByTestId("preset-loaded").getByText(/Damped cavity occupation/).isVisible());
+  await page.getByRole("tab",{name:"Roadmap",exact:true}).click();
+  for(const id of ["D1-001","D1-002","D1-003","D1-004"]) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {
   await reopened.close();

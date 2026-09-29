@@ -26,6 +26,6 @@ else {
       "Frozen reconciliation drift: review additive changes explicitly before regeneration",
     );
   console.log(
-    "Verified frozen Atlas/Lab metadata, review digest and unchanged protocol schemas",
+    "Verified current Atlas/Lab metadata, review digest and reviewed protocol schema digests",
   );
 }

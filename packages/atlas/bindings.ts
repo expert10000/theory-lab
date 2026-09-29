@@ -1,6 +1,7 @@
 import { atlasEntry } from "./index";
 
 export type AtlasBinding =
+  | { kind: "oscillator"; atlasId: "harmonic_oscillator"; modelId: "harmonic_oscillator"; parameters: { omega:number; cutoff:number; levels:number; state:number; extent:number; points:number }; convention:string }
   | { kind: "spectrum"; atlasId: "two_level_pauli"; modelId: "two_level"; parameters: { delta: number; omega: number }; convention: string }
   | { kind: "dynamics"; atlasId: "semiclassical_rabi_drive" | "landau_zener" | "floquet_two_level"; modelId: "driven_two_level" | "landau_zener" | "strong_drive"; parameters: Record<string, number>; convention: string }
   | { kind: "cavity"; atlasId: "jaynes_cummings" | "rabi"; modelId: "jaynes_cummings" | "quantum_rabi"; parameters: { qubitFrequency: number; cavityFrequency: number; coupling: number; cutoff: number }; convention: string }
@@ -18,6 +19,10 @@ function value(id: string, symbol: string): number {
 // Atlas itself does not mark any entry runnable. The app owns and tests these adapters.
 export function atlasBinding(id: string): AtlasBinding | null {
   switch (id) {
+    case "harmonic_oscillator":
+      return {kind:"oscillator",atlasId:id,modelId:"harmonic_oscillator",
+        parameters:{omega:value(id,"omega"),cutoff:16,levels:6,state:0,extent:8,points:201},
+        convention:"Atlas omega unchanged; hbar=1, H=omega(N+1/2), Fock |n>. Cutoff, reported levels, number state and Hermite grid are explicit Lab choices. q=(a+a†)/sqrt(2) is dimensionless, not physical x. Static 1D spectrum and stationary density only; no driven/anharmonic/ND dynamics or 3D scene."};
     case "two_level_pauli":
       return { kind: "spectrum", atlasId: id, modelId: "two_level",
         parameters: { delta: 2 * value(id, "d_z"), omega: 2 * value(id, "d_x") },

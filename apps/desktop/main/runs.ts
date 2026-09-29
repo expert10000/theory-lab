@@ -226,7 +226,8 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
     const low = energies[0], span = Math.max(1e-9, energies[energies.length - 1] - low);
     return head + energies.map((energy, index) => {
       const y = 410 - (energy - low) * 290 / span;
-      return `<path d="M${120 + index * 86} ${y} h58" stroke="#79d9c1" stroke-width="4"/><text x="${120 + index * 86}" y="${y - 10}" fill="white" font-family="sans-serif" font-size="11">E${index} ${energy.toFixed(3)}</text>`;
+      const x = result.operation === "oscillator" ? 80 + index * 700 / (energies.length - 1) : 120 + index * 86;
+      return `<path d="M${x} ${y} h58" stroke="#79d9c1" stroke-width="4"/><text x="${x}" y="${y - 10}" fill="white" font-family="sans-serif" font-size="11">E${index} ${energy.toFixed(3)}</text>`;
     }).join("") + `</svg>\n`;
   }
   if (result.operation === "topology") {

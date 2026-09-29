@@ -75,6 +75,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             and <code>steadystate</code> solve the Lindblad laboratory.
           </p>
           <small>Reference engine · per-step output normalized</small>
+          <p>D1 oscillator: <code>num</code>, <code>destroy</code>, <code>eigenenergies</code> and quadrature expectations give the static Fock ladder and moments. The native path constructs independent NumPy matrices. Both use shared SciPy Hermite functions for stationary plotting.</p>
         </article>
         <article className="panel backend-card">
           <div className="backend-card-title">
@@ -135,6 +136,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             that stream over an authenticated, host-key-verified connection.
           </p>
           <small>hello · capabilities · health · run · cancel · shutdown</small>
+          <p>Oscillator uses synchronous <code>quantum.run</code> through typed <code>quantum:oscillator</code> IPC: omega, cutoff, levels, selected state, q extent and odd grid points. Result carries bounded inline energies/q/amplitude/density, diagnostics and provenance; no binary artifact or scene is fabricated.</p>
         </article>
         <article className="panel backend-card" data-testid="worker-resources">
           <p className="eyebrow">LIVE WORKER RESOURCES</p>

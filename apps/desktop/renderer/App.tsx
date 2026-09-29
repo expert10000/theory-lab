@@ -67,6 +67,7 @@ export function App() {
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
   const [atlasTopology, setAtlasTopology] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["topology"]> } | null>(null);
+  const [atlasOscillator, setAtlasOscillator] = useState<{ epoch:number; draft:NonNullable<WorkspaceSnapshot["oscillator"]> } | null>(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const collectDynamics = useCallback((value: WorkspaceSnapshot["dynamics"]) => { workspaceParts.current.dynamics = value; checkParts(); }, []);
   const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
@@ -198,6 +199,10 @@ export function App() {
         reference: "Pinned Hamiltonian Atlas entry", convention: binding.convention, source,
         modelId: binding.modelId, parameters: binding.parameters, initialState: { qubit: "excited", photons: 0 },
         solver: { tStart: 0, tStop: 25, samples: 401 } });
+    } else if (binding.kind === "oscillator") {
+      setAtlasOscillator(current=>({epoch:(current?.epoch??0)+1,draft:{...OSCILLATOR_DEFAULTS,
+        ...Object.fromEntries(Object.entries(binding.parameters).map(([key,value])=>[key,String(value)]))}}));
+      setTab("oscillator");
     } else if (binding.kind === "many_body") {
       const p = binding.parameters;
       setAtlasManyBody(current => ({ epoch: (current?.epoch ?? 0) + 1,
@@ -493,7 +498,7 @@ export function App() {
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
-          <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} onSnapshot={collectOscillator} /></div>
+          <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} /></div>
           {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (

@@ -3,6 +3,7 @@ import {
   POST_QVIS,
   SOURCE_PLAN_COVERAGE,
   ATLAS_RECONCILIATION_STEPS,
+  D1_OSCILLATOR_STEPS,
 } from "../../../packages/models/roadmap";
 
 export function PostRoadmapPanel() {
@@ -70,6 +71,9 @@ export function PostRoadmapPanel() {
           <small>{entry.state}</small>
         </div>
       ))}
+      <h3>D1 · standalone harmonic oscillator</h3>
+      <p>Static 1D Fock spectrum and stationary number-state density are implemented. Dimensionless q, ℏ=1; no driven/anharmonic/ND dynamics, oscillator 3D scene or Math3D connection. See docs/D1_OSCILLATOR.md.</p>
+      {D1_OSCILLATOR_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`oscillator-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
       <details data-testid="source-plan-coverage">
         <summary>
           Coverage of the supplied plan — different numbering/scopes

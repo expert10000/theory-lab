@@ -95,6 +95,12 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
   },
 ];
 export const POST_QVIS: RoadmapEntry[] = [];
+export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
+  {id:"D1-001",title:"Bounded oscillator contracts and typed model",state:"Implemented",detail:"Append-only job/result variants; original schema branches fingerprint-tested against R5."},
+  {id:"D1-002",title:"QuTiP/native stationary oscillator worker",state:"Implemented",detail:"Independent Fock operators, zero-point ladder, quadrature moments; shared analytic Hermite plotting."},
+  {id:"D1-003",title:"Electron oscillator lab and persistence",state:"Implemented",detail:"Density/amplitude plots, engine comparison, strict IPC, stale labels, saved CSV/SVG/manifest and workspace restore."},
+  {id:"D1-004",title:"Reviewed oscillator Atlas binding and acceptance",state:"Implemented",detail:"Tenth bounded binding; all 68 references and nine original bindings retained. Desktop-first, dimensionless q, no new scene/Math3D path."},
+];
 export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {
     id: "R1",

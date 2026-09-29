@@ -8,6 +8,7 @@ import { cavityJob } from "../packages/models/cavity";
 import { manyBodyJob } from "../packages/models/many_body";
 import { consistentTopologyResult, isTopologyResponse, topologyJob, TOPOLOGY_DEFAULTS } from "../packages/models/topology";
 import { isQuantumJob } from "../packages/contracts";
+import { oscillatorJob, OSCILLATOR_DEFAULTS } from "../packages/models/oscillator";
 
 test("pinned Atlas snapshot is complete, connected and reference-only", () => {
   assert.equal(ATLAS_REVISION, "48e2036ba7c7dd5c79d54749341a79d41770cbb7");
@@ -27,7 +28,7 @@ test("pinned Atlas snapshot is complete, connected and reference-only", () => {
 });
 
 test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian coefficients", () => {
-  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain", "ssh", "qwz"];
+  const ids = ["two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level", "jaynes_cummings", "rabi", "ising_chain", "ssh", "qwz", "harmonic_oscillator"];
   for (const id of ids) {
     const binding = atlasBinding(id);
     assert.ok(binding, id);
@@ -47,6 +48,9 @@ test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian co
     } else if (binding.kind === "many_body") {
       job = manyBodyJob("atlas-test", Object.fromEntries(Object.entries(binding.parameters).map(([key, value]) => [key, String(value)])) as never, "open", "native");
       assert.equal(job.model.parameters.longitudinal, 0);
+    } else if (binding.kind === "oscillator") {
+      job=oscillatorJob("atlas-test",{...OSCILLATOR_DEFAULTS,...Object.fromEntries(Object.entries(binding.parameters).map(([k,v])=>[k,String(v)]))},"native");
+      assert.equal(job.model.parameters.omega,atlasEntry("harmonic_oscillator")!.parameters.find(p=>p.symbol==="omega")!.default);
     } else if (binding.modelId === "ssh") {
       job = topologyJob("atlas-test", { ...TOPOLOGY_DEFAULTS, modelId: "ssh", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2) });
       assert.deepEqual(job.model.parameters, { t1: 0.6, t2: 1, cells: 16, kPoints: 101 });

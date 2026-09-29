@@ -6,6 +6,7 @@ import {
   POST_QVIS,
   SOURCE_PLAN_COVERAGE,
   ATLAS_RECONCILIATION_STEPS,
+  D1_OSCILLATOR_STEPS,
 } from "../packages/models/roadmap";
 
 test("roadmap preserves delivered IDs and labels future work as planned", () => {
@@ -17,6 +18,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
     ),
   );
   assert.ok(DELIVERED_QVIS.every((r) => r.state === "Implemented"));
+  assert.deepEqual(D1_OSCILLATOR_STEPS.map(r=>[r.id,r.state]),[1,2,3,4].map(i=>[`D1-00${i}`,"Implemented"]));
   assert.match(DELIVERED_QVIS[5].title, /bundle import/);
   assert.match(DELIVERED_QVIS[6].title, /convergence/);
   assert.deepEqual(

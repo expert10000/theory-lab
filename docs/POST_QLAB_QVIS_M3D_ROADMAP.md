@@ -28,6 +28,13 @@ M3D-Q01–Q10 retain their proposed names and remain a separate-repository track
 
 ## Delivered Lab milestones
 
+D1-001–004 are implemented as an additive static 1D oscillator extension after
+R1–R5. Contracts, QuTiP/native Fock spectrum/quadratures, Hermite density plots,
+Electron persistence and the tenth reviewed Atlas binding are delivered.
+All 68 definitions and nine original bindings remain intact. The original R5
+metadata is preserved. Driven/anharmonic/ND scope, web computation and Math3D
+remain future work; see [D1_OSCILLATOR.md](D1_OSCILLATOR.md).
+
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |
 | QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |

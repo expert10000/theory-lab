@@ -18,7 +18,7 @@ export function AtlasBrowser({ onLoad, supported }: {
   return <div className="web-atlas" data-testid="web-atlas">
     <div className="page-intro"><div><div className="eyebrow">THEORY / PINNED REFERENCE</div><h1>Hamiltonian Atlas</h1>
       <p>{ATLAS_ENTRIES.length} source definitions at revision <code>{ATLAS_REVISION.slice(0, 12)}</code>. R1 separates reference entries, theory examples and tested Lab bindings.</p></div>
-      <div className="model-badge">{ATLAS_ENTRIES.length} Hamiltonians · 9 tested lab bindings</div></div>
+      <div className="model-badge">{ATLAS_ENTRIES.length} Hamiltonians · {ATLAS_ENTRIES.filter(e=>atlasBinding(e.id)).length} tested lab bindings</div></div>
     <div className="card"><div className="atlas-filters"><input aria-label="Search Atlas" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search names, IDs or tags"/>
       <select aria-label="Atlas family" value={family} onChange={event => setFamily(event.target.value)}><option value="all">All families</option>{[...new Set(ATLAS_ENTRIES.map(entry => entry.family))].sort().map(value => <option key={value} value={value}>{value}</option>)}</select></div>
       <div className="atlas-grid"><div className="atlas-items" role="list" aria-label="Atlas entries">{entries.map(entry => <button key={entry.id} className={selectedId === entry.id ? "atlas-item active" : "atlas-item"} onClick={() => setSelectedId(entry.id)}><strong>{entry.name}</strong><small>{entry.id} · {entry.family}</small></button>)}</div>

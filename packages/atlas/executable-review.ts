@@ -11,6 +11,12 @@ export interface ScientificMappingReview {
 }
 /** Review evidence only. The existing atlasBinding switch remains execution authority. */
 export const BINDING_REVIEWS: Record<string, ScientificMappingReview> = {
+  harmonic_oscillator: {
+    conversion:"omega=omega_Atlas, hbar=1; H=omega(N+1/2), including zero-point energy.",
+    basis:"Fock |n>; stationary Hermite amplitude in dimensionless q=(a+a†)/sqrt(2). No mass/physical-length calibration inferred.",
+    boundedScope:"Static 1D spectrum, selected n<=10 below the top basis state; cutoff 8..64, levels 3..12, odd grid 101..401. Shared analytic Hermite plotting is not an independent spatial solver. No oscillator scene adapter.",
+    evidence:["tests/oscillator.test.ts","workers/quantum-python/tests/test_oscillator.py","scripts/smoke.mjs"],
+  },
   two_level_pauli: {
     conversion: "delta=2*d_z, omega=2*d_x; d_0=d_y=0; hbar=1.",
     basis:
@@ -132,7 +138,7 @@ export const ADDITIONAL_MAPPING_REVIEWS: Record<string, string> = {
   ramsey_sequence_effective:
     "Pulse schedule and phase conventions are missing; continuous drive must not substitute for a Ramsey sequence.",
   harmonic_oscillator:
-    "A cavity component is not a standalone oscillator job; define Fock/position output, cutoff and analytic ladder tests.",
+    "D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted. Broader arbitrary-state/time-dependent/physical-coordinate oscillator scope remains additive; a JC component remains a separate related path.",
   driven_harmonic_oscillator:
     "Standalone drive/displacement and truncation diagnostics are needed; open JC has an additional qubit and dissipation.",
   dispersive_jc:
@@ -155,6 +161,7 @@ export interface ExecutableReview {
   atlasId: string;
   disposition:
     | "preserved-binding"
+    | "accepted-binding"
     | "adapter-candidate"
     | "new-model-required"
     | "reference-only";
@@ -169,7 +176,7 @@ function review(row: AtlasReconciliationEntry): ExecutableReview {
   return {
     atlasId: row.atlasId,
     disposition: row.lab
-      ? "preserved-binding"
+      ? row.atlasId === "harmonic_oscillator" ? "accepted-binding" : "preserved-binding"
       : ["coulomb_one_body", "spin_half_zeeman"].includes(row.atlasId)
         ? "adapter-candidate"
         : ADDITIONAL_MAPPING_REVIEWS[row.atlasId]

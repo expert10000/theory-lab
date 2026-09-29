@@ -4,13 +4,15 @@ Canonical source: `48e2036ba7c7dd5c79d54749341a79d41770cbb7`. R1's complete inve
 
 No existing lab, source definition, binding, engine, host control or scene vocabulary is removed. These milestones complete the review and freeze; they do not claim implementation of unbound physics. Source programs are evidence, not execution permission.
 
+D1 amendment: tables and digests below represent the current additive inventory, including the accepted static 1D oscillator. The historical R5 baseline at 4159d2e is preserved in packages/atlas/fixtures/reconciliation-r5.v1.json. Original protocol branches/definitions are fingerprint-tested against that baseline; new oscillator enum/variants require updated strict consumers. No existing scene schema changed.
+
 ## R2 — Executable mapping review (implemented)
 
-All 68 entries have an explicit disposition. The nine existing bindings remain enabled through the unchanged atlasBinding switch. Two restricted adapter candidates remain disabled pending unit/parameter acceptance. Every new model must extend existing contracts and worker supervision, not create a parallel executor.
+All 68 entries have an explicit disposition. The nine original bindings remain unchanged; D1 adds one accepted oscillator binding through the existing atlasBinding switch. Two restricted adapter candidates remain disabled pending unit/parameter acceptance. Every new model must extend existing contracts and worker supervision, not create a parallel executor.
 
 | Atlas ID | Disposition | Enabled existing binding | Next requirement |
 | --- | --- | --- | --- |
-| `harmonic_oscillator` | new-model-required | no | A cavity component is not a standalone oscillator job; define Fock/position output, cutoff and analytic ladder tests. |
+| `harmonic_oscillator` | accepted-binding | yes | D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted. Broader arbitrary-state/time-dependent/physical-coordinate oscillator scope remains additive; a JC component remains a separate related path. |
 | `rabi` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `jaynes_cummings` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `ssh` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
@@ -80,6 +82,16 @@ All 68 entries have an explicit disposition. The nine existing bindings remain e
 | `syndrome_defect_effective` | new-model-required | no | A reference_lab syndrome program does not establish an effective-defect Hamiltonian spectrum or transport solver. Define that scientific mapping independently. |
 
 ### Preserved scientific conversions
+
+#### harmonic_oscillator
+
+omega=omega_Atlas, hbar=1; H=omega(N+1/2), including zero-point energy.
+
+Fock |n>; stationary Hermite amplitude in dimensionless q=(a+a†)/sqrt(2). No mass/physical-length calibration inferred.
+
+Static 1D spectrum, selected n<=10 below the top basis state; cutoff 8..64, levels 3..12, odd grid 101..401. Shared analytic Hermite plotting is not an independent spatial solver. No oscillator scene adapter.
+
+Evidence: `tests/oscillator.test.ts`, `workers/quantum-python/tests/test_oscillator.py`, `scripts/smoke.mjs`.
 
 #### rabi
 
@@ -279,11 +291,11 @@ Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/
 
 ## R4 — Genuine physics/model gaps (implemented review)
 
-Every Atlas ID is classified exactly once: nine covered subspaces, two parameter-adapter candidates and 57 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.
+Every Atlas ID is classified exactly once: 10 covered subspaces, 2 parameter-adapter candidates and 56 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.
 
 | Atlas ID | Gap status | Group | Priority |
 | --- | --- | --- | --- |
-| `harmonic_oscillator` | new-model | G02 | 2 |
+| `harmonic_oscillator` | covered-subspace | — | preserve |
 | `rabi` | covered-subspace | — | preserve |
 | `jaynes_cummings` | covered-subspace | — | preserve |
 | `ssh` | covered-subspace | — | preserve |
@@ -369,11 +381,13 @@ Acceptance requirements:
 
 ### G02 — Standalone oscillator family (priority 2)
 
-Entries: `harmonic_oscillator`, `harmonic_oscillator_nd`, `driven_harmonic_oscillator`, `parametric_oscillator`, `anharmonic_oscillator`, `double_well`. Dependencies: none.
+Entries: `harmonic_oscillator_nd`, `driven_harmonic_oscillator`, `parametric_oscillator`, `anharmonic_oscillator`, `double_well`. Dependencies: none.
 
 Reuse: Cavity Fock mathematics, existing supervised jobs, binary artifacts, sweeps, native/QuTiP comparisons and scalar/complex viewers.
 
-Missing: Standalone job/results and controls; oscillator component in JC is not an independent solver. Spatial outputs need an explicit basis transform.
+Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; broader scope remains below.
+
+Missing: D1 now delivers standalone static 1D jobs/results/controls and analytic basis-to-q plotting. Arbitrary-state dynamics, drive/displacement, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. JC oscillator components remain distinct.
 
 Acceptance requirements:
 
@@ -532,15 +546,15 @@ Acceptance requirements:
 - Known syndrome/error/decoder limiting cases
 - Distinguish Hamiltonian spectrum, syndrome observations and Monte Carlo failure rates
 
-Recommended next physics milestone after reconciliation: an additive standalone 1D harmonic-oscillator lab within G02, with analytic ladder and cutoff acceptance. G01 adapter candidates can be handled independently. Rice–Mele and XY/Heisenberg are further bounded candidates. No D1 solver is implemented by this review; all current labs remain available.
+D1 now delivers the bounded standalone static 1D oscillator within G02; the group retains all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.
 
 ## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `b12fb7ffc6e61b44e5cd047bea0be3a8fecab31c141cdd4a06b95c0fddd47ec9`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `765dc57e1489bbcfa90746b2d29265aa39c9fc5d50a66c4e7911c40a1be37e67`. Digests detect drift, not publisher identity or scientific truth.
 
-### Existing scientific protocol schemas retained byte-semantically
+### Current protocol digests; legacy branches retained
 
 Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platform line-ending differences. No existing job/result/scene schema was edited by R2–R5.
 

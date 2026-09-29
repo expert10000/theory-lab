@@ -95,6 +95,11 @@ try {
     path: join(root, "artifacts", "web-atlas-r1.png"),
     fullPage: true,
   });
+  await page.getByLabel("Search Atlas").fill("harmonic_oscillator");
+  await page.getByRole("button",{name:/^Quantum harmonic oscillator harmonic_oscillator/}).click();
+  assert.match(await page.getByTestId("atlas-lab-coverage").innerText(),/Bound operation: oscillator.*Web compute control: not available/);
+  assert.equal(await page.getByTestId("web-atlas-load").count(),0,"new oscillator binding remains desktop-only");
+  assert.match(await page.getByTestId("web-atlas").innerText(),/10 tested lab bindings/);
   await page.getByLabel("Search Atlas").fill("Su-Schrieffer-Heeger");
   await page
     .getByRole("button", { name: /Su-Schrieffer-Heeger model/ })

@@ -164,6 +164,7 @@ export function webSupportsAtlasBinding(binding: AtlasBinding): boolean {
   return LAB_IMPLEMENTATIONS[binding.modelId].webControl;
 }
 const primaryOperation: Record<AtlasBinding["kind"], Operation> = {
+  oscillator: "oscillator",
   spectrum: "diagonalize",
   dynamics: "evolve",
   cavity: "cavity",
