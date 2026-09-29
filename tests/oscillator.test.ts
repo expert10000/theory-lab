@@ -8,6 +8,11 @@ import currentJobSchema from "../packages/contracts/schemas/quantum-job.v1.json"
 import currentResultSchema from "../packages/contracts/schemas/quantum-result.v1.json";
 import legacySchemas from "../packages/atlas/fixtures/protocols-r5.v1.json";
 import { createHash } from "node:crypto";
+import { WorkerSupervisor } from "../apps/desktop/main/worker";
+import { RunStore } from "../apps/desktop/main/runs";
+import { mkdtemp, readFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
 
 test("D1 appends oscillator variants without changing any legacy job/result definitions or branches", () => {
   for (const [name, schema] of [["job", currentJobSchema], ["result", currentResultSchema]] as const) {
@@ -43,4 +48,30 @@ test("stationary oscillator data is checked independently, not renormalized or c
   for (const mutate of [(r:OscillatorResult)=>{r.spectrum.energies[0]=0;},(r:OscillatorResult)=>{r.state.q[1]+=1;},(r:OscillatorResult)=>{r.state.amplitude[100]*=-1;},(r:OscillatorResult)=>{r.analysis.gridProbability=.1;}]){
     const bad=structuredClone(result);mutate(bad);assert.equal(consistentOscillatorResult(job,bad),false);
   }
+});
+
+test("real supervised oscillator engines agree and persist/export verified results", async()=>{
+  const worker=new WorkerSupervisor(process.cwd());
+  const root=await mkdtemp(join(tmpdir(),"qlab-oscillator-")), store=new RunStore(join(root,"runs"),join(root,"artifacts"));
+  try {
+    assert.equal((await worker.start()).state,"READY");
+    assert.ok(worker.status.capabilities?.operations.includes("oscillator"));
+    const results:OscillatorResult[]=[];
+    for(const engine of ["qutip","native"] as const){
+      const job=oscillatorJob(`oscillator-${engine}`,{...OSCILLATOR_DEFAULTS,state:"2"},engine);
+      const result=await worker.request("quantum.run",job);
+      assert.ok(isQuantumResult(result)&&result.operation==="oscillator");
+      assert.ok(consistentOscillatorResult(job,result));results.push(result);
+      await store.record(job,result);
+      await store.export(result.runId,"csv",join(root,`${engine}.csv`));
+      await store.export(result.runId,"svg",join(root,`${engine}.svg`));
+      await store.export(result.runId,"manifest",join(root,`${engine}.json`));
+      assert.match(await readFile(join(root,`${engine}.csv`),"utf8"),/q,real_amplitude,density/);
+      assert.match(await readFile(join(root,`${engine}.svg`),"utf8"),/<svg/);
+      await assert.rejects(store.record(job,{...result,analysis:{...result.analysis,qVariance:3.5}}),/inconsistent/);
+    }
+    assert.equal((await store.list()).length,2);
+    results[0].spectrum.energies.forEach((v,i)=>assert.ok(Math.abs(v-results[1].spectrum.energies[i])<1e-12));
+    assert.ok(Math.abs(results[0].analysis.qVariance-results[1].analysis.qVariance)<1e-12);
+  } finally {await worker.stop();}
 });
