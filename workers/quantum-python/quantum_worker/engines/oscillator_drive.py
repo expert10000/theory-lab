@@ -124,6 +124,8 @@ def oscillator_drive(job, output_dir, cancelled, progress, _forcing=None):
                            "rows": rows, "columns": columns, "bytes": rows*len(columns)*8, "sha256": digest.hexdigest()},
                   "analysis": analysis, "provenance": {"pythonVersion": platform.python_version(), "workerVersion": __version__,
                       "computedAt": datetime.now(timezone.utc).isoformat(), "durationMs": (perf_counter()-started)*1000}}
+        if _forcing:
+            result["integration"] = _forcing["integration"]()
         validate("quantum-result", result)
         os.replace(temporary, final)
         return result

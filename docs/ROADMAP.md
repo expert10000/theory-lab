@@ -65,15 +65,17 @@ an inferred Atlas envelope. Arbitrary envelopes/pulses and all wider G02 goals
 remain planned; no web compute, scene or Math3D expansion. See
 [D1_DRIVEN_OSCILLATOR.md](D1_DRIVEN_OSCILLATOR.md).
 
-### Recommended next three commits (planned)
+### Gaussian pulse continuation (implemented)
 
 D1-011 adds a bounded declarative Gaussian pulse and independently verified
 worker evolution; D1-012 adds pulse controls and cutoff/time-resolution
 inspection in the existing Electron lab; D1-013 adds durable envelope data,
-exports/restoration, reviewed Atlas coverage and acceptance. These are planned,
-not implemented. See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md)
-for scientific gates and limits. All current modes, eleven bindings and broader
-G02 goals remain; no Math3D or web compute extension is authorized by this plan.
+exports/restoration, reviewed Atlas coverage and acceptance. All three are
+implemented. See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md)
+for delivery, scientific gates and limits. All previous modes and eleven Atlas
+load presets remain unchanged; Gaussian is a separate explicit Lab choice.
+Arbitrary waveforms and all broader G02 goals remain planned. No Math3D, new
+scene vocabulary or web oscillator compute permission is introduced.
 
 ## 1. Technology decision
 

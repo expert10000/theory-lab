@@ -1,16 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readdir } from "node:fs/promises";
+import { mkdtemp, readdir, readFile, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
 import jobSchema from "../packages/contracts/schemas/quantum-job.v1.json";
 import resultSchema from "../packages/contracts/schemas/quantum-result.v1.json";
 import baseline from "../packages/contracts/fixtures/protocols-d1-drive.v1.json";
-import { assertJob } from "../packages/contracts";
+import { assertJob, type PulsedOscillatorResult } from "../packages/contracts";
 import { WorkerSupervisor } from "../apps/desktop/main/worker";
 import { EvolutionCoordinator } from "../apps/desktop/main/evolution";
+import { RunStore } from "../apps/desktop/main/runs";
 import {
   PULSED_OSCILLATOR_DEFAULTS,
   pulsedOscillatorJob,
@@ -94,7 +95,8 @@ test("supervised pulse verifies coefficients, quadrature, power, density, conver
     assert.ok(
       worker.status.capabilities?.operations.includes("oscillator_pulse"),
     );
-    const outputs = [];
+    const outputs: { result: PulsedOscillatorResult; data: Float64Array }[] =
+      [];
     for (const engine of ["native", "qutip"] as const) {
       const job = pulsedOscillatorJob(
           `pulse-${engine}`,
@@ -107,6 +109,14 @@ test("supervised pulse verifies coefficients, quadrature, power, density, conver
       outputs.push({ result, data });
       assert.ok(result.analysis.maxNumberError < 1e-7);
       assert.ok(result.analysis.maxNormDrift < 1e-7);
+      assert.equal(
+        result.integration.method,
+        engine === "qutip" ? "qutip-vern9" : "scipy-dop853",
+      );
+      assert.ok(
+        result.integration.evaluations > 0 &&
+          result.integration.evaluations <= 1000000,
+      );
       const row = 100,
         ref = pulsedReference(result.model.parameters, result.initialState, 5);
       assert.ok(
@@ -178,6 +188,43 @@ test("supervised pulse verifies coefficients, quadrature, power, density, conver
       ),
       nr = await coordinator.run(narrow);
     checkPulsedOscillatorData(nr, await coordinator.readData(narrow.jobId));
+    const complex = pulsedOscillatorJob(
+      "pulse-complex-edge",
+      {
+        ...PULSED_OSCILLATOR_DEFAULTS,
+        initial: "fock",
+        index: "2",
+        omega: ".1",
+        driveFrequency: "5",
+        epsilonRe: ".3",
+        epsilonIm: ".4",
+        cutoff: "64",
+        stop: "20",
+        pulseWidth: ".05",
+        pulseCenter: "9.731",
+        maxStep: ".005",
+        samples: "3",
+      },
+      "qutip",
+    );
+    const cr = await coordinator.run(complex);
+    checkPulsedOscillatorData(cr, await coordinator.readData(complex.jobId));
+    assert.throws(
+      () =>
+        comparePulseConvergence(
+          outputs[0].result,
+          outputs[0].data,
+          {
+            ...highResult,
+            model: {
+              ...highResult.model,
+              parameters: { ...highResult.model.parameters, pulseCenter: 4 },
+            },
+          },
+          high,
+        ),
+      /same pulse/,
+    );
     cancel = "pulse-cancel";
     await assert.rejects(
       coordinator.run(
@@ -191,6 +238,109 @@ test("supervised pulse verifies coefficients, quadrature, power, density, conver
     );
     await worker.request("health");
     assert.equal(worker.status.state, "READY");
+  } finally {
+    await worker.stop();
+  }
+});
+
+test("pulse runs export after restart and reject corruption even with recomputed hashes", async () => {
+  const root = await mkdtemp(join(tmpdir(), "qlab-pulse-store-")),
+    artifacts = join(root, "artifacts"),
+    worker = new WorkerSupervisor(process.cwd()),
+    coordinator = new EvolutionCoordinator(worker, artifacts, () => {}),
+    store = new RunStore(join(root, "runs"), artifacts);
+  try {
+    await worker.start();
+    const job = pulsedOscillatorJob(
+        "pulse-durable",
+        {
+          ...PULSED_OSCILLATOR_DEFAULTS,
+          epsilonRe: ".15",
+          epsilonIm: ".2",
+          pulseCenter: "4",
+          pulseWidth: "1.25",
+          maxStep: ".01",
+        },
+        "native",
+      ),
+      result = await coordinator.run(job);
+    await store.record(job, result);
+    await assert.rejects(
+      store.record(
+        { ...job, solver: { ...job.solver, maxStep: 0.005 } },
+        { ...result, runId: "run-inconsistent-pulse" },
+      ),
+      /inconsistent/,
+    );
+    const restarted = new RunStore(
+      join(root, "runs"),
+      join(root, "no-live-artifacts"),
+    );
+    assert.equal((await restarted.list())[0].operation, "oscillator_pulse");
+    for (const format of ["csv", "svg", "manifest"] as const)
+      await restarted.export(
+        result.runId,
+        format,
+        join(root, `pulse.${format}`),
+      );
+    const csv = await readFile(join(root, "pulse.csv"), "utf8");
+    assert.ok(csv.startsWith(result.data.columns.join(",")));
+    assert.equal(csv.trim().split("\n").length, result.data.rows + 1);
+    const svg = await readFile(join(root, "pulse.svg"), "utf8");
+    assert.match(svg, /q_mean/);
+    assert.match(svg, /p_mean/);
+    assert.doesNotMatch(svg, /q_variance/);
+    const exported = JSON.parse(
+      await readFile(join(root, "pulse.manifest"), "utf8"),
+    );
+    assert.deepEqual(exported.job, job);
+    assert.deepEqual(exported.result.analysis, result.analysis);
+    assert.deepEqual(exported.result.integration, result.integration);
+    assert.equal(exported.manifest.artifactSha256, result.data.sha256);
+    await assert.rejects(
+      restarted.scene(result.runId),
+      /no QVIS-002 scene adapter/,
+    );
+    const dir = join(root, "runs", result.runId),
+      corrupt = await readFile(join(dir, "data.f64"));
+    // Preserve every phase-independent readout while forging the stipulated
+    // absolute coefficient phase. Byte hashes alone would accept this.
+    const stride = result.data.columns.length;
+    for (let row = 0; row < result.data.rows; row++)
+      for (let col = 13; col < stride; col++) {
+        const offset = (row * stride + col) * 8;
+        corrupt.writeDoubleLE(-corrupt.readDoubleLE(offset), offset);
+      }
+    await writeFile(join(dir, "data.f64"), corrupt);
+    await assert.rejects(
+      restarted.export(result.runId, "csv", join(root, "corrupt.csv")),
+      /integrity/,
+    );
+    const sha = (v: Uint8Array | string) =>
+        createHash("sha256").update(v).digest("hex"),
+      forged = { ...result, data: { ...result.data, sha256: sha(corrupt) } },
+      text = JSON.stringify(forged, null, 2) + "\n",
+      manifest = JSON.parse(await readFile(join(dir, "manifest.json"), "utf8"));
+    manifest.artifactSha256 = forged.data.sha256;
+    manifest.hashes.result = sha(text);
+    await writeFile(join(dir, "result.json"), text);
+    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    for (const format of ["csv", "svg", "manifest"] as const)
+      await assert.rejects(
+        restarted.export(result.runId, format, join(root, `forged.${format}`)),
+        /amplitudes/,
+      );
+    await writeFile(join(artifacts, result.data.path), corrupt);
+    await assert.rejects(
+      store.record(job, { ...forged, runId: "run-forged-pulse" }),
+      /amplitudes/,
+    );
+    assert.ok(
+      !(await readdir(join(root, "runs"))).includes("run-forged-pulse"),
+    );
+    assert.ok(
+      !(await readdir(join(root, "runs"))).includes("run-inconsistent-pulse"),
+    );
   } finally {
     await worker.stop();
   }

@@ -14,8 +14,8 @@ export const BINDING_REVIEWS: Record<string, ScientificMappingReview> = {
   driven_harmonic_oscillator:{
     conversion:"omega unchanged, hbar=1; epsilon(t)=epsilon0 exp[-i nu(t-tStart)] is an explicitly chosen Lab subset of the model-defined Atlas envelope. Lab adds omega/2 identity; energies/coefficients retain its energy/global-phase offset.",
     basis:"Finite Fock |n>, normalized initial coherent projection or n<=10. q,p are dimensionless finite projected ladder operators; selected density uses shared Hermite reconstruction.",
-    boundedScope:"omega .1..5; cutoff 8..64; |epsilon0|<=.5, nu 0..5; duration<=20, omega*duration<=50, |alpha|+|epsilon0|*duration<=4. No arbitrary envelope, damping, parametric/anharmonic/ND, physical-length calibration, web computation or scene adapter. Drive .2/nu=1 is a declared Lab preset, not inferred Atlas data.",
-    evidence:["tests/oscillator-drive.test.ts","workers/quantum-python/tests/test_oscillator_drive.py","scripts/smoke.mjs"],
+    boundedScope:"Existing Atlas binding remains the unchanged monochromatic preset: omega .1..5; cutoff 8..64; |epsilon0|<=.5, nu 0..5; duration<=20, omega*duration<=50, |alpha|+|epsilon0|*duration<=4. The same lab additionally accepts a separately declared Gaussian pulse job: width .05..5, elapsed center within interval, maxStep .001..05 <=width/8, <=20000 step intervals and <=1000000 solver evaluations, |alpha|+|epsilon0|*min(duration,sqrt(2pi)*width)<=4. Explicit Gaussian Lab preset uses epsilon0=.2, nu=1, width=1, center=5, duration=10, maxStep=.02; these are not Atlas defaults. No arbitrary waveform, damping, parametric/anharmonic/ND, physical-length calibration, web computation or scene adapter.",
+    evidence:["tests/oscillator-drive.test.ts","workers/quantum-python/tests/test_oscillator_drive.py","tests/oscillator-pulse.test.ts","workers/quantum-python/tests/test_oscillator_pulse.py","scripts/smoke.mjs"],
   },
   harmonic_oscillator: {
     conversion:"omega=omega_Atlas, hbar=1; H=omega(N+1/2), including zero-point energy.",
@@ -146,7 +146,7 @@ export const ADDITIONAL_MAPPING_REVIEWS: Record<string, string> = {
   harmonic_oscillator:
     "D1 standalone static 1D Fock spectrum and stationary Hermite density now accepted via the unchanged static Atlas binding. The same lab adds bounded free Fock/projected-coherent dynamics with verified amplitudes, q/p diagnostics and persistence. Broader arbitrary-state/driven/parametric/anharmonic/ND/physical-coordinate scope remains additive; a JC component remains a separate related path.",
   driven_harmonic_oscillator:
-    "D1 now delivers the bounded monochromatic standalone drive with analytic displacement, finite-phase checks, boundary/reference errors and durable data. General envelopes, pulses and broader driven scope remain missing; open JC includes an additional qubit/dissipation and remains separate.",
+    "D1 now delivers bounded monochromatic and declarative Gaussian pulses with displacement quadrature, finite-phase checks, boundary/reference errors and durable data. The Atlas load preset remains monochromatic; Gaussian is an explicit additional Lab choice. Arbitrary waveforms, other envelopes/pulses and broader driven scope remain missing; open JC includes an additional qubit/dissipation and remains separate.",
   dispersive_jc:
     "Source uses atom x cavity and rotating-frame H_eff=(Delta+chi)Pe+chi*n*sigma_z, chi=g^2/Delta, sigma_z=2Pe-I. At hbar=1: Delta=omega_q-omega_c; H_source=H_Atlas-omega_c*(n+Pe)+(omega_q+chi)*I/2 after tensor conversion. Inferring g from Atlas chi requires chi*Delta>=0 and an explicit coupling-sign convention, not a unique default. Freeze nonzero detuning, |g/Delta|<<1, n<<n_crit and compare to full JC before integration.",
   tavis_cummings:

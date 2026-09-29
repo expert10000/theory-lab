@@ -18,6 +18,7 @@ import { OscillatorLab } from "./OscillatorLab";
 import { OSCILLATOR_DEFAULTS } from "../../../packages/models/oscillator";
 import { OSCILLATOR_DYNAMICS_DEFAULTS } from "../../../packages/models/oscillator-dynamics";
 import { DRIVEN_OSCILLATOR_DEFAULTS } from "../../../packages/models/oscillator-drive";
+import { PULSED_OSCILLATOR_DEFAULTS } from "../../../packages/models/oscillator-pulse";
 import { PresetPanel } from "./PresetPanel";
 import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets";
 import { RunHistory } from "./RunHistory";
@@ -64,7 +65,7 @@ export function App() {
     useState<EvolutionModelId>("driven_two_level");
   const [cavityModel, setCavityModel] = useState<CavityModelId>("jaynes_cummings");
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
-  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven">>>({});
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
@@ -84,6 +85,7 @@ export function App() {
   const collectOscillatorDynamics = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorDynamics"]>) => { workspaceParts.current.oscillatorDynamics = value; }, []);
   const collectOscillatorMode = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorMode"]>) => { workspaceParts.current.oscillatorMode = value; }, []);
   const collectOscillatorDriven = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorDriven"]>) => { workspaceParts.current.oscillatorDriven = value; }, []);
+  const collectOscillatorPulse = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorPulse"]>) => { workspaceParts.current.oscillatorPulse = value; }, []);
   function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody && workspaceParts.current.circuit) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
@@ -239,6 +241,7 @@ export function App() {
       oscillator: parts.oscillator ?? OSCILLATOR_DEFAULTS,
       oscillatorDynamics: parts.oscillatorDynamics ?? OSCILLATOR_DYNAMICS_DEFAULTS,
       oscillatorDriven: parts.oscillatorDriven ?? DRIVEN_OSCILLATOR_DEFAULTS,
+      oscillatorPulse: parts.oscillatorPulse ?? PULSED_OSCILLATOR_DEFAULTS,
       oscillatorMode: parts.oscillatorMode ?? "static" };
     try { await window.quantum.saveWorkspace(snapshot); setWorkspaceMessage("Workspace saved"); }
     catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
@@ -511,7 +514,7 @@ export function App() {
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
-          <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch}/></div>
+          <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse}/></div>
           {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (

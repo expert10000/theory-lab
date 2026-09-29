@@ -49,6 +49,13 @@ are implemented. All preceding bindings are preserved; general envelopes,
 pulses, damping and broader oscillator physics remain separate work. See
 [D1_DRIVEN_OSCILLATOR.md](D1_DRIVEN_OSCILLATOR.md). Math3D is unchanged.
 
+D1-011–013 are implemented: bounded declarative Gaussian pulses, independent
+QuTiP-Verner9/native-DOP853 evolution and finite/displacement verification,
+pulse controls and bounded cutoff/solver-step comparisons, endpoint tails,
+verified persistence/exports and input-only restoration. All eleven existing
+Atlas load presets remain unchanged; Gaussian is an additional explicit Lab
+choice. See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md).
+
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |
 | QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |
@@ -107,18 +114,18 @@ R5 is implemented: strict additive atlas-lab-reconciliation/v1 metadata with
 coverage/digests and compatibility gates. Existing Lab features and scientific
 protocols are retained; no unbound solver is claimed implemented.
 B/C scaffolding is not imported as a parallel architecture;
-D1 physics was not started by reconciliation itself; D1-001–010 were delivered
+D1 physics was not started by reconciliation itself; D1-001–013 were delivered
 subsequently as recorded above. Math3D integration remains a separate track.
 
-### Recommended next Lab sequence (planned, not implemented)
+### Gaussian pulse Lab sequence (implemented)
 
 | ID | Next delivery | Status |
 | --- | --- | --- |
-| D1-011 | Bounded Gaussian envelope, append-only contracts, independent worker engines and displacement/finite-model checks | Planned |
-| D1-012 | Pulse controls, drive plot and bounded cutoff/time-resolution inspection in the existing oscillator lab | Planned |
-| D1-013 | Durable pulse provenance/exports/restoration, reviewed existing Atlas mapping and regression acceptance | Planned |
+| D1-011 | Bounded Gaussian envelope, append-only contracts, independent worker engines and displacement/finite-model checks | Implemented |
+| D1-012 | Pulse controls, drive plot and bounded cutoff/time-resolution inspection in the existing oscillator lab | Implemented |
+| D1-013 | Durable pulse provenance/exports/restoration, reviewed existing Atlas mapping and regression acceptance | Implemented |
 
-See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md). This proposal
+See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md). This delivery
 extends existing architecture and retains all delivered modes and eleven
 bindings. Gaussian pulses do not complete the general Atlas envelope family;
 arbitrary waveforms, damping and the other G02 requirements remain planned.

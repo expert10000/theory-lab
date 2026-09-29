@@ -226,6 +226,13 @@ export function consistentPulsedOscillatorResult(
     p = j.model.parameters;
   return (
     r.jobId === j.jobId &&
+    r.integration?.method ===
+      (j.engine === "qutip" ? "qutip-vern9" : "scipy-dop853") &&
+    r.integration.rtol === 1e-10 &&
+    r.integration.atol === 1e-12 &&
+    Number.isInteger(r.integration.evaluations) &&
+    r.integration.evaluations >= 1 &&
+    r.integration.evaluations <= 1000000 &&
     r.engine.name === j.engine &&
     JSON.stringify(r.model) === JSON.stringify(j.model) &&
     JSON.stringify(r.initialState) === JSON.stringify(j.initialState) &&

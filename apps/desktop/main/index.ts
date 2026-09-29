@@ -7,7 +7,7 @@ import {
   session,
   type IpcMainInvokeEvent,
 } from "electron";
-import { join } from "node:path";
+import { join, isAbsolute } from "node:path";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
@@ -34,6 +34,11 @@ function trusted(event: IpcMainInvokeEvent) {
 }
 
 app.setName("Quantum Hamiltonian Lab");
+// Acceptance uses a fresh profile; ordinary launches retain the existing path.
+if(process.env.QLAB_TEST_PROFILE){
+  if(!isAbsolute(process.env.QLAB_TEST_PROFILE))throw new Error("Test profile must be an absolute existing directory");
+  app.setPath("userData",process.env.QLAB_TEST_PROFILE);
+}
 function createWindow() {
   const win = new BrowserWindow({
     width: 1380,

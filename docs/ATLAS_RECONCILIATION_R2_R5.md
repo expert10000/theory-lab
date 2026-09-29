@@ -25,7 +25,7 @@ All 68 entries have an explicit disposition. The nine original bindings and tent
 | `rotating_frame_qubit` | new-model-required | no | New effective-model path required: specify frame, detuning sign, rotation and RWA validity. A lab-frame cosine solver is not the same result contract semantics. |
 | `ramsey_sequence_effective` | new-model-required | no | Pulse schedule and phase conventions are missing; continuous drive must not substitute for a Ramsey sequence. |
 | `floquet_two_level` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
-| `driven_harmonic_oscillator` | accepted-binding | yes | D1 now delivers the bounded monochromatic standalone drive with analytic displacement, finite-phase checks, boundary/reference errors and durable data. General envelopes, pulses and broader driven scope remain missing; open JC includes an additional qubit/dissipation and remains separate. |
+| `driven_harmonic_oscillator` | accepted-binding | yes | D1 now delivers bounded monochromatic and declarative Gaussian pulses with displacement quadrature, finite-phase checks, boundary/reference errors and durable data. The Atlas load preset remains monochromatic; Gaussian is an explicit additional Lab choice. Arbitrary waveforms, other envelopes/pulses and broader driven scope remain missing; open JC includes an additional qubit/dissipation and remains separate. |
 | `parametric_oscillator` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `tavis_cummings` | new-model-required | no | Source uses emitters x cavity, rotating-frame Delta*sum(Pe)+g*(a^dag J_-+a J_+). At hbar=1, J_z=sum(Pe)-N/2 and Delta=omega_q-omega_c: H_source=H_Atlas-omega_c*(n+sum(Pe))+N*omega_q*I/2. Atlas has no default emitter count, so N/basis/cutoff must be explicit new model data. Bound 2^N*cutoff and result shapes; test N=1, sqrt(N) bright coupling and dark states. Do not map to single-emitter JC. |
 | `dicke` | new-model-required | no | Collective model required; one-qubit Rabi is only the N=1 restriction, not an enabled mapping. |
@@ -159,9 +159,9 @@ omega unchanged, hbar=1; epsilon(t)=epsilon0 exp[-i nu(t-tStart)] is an explicit
 
 Finite Fock |n>, normalized initial coherent projection or n<=10. q,p are dimensionless finite projected ladder operators; selected density uses shared Hermite reconstruction.
 
-omega .1..5; cutoff 8..64; |epsilon0|<=.5, nu 0..5; duration<=20, omega*duration<=50, |alpha|+|epsilon0|*duration<=4. No arbitrary envelope, damping, parametric/anharmonic/ND, physical-length calibration, web computation or scene adapter. Drive .2/nu=1 is a declared Lab preset, not inferred Atlas data.
+Existing Atlas binding remains the unchanged monochromatic preset: omega .1..5; cutoff 8..64; |epsilon0|<=.5, nu 0..5; duration<=20, omega*duration<=50, |alpha|+|epsilon0|*duration<=4. The same lab additionally accepts a separately declared Gaussian pulse job: width .05..5, elapsed center within interval, maxStep .001..05 <=width/8, <=20000 step intervals and <=1000000 solver evaluations, |alpha|+|epsilon0|*min(duration,sqrt(2pi)*width)<=4. Explicit Gaussian Lab preset uses epsilon0=.2, nu=1, width=1, center=5, duration=10, maxStep=.02; these are not Atlas defaults. No arbitrary waveform, damping, parametric/anharmonic/ND, physical-length calibration, web computation or scene adapter.
 
-Evidence: `tests/oscillator-drive.test.ts`, `workers/quantum-python/tests/test_oscillator_drive.py`, `scripts/smoke.mjs`.
+Evidence: `tests/oscillator-drive.test.ts`, `workers/quantum-python/tests/test_oscillator_drive.py`, `tests/oscillator-pulse.test.ts`, `workers/quantum-python/tests/test_oscillator_pulse.py`, `scripts/smoke.mjs`.
 
 #### qwz
 
@@ -395,9 +395,9 @@ Entries: `harmonic_oscillator_nd`, `parametric_oscillator`, `anharmonic_oscillat
 
 Reuse: Cavity Fock mathematics, existing supervised jobs, binary artifacts, sweeps, native/QuTiP comparisons and scalar/complex viewers.
 
-Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below; driven_harmonic_oscillator: D1 bounded monochromatic complex forcing only; general envelopes/pulses and broader driven requirements remain missing below.
+Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below; driven_harmonic_oscillator: D1 bounded monochromatic and declarative Gaussian complex forcing; general envelopes/pulses and broader driven requirements remain missing below.
 
-Missing: D1 now delivers static/free 1D and bounded monochromatic complex forcing with displacement/truncation diagnostics and persistence. Arbitrary-state dynamics, general driven envelopes/pulses, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. Partial driven coverage is recorded in deliveredSubspaces, not a full-envelope completion. JC components remain distinct.
+Missing: D1 now delivers static/free 1D, bounded monochromatic forcing and Gaussian pulses with independent displacement/finite dynamics, cutoff/step diagnostics and persistence. Arbitrary-state dynamics, arbitrary waveforms and general driven envelopes/pulses beyond Gaussian, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. Partial driven coverage is recorded in deliveredSubspaces, not a full-envelope completion. JC components remain distinct.
 
 Acceptance requirements:
 
@@ -562,7 +562,7 @@ D1 now delivers bounded static/free 1D motion and monochromatic coherent forcing
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `e63609388c627fdb15dccd47ac8dc0eaaadba2c80a5fa9b5d46358a1f0f34553`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `4d52257f8a7542366698b1df59f4768c0bd2b71ddf3f0c2010f721809459e17d`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 
@@ -571,7 +571,7 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
 | packages/contracts/schemas/quantum-job.v1.json | `6c4bf7cc1c2119967d0b4ae6f5761401aee44ba1bf381e903296561afa3957dd` |
-| packages/contracts/schemas/quantum-result.v1.json | `7c47d2e89b34b7df3c5849e99b614d7378d56474ded903450305c9005980f016` |
+| packages/contracts/schemas/quantum-result.v1.json | `cda6ed50f291bbd294fc062ef3910aeb74b4a0cb53ae7d2ab7084a05f5714281` |
 | packages/contracts/schemas/worker-capabilities.v1.json | `56c7ce1690cd5db61554e995fdc8dfcce84c35dfc28fefad5249e4b0469c37b2` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
 | packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |

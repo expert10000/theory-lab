@@ -95,8 +95,8 @@ acceptance retain their existing permissions and scene vocabulary. The pinned
 ## Delivery and continuation
 
 Delivered in commits `af0d456` (D1-008 worker), `b578367` (D1-009 Electron UI)
-and `2b90d3b` (D1-010 Atlas/durability/acceptance). The next recommended sequence
-is D1-011–013: bounded Gaussian pulses, pulse/convergence controls and durable
-acceptance. It is **planned, not implemented**; see
+and `2b90d3b` (D1-010 Atlas/durability/acceptance). D1-011–013 subsequently
+implemented bounded Gaussian pulses, pulse/convergence controls and durable
+acceptance; see
 [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md). The delivered
 monochromatic contract and preset remain unchanged.

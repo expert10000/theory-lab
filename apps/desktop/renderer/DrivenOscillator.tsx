@@ -438,6 +438,17 @@ export function DrivenOscillator({
           </button>
           {gaussian && (
             <button
+              data-testid="pulse-preset"
+              disabled={running}
+              onClick={() =>
+                reset(PULSED_OSCILLATOR_DEFAULTS, "GAUSSIAN LAB PRESET LOADED")
+              }
+            >
+              Load Gaussian Lab preset
+            </button>
+          )}
+          {gaussian && (
+            <button
               data-testid="study-oscillator-pulse"
               disabled={!preview || !ready || running || !studyAllowed}
               onClick={() => void run(true)}
@@ -685,6 +696,15 @@ export function DrivenOscillator({
             spatial-grid convergence claim.
           </p>
           <div className="plot-caption">
+            {computed.result.operation === "oscillator_pulse" && (
+              <span>
+                {computed.result.integration.method} · rtol{" "}
+                {computed.result.integration.rtol} · atol{" "}
+                {computed.result.integration.atol} ·{" "}
+                {computed.result.integration.evaluations} integration
+                evaluations · maxStep {computed.result.solver.maxStep}
+              </span>
+            )}
             <span>
               {computed.result.engine.name} {computed.result.engine.version} ·
               Python {computed.result.provenance.pythonVersion} ·{" "}

@@ -1,14 +1,17 @@
-# D1-011–013 — bounded Gaussian drive pulses (planned)
+# D1-011–013 — bounded Gaussian drive pulses
 
-Status: D1-011–012 implemented; D1-013 remains planned until acceptance.
-D1-001–010 remain implemented. This extends the existing oscillator lab, typed contracts, worker
-supervision and durable numerical pipeline; it creates no parallel architecture.
+Status: D1-011–013 implemented at the bounded scope recorded below. This
+historical plan now also records delivery and acceptance; its broader goals
+remain unchanged.
+D1-001–010 remain implemented. This extends the existing oscillator lab, typed
+contracts, worker supervision and durable numerical pipeline; it creates no
+parallel architecture.
 
-| Milestone | Proposed commit | Status |
+| Milestone | Commit sequence | Status |
 | --- | --- | --- |
 | D1-011 | `feat(worker): add bounded Gaussian oscillator pulses` | Implemented |
 | D1-012 | `feat(desktop): add pulse controls and oscillator convergence inspection` | Implemented |
-| D1-013 | `feat(lab): persist pulsed oscillator runs and record acceptance` | Planned |
+| D1-013 | `feat(lab): persist pulsed oscillator runs and record acceptance` | Implemented |
 
 ## D1-011 — contracts and independent worker engines
 
@@ -22,7 +25,9 @@ The maximum artifact is 1,129,128 bytes in
 columns followed by complex coefficients. The new `oscillator_pulse` branch
 leaves every previously delivered schema branch and definition unchanged.
 
-Native uses SciPy DOP853, QuTiP uses lab-frame SESolver; both retain raw output,
+Native uses SciPy DOP853; QuTiP uses lab-frame SESolver with its own Verner9
+integrator, avoiding the SciPy/Fortran callback exception wrapper. Both retain
+raw output,
 rtol=1e-10, atol=1e-12 and bounded internal steps independent of plotted samples.
 Displacement uses adaptive scalar quadrature with explicit peak breakpoints.
 The host independently checks finite coefficients with interaction-picture RK4
@@ -30,6 +35,10 @@ and displacement with composite Simpson quadrature, without renormalization.
 Endpoint envelopes and envelope-derivative power are verified alongside moments,
 phases, finite/full-reference discrepancies and sampled work. Gaussian tails are
 not silently dropped or renormalized. Cancellation removes partial artifacts.
+Integration work has a hard ceiling of 1,000,000 native RHS or QuTiP coefficient
+evaluations per job. Exhaustion fails without a published artifact. Results
+explicitly record `qutip-vern9` or `scipy-dop853`, fixed rtol/atol and evaluation
+count; these method/tolerance fields are checked and retained in exports.
 
 Start with one declarative envelope, not user code or arbitrary expressions:
 
@@ -40,13 +49,13 @@ dimensionless q/p and the explicit omega/2 offset relative to the Atlas.
 Report nonzero envelope tails at the interval endpoints; do not describe a
 Gaussian restricted to a finite interval as an exactly compact pulse.
 
-Before implementation, freeze limits for width, interval, amplitude, sample
-count, internal integration work and artifact size. Retain the conservative
+The delivered limits freeze width, interval, amplitude, sample count, internal
+integration work and artifact size. Retain the conservative
 displacement bound `|alpha0|+integral |epsilon(t)| dt<=4`, using an upper bound
 when validating inputs. Enforce solver resolution for narrow pulses rather
 than relying on plotted time samples to resolve the Hamiltonian.
 
-Add strict variants without changing any delivered static/free/monochromatic
+Strict variants were added without changing any delivered static/free/monochromatic
 job or result branch. QuTiP integrates the laboratory Hamiltonian; the native
 engine independently integrates the finite Fock coefficients with explicit
 error tolerances. The constant rotating-frame eigensystem alone is no longer
@@ -95,24 +104,48 @@ the entire infinite-dimensional solution.
 
 ## D1-013 — durability, review and acceptance
 
-Store the complete declarative envelope, solver settings, coefficients,
+Delivered: verified pulse coefficients, declarative Gaussian parameters,
+integration settings/count, tails, energy/power/work diagnostics and provenance
+survive independently of live worker artifacts. CSV exports every column; SVG
+exports q/p trajectories; manifest export includes the complete job/result.
+Load/export verifies scientific content as well as hashes, including a forged
+global coefficient phase with recomputed byte and metadata hashes. Invalid
+data is rejected before creating a new durable run directory.
+
+Optional `oscillatorPulse` workspace inputs and `pulse` mode remain compatible
+with old snapshots. Restore never fabricates a computed plot or convergence
+study. All eleven Atlas bindings are fingerprinted against `85ac21f` and remain
+unchanged. The existing driven binding still loads monochromatic mode; the
+separate **Load Gaussian Lab preset** button selects width=1, center=5,
+duration=10, epsilon0=.2, nu=1 and maxStep=.02. These are explicit Lab choices,
+not canonical Atlas defaults or a duplicate binding. The existing scientific
+mapping review records this additional bounded subspace without reducing G02.
+
+Completed runs store the complete declarative envelope, solver settings, coefficients,
 diagnostics and provenance; verify scientific content as well as hashes on
-load and export. Add CSV/SVG/manifest export, optional backward-compatible
+load and export. Delivery includes CSV/SVG/manifest export, optional backward-compatible
 workspace settings and restart tests through existing mechanisms.
 
-Extend the existing `driven_harmonic_oscillator` binding review only after
-scientific acceptance. Do not add a duplicate Atlas entry or silently change
-its current monochromatic preset. Pulse presets must be explicit Lab choices,
+The existing `driven_harmonic_oscillator` binding review was extended after
+scientific acceptance, without a duplicate Atlas entry or any change to
+its monochromatic preset. Pulse presets must be explicit Lab choices,
 not inferred defaults for the Atlas's model-defined envelope. Preserve all
 eleven current bindings and all 68 canonical definitions.
 
-Run contract compatibility, worker, Electron restart/cancel/export, authenticated
-web permission and independent scene regression checks. Publish implemented
-status only after acceptance; retain every remaining G02 requirement.
+Acceptance: 105 Node tests pass (one opt-in SSH skip); 77 Python tests pass
+(four unavailable optional-engine skips). Tests cover resonance, detuned complex
+forcing, Fock/coherent states, a narrow pulse between observation times,
+zero-drive phase, nonzero time origin, envelope-derivative power, work sampling,
+cutoff/solver-step refinement, integration-budget exhaustion and cancellation.
+Typecheck, Electron pulse/old-lab/restart/export acceptance, authenticated web
+and independent scene regression gates pass. Desktop acceptance uses a fresh
+temporary profile through `QLAB_TEST_PROFILE`; ordinary launches keep the
+existing user-data location. Reports and pinned 68-entry Atlas checks remain
+deterministic. No web oscillator computation or scene adapter is enabled.
 
 ## Boundaries retained
 
-This proposal does not implement arbitrary waveforms, damping, parametric or
+This delivery does not implement arbitrary waveforms, damping, parametric or
 anharmonic/ND oscillators, arbitrary initial states or physical-length
 calibration. Those goals remain planned. No web oscillator compute permission,
 new QVIS vocabulary or Math3D change is included. Future visualization remains

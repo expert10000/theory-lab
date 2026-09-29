@@ -9,6 +9,7 @@ import { TOPOLOGY_DEFAULTS, topologyJob } from "../packages/models/topology";
 import { OSCILLATOR_DEFAULTS, oscillatorJob } from "../packages/models/oscillator";
 import { OSCILLATOR_DYNAMICS_DEFAULTS, oscillatorEvolutionJob } from "../packages/models/oscillator-dynamics";
 import { DRIVEN_OSCILLATOR_DEFAULTS, drivenOscillatorJob } from "../packages/models/oscillator-drive";
+import { PULSED_OSCILLATOR_DEFAULTS, pulsedOscillatorJob } from "../packages/models/oscillator-pulse";
 
 const token = "gateway-test-token-0123456789-abcdef";
 
@@ -50,6 +51,8 @@ test("gateway enforces authentication and origin before running versioned jobs",
     assert.equal(motion.status,400,"free oscillator dynamics remains desktop-only");
     const drive=await fetch(`${gateway.origin}/api/jobs`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(drivenOscillatorJob("desktop-drive-only",DRIVEN_OSCILLATOR_DEFAULTS,"native"))});
     assert.equal(drive.status,400,"driven oscillator Atlas binding must not broaden gateway permissions");
+    const pulse=await fetch(`${gateway.origin}/api/jobs`,{method:"POST",headers:{Authorization:`Bearer ${token}`,"Content-Type":"application/json"},body:JSON.stringify(pulsedOscillatorJob("desktop-pulse-only",PULSED_OSCILLATOR_DEFAULTS,"native"))});
+    assert.equal(pulse.status,400,"Gaussian pulse capability remains desktop-only");
     const runs = await fetch(`${gateway.origin}/api/runs`, { headers: { Authorization: `Bearer ${token}` } });
     assert.equal(runs.status, 200);
     assert.equal((await runs.json())[0].jobId, job.jobId);

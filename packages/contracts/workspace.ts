@@ -32,6 +32,7 @@ export interface WorkspaceSnapshot {
   oscillator?: import("../models/oscillator").OscillatorDraft;
   oscillatorDynamics?: import("../models/oscillator-dynamics").OscillatorDynamicsDraft;
   oscillatorDriven?: import("../models/oscillator-drive").DrivenOscillatorDraft;
+  oscillatorPulse?: import("../models/oscillator-pulse").PulsedOscillatorDraft;
   oscillatorMode?: "static" | "dynamics" | "driven" | "pulse";
 }
 export interface RunSummary {
@@ -103,6 +104,13 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
     engine: { enum: ["qutip", "native", "compare"] },
   }),
   oscillatorMode: { enum: ["static", "dynamics", "driven", "pulse"] },
+  oscillatorPulse: block(["omega", "cutoff", "extent", "points", "initial", "index", "alphaRe", "alphaIm", "start", "stop", "samples", "engine", "epsilonRe", "epsilonIm", "driveFrequency", "pulseWidth", "pulseCenter", "maxStep"], {
+    omega: shortText, cutoff: shortText, extent: shortText, points: shortText,
+    initial: { enum: ["fock", "coherent"] }, index: shortText, alphaRe: shortText, alphaIm: shortText,
+    start: shortText, stop: shortText, samples: shortText, epsilonRe: shortText, epsilonIm: shortText, driveFrequency: shortText,
+    pulseWidth: shortText, pulseCenter: shortText, maxStep: shortText,
+    engine: { enum: ["qutip", "native", "compare"] },
+  }),
   oscillatorDriven: block(["omega", "cutoff", "extent", "points", "initial", "index", "alphaRe", "alphaIm", "start", "stop", "samples", "engine", "epsilonRe", "epsilonIm", "driveFrequency"], {
     omega: shortText, cutoff: shortText, extent: shortText, points: shortText,
     initial: { enum: ["fock", "coherent"] }, index: shortText, alphaRe: shortText, alphaIm: shortText,

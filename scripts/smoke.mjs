@@ -1,14 +1,17 @@
 import { _electron as electron } from "playwright";
 import assert from "node:assert/strict";
-import { mkdir } from "node:fs/promises";
+import { mkdir, mkdtemp } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
-import { resolve } from "node:path";
+import { resolve, join } from "node:path";
+import { tmpdir } from "node:os";
 const env = { ...process.env };
+env.QLAB_TEST_PROFILE=await mkdtemp(join(tmpdir(),"qlab-desktop-acceptance-"));
 delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
+let preservedPulseRunId = null;
 const errors = [];
 try {
   const page = await app.firstWindow();
@@ -231,6 +234,9 @@ try {
   assert.equal(await page.getByLabel("Drive samples",{exact:true}).inputValue(),"1001");
   assert.equal(await page.getByTestId("oscillator-drive-result").count(),0);
   await page.getByRole("tab",{name:"Gaussian pulse",exact:true}).click();
+  await page.getByTestId("pulse-preset").click();
+  assert.match(await page.getByTestId("oscillator-pulse-state").innerText(),/LAB PRESET/);
+  const initialPulseRuns=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_pulse").length));
   await page.getByLabel("Pulse pulseWidth",{exact:true}).fill(".05");
   assert.ok(await page.getByTestId("run-oscillator-pulse").isDisabled(),"a narrow pulse requires a resolved internal step");
   await page.getByLabel("Pulse pulseWidth",{exact:true}).fill("1");
@@ -258,6 +264,19 @@ try {
   await page.evaluate(async()=>{document.querySelector('[data-testid="run-oscillator-pulse"]').click();await new Promise(resolve=>requestAnimationFrame(resolve));const cancel=document.querySelector('[data-testid="cancel-oscillator-pulse"]');if(!cancel)throw new Error("Missing pulse cancellation UI");cancel.click();});
   await page.getByTestId("oscillator-pulse-state").filter({hasText:"CANCELLED"}).waitFor();
   assert.ok(await page.getByTestId("pulse-convergence").isVisible(),"cancelled study/run retains the last verified comparison");
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_pulse").length)),initialPulseRuns+5,"cancelled incomplete pulse is not saved");
+  for(const [key,value] of Object.entries({epsilonRe:".3",epsilonIm:".1",alphaRe:"1.4",cutoff:"32",pulseWidth:"1.25",pulseCenter:"4",maxStep:".01",start:"-2",stop:"8",samples:"101"}))await page.getByLabel(`Pulse ${key}`,{exact:true}).fill(value);
+  await page.getByLabel("Pulse engine",{exact:true}).selectOption("qutip");
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
+  await page.getByLabel("Pulse pulseWidth",{exact:true}).fill("2");
+  await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Pulse pulseWidth"]')?.value==="1.25");
+  await page.getByRole("tab",{name:"Gaussian pulse",exact:true}).and(page.locator('[aria-selected="true"]')).waitFor();
+  assert.equal(await page.getByLabel("Pulse maxStep",{exact:true}).inputValue(),".01");
+  assert.equal(await page.getByTestId("oscillator-pulse-result").count(),0,"pulse restore does not fabricate a plot or convergence study");
+  assert.equal(await page.getByTestId("pulse-convergence").count(),0);
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({
@@ -776,9 +795,22 @@ try {
   const driveRun=savedRuns.find(r=>r.operation==="oscillator_drive");
   assert.ok(driveRun,"driven motion is listed in durable runs");
   preservedDriveRunId=driveRun.runId;
+  const pulseRun=savedRuns.find(r=>r.operation==="oscillator_pulse");
+  assert.ok(pulseRun,"Gaussian pulses are listed in durable runs");
+  preservedPulseRunId=pulseRun.runId;
   const latest = savedRuns[0].runId;
   preservedRunId = latest;
   await mkdir("artifacts/exports", { recursive: true });
+  for(const format of ["csv","svg","manifest"]){
+    const destination=resolve(`artifacts/exports/oscillator-pulse.${format}`);
+    await app.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},destination);
+    await page.getByRole("button",{name:`Export ${format.toUpperCase()} ${pulseRun.runId}`}).click();
+    await page.getByRole("status").filter({hasText:`Exported ${format.toUpperCase()}`}).waitFor();
+    const v=await readFile(destination,"utf8");
+    if(format==="csv")assert.match(v,/number_exact,energy,power,c0_re,c0_im/);
+    if(format==="svg"){assert.match(v,/q_mean/);assert.match(v,/p_mean/);assert.doesNotMatch(v,/q_variance/);}
+    if(format==="manifest"){const m=JSON.parse(v);assert.equal(m.result.operation,"oscillator_pulse");assert.equal(m.job.model.parameters.envelope,"gaussian");assert.equal(m.job.model.parameters.pulseWidth,1.5);assert.equal(m.job.solver.maxStep,.01);assert.equal(m.result.analysis.energyOffset,.5);assert.equal(m.result.data.sha256,pulseRun.artifactSha256);}
+  }
   for(const format of ["csv","svg","manifest"]){
     const destination=resolve(`artifacts/exports/oscillator-drive.${format}`);
     await app.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},destination);
@@ -991,6 +1023,8 @@ try {
   for(const family of ["square","honeycomb","simple_cubic"]) {
     await page.getByLabel("Geometry family").selectOption(family);
     await page.getByTestId("open-geometry-example").click();
+    // A previous verified fixture remains visible while the new one loads.
+    await examplePage.getByRole("heading",{name:new RegExp(`^${family.replaceAll("_"," ")} · .*open geometry fixture$`)}).waitFor();
     await examplePage.getByTestId("scene-source").filter({hasText:"GEOMETRY FIXTURE"}).waitFor();
     await examplePage.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
     await examplePage.getByLabel("Inspect scene object").selectOption("lattice-sites-object");
@@ -1003,6 +1037,7 @@ try {
   for(const family of ["square","honeycomb","simple_cubic"]) {
     await examplePage.getByLabel("Geometry family").selectOption(family);
     await examplePage.getByTestId("open-geometry-example").click();
+    await examplePage.getByRole("heading",{name:`${family.replaceAll("_"," ")} · primitive reciprocal fixture`,exact:true}).waitFor();
     await examplePage.getByTestId("reciprocal-inspection").waitFor();
     await examplePage.getByLabel("Reciprocal point").selectOption(family==="honeycomb"?"K":family==="square"?"M":"R");
     await examplePage.getByTestId("reciprocal-point-value").filter({hasText:"rad / schematic"}).waitFor();
@@ -1060,6 +1095,12 @@ try {
   assert.ok(runIds.includes(preservedRunId), "saved run must survive app restart");
   assert.ok(runIds.includes(preservedMotionRunId),"saved motion amplitudes survive full restart");
   assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
+  assert.ok(runIds.includes(preservedPulseRunId),"saved pulse envelope and coefficients survive full restart");
+  const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
+  await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);
+  await page.getByRole("button",{name:`Export CSV ${preservedPulseRunId}`}).click();
+  await page.getByRole("status").filter({hasText:"Exported CSV"}).waitFor();
+  assert.match(await readFile(pulseExport,"utf8"),/number_exact,energy,power,c0_re,c0_im/);
   const driveExport=resolve("artifacts/exports/oscillator-drive-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},driveExport);
   await page.getByRole("button",{name:`Export CSV ${preservedDriveRunId}`}).click();
@@ -1087,8 +1128,13 @@ try {
   assert.equal(await page.getByLabel("Drive stop",{exact:true}).inputValue(),"10");
   assert.equal(await page.getByLabel("Drive samples",{exact:true}).inputValue(),"1001");
   assert.equal(await page.getByTestId("oscillator-drive-result").count(),0);
+  await page.getByRole("tab",{name:"Gaussian pulse",exact:true}).click();
+  for(const [key,value] of Object.entries({epsilonRe:".3",epsilonIm:".1",alphaRe:"1.4",cutoff:"32",pulseWidth:"1.25",pulseCenter:"4",maxStep:".01",start:"-2",stop:"8",samples:"101"}))assert.equal(await page.getByLabel(`Pulse ${key}`,{exact:true}).inputValue(),value);
+  assert.equal(await page.getByLabel("Pulse engine",{exact:true}).inputValue(),"qutip");
+  assert.equal(await page.getByTestId("oscillator-pulse-result").count(),0);
+  assert.equal(await page.getByTestId("pulse-convergence").count(),0);
   await page.getByRole("tab",{name:"Roadmap",exact:true}).click();
-  for(const id of Array.from({length:10},(_,i)=>`D1-${String(i+1).padStart(3,"0")}`)) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
+  for(const id of Array.from({length:13},(_,i)=>`D1-${String(i+1).padStart(3,"0")}`)) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {
   await reopened.close();

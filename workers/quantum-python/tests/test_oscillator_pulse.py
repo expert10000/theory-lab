@@ -4,6 +4,7 @@ import tempfile
 import threading
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 import numpy as np
 from quantum_worker.contracts import validate
 from quantum_worker.engines.oscillator_pulse import oscillator_pulse
@@ -25,6 +26,14 @@ def calculate(j):
 
 
 class PulsedOscillatorTests(unittest.TestCase):
+    def test_integration_budget_failure_leaves_no_partial_artifact(self):
+        for backend in ("native", "qutip"):
+            with tempfile.TemporaryDirectory() as root:
+                with patch("quantum_worker.engines.oscillator_pulse.MAX_PULSE_EVALUATIONS", 10):
+                    with self.assertRaisesRegex(ValueError, "evaluation budget"):
+                        oscillator_pulse(job(backend), root, threading.Event(), lambda *_:None)
+                self.assertEqual(list(Path(root).iterdir()), [])
+
     def test_resonant_gaussian_integral_and_independent_engines(self):
         datasets = []
         for backend in ("native", "qutip"):

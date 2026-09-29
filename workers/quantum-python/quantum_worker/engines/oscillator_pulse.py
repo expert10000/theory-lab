@@ -10,6 +10,8 @@ from quantum_worker.contracts import validate
 from quantum_worker.engines.oscillator_drive import oscillator_drive
 from quantum_worker.engines.qutip_engine import engine
 
+MAX_PULSE_EVALUATIONS = 1_000_000
+
 
 def oscillator_pulse(job, output_dir, cancelled, progress):
     validate("quantum-job", job)
@@ -19,6 +21,13 @@ def oscillator_pulse(job, output_dir, cancelled, progress):
     width, center, omega, nu = p["pulseWidth"], p["pulseCenter"], p["omega"], p["driveFrequency"]
     eps = complex(p["epsilonRe"], p["epsilonIm"])
     duration = s["tStop"]-s["tStart"]
+    evaluations = 0
+
+    def budget():
+        nonlocal evaluations
+        evaluations += 1
+        if evaluations > MAX_PULSE_EVALUATIONS:
+            raise ValueError("Pulse exceeded bounded integration evaluation budget")
 
     def gaussian(tau):
         return math.exp(-.5*((tau-center)/width)**2)
@@ -35,11 +44,12 @@ def oscillator_pulse(job, output_dir, cancelled, progress):
             qt = engine()
             a = qt.destroy(n)
             def coefficient(t):
+                budget()
                 return envelope(t-s["tStart"])
             def conjugate_coefficient(t):
                 return coefficient(t).conjugate()
             h = qt.QobjEvo([omega*(qt.num(n)+.5*qt.qeye(n)), [a.dag(), coefficient], [a, conjugate_coefficient]])
-            solver = qt.SESolver(h, options={"normalize_output": False, "atol": 1e-12, "rtol": 1e-10,
+            solver = qt.SESolver(h, options={"method": "vern9", "normalize_output": False, "atol": 1e-12, "rtol": 1e-10,
                                            "max_step": s["maxStep"], "nsteps": 100000})
             solver.start(qt.Qobj(psi0), s["tStart"])
             return lambda t: solver.step(t).full().ravel(), qt.__version__
@@ -47,6 +57,7 @@ def oscillator_pulse(job, output_dir, cancelled, progress):
         diagonal = omega*(np.arange(n)+.5)
         roots = np.sqrt(np.arange(1, n))
         def rhs(tau, psi):
+            budget()
             if cancelled.is_set():
                 raise InterruptedError("Pulse cancelled")
             e = envelope(tau)
@@ -89,4 +100,6 @@ def oscillator_pulse(job, output_dir, cancelled, progress):
     return oscillator_drive(job, output_dir, cancelled, progress, {
         "states": states, "envelope": envelope, "derivative": derivative, "displacement": displacement,
         "analysis": {"startEnvelope": gaussian(0), "endEnvelope": gaussian(duration)},
+        "integration": lambda: {"method":"qutip-vern9" if job["engine"] == "qutip" else "scipy-dop853",
+                                "rtol":1e-10, "atol":1e-12, "evaluations":evaluations},
     })

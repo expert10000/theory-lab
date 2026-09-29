@@ -1,4 +1,5 @@
 import { test } from "node:test";
+import { PULSED_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-pulse";
 import assert from "node:assert/strict";
 import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
@@ -15,6 +16,12 @@ import { ORBITAL_DEFAULTS } from "../packages/models/orbital";
 import { OSCILLATOR_DEFAULTS } from "../packages/models/oscillator";
 import { OSCILLATOR_DYNAMICS_DEFAULTS } from "../packages/models/oscillator-dynamics";
 import { DRIVEN_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-drive";
+test("Gaussian pulse workspace draft is optional and rejects executable/unsupported fields",()=>{
+  assert.ok(isWorkspaceSnapshot(workspace),"legacy workspace still valid");
+  const extended={...workspace,tab:"oscillator",oscillatorPulse:PULSED_OSCILLATOR_DEFAULTS,oscillatorMode:"pulse"};
+  assert.ok(isWorkspaceSnapshot(extended));
+  for(const d of [{pulseWidth:"x".repeat(101)},{source:"t=>code"},{envelope:"custom"},{initial:"arbitrary"},{engine:"dynamiqs"}])assert.equal(isWorkspaceSnapshot({...extended,oscillatorPulse:{...PULSED_OSCILLATOR_DEFAULTS,...d}}),false);
+});
 
 const workspace: WorkspaceSnapshot = {
   schema: "quantum-workspace/v1", savedAt: "2026-09-27T00:00:00Z", tab: "sweep", selectedPresetId: null,

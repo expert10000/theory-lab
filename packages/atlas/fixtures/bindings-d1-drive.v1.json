@@ -1,0 +1,331 @@
+{
+  "revision": "85ac21f",
+  "bindings": [
+    {
+      "atlasId": "harmonic_oscillator",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "jaynes_cummings"
+      ],
+      "binding": {
+        "modelId": "harmonic_oscillator",
+        "operation": "oscillator",
+        "parameters": {
+          "omega": 1,
+          "cutoff": 16,
+          "levels": 6,
+          "state": 0,
+          "extent": 8,
+          "points": 201
+        },
+        "convention": "Atlas omega unchanged; hbar=1, H=omega(N+1/2), Fock |n>. Cutoff, reported levels, number state and Hermite grid are explicit Lab choices. q=(a+a†)/sqrt(2) is dimensionless, not physical x. Static 1D spectrum and stationary density only; no driven/anharmonic/ND dynamics or 3D scene.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "accepted-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "rabi",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "quantum_rabi",
+        "operation": "cavity",
+        "parameters": {
+          "qubitFrequency": 1,
+          "cavityFrequency": 1,
+          "coupling": 0.05,
+          "cutoff": 8
+        },
+        "convention": "ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq|e⟩⟨e| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "jaynes_cummings",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/jaynes_cummings.py",
+        "example": "examples/python/qutip/run_jaynes_cummings_cavity_qed_lab.py",
+        "kind": "direct",
+        "notes": "Direct cavity-QED model binding."
+      },
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "jaynes_cummings",
+        "operation": "cavity",
+        "parameters": {
+          "qubitFrequency": 1,
+          "cavityFrequency": 1,
+          "coupling": 0.05,
+          "cutoff": 6
+        },
+        "convention": "ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq|e⟩⟨e| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "ssh",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "ssh",
+        "operation": "topology",
+        "parameters": {
+          "t1": 0.6,
+          "t2": 1,
+          "cells": 16,
+          "kPoints": 101
+        },
+        "convention": "Atlas t₁/t₂ are the lab intracell/intercell hoppings. Bloch H(k)=(t₁+t₂ cos k)σx+t₂ sin k σy; open chain uses |n,A⟩,|n,B⟩ and 16 cells. Winding requires nonzero bulk gap.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "topology",
+        "sceneViews": [
+          "standard",
+          "bands"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "landau_zener",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "landau_zener",
+        "operation": "evolve",
+        "parameters": {
+          "sweepRate": 1,
+          "gap": 0.2,
+          "bias": 0
+        },
+        "convention": "Atlas H = vt σz/2 + Δ σx/2; lab sweepRate = v, gap = Δ, bias = 0. Finite simulation window does not equal asymptotic LZ scattering.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": "evolve",
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "semiclassical_rabi_drive",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "driven_two_level",
+        "operation": "evolve",
+        "parameters": {
+          "delta": 1,
+          "amplitude": 0.2,
+          "frequency": 1,
+          "phase": 0
+        },
+        "convention": "ħ = 1; lab Δ = ω₀, A = 2Ω, ω = ωd, φ unchanged. This is a classical drive, not the quantum Rabi cavity model.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "evolve",
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "floquet_two_level",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "strong_drive",
+        "operation": "evolve",
+        "parameters": {
+          "delta": 1,
+          "amplitude": 1,
+          "frequency": 1,
+          "phase": 0
+        },
+        "convention": "Lab uses A_lab cos(ωt + φ) σx/2: A_lab = 2A_Atlas, φ = 0, ħ = 1. Quasienergies are modulo ω.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": "evolve",
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "driven_harmonic_oscillator",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "open_jaynes_cummings"
+      ],
+      "binding": {
+        "modelId": "driven_harmonic_oscillator",
+        "operation": "oscillator_drive",
+        "parameters": {
+          "omega": 1,
+          "cutoff": 24,
+          "extent": 8,
+          "points": 201,
+          "epsilonRe": 0.2,
+          "epsilonIm": 0,
+          "driveFrequency": 1
+        },
+        "convention": "Bounded monochromatic subset only: hbar=1, epsilon(t)=epsilon0 exp[-i nu(t-tStart)], |epsilon0|<=.5. Atlas epsilon is model-defined, not a numeric default: Lab explicitly chooses epsilon0=.2, nu=1, projected vacuum/coherent input and finite cutoff/time/grid. Lab H includes omega/2 identity relative to Atlas omega N; subtract omega/2 for absolute energy and retain the associated global phase. No general envelope, damping, parametric/anharmonic/ND model, web compute or scene adapter.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "accepted-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "qwz",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "qwz",
+        "operation": "topology",
+        "parameters": {
+          "mass": 1,
+          "grid": 21
+        },
+        "convention": "Atlas H(k)=sin kₓ σx+sin kᵧ σy+(m+cos kₓ+cos kᵧ)σz, with lattice spacing, hopping scale and ħ set to 1. The lab computes the lower-band FHS Chern number and an independent midpoint Berry-curvature integral; at m=−2, 0, 2 the invariant is undefined.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "topology",
+        "sceneViews": [
+          "standard",
+          "bands"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "two_level_pauli",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/models.py",
+        "example": "examples/python/qutip/run_two_level_dynamics_lab.py",
+        "kind": "family",
+        "notes": "Generic two-level computational family; exact model selection remains adapter-side."
+      },
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "two_level",
+        "operation": "diagonalize",
+        "parameters": {
+          "delta": 2,
+          "omega": 0
+        },
+        "convention": "Subspace d₀ = dᵧ = 0; lab Δ = 2d_z and Ω = 2d_x. Atlas's full four-parameter model is not implemented.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "diagonalize",
+        "sceneViews": []
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "ising_chain",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "ising_chain",
+        "operation": "many_body",
+        "parameters": {
+          "sites": 4,
+          "interaction": 1,
+          "transverse": 0.5,
+          "longitudinal": 0,
+          "boundary": "open"
+        },
+        "convention": "Finite open chain, four sites, zero longitudinal field. Lab H = −JΣσᶻᵢσᶻᵢ₊₁ − hΣσˣᵢ; no thermodynamic-limit claim.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    }
+  ]
+}

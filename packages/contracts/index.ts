@@ -219,6 +219,7 @@ export interface PulsedOscillatorResult {
   engine:DrivenOscillatorResult["engine"];
   data:Omit<DrivenOscillatorResult["data"],"schema"> & {schema:"quantum-pulsed-oscillator-data/v1"};
   analysis:DrivenOscillatorResult["analysis"] & {startEnvelope:number;endEnvelope:number};
+  integration:{method:"qutip-vern9"|"scipy-dop853";rtol:1e-10;atol:1e-12;evaluations:number};
   provenance:SpectrumResult["provenance"];
 }
 export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob;
