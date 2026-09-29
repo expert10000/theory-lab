@@ -9,6 +9,7 @@ import type { AtlasBinding } from "../../packages/atlas/bindings";
 import { TOPOLOGY_DEFAULTS, isTopologyResponse } from "../../packages/models/topology";
 import { TopologyLab } from "./TopologyLab";
 import {WebSceneLab} from "./SceneLab";
+import { webSupportsAtlasBinding } from "../../packages/atlas/reconciliation";
 
 type Mode = "spectrum" | "dynamics" | "worker" | "atlas" | "topology"|"scenes";
 type Engine = "qutip" | "native";
@@ -106,8 +107,7 @@ function App() {
     return payload;
   }
   function atlasSupported(binding: AtlasBinding) {
-    return binding.kind === "spectrum" || binding.kind === "topology" ||
-      (binding.kind === "dynamics" && binding.modelId === "driven_two_level");
+    return webSupportsAtlasBinding(binding);
   }
   function loadAtlas(binding: AtlasBinding) {
     if (binding.kind === "spectrum") {

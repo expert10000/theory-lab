@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { WorkerResources, WorkerStatus } from "../../../packages/contracts";
+import { ATLAS_ENTRIES,ATLAS_REVISION } from "../../../packages/atlas";
 
 const columns = [
   "time",
@@ -204,7 +205,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
       <article className="panel backend-card backend-wide">
         <p className="eyebrow">HAMILTONIAN ATLAS / NUMERICAL TOPOLOGY</p>
         <h2>Pinned definitions, explicit computations.</h2>
-        <p>The Atlas tab snapshots 48 source entries from Theory revision 61791aff and labels the source registry as reference-only. Nine explicit bindings map supported subspaces and units into the laboratory. The Topology tab solves an open SSH chain and a periodic QWZ model with NumPy; its SSH winding and Chern number are undefined at their bulk gap closures. A mass-sign phase check catches under-resolved FHS meshes, while the QWZ midpoint Berry-curvature integral provides a separate convergence diagnostic. Topology results use bounded inline JSON under quantum-result/v1 and are saved with job and source provenance.</p>
+        <p>The Atlas tab snapshots {ATLAS_ENTRIES.length} source entries from Theory revision {ATLAS_REVISION.slice(0,8)}. R1 separates reference definitions, seven declared theory-example paths and nine tested Lab bindings. Source flags are not worker execution permissions. The existing bindings preserve subspaces, units, tensor order and energy offsets; optional engines still require runtime availability. The Topology tab solves an open SSH chain and a periodic QWZ model with NumPy; its SSH winding and Chern number are undefined at their bulk gap closures. A mass-sign phase check catches under-resolved FHS meshes, while the QWZ midpoint Berry-curvature integral provides a separate convergence diagnostic. Topology results use bounded inline JSON under quantum-result/v1 and are saved with job and source provenance.</p>
       </article>
       <article className="panel backend-card backend-wide">
         <p className="eyebrow">DURABLE RUNS / WORKSPACE</p>

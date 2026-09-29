@@ -1,6 +1,6 @@
 # Post-QLAB roadmap — integration and implementation status
 
-Updated 2026-09-28. This file incorporates the supplied
+Updated 2026-09-29. This file incorporates the supplied
 `MATH3D-2026/POST_QLAB_QVIS_M3D_ROADMAP.md` as a planning reference.
 The source document is preserved below; this status overlay and
 [ROADMAP.md](ROADMAP.md) describe the actual Lab delivery sequence.
@@ -73,6 +73,14 @@ The earlier v0.1 Linux acceptance record is separate from this Windows run.
 | Track A Atlas | Partial: pinned catalog and explicit tested model bindings | Progressively unify model metadata; no claim that the reference's whole family list is computed |
 
 ## Lab continuation milestones (status updated per delivery)
+
+**Atlas reconciliation:** R1 is implemented — 68 canonical definitions at
+`48e2036ba7c7dd5c79d54749341a79d41770cbb7`, seven theory-side program references,
+nine preserved tested Lab bindings and explicit desktop/web/gateway/scene
+coverage. See ATLAS_RECONCILIATION_R1.md. R2 executable mappings, R3 C/QVIS
+vocabulary review, R4 genuine physics gaps and R5 reconciled contract freeze
+remain planned. B/C scaffolding is not imported as a parallel architecture;
+no D1 physics model or Math3D integration has been started.
 
 1. **QVIS-008 — generic lattice scenes (implemented, bounded open examples)**
    `feat(qvis): add bounded lattice cells and supercell scene fixtures`

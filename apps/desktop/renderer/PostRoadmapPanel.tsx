@@ -2,6 +2,7 @@ import React from "react";
 import {
   POST_QVIS,
   SOURCE_PLAN_COVERAGE,
+  ATLAS_RECONCILIATION_STEPS,
 } from "../../../packages/models/roadmap";
 
 export function PostRoadmapPanel() {
@@ -19,18 +20,44 @@ export function PostRoadmapPanel() {
         Bounded lattice and primitive reciprocal-space fixtures are implemented.
         Portable SSH/QWZ bands, supplied topology quantities and bounded chunked
         loading are implemented. QVIS-013 closes the bounded v0.1 release gate,
-        including web Scenes and read-only imports. Compatibility and limits
-        are recorded in docs/RELEASE_QVIS_V0.1.md.
-        Math3D remains a separate track: QuantumResult → QuantumScene →
-        independent viewers.
+        including web Scenes and read-only imports. Compatibility and limits are
+        recorded in docs/RELEASE_QVIS_V0.1.md. Math3D remains a separate track:
+        QuantumResult → QuantumScene → independent viewers.
       </p>
-      <h3>{POST_QVIS.length ? "Planned Lab sequence" : "Bounded QVIS v0.1 delivered"}</h3>
-      {!POST_QVIS.length && <p data-testid="qvis-release-status">QVIS-001–013 implemented. Broader physics and separate Math3D integration remain outside this release.</p>}
+      <h3>
+        {POST_QVIS.length
+          ? "Planned Lab sequence"
+          : "Bounded QVIS v0.1 delivered"}
+      </h3>
+      {!POST_QVIS.length && (
+        <p data-testid="qvis-release-status">
+          QVIS-001–013 implemented. Broader physics and separate Math3D
+          integration remain outside this release.
+        </p>
+      )}
       {POST_QVIS.map((entry) => (
         <div
           className="roadmap-row"
           key={entry.id}
           data-testid={`planned-${entry.id}`}
+          title={entry.detail}
+        >
+          <code>{entry.id}</code>
+          <span>{entry.title}</span>
+          <small>{entry.state}</small>
+        </div>
+      ))}
+      <h3>Atlas reconciliation · existing architecture</h3>
+      <p>
+        R1 maps the 68-entry canonical Atlas to existing Lab code. Theory
+        examples are not Lab worker permissions; no second model/workspace layer
+        is introduced. Full inventory: docs/ATLAS_RECONCILIATION_R1.md.
+      </p>
+      {ATLAS_RECONCILIATION_STEPS.map((entry) => (
+        <div
+          className="roadmap-row"
+          key={entry.id}
+          data-testid={`reconciliation-${entry.id}`}
           title={entry.detail}
         >
           <code>{entry.id}</code>

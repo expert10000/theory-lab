@@ -10,15 +10,15 @@ import { consistentTopologyResult, isTopologyResponse, topologyJob, TOPOLOGY_DEF
 import { isQuantumJob } from "../packages/contracts";
 
 test("pinned Atlas snapshot is complete, connected and reference-only", () => {
-  assert.equal(ATLAS_REVISION, "61791aff00c0f35a82ec6f2271deded5cc5e99d6");
-  assert.equal(ATLAS_ENTRIES.length, 48);
+  assert.equal(ATLAS_REVISION, "48e2036ba7c7dd5c79d54749341a79d41770cbb7");
+  assert.equal(ATLAS_ENTRIES.length, 68);
   const ids = new Set(ATLAS_ENTRIES.map(entry => entry.id));
-  assert.equal(ids.size, 48);
+  assert.equal(ids.size, 68);
   for (const entry of ATLAS_ENTRIES) {
     assert.equal(entry.computation.adapter, null);
     assert.equal(entry.computation.runnable, null);
     assert.ok(entry.formula.latex && entry.basis.description);
-    assert.match(atlasUrl(entry), /^https:\/\/github.com\/expert10000\/theory\/blob\/61791aff/);
+    assert.match(atlasUrl(entry), /^https:\/\/github.com\/expert10000\/theory\/blob\/48e2036/);
     for (const relation of entry.relations) assert.ok(ids.has(relation.target), `${entry.id} → ${relation.target}`);
     if (entry.computation.default_preset) assert.equal(ATLAS_PRESETS[entry.computation.default_preset as keyof typeof ATLAS_PRESETS]?.model, entry.id);
   }

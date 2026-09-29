@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ATLAS_ENTRIES, ATLAS_REVISION, atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { atlasBinding } from "../../../packages/atlas/bindings";
+import { AtlasCapabilities } from "../../../packages/ui/AtlasCapabilities";
 
 export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
   const [query, setQuery] = useState("");
@@ -11,8 +12,8 @@ export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
   const selected = atlasEntry(selectedId);
   const binding = atlasBinding(selectedId);
   return <div className="atlas-panel" data-testid="atlas-panel">
-    <section className="panel"><p className="eyebrow">THEORY ATLAS / PINNED SOURCE</p><h2>48 Hamiltonians, one inspected revision.</h2>
-      <p>Source revision <code>{ATLAS_REVISION.slice(0, 12)}</code>. These are reference definitions. The source registry marks no entry runnable; a Theory Lab binding is listed separately when implemented and tested.</p>
+    <section className="panel"><p className="eyebrow">THEORY ATLAS / PINNED SOURCE · R1</p><h2>{ATLAS_ENTRIES.length} Hamiltonians, one inspected revision.</h2>
+      <p>Source revision <code>{ATLAS_REVISION.slice(0, 12)}</code>. Reference definitions, theory examples and tested Lab bindings are separate capabilities. A source example never enables a Lab Run action.</p>
       <div className="atlas-controls"><input aria-label="Search Atlas" placeholder="Search Hamiltonians" value={query} onChange={event => setQuery(event.target.value)}/>
         <select aria-label="Atlas family" value={family} onChange={event => setFamily(event.target.value)}><option value="all">All families</option>{[...new Set(ATLAS_ENTRIES.map(entry => entry.family))].sort().map(name => <option key={name} value={name}>{name}</option>)}</select></div>
       <div className="atlas-browser"><div className="atlas-list" role="list" aria-label="Atlas entries">{filtered.map(entry => <button key={entry.id} className={selectedId === entry.id ? "atlas-active" : ""} onClick={() => setSelectedId(entry.id)}><strong>{entry.name}</strong><small>{entry.id} · {entry.family}</small></button>)}</div>
@@ -23,6 +24,7 @@ export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
           <h4>Observables</h4><p>{selected.observables.join(" · ")}</p>
           {selected.relations.length > 0 && <><h4>Related entries</h4><div className="atlas-relations">{selected.relations.map((relation, index) => <button key={index} onClick={() => { setSelectedId(relation.target); setFamily("all"); setQuery(""); }}>{relation.target} ↗</button>)}</div></>}
           <p><button className="text-button" onClick={() => void window.quantum.openAtlasSource(selected.id)}>View pinned source ↗</button> <small>({atlasUrl(selected)})</small></p>
+          <AtlasCapabilities id={selected.id}/>
           {binding ? <div className="atlas-binding"><p className="eyebrow">THEORY LAB BINDING / TESTED SUBSPACE</p><p>{binding.convention}</p><button className="run-button" data-testid="open-atlas-binding" onClick={() => openLab?.(selectedId)}>Load in {binding.modelId.replaceAll("_", " ")} lab ↗</button></div> : <p className="scope-note">No tested Theory Lab binding for this entry yet.</p>}
         </article>}</div>
     </section>

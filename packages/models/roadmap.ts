@@ -95,6 +95,43 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
   },
 ];
 export const POST_QVIS: RoadmapEntry[] = [];
+export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
+  {
+    id: "R1",
+    title: "Canonical Atlas ↔ existing Lab capability inventory",
+    state: "Implemented",
+    detail:
+      "Pinned 68 entries; seven source-example references; nine preserved tested bindings; full model/UI/gateway/scene map. No new physics or parallel infrastructure.",
+  },
+  {
+    id: "R2",
+    title: "Executable Atlas mappings to existing jobs/labs",
+    state: "Planned",
+    detail:
+      "Review explicit scientific conversions and bounded contract-valid numerical adapters.",
+  },
+  {
+    id: "R3",
+    title: "C2–C8 ideas mapped to quantum-scene/v1",
+    state: "Planned",
+    detail:
+      "Reuse QVIS vocabulary; identify genuine compatible adapter/schema extensions.",
+  },
+  {
+    id: "R4",
+    title: "Genuinely missing physics and model inventory",
+    state: "Planned",
+    detail:
+      "Rank model gaps after binding and scene reconciliation, not by scaffold names.",
+  },
+  {
+    id: "R5",
+    title: "Reconciled Atlas ↔ Lab contract freeze",
+    state: "Planned",
+    detail:
+      "Freeze only after R2–R4; do not adopt alternative B/C job or visualization contracts.",
+  },
+];
 export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
   {
     id: "QVIS-001",
@@ -140,7 +177,8 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     id: "QVIS-007",
     title: "Portable band integration",
     state: "Implemented (bounded)",
-    detail: "Portable SSH paths and QWZ surfaces with supplied worker energies, shared selection and offline inspection; no arbitrary-crystal bands.",
+    detail:
+      "Portable SSH paths and QWZ surfaces with supplied worker energies, shared selection and offline inspection; no arbitrary-crystal bands.",
   },
   {
     id: "QVIS-008",
@@ -153,7 +191,8 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     id: "QVIS-009",
     title: "Large-data streaming and LOD",
     state: "Implemented (bounded)",
-    detail: "Separate multilevel bundles with lazy verified chunks and cache/cancellation; current per-level grid/memory bounds remain. No unlimited volumes or time player.",
+    detail:
+      "Separate multilevel bundles with lazy verified chunks and cache/cancellation; current per-level grid/memory bounds remain. No unlimited volumes or time player.",
   },
   {
     id: "QVIS-010",
@@ -174,6 +213,6 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     title: "Atlas metadata unification",
     state: "Partial",
     detail:
-      "Pinned catalog and tested bindings exist; metadata unification and broader model families remain planned.",
+      "R1 reconciles 68 canonical entries with typed Lab modules, source examples and nine tested bindings. R2–R5 mapping review/contract freeze remain planned; broader physics is not claimed.",
   },
 ];

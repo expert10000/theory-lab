@@ -15,5 +15,13 @@ export const ATLAS_REVISION = snapshot.sourceRevision;
 export const ATLAS_SOURCE = snapshot.sourceRepository;
 export const ATLAS_ENTRIES = snapshot.entries as AtlasEntry[];
 export const ATLAS_PRESETS = snapshot.presets;
+export interface TheorySourceBinding {
+  adapter: string;
+  example: string;
+  kind: "direct" | "family" | "reference_lab";
+  notes: string;
+}
+/** Source paths checked at the pinned revision, not Lab worker permissions. */
+export const ATLAS_SOURCE_BINDINGS = snapshot.sourceBindings as Record<string, TheorySourceBinding>;
 export const atlasEntry = (id: string) => ATLAS_ENTRIES.find(entry => entry.id === id);
 export const atlasUrl = (entry: AtlasEntry) => `${ATLAS_SOURCE}/blob/${ATLAS_REVISION}/data/hamiltonian_atlas/${entry.sourceFile}`;

@@ -142,6 +142,8 @@ try {
   assert.ok(await page.getByText("Generic lattice cells & bounded supercell fixtures", {exact:true}).isVisible());
   assert.ok(await page.getByText("Reciprocal basis & Brillouin-zone inspection",{exact:true}).isVisible());
   assert.match(await page.getByTestId("qvis-release-status").innerText(), /QVIS-001–013 implemented/);
+  assert.match(await page.getByTestId("reconciliation-R1").innerText(),/Implemented/);
+  assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -165,7 +167,16 @@ try {
   });
   await page.getByTestId("open-atlas").click();
   assert.ok(await page.getByTestId("atlas-panel").isVisible());
+  assert.match(await page.getByTestId("atlas-panel").innerText(),/68 Hamiltonians/);
+  assert.equal(await page.locator(".pill").innerText(),"68 SOURCE ENTRIES");
+  for(const [id,kind] of [["surface_code_planar","reference_lab"],["dispersive_jc","direct"],["hofstadter","not declared"],["coulomb_one_body","not declared"]]) {
+    await page.getByLabel("Search Atlas").fill(id);
+    await page.getByRole("button",{name:new RegExp(id)}).click();
+    assert.match(await page.getByTestId("atlas-capability-status").innerText(),new RegExp(`Theory example: ${kind}.*Lab executable binding: none`));
+    assert.equal(await page.getByTestId("open-atlas-binding").count(),0);
+  }
   await page.screenshot({ path: "artifacts/desktop-atlas.png", fullPage: true });
+  await page.getByLabel("Search Atlas").fill("Su-Schrieffer-Heeger");
   await page.getByRole("button", { name: /Su-Schrieffer-Heeger model/ }).click();
   assert.match(await page.getByTestId("atlas-panel").innerText(), /Atlas t₁\/t₂/);
   await page.getByTestId("open-atlas-binding").click();

@@ -2,7 +2,7 @@
 
 The React web client uses the existing authenticated gateway and supervised
 Python worker. It currently exposes the two-level spectrum, driven Rabi
-dynamics, worker/API status, the pinned 48-entry Hamiltonian Atlas, and native
+dynamics, worker/API status, the pinned 68-entry Hamiltonian Atlas, and native
 SSH/QWZ topology labs. Other desktop laboratories remain desktop-only; the
 Atlas marks their bindings accordingly rather than offering nonfunctional web
 controls. QVIS-013 adds **Portable scenes**, reusing desktop geometry, lattice,
@@ -15,6 +15,11 @@ The read-only Atlas snapshot is bundled into `web.js` from
 before gateway authentication. The nine app-level bindings come from the same
 tested mapping module used by desktop. Only static two-level, semiclassical
 Rabi-drive and SSH/QWZ bindings currently open web controls.
+
+R1 shows seven source-side example references separately from those nine Lab
+bindings. A declared source path or source catalog flag never enables a web
+Run/Load action. Reference and related-only entries remain browsable without
+authentication. The full capability inventory is in ATLAS_RECONCILIATION_R1.md.
 
 For computation, the bearer token is kept in React memory and is never stored
 in browser storage. The gateway checks token and origin, validates bounded

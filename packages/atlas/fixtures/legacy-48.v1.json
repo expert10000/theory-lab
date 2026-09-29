@@ -1,0 +1,159 @@
+{
+  "sourceRevision": "61791aff00c0f35a82ec6f2271deded5cc5e99d6",
+  "fingerprints": {
+    "harmonic_oscillator": "880ae49e215f644940d120815e7e49f8e64a03c2ac06009001f28d5f78f72429",
+    "rabi": "706a9384327dc741a07f2fa8b7039ecf84f0d0439ef27adf509772309ffd0b9d",
+    "jaynes_cummings": "51557beaf898bd59d95fd174570d7d29300d83ca2f8c2a7b53911e17aa14f93e",
+    "ssh": "533007aeb5f2e29fc749299bbc625730dc48d90b43ddf6f136bfcd215128b508",
+    "rice_mele": "2c235621cc657d781b8ceb64768f017d4d55dfcf3a562a4a0518da14f45aac7e",
+    "hubbard": "1af6c95f8c2dfcdb2de7af460e2b1320d3f14ec66ce0f3a578e0933907111fc8",
+    "kitaev_chain": "937f317c89ee1c2f5ee8e9c291d04581f7bb0a9a1b7a5aff1675a722f9ffb59a",
+    "surface_code_stabilizer": "2c2c41f7cab33439b7134141c8b8b1947839f4f7abe33da5feb48a1c7aa0c225",
+    "landau_zener": "804ac844843788079e9cd8ded8372344aa06c6dd67aa3493bd50a78eb525e190",
+    "semiclassical_rabi_drive": "d35bd38a018faf7f1c180139749028fe7e967be60dcec9f90611905e27d70706",
+    "rotating_frame_qubit": "8830b91227f2ca4e718543512e19aface2c9c819232de78bfe66dd623c3aabba",
+    "ramsey_sequence_effective": "fefe09e86ceac1341ae81c397abe3d7db06d6ea9205a0ee2d30702ae9b4f3e13",
+    "floquet_two_level": "2998f1759da060a4b7613007edaf7dc59dbf739fa99fb5f4c73223dd9e37fdaf",
+    "driven_harmonic_oscillator": "d282646d901c85fd3422e02262eaed5b676e3d6f26e7604ac638a4014a98bcbc",
+    "parametric_oscillator": "1c7ef36c3bdfb099a01c80deec5202f600631e14c8d2fbcb1149fcd66bd3bf42",
+    "tavis_cummings": "0b547d83933adb4819c4dc3fb484c0224a1703ceb2fc67a300316a69d61cf747",
+    "dicke": "7717d2127165ef5d75e7a668fda75942ad749f48d138fb5700e4abe5211b161c",
+    "dispersive_jc": "d9b38ce290c51a33f1bf15580368f5491e44486e9ae01327ae70ec5e507cafba",
+    "free_particle": "e1614db2eaa1b4cd3232baa8903ccb787ef316c0f9dbc8d5fd2838aa8b1514d8",
+    "particle_in_box": "1a0185e503c50a1e15e5847c25197730040b6d2e79b9e1c9a0d29798f9c78757",
+    "finite_square_well": "96cae5ad896acce7fcba9913fbf5397aae4f881d2ce5f9aed3ff7ca795dc73ab",
+    "delta_potential": "189cb5165f543bcb61927a2e42f641bd76bc5294aa5f211ba322397f1ac4dfda",
+    "harmonic_oscillator_nd": "566f4f5259e2094453bfd81137e5c9baf98d45f67fb39c836eb856bad7237e09",
+    "anharmonic_oscillator": "b2305def81e78dbd70e9ab42ed38603f7d3bdb9d8c021ad5ea8b28afa8d0fcc1",
+    "double_well": "402d8beba565a79fb7bab75e1efc403b8cd513e18e74ea3ccd71083cfb004334",
+    "linear_potential": "d3f2cf67febe395badb37bbed6cbf0d33a51a8d9038ca0d531c90f4837410e16",
+    "central_potential": "20f7ac678ace122e295cb8155fd654f6298ebec0a700e2b702f880302c7b6738",
+    "coulomb_one_body": "0395f7088c8b1723e332eb5c48a1f2828fc031167ad2e8012124d8329243a165",
+    "tight_binding_generic": "53a36b3679f115a08ba878abb737f21d29d316dea79bf40b09587b3a486eadb0",
+    "bloch_two_band": "6d6cc9f524ee3956a7718ba7e622ee46e472a2f0616981846bcddb630111efda",
+    "graphene_nn": "e6bc154f71add90ae33ac8372b6d2977ac0ca065116e6bd93931f56621189d20",
+    "dirac_2d": "a1701dfaa9a637c90f05e8d0459fb35b055de0ffbb9b952d8e30143b8a90ffc5",
+    "qwz": "e3d6adecba1bc128361eb049539db105164cc906a7854eaa57dabfdfec162d0d",
+    "haldane": "a3c6cfdb153f7c73ea16144b5f223e9dd4b67798ebc7630e2ed8ede83a79bf94",
+    "bhz": "f6e95c95107dda7683fbbd24e76b841a686b2c28b0fbab19538481bc241a8f15",
+    "bbh": "2b007c578cc566afc19f56b8efb744fb8973f9ba4318a75c99912d08d6825742",
+    "weyl_minimal": "3c06a6c5253d3c76e3eff39bb38fa56af5e46ffcfc17cb4f86360b4c2d83a28d",
+    "nodal_line_two_band": "db1995bd974f9be225dfd29870d90bb09a3b06386917c66f64edef01c0f62e13",
+    "two_level_pauli": "98dcfae2914d6d716d4702583d948808cdddd1951f3ad8db463cfae158b10de1",
+    "spin_half_zeeman": "ee0d6318702558164df6a130f23ac8c75c6763b4304ed14d066cc4e9ac56325c",
+    "pauli_particle_em": "dc705615dec5b17093f1a51791d6a2fe328897259a1719e74896c0a6b99c5b9c",
+    "linear_stark": "e9104e09830e967b4bce80c09d3a04ed260c66532fda0f500f46e822af825593",
+    "spin_orbit_ls": "4ddc0ce934ae59011bca416994305939b652089c8b3ae4b671c877519c2c632d",
+    "hyperfine_dipole": "0da7b85a7be405305eda36ea1173225f7bb410066121251fa93c1b80d4474a47",
+    "ising_chain": "40f6779d9197e905ff4389f7e09038d4d9755e113aa7082754389eefde7f02ee",
+    "xy_chain": "09e258a67f80920c4d05ac5c8a35b344e6b63d367735d06c2cb0d8ef6fc1c279",
+    "heisenberg_chain": "048e87d83ac96ee1ffaa9f7618828d53eff74ff27bc4806bb1e303e3471afaeb",
+    "spin_one_zfs": "0655a9e37f3573678895bb12a85b691a720ae6eca6799f0106a78e4430d4809f"
+  },
+  "bindings": {
+    "rabi": {
+      "kind": "cavity",
+      "atlasId": "rabi",
+      "modelId": "quantum_rabi",
+      "parameters": {
+        "qubitFrequency": 1,
+        "cavityFrequency": 1,
+        "coupling": 0.05,
+        "cutoff": 8
+      },
+      "convention": "ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq|e⟩⟨e| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice."
+    },
+    "jaynes_cummings": {
+      "kind": "cavity",
+      "atlasId": "jaynes_cummings",
+      "modelId": "jaynes_cummings",
+      "parameters": {
+        "qubitFrequency": 1,
+        "cavityFrequency": 1,
+        "coupling": 0.05,
+        "cutoff": 6
+      },
+      "convention": "ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq|e⟩⟨e| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice."
+    },
+    "ssh": {
+      "kind": "topology",
+      "atlasId": "ssh",
+      "modelId": "ssh",
+      "parameters": {
+        "t1": 0.6,
+        "t2": 1,
+        "cells": 16,
+        "kPoints": 101
+      },
+      "convention": "Atlas t₁/t₂ are the lab intracell/intercell hoppings. Bloch H(k)=(t₁+t₂ cos k)σx+t₂ sin k σy; open chain uses |n,A⟩,|n,B⟩ and 16 cells. Winding requires nonzero bulk gap."
+    },
+    "landau_zener": {
+      "kind": "dynamics",
+      "atlasId": "landau_zener",
+      "modelId": "landau_zener",
+      "parameters": {
+        "sweepRate": 1,
+        "gap": 0.2,
+        "bias": 0
+      },
+      "convention": "Atlas H = vt σz/2 + Δ σx/2; lab sweepRate = v, gap = Δ, bias = 0. Finite simulation window does not equal asymptotic LZ scattering."
+    },
+    "semiclassical_rabi_drive": {
+      "kind": "dynamics",
+      "atlasId": "semiclassical_rabi_drive",
+      "modelId": "driven_two_level",
+      "parameters": {
+        "delta": 1,
+        "amplitude": 0.2,
+        "frequency": 1,
+        "phase": 0
+      },
+      "convention": "ħ = 1; lab Δ = ω₀, A = 2Ω, ω = ωd, φ unchanged. This is a classical drive, not the quantum Rabi cavity model."
+    },
+    "floquet_two_level": {
+      "kind": "dynamics",
+      "atlasId": "floquet_two_level",
+      "modelId": "strong_drive",
+      "parameters": {
+        "delta": 1,
+        "amplitude": 1,
+        "frequency": 1,
+        "phase": 0
+      },
+      "convention": "Lab uses A_lab cos(ωt + φ) σx/2: A_lab = 2A_Atlas, φ = 0, ħ = 1. Quasienergies are modulo ω."
+    },
+    "qwz": {
+      "kind": "topology",
+      "atlasId": "qwz",
+      "modelId": "qwz",
+      "parameters": {
+        "mass": 1,
+        "grid": 21
+      },
+      "convention": "Atlas H(k)=sin kₓ σx+sin kᵧ σy+(m+cos kₓ+cos kᵧ)σz, with lattice spacing, hopping scale and ħ set to 1. The lab computes the lower-band FHS Chern number and an independent midpoint Berry-curvature integral; at m=−2, 0, 2 the invariant is undefined."
+    },
+    "two_level_pauli": {
+      "kind": "spectrum",
+      "atlasId": "two_level_pauli",
+      "modelId": "two_level",
+      "parameters": {
+        "delta": 2,
+        "omega": 0
+      },
+      "convention": "Subspace d₀ = dᵧ = 0; lab Δ = 2d_z and Ω = 2d_x. Atlas's full four-parameter model is not implemented."
+    },
+    "ising_chain": {
+      "kind": "many_body",
+      "atlasId": "ising_chain",
+      "modelId": "ising_chain",
+      "parameters": {
+        "sites": 4,
+        "interaction": 1,
+        "transverse": 0.5,
+        "longitudinal": 0,
+        "boundary": "open"
+      },
+      "convention": "Finite open chain, four sites, zero longitudinal field. Lab H = −JΣσᶻᵢσᶻᵢ₊₁ − hΣσˣᵢ; no thermodynamic-limit claim."
+    }
+  }
+}

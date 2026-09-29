@@ -5,6 +5,7 @@ import {
   DELIVERED_QVIS,
   POST_QVIS,
   SOURCE_PLAN_COVERAGE,
+  ATLAS_RECONCILIATION_STEPS,
 } from "../packages/models/roadmap";
 
 test("roadmap preserves delivered IDs and labels future work as planned", () => {
@@ -23,6 +24,16 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
     [],
   );
   assert.ok(POST_QVIS.every((r) => r.state === "Planned"));
+  assert.deepEqual(
+    ATLAS_RECONCILIATION_STEPS.map((r) => [r.id, r.state]),
+    [
+      ["R1", "Implemented"],
+      ["R2", "Planned"],
+      ["R3", "Planned"],
+      ["R4", "Planned"],
+      ["R5", "Planned"],
+    ],
+  );
   assert.equal(
     new Set([...DELIVERED_QVIS, ...POST_QVIS].map((r) => r.id)).size,
     13,
@@ -56,5 +67,8 @@ test("tracked post-QLAB document keeps the source plan and a separate status ove
   for (const row of [...DELIVERED_QVIS, ...POST_QVIS])
     assert.ok(doc.includes(row.id));
   assert.match(doc, /commit e4afd9a/);
-  assert.match(doc, /Lab continuation milestones \(status updated per delivery\)/);
+  assert.match(
+    doc,
+    /Lab continuation milestones \(status updated per delivery\)/,
+  );
 });

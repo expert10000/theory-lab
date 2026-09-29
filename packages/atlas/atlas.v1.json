@@ -1,7 +1,7 @@
 {
   "schema": "theory-atlas-snapshot/v1",
   "sourceRepository": "https://github.com/expert10000/theory",
-  "sourceRevision": "61791aff00c0f35a82ec6f2271deded5cc5e99d6",
+  "sourceRevision": "48e2036ba7c7dd5c79d54749341a79d41770cbb7",
   "atlasVersion": "1.0",
   "entries": [
     {
@@ -3630,6 +3630,1567 @@
         "difficulty": "intermediate"
       },
       "sourceFile": "registry/spin_atomic_fields.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "landau_continuum",
+      "name": "Continuum Landau Hamiltonian",
+      "family": "hall",
+      "formula": {
+        "latex": "H=\\frac{1}{2m}(\\mathbf p-q\\mathbf A)^2"
+      },
+      "basis": {
+        "description": "2D orbital / Landau-level basis"
+      },
+      "parameters": [
+        {
+          "symbol": "m",
+          "name": "effective mass",
+          "unit_convention": "mass",
+          "description": "particle mass",
+          "default": 1
+        },
+        {
+          "symbol": "q",
+          "name": "charge",
+          "unit_convention": "charge",
+          "description": "particle charge",
+          "default": -1
+        },
+        {
+          "symbol": "B",
+          "name": "magnetic field",
+          "unit_convention": "field",
+          "description": "uniform perpendicular field",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "2D charged particle",
+        "uniform B"
+      ],
+      "symmetries": [
+        "magnetic translations",
+        "gauge covariance"
+      ],
+      "conserved_quantities": [
+        "energy"
+      ],
+      "important_limits": [
+        {
+          "condition": "uniform B",
+          "result": "Landau-level quantization"
+        }
+      ],
+      "observables": [
+        "Landau levels",
+        "current",
+        "density"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "pauli_particle_em",
+          "condition": "spinless orbital minimal-coupling sector"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Orbital basis of integer quantum Hall physics.",
+        "tags": [
+          "landau",
+          "hall"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "hofstadter",
+      "name": "Hofstadter lattice Hamiltonian",
+      "family": "hall",
+      "formula": {
+        "latex": "H=-t\\sum_{\\langle ij\\rangle}e^{i\\theta_{ij}}c_i^\\dagger c_j+\\mathrm{h.c.}"
+      },
+      "basis": {
+        "description": "lattice sites with Peierls phases"
+      },
+      "parameters": [
+        {
+          "symbol": "t",
+          "name": "hopping",
+          "unit_convention": "energy",
+          "description": "nearest-neighbor hopping",
+          "default": 1
+        },
+        {
+          "symbol": "alpha",
+          "name": "flux per plaquette",
+          "unit_convention": "flux_quantum_fraction",
+          "description": "flux in units of flux quantum",
+          "default": 0.25
+        }
+      ],
+      "assumptions": [
+        "tight-binding lattice",
+        "uniform magnetic flux"
+      ],
+      "symmetries": [
+        "magnetic translations at rational flux"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "alpha=p/q",
+          "result": "q-band magnetic unit-cell structure"
+        }
+      ],
+      "observables": [
+        "Hofstadter spectrum",
+        "Chern numbers",
+        "edge spectrum"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "tight_binding_generic",
+          "condition": "Peierls magnetic phases"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Magnetic lattice model producing Hofstadter bands.",
+        "tags": [
+          "hofstadter",
+          "chern"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "integer_qh_effective",
+      "name": "Integer quantum Hall filled-level model",
+      "family": "hall",
+      "formula": {
+        "latex": "H=\\sum_{n,k}\\hbar\\omega_c(n+\\tfrac12)c_{nk}^\\dagger c_{nk}"
+      },
+      "basis": {
+        "description": "Landau-level occupation basis"
+      },
+      "parameters": [
+        {
+          "symbol": "omega_c",
+          "name": "cyclotron frequency",
+          "unit_convention": "angular_frequency",
+          "description": "cyclotron frequency",
+          "default": 1
+        },
+        {
+          "symbol": "nu",
+          "name": "filling factor",
+          "unit_convention": "dimensionless",
+          "description": "filled Landau levels",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "noninteracting fermions",
+        "integer filling"
+      ],
+      "symmetries": [
+        "magnetic translations"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "integer nu and spectral gap",
+          "result": "ideal quantized Hall plateau"
+        }
+      ],
+      "observables": [
+        "Hall conductivity",
+        "edge channels",
+        "occupations"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "landau_continuum",
+          "condition": "second-quantized filled-level description"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Effective filled-Landau-level IQH model.",
+        "tags": [
+          "iqhe",
+          "hall"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "bose_hubbard",
+      "name": "Bose-Hubbard model",
+      "family": "many_body",
+      "formula": {
+        "latex": "H=-t\\sum_{\\langle ij\\rangle}(b_i^\\dagger b_j+\\mathrm{h.c.})+\\frac{U}{2}\\sum_i n_i(n_i-1)-\\mu\\sum_i n_i"
+      },
+      "basis": {
+        "description": "bosonic occupation basis"
+      },
+      "parameters": [
+        {
+          "symbol": "t",
+          "name": "hopping",
+          "unit_convention": "energy",
+          "description": "boson hopping",
+          "default": 1
+        },
+        {
+          "symbol": "U",
+          "name": "onsite interaction",
+          "unit_convention": "energy",
+          "description": "onsite repulsion",
+          "default": 4
+        },
+        {
+          "symbol": "mu",
+          "name": "chemical potential",
+          "unit_convention": "energy",
+          "description": "chemical potential",
+          "default": 0
+        }
+      ],
+      "assumptions": [
+        "single-band bosons"
+      ],
+      "symmetries": [
+        "global U(1)"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "large U/t at commensurate filling",
+          "result": "Mott-favored regime"
+        }
+      ],
+      "observables": [
+        "occupation",
+        "fluctuations",
+        "correlations"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "hubbard",
+          "condition": "bosonic onsite-interaction analogue"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical interacting bosonic lattice model.",
+        "tags": [
+          "bose-hubbard",
+          "mott"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "extended_hubbard",
+      "name": "Extended Fermi-Hubbard model",
+      "family": "many_body",
+      "formula": {
+        "latex": "H=H_{\\mathrm{Hubbard}}+V\\sum_{\\langle ij\\rangle}n_i n_j"
+      },
+      "basis": {
+        "description": "fermionic occupation basis"
+      },
+      "parameters": [
+        {
+          "symbol": "t",
+          "name": "hopping",
+          "unit_convention": "energy",
+          "description": "nearest-neighbor hopping",
+          "default": 1
+        },
+        {
+          "symbol": "U",
+          "name": "onsite interaction",
+          "unit_convention": "energy",
+          "description": "onsite interaction",
+          "default": 4
+        },
+        {
+          "symbol": "V",
+          "name": "nearest-neighbor interaction",
+          "unit_convention": "energy",
+          "description": "density interaction",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "single-band fermions"
+      ],
+      "symmetries": [
+        "particle number"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "V=0",
+          "result": "hubbard"
+        }
+      ],
+      "observables": [
+        "density correlations",
+        "double occupancy",
+        "charge order"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "hubbard",
+          "condition": "V=0"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Hubbard extension with nearest-neighbor density interaction.",
+        "tags": [
+          "extended-hubbard",
+          "interaction"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "t_j_model",
+      "name": "t-J model",
+      "family": "many_body",
+      "formula": {
+        "latex": "H=-t\\sum_{\\langle ij\\rangle,\\sigma}\\mathcal P(c_{i\\sigma}^\\dagger c_{j\\sigma}+\\mathrm{h.c.})\\mathcal P+J\\sum_{\\langle ij\\rangle}(\\mathbf S_i\\cdot\\mathbf S_j-\\tfrac14 n_i n_j)"
+      },
+      "basis": {
+        "description": "projected no-double-occupancy basis"
+      },
+      "parameters": [
+        {
+          "symbol": "t",
+          "name": "projected hopping",
+          "unit_convention": "energy",
+          "description": "carrier hopping",
+          "default": 1
+        },
+        {
+          "symbol": "J",
+          "name": "exchange",
+          "unit_convention": "energy",
+          "description": "spin exchange",
+          "default": 0.3
+        }
+      ],
+      "assumptions": [
+        "strong-coupling projected Hilbert space"
+      ],
+      "symmetries": [
+        "spin rotation",
+        "particle number"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "near half filling",
+          "result": "exchange-dominated spin sector"
+        }
+      ],
+      "observables": [
+        "spin correlations",
+        "hole motion"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "hubbard",
+          "condition": "strong-coupling low-energy descendant"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Projected strong-coupling lattice model.",
+        "tags": [
+          "t-j",
+          "strong-coupling"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "heisenberg_from_hubbard",
+      "name": "Hubbard superexchange Hamiltonian",
+      "family": "many_body",
+      "formula": {
+        "latex": "H_{\\mathrm{eff}}=J\\sum_{\\langle ij\\rangle}\\mathbf S_i\\cdot\\mathbf S_j,\\quad J\\simeq4t^2/U"
+      },
+      "basis": {
+        "description": "singly occupied low-energy spin sector"
+      },
+      "parameters": [
+        {
+          "symbol": "t",
+          "name": "parent hopping",
+          "unit_convention": "energy",
+          "description": "virtual hopping",
+          "default": 1
+        },
+        {
+          "symbol": "U",
+          "name": "parent repulsion",
+          "unit_convention": "energy",
+          "description": "large onsite repulsion",
+          "default": 8
+        },
+        {
+          "symbol": "J",
+          "name": "superexchange",
+          "unit_convention": "energy",
+          "description": "derived 4t^2/U",
+          "default": "derived"
+        }
+      ],
+      "assumptions": [
+        "half-filled Hubbard",
+        "U much larger than t"
+      ],
+      "symmetries": [
+        "SU(2)"
+      ],
+      "conserved_quantities": [
+        "total spin"
+      ],
+      "important_limits": [
+        {
+          "condition": "U/t large",
+          "result": "leading superexchange description"
+        }
+      ],
+      "observables": [
+        "spin correlations",
+        "exchange energy"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "hubbard",
+          "condition": "strong-coupling effective limit"
+        },
+        {
+          "type": "related",
+          "target": "heisenberg_chain",
+          "condition": "1D nearest-neighbor specialization"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Explicit Hubbard-to-Heisenberg bridge.",
+        "tags": [
+          "superexchange",
+          "heisenberg"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "bcs_reduced",
+      "name": "Reduced BCS pairing Hamiltonian",
+      "family": "superconducting",
+      "formula": {
+        "latex": "H=\\sum_{\\mathbf k,\\sigma}\\xi_{\\mathbf k}c_{\\mathbf k\\sigma}^\\dagger c_{\\mathbf k\\sigma}-\\sum_{\\mathbf k,\\mathbf k'}V_{\\mathbf k\\mathbf k'}c_{\\mathbf k\\uparrow}^\\dagger c_{-\\mathbf k\\downarrow}^\\dagger c_{-\\mathbf k'\\downarrow}c_{\\mathbf k'\\uparrow}"
+      },
+      "basis": {
+        "description": "momentum-space fermionic Fock basis"
+      },
+      "parameters": [
+        {
+          "symbol": "xi_k",
+          "name": "dispersion",
+          "unit_convention": "energy",
+          "description": "energy relative to chemical potential",
+          "default": "model-defined"
+        },
+        {
+          "symbol": "V_kk",
+          "name": "pairing interaction",
+          "unit_convention": "energy",
+          "description": "pairing kernel",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "reduced opposite-momentum pairing channel"
+      ],
+      "symmetries": [
+        "global U(1) before mean field"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "mean-field decoupling",
+          "result": "bdg_swave"
+        }
+      ],
+      "observables": [
+        "pair correlations",
+        "gap",
+        "occupation"
+      ],
+      "relations": [
+        {
+          "type": "extension",
+          "target": "bdg_swave",
+          "condition": "mean-field quasiparticle representation"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Reduced pairing Hamiltonian underlying BCS theory.",
+        "tags": [
+          "bcs",
+          "pairing"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "bdg_swave",
+      "name": "s-wave Bogoliubov-de Gennes Hamiltonian",
+      "family": "superconducting",
+      "formula": {
+        "latex": "H_{\\mathrm{BdG}}(\\mathbf k)=\\xi_{\\mathbf k}\\tau_z+\\mathrm{Re}\\Delta\\,\\tau_x-\\mathrm{Im}\\Delta\\,\\tau_y"
+      },
+      "basis": {
+        "description": "Nambu particle-hole basis"
+      },
+      "parameters": [
+        {
+          "symbol": "xi_k",
+          "name": "normal dispersion",
+          "unit_convention": "energy",
+          "description": "dispersion relative to chemical potential",
+          "default": "model-defined"
+        },
+        {
+          "symbol": "Delta",
+          "name": "pair potential",
+          "unit_convention": "energy",
+          "description": "complex s-wave gap",
+          "default": 0.2
+        }
+      ],
+      "assumptions": [
+        "mean-field superconductivity",
+        "Nambu doubling"
+      ],
+      "symmetries": [
+        "BdG particle-hole symmetry"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "Delta=0",
+          "result": "normal-state doubled spectrum"
+        }
+      ],
+      "observables": [
+        "quasiparticle spectrum",
+        "gap",
+        "density of states"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "bcs_reduced",
+          "condition": "mean-field quasiparticle form"
+        },
+        {
+          "type": "related",
+          "target": "kitaev_chain",
+          "condition": "1D spinless p-wave counterpart"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Minimal conventional BdG quasiparticle Hamiltonian.",
+        "tags": [
+          "bdg",
+          "s-wave"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "anderson_impurity",
+      "name": "Single-impurity Anderson model",
+      "family": "many_body",
+      "formula": {
+        "latex": "H=\\sum_{k\\sigma}\\epsilon_k c_{k\\sigma}^\\dagger c_{k\\sigma}+\\epsilon_d\\sum_\\sigma n_{d\\sigma}+U n_{d\\uparrow}n_{d\\downarrow}+\\sum_{k\\sigma}(V_kc_{k\\sigma}^\\dagger d_\\sigma+\\mathrm{h.c.})"
+      },
+      "basis": {
+        "description": "bath Fock x impurity occupation basis"
+      },
+      "parameters": [
+        {
+          "symbol": "epsilon_d",
+          "name": "impurity level",
+          "unit_convention": "energy",
+          "description": "localized level",
+          "default": 0
+        },
+        {
+          "symbol": "U",
+          "name": "impurity interaction",
+          "unit_convention": "energy",
+          "description": "onsite repulsion",
+          "default": 4
+        },
+        {
+          "symbol": "V_k",
+          "name": "hybridization",
+          "unit_convention": "energy",
+          "description": "bath coupling",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "single correlated impurity with noninteracting bath"
+      ],
+      "symmetries": [
+        "particle number",
+        "spin rotation"
+      ],
+      "conserved_quantities": [
+        "particle number"
+      ],
+      "important_limits": [
+        {
+          "condition": "U=0",
+          "result": "resonant-level model"
+        }
+      ],
+      "observables": [
+        "impurity occupation",
+        "spectral function",
+        "spin susceptibility"
+      ],
+      "relations": [],
+      "references": {
+        "chapters": [
+          "Volume VIII Landau/Hall, many-body, and superconducting Hamiltonians"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical correlated impurity model.",
+        "tags": [
+          "anderson-impurity",
+          "correlations"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/hall_many_body_superconducting.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "repetition_code_ising",
+      "name": "Repetition-code Ising penalty Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H=-J\\sum_{i=1}^{n-1}Z_iZ_{i+1}"
+      },
+      "basis": {
+        "description": "n-qubit computational basis"
+      },
+      "parameters": [
+        {
+          "symbol": "J",
+          "name": "parity-check penalty",
+          "unit_convention": "energy",
+          "description": "nearest-neighbor repetition-code stabilizer weight",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "bit-flip repetition code",
+        "open-chain checks"
+      ],
+      "symmetries": [
+        "global logical X symmetry in ideal chain"
+      ],
+      "conserved_quantities": [
+        "Z_i Z_{i+1} checks"
+      ],
+      "important_limits": [
+        {
+          "condition": "J>0",
+          "result": "aligned computational states span ideal ground/code sector"
+        }
+      ],
+      "observables": [
+        "check expectations",
+        "domain-wall syndrome",
+        "logical parity"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "surface_code_stabilizer",
+          "condition": "1D commuting-stabilizer analogue"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Hamiltonian encoding the parity checks of the bit-flip repetition code.",
+        "tags": [
+          "qec",
+          "repetition",
+          "penalty"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "toric_code",
+      "name": "Toric-code Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H=-J_e\\sum_s A_s-J_m\\sum_p B_p"
+      },
+      "basis": {
+        "description": "qubits on edges of a periodic square lattice"
+      },
+      "parameters": [
+        {
+          "symbol": "J_e",
+          "name": "star coupling",
+          "unit_convention": "energy",
+          "description": "electric/star stabilizer weight",
+          "default": 1
+        },
+        {
+          "symbol": "J_m",
+          "name": "plaquette coupling",
+          "unit_convention": "energy",
+          "description": "magnetic/plaquette stabilizer weight",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "periodic topology",
+        "ideal commuting stabilizers"
+      ],
+      "symmetries": [
+        "stabilizer symmetries",
+        "topological loop symmetries"
+      ],
+      "conserved_quantities": [
+        "all A_s and B_p stabilizers"
+      ],
+      "important_limits": [
+        {
+          "condition": "J_e,J_m>0",
+          "result": "ground space is common +1 stabilizer sector with topology-dependent degeneracy"
+        }
+      ],
+      "observables": [
+        "anyon syndromes",
+        "Wilson loops",
+        "logical loops",
+        "ground-space splitting"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "surface_code_stabilizer",
+          "condition": "periodic-boundary counterpart"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Canonical commuting-projector topological-code Hamiltonian.",
+        "tags": [
+          "qec",
+          "toric-code",
+          "topological-order"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "surface_code_planar",
+      "name": "Planar surface-code Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H=-J_X\\sum_s A_s-J_Z\\sum_p B_p"
+      },
+      "basis": {
+        "description": "qubits on a planar surface-code lattice with boundaries"
+      },
+      "parameters": [
+        {
+          "symbol": "J_X",
+          "name": "X-check coupling",
+          "unit_convention": "energy",
+          "description": "star/X stabilizer weight",
+          "default": 1
+        },
+        {
+          "symbol": "J_Z",
+          "name": "Z-check coupling",
+          "unit_convention": "energy",
+          "description": "plaquette/Z stabilizer weight",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "planar boundaries",
+        "ideal commuting stabilizers"
+      ],
+      "symmetries": [
+        "stabilizer symmetries"
+      ],
+      "conserved_quantities": [
+        "bulk/boundary stabilizers"
+      ],
+      "important_limits": [
+        {
+          "condition": "positive stabilizer weights",
+          "result": "code space is simultaneous +1 eigenspace subject to logical degeneracy"
+        }
+      ],
+      "observables": [
+        "syndrome pattern",
+        "logical strings",
+        "stabilizer expectations"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "surface_code_stabilizer",
+          "condition": "explicit planar-boundary realization"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Planar realization of the canonical surface-code stabilizer Hamiltonian.",
+        "tags": [
+          "qec",
+          "surface-code",
+          "planar"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "surface_code_with_fields",
+      "name": "Surface code with local perturbing fields",
+      "family": "qec",
+      "formula": {
+        "latex": "H=-J_X\\sum_sA_s-J_Z\\sum_pB_p-\\sum_i(h_i^xX_i+h_i^zZ_i)"
+      },
+      "basis": {
+        "description": "surface-code qubit basis"
+      },
+      "parameters": [
+        {
+          "symbol": "J_X",
+          "name": "X-check coupling",
+          "unit_convention": "energy",
+          "description": "X stabilizer weight",
+          "default": 1
+        },
+        {
+          "symbol": "J_Z",
+          "name": "Z-check coupling",
+          "unit_convention": "energy",
+          "description": "Z stabilizer weight",
+          "default": 1
+        },
+        {
+          "symbol": "h_x",
+          "name": "X-field scale",
+          "unit_convention": "energy",
+          "description": "local X perturbation",
+          "default": "0.05"
+        },
+        {
+          "symbol": "h_z",
+          "name": "Z-field scale",
+          "unit_convention": "energy",
+          "description": "local Z perturbation",
+          "default": "0.05"
+        }
+      ],
+      "assumptions": [
+        "static coherent perturbations added to ideal code Hamiltonian"
+      ],
+      "symmetries": [
+        "generally reduced from ideal stabilizer symmetry"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "h_x=h_z=0",
+          "result": "surface_code_stabilizer"
+        }
+      ],
+      "observables": [
+        "stabilizer decay",
+        "gap",
+        "logical-sector mixing"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "surface_code_stabilizer",
+          "condition": "fields switched off"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Effective coherent-error extension of the ideal surface-code Hamiltonian.",
+        "tags": [
+          "qec",
+          "surface-code",
+          "coherent-error"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "color_code_stabilizer",
+      "name": "2D color-code stabilizer Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H=-J_X\\sum_f X_f-J_Z\\sum_f Z_f"
+      },
+      "basis": {
+        "description": "qubits on vertices of a trivalent three-colorable lattice"
+      },
+      "parameters": [
+        {
+          "symbol": "J_X",
+          "name": "X-face coupling",
+          "unit_convention": "energy",
+          "description": "X-face stabilizer weight",
+          "default": 1
+        },
+        {
+          "symbol": "J_Z",
+          "name": "Z-face coupling",
+          "unit_convention": "energy",
+          "description": "Z-face stabilizer weight",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "valid color-code lattice",
+        "ideal commuting face stabilizers"
+      ],
+      "symmetries": [
+        "stabilizer symmetries"
+      ],
+      "conserved_quantities": [
+        "face stabilizers"
+      ],
+      "important_limits": [
+        {
+          "condition": "positive stabilizer weights",
+          "result": "code space is common +1 stabilizer sector"
+        }
+      ],
+      "observables": [
+        "face syndromes",
+        "logical strings",
+        "stabilizer expectations"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "surface_code_stabilizer",
+          "condition": "alternative 2D topological stabilizer-code family"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Commuting-stabilizer Hamiltonian for the 2D color code.",
+        "tags": [
+          "qec",
+          "color-code",
+          "stabilizer"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "bacon_shor_gauge",
+      "name": "Bacon-Shor gauge Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H_{\\rm gauge}=-J_X\\sum_{\\langle ij\\rangle_x}X_iX_j-J_Z\\sum_{\\langle ij\\rangle_z}Z_iZ_j"
+      },
+      "basis": {
+        "description": "qubit grid basis"
+      },
+      "parameters": [
+        {
+          "symbol": "J_X",
+          "name": "XX gauge coupling",
+          "unit_convention": "energy",
+          "description": "row/axis gauge interaction",
+          "default": 1
+        },
+        {
+          "symbol": "J_Z",
+          "name": "ZZ gauge coupling",
+          "unit_convention": "energy",
+          "description": "column/axis gauge interaction",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "subsystem-code gauge description"
+      ],
+      "symmetries": [
+        "gauge-generated subsystem structure"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "gauge operators combined",
+          "result": "higher-weight stabilizers emerge as gauge products"
+        }
+      ],
+      "observables": [
+        "gauge expectations",
+        "stabilizer syndromes",
+        "logical observables"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "surface_code_stabilizer",
+          "condition": "subsystem-code contrast to commuting stabilizer construction"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Two-body gauge-interaction representation associated with Bacon-Shor subsystem coding.",
+        "tags": [
+          "qec",
+          "subsystem-code",
+          "bacon-shor"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "stabilizer_penalty_generic",
+      "name": "Generic stabilizer penalty Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H_{\\rm pen}=-\\sum_a\\lambda_a S_a"
+      },
+      "basis": {
+        "description": "code-space basis defined by commuting stabilizer generators S_a"
+      },
+      "parameters": [
+        {
+          "symbol": "lambda_a",
+          "name": "stabilizer penalties",
+          "unit_convention": "energy",
+          "description": "positive penalty weights",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "mutually commuting stabilizer generators",
+        "ideal static penalty model"
+      ],
+      "symmetries": [
+        "stabilizer group"
+      ],
+      "conserved_quantities": [
+        "all included S_a"
+      ],
+      "important_limits": [
+        {
+          "condition": "all lambda_a>0",
+          "result": "simultaneous +1 stabilizer sector minimizes penalty energy"
+        }
+      ],
+      "observables": [
+        "syndrome energy",
+        "stabilizer expectations",
+        "code-space leakage"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "surface_code_stabilizer",
+          "condition": "generic parent form"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Code-independent Hamiltonian form for energetic stabilizer penalties.",
+        "tags": [
+          "qec",
+          "stabilizer",
+          "penalty"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "encoded_adiabatic_penalty",
+      "name": "Encoded adiabatic penalty Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H(t)=H_{\\rm logical}(t)-\\eta(t)\\sum_a S_a"
+      },
+      "basis": {
+        "description": "encoded/code-space basis"
+      },
+      "parameters": [
+        {
+          "symbol": "eta",
+          "name": "penalty schedule",
+          "unit_convention": "energy",
+          "description": "time-dependent stabilizer penalty scale",
+          "default": "model-defined"
+        }
+      ],
+      "assumptions": [
+        "logical Hamiltonian compatible with chosen encoding",
+        "stabilizer penalty construction"
+      ],
+      "symmetries": [
+        "model-dependent"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "eta large relative to leakage couplings",
+          "result": "energetic suppression of departures from code sector"
+        }
+      ],
+      "observables": [
+        "code-space population",
+        "gap",
+        "logical observable",
+        "leakage"
+      ],
+      "relations": [
+        {
+          "type": "parent",
+          "target": "stabilizer_penalty_generic",
+          "condition": "time-dependent encoded extension"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Generic encoded adiabatic/annealing Hamiltonian augmented by stabilizer penalties.",
+        "tags": [
+          "qec",
+          "adiabatic",
+          "penalty"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "logical_pauli_effective",
+      "name": "Effective logical-qubit Pauli Hamiltonian",
+      "family": "qec",
+      "formula": {
+        "latex": "H_L=d_0I_L+d_xX_L+d_yY_L+d_zZ_L"
+      },
+      "basis": {
+        "description": "logical two-dimensional code subspace"
+      },
+      "parameters": [
+        {
+          "symbol": "d_0",
+          "name": "logical offset",
+          "unit_convention": "energy",
+          "description": "logical identity coefficient",
+          "default": 0
+        },
+        {
+          "symbol": "d_x",
+          "name": "logical X coefficient",
+          "unit_convention": "energy",
+          "description": "logical X drive/coupling",
+          "default": 0
+        },
+        {
+          "symbol": "d_y",
+          "name": "logical Y coefficient",
+          "unit_convention": "energy",
+          "description": "logical Y drive/coupling",
+          "default": 0
+        },
+        {
+          "symbol": "d_z",
+          "name": "logical Z coefficient",
+          "unit_convention": "energy",
+          "description": "logical splitting",
+          "default": 1
+        }
+      ],
+      "assumptions": [
+        "projection into a protected logical-qubit subspace"
+      ],
+      "symmetries": [
+        "depends on encoded control"
+      ],
+      "conserved_quantities": [],
+      "important_limits": [
+        {
+          "condition": "no leakage and ideal projection",
+          "result": "ordinary two-level Pauli dynamics in logical space"
+        }
+      ],
+      "observables": [
+        "logical Bloch vector",
+        "logical populations",
+        "logical fidelity"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "two_level_pauli",
+          "condition": "encoded logical counterpart"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Universal effective Hamiltonian for a single encoded logical qubit.",
+        "tags": [
+          "qec",
+          "logical-qubit",
+          "effective"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
+    },
+    {
+      "schema_version": "1.0",
+      "id": "syndrome_defect_effective",
+      "name": "Surface-code syndrome-defect energy model",
+      "family": "qec",
+      "formula": {
+        "latex": "H_{\\rm synd}=\\sum_s\\epsilon_s\\,\\frac{1-A_s}{2}+\\sum_p\\epsilon_p\\,\\frac{1-B_p}{2}"
+      },
+      "basis": {
+        "description": "stabilizer-eigenvalue / syndrome-sector basis"
+      },
+      "parameters": [
+        {
+          "symbol": "epsilon_s",
+          "name": "star defect energy",
+          "unit_convention": "energy",
+          "description": "energy assigned to violated X-type check",
+          "default": 2
+        },
+        {
+          "symbol": "epsilon_p",
+          "name": "plaquette defect energy",
+          "unit_convention": "energy",
+          "description": "energy assigned to violated Z-type check",
+          "default": 2
+        }
+      ],
+      "assumptions": [
+        "ideal commuting stabilizer-sector description"
+      ],
+      "symmetries": [
+        "stabilizer symmetries"
+      ],
+      "conserved_quantities": [
+        "syndrome projectors"
+      ],
+      "important_limits": [
+        {
+          "condition": "all checks +1",
+          "result": "zero-defect code sector"
+        }
+      ],
+      "observables": [
+        "defect count",
+        "syndrome energy",
+        "defect separation"
+      ],
+      "relations": [
+        {
+          "type": "related",
+          "target": "surface_code_stabilizer",
+          "condition": "same ideal spectrum rewritten in defect-energy language"
+        }
+      ],
+      "references": {
+        "chapters": [
+          "Volume VIII QEC and surface-code computational laboratories"
+        ],
+        "computational_examples": []
+      },
+      "computation": {
+        "adapter": null,
+        "runnable": null,
+        "default_preset": null
+      },
+      "presentation": {
+        "summary": "Syndrome-sector representation useful for connecting stabilizer violations to effective excitation energies.",
+        "tags": [
+          "qec",
+          "surface-code",
+          "syndrome"
+        ],
+        "difficulty": "advanced"
+      },
+      "sourceFile": "registry/qec_effective.yaml"
     }
   ],
   "presets": {
@@ -3683,6 +5244,50 @@
         "J_s": 1,
         "J_p": 1
       }
+    }
+  },
+  "sourceBindings": {
+    "jaynes_cummings": {
+      "adapter": "examples/python/qutip/adapters/jaynes_cummings.py",
+      "example": "examples/python/qutip/run_jaynes_cummings_cavity_qed_lab.py",
+      "kind": "direct",
+      "notes": "Direct cavity-QED model binding."
+    },
+    "dispersive_jc": {
+      "adapter": "examples/python/qutip/adapters/dispersive_jc.py",
+      "example": "examples/python/qutip/run_dispersive_jc_spectroscopy_lab.py",
+      "kind": "direct",
+      "notes": "Direct dispersive Jaynes-Cummings spectroscopy binding."
+    },
+    "tavis_cummings": {
+      "adapter": "examples/python/qutip/adapters/tavis_cummings.py",
+      "example": "examples/python/qutip/run_tavis_cummings_collective_qed_lab.py",
+      "kind": "direct",
+      "notes": "Direct collective cavity-QED binding."
+    },
+    "two_level_pauli": {
+      "adapter": "examples/python/qutip/adapters/models.py",
+      "example": "examples/python/qutip/run_two_level_dynamics_lab.py",
+      "kind": "family",
+      "notes": "Generic two-level computational family; exact model selection remains adapter-side."
+    },
+    "surface_code_stabilizer": {
+      "adapter": "examples/python/qutip/adapters/surface_code_d3.py",
+      "example": "examples/python/qutip/run_surface_code_d3_lab.py",
+      "kind": "reference_lab",
+      "notes": "Core surface-code reference laboratory; decoder/scaling labs remain related consumers."
+    },
+    "surface_code_planar": {
+      "adapter": "examples/python/qutip/adapters/surface_code_rotated.py",
+      "example": "examples/python/qutip/run_surface_code_rotated_lab.py",
+      "kind": "reference_lab",
+      "notes": "Planar/rotated surface-code reference implementation."
+    },
+    "syndrome_defect_effective": {
+      "adapter": "examples/python/qutip/adapters/surface_plaquette.py",
+      "example": "examples/python/qutip/run_surface_plaquette_lab.py",
+      "kind": "reference_lab",
+      "notes": "Plaquette/syndrome-graph laboratory is the closest verified executable reference."
     }
   }
 }

@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from "react";
 import { ATLAS_ENTRIES, ATLAS_REVISION, atlasEntry, atlasUrl } from "../../packages/atlas";
 import { atlasBinding, type AtlasBinding } from "../../packages/atlas/bindings";
+import { AtlasCapabilities } from "../../packages/ui/AtlasCapabilities";
 
 export function AtlasBrowser({ onLoad, supported }: {
   onLoad: (binding: AtlasBinding) => void;
@@ -16,8 +17,8 @@ export function AtlasBrowser({ onLoad, supported }: {
   const binding = selected ? atlasBinding(selected.id) : null;
   return <div className="web-atlas" data-testid="web-atlas">
     <div className="page-intro"><div><div className="eyebrow">THEORY / PINNED REFERENCE</div><h1>Hamiltonian Atlas</h1>
-      <p>48 source definitions at revision <code>{ATLAS_REVISION.slice(0, 12)}</code>. The source registry marks no entry runnable; supported web lab bindings are separate.</p></div>
-      <div className="model-badge">48 Hamiltonians · 9 tested lab bindings</div></div>
+      <p>{ATLAS_ENTRIES.length} source definitions at revision <code>{ATLAS_REVISION.slice(0, 12)}</code>. R1 separates reference entries, theory examples and tested Lab bindings.</p></div>
+      <div className="model-badge">{ATLAS_ENTRIES.length} Hamiltonians · 9 tested lab bindings</div></div>
     <div className="card"><div className="atlas-filters"><input aria-label="Search Atlas" value={query} onChange={event => setQuery(event.target.value)} placeholder="Search names, IDs or tags"/>
       <select aria-label="Atlas family" value={family} onChange={event => setFamily(event.target.value)}><option value="all">All families</option>{[...new Set(ATLAS_ENTRIES.map(entry => entry.family))].sort().map(value => <option key={value} value={value}>{value}</option>)}</select></div>
       <div className="atlas-grid"><div className="atlas-items" role="list" aria-label="Atlas entries">{entries.map(entry => <button key={entry.id} className={selectedId === entry.id ? "atlas-item active" : "atlas-item"} onClick={() => setSelectedId(entry.id)}><strong>{entry.name}</strong><small>{entry.id} · {entry.family}</small></button>)}</div>
@@ -28,6 +29,7 @@ export function AtlasBrowser({ onLoad, supported }: {
         <h3>Observables</h3><p>{selected.observables.join(" · ")}</p>
         {selected.relations.length > 0 && <><h3>Relations</h3><div className="atlas-links">{selected.relations.map((relation, index) => <button key={index} onClick={() => { setSelectedId(relation.target); setFamily("all"); setQuery(""); }}>{relation.target} ↗</button>)}</div></>}
         <a className="atlas-source" href={atlasUrl(selected)} target="_blank" rel="noopener noreferrer">View pinned source ↗</a>
+        <AtlasCapabilities id={selected.id}/>
         {binding ? <div className="atlas-bridge"><div className="eyebrow">THEORY LAB BINDING</div><p>{binding.convention}</p>
           {supported(binding) ? <button className="primary" data-testid="web-atlas-load" onClick={() => onLoad(binding)}>Load in {binding.modelId.replaceAll("_", " ")} lab →</button> : <small>This binding is available in the desktop lab; it is not yet a web control.</small>}</div>
           : <p className="atlas-unbound">No tested lab binding for this entry yet.</p>}

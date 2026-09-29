@@ -8,6 +8,13 @@ implemented QVIS-001–013 from broader future physics and visualization work.
 The supplied Math3D plan is preserved as a separate
 track; it is not a claim that integration is already implemented.
 
+**R1 Atlas reconciliation** pins 68 canonical definitions and maps all entries
+to the existing Lab capabilities. Seven theory-side example references are
+distinct from nine tested Lab bindings; reference/related entries never gain
+Run actions from source flags. Both Atlas UIs show the coverage. See the
+[complete reconciliation map](docs/ATLAS_RECONCILIATION_R1.md). R2–R5 remain
+planned; no new physics or parallel model/worker layer is introduced.
+
 ## Run on Windows
 
 Install Node.js 24 LTS and Python 3.12, then from this repository:

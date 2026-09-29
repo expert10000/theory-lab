@@ -21,6 +21,13 @@ This extension reconciles the imported 001–010 proposal without renaming shipp
 commits. General crystals, additional physics models and Math3D integration
 remain separate future work; no Math3D files were changed.
 
+R1 is implemented: the canonical 68-entry Atlas is pinned and reconciled with
+existing typed Lab modules, seven source-example references and nine preserved
+tested bindings. No second model/workspace/worker architecture was added.
+See [ATLAS_RECONCILIATION_R1.md](ATLAS_RECONCILIATION_R1.md) for the full inventory.
+R2 executable mapping review, R3 QVIS vocabulary review, R4 genuine model gaps,
+and R5 the reconciled contract freeze remain planned. D1 is not started.
+
 ## 1. Technology decision
 
 ### V1

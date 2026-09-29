@@ -58,6 +58,28 @@ try {
     });
   await page.getByRole("button", { name: /Hamiltonian Atlas/ }).click();
   await page.getByTestId("web-atlas").waitFor();
+  assert.match(
+    await page.getByTestId("web-atlas").innerText(),
+    /68 Hamiltonians/,
+  );
+  for (const [id, kind] of [
+    ["surface_code_planar", "reference_lab"],
+    ["dispersive_jc", "direct"],
+    ["hofstadter", "not declared"],
+    ["coulomb_one_body", "not declared"],
+  ]) {
+    await page.getByLabel("Search Atlas").fill(id);
+    await page.getByRole("button", { name: new RegExp(id) }).click();
+    assert.match(
+      await page.getByTestId("atlas-capability-status").innerText(),
+      new RegExp(`Theory example: ${kind}.*Lab executable binding: none`),
+    );
+    assert.equal(await page.getByTestId("web-atlas-load").count(), 0);
+  }
+  await page.screenshot({
+    path: join(root, "artifacts", "web-atlas-r1.png"),
+    fullPage: true,
+  });
   await page.getByLabel("Search Atlas").fill("Su-Schrieffer-Heeger");
   await page
     .getByRole("button", { name: /Su-Schrieffer-Heeger model/ })
@@ -70,7 +92,7 @@ try {
     (await page
       .getByRole("link", { name: /View pinned source/ })
       .getAttribute("href"))!.includes(
-      "61791aff00c0f35a82ec6f2271deded5cc5e99d6",
+      "48e2036ba7c7dd5c79d54749341a79d41770cbb7",
     ),
   );
   assert.ok(await page.getByTestId("web-atlas-load").isVisible());
