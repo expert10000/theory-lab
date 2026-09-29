@@ -25,6 +25,44 @@ def default(atlas_id, symbol):
 
 
 class AtlasMappingTests(unittest.TestCase):
+    def test_restricted_zeeman_candidate_signs_without_enabling_a_binding(self):
+        qt = engine()
+        for gamma in (-2.3, 1.7):
+            bx, bz = 0.4, -0.8
+            candidate = {"type": "two_level", "parameters": {"delta": -gamma*bz, "omega": -gamma*bx}}
+            expected = -gamma / 2 * (bx * qt.sigmax() + bz * qt.sigmaz())
+            np.testing.assert_allclose(build(qt, candidate).full(), expected.full(), atol=1e-13)
+        self.assertNotIn("spin_half_zeeman", BINDINGS)
+
+    def test_source_rotating_frame_algebra_is_not_a_new_executable_binding(self):
+        # Independent finite matrices of the reviewed source formulas, not source runner acceptance.
+        wc, wq, coupling, chi, cutoff = 1., 1.3, .07, .02, 3
+        a = np.diag(np.sqrt(np.arange(1, cutoff)), 1)
+        for emitters in (1, 2):
+            factors = [2] * emitters + [cutoff]
+            def local(index, operator):
+                result = np.array([[1.]])
+                for i, size in enumerate(factors):
+                    result = np.kron(result, operator if i == index else np.eye(size))
+                return result
+            dim = 2**emitters * cutoff
+            identity = np.eye(dim)
+            photons = local(emitters, a.T @ a)
+            lowering = sum((local(i, np.array([[0, 1], [0, 0]])) for i in range(emitters)), np.zeros((dim, dim)))
+            excited = sum((local(i, np.diag([0, 1])) for i in range(emitters)), np.zeros((dim, dim)))
+            oscillator = local(emitters, a)
+            exchange = coupling * (oscillator.T @ lowering + oscillator @ lowering.T)
+            atlas = wc * photons + wq * (excited - emitters/2 * identity) + exchange
+            source = (wq - wc) * excited + exchange
+            np.testing.assert_allclose(atlas - wc*(photons + excited) + emitters*wq/2*identity, source, atol=1e-13)
+            if emitters == 1:
+                sigma_z = 2*excited - identity
+                atlas_disp = wc*photons + chi*photons @ sigma_z + (wq+chi)/2*sigma_z
+                source_disp = (wq-wc+chi)*excited + chi*photons @ sigma_z
+                np.testing.assert_allclose(atlas_disp-wc*(photons+excited)+(wq+chi)/2*identity, source_disp, atol=1e-13)
+        self.assertNotIn("dispersive_jc", BINDINGS)
+        self.assertNotIn("tavis_cummings", BINDINGS)
+
     def test_two_level_and_time_dependent_atlas_coefficients(self):
         qt = engine()
         for atlas_id in ("two_level_pauli", "semiclassical_rabi_drive", "landau_zener", "floquet_two_level"):

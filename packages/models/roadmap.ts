@@ -127,9 +127,9 @@ export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {
     id: "R5",
     title: "Reconciled Atlas ↔ Lab contract freeze",
-    state: "Planned",
+    state: "Implemented",
     detail:
-      "Freeze only after R2–R4; do not adopt alternative B/C job or visualization contracts.",
+      "Strict additive atlas-lab-reconciliation/v1 metadata, complete coverage/digests and compatibility gates. Existing scientific protocols retained; future additions remain possible.",
   },
 ];
 export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
@@ -213,6 +213,6 @@ export const SOURCE_PLAN_COVERAGE: RoadmapEntry[] = [
     title: "Atlas metadata unification",
     state: "Partial",
     detail:
-      "R1 reconciles 68 canonical entries with typed Lab modules, source examples and nine tested bindings. R2–R5 mapping review/contract freeze remain planned; broader physics is not claimed.",
+      "R1–R5 reconcile 68 canonical entries, preserve nine tested bindings, review C2–C8/gaps and freeze additive metadata. Broader physics implementation remains planned, not reduced or replaced.",
   },
 ];

@@ -1,7 +1,9 @@
 # Quantum Hamiltonian Lab
 
-Additive Atlas reconciliation: R2 reviews all 68 executable dispositions and
-preserves the nine existing tested bindings; no source runner is auto-enabled.
+Additive Atlas reconciliation R1–R5 is implemented: all 68 executable
+dispositions, C2–C8 scene compatibility, ranked model gaps and strict frozen
+metadata. The nine existing tested bindings and all Lab features are retained;
+no source runner is auto-enabled and no unbound solver is claimed implemented.
 See [the R2–R5 review](docs/ATLAS_RECONCILIATION_R2_R5.md).
 
 An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018–021 add optional Dynamiqs GPU evolution and sweeps plus a finite Ising-chain laboratory with optional QuSpin.
@@ -16,8 +18,10 @@ track; it is not a claim that integration is already implemented.
 to the existing Lab capabilities. Seven theory-side example references are
 distinct from nine tested Lab bindings; reference/related entries never gain
 Run actions from source flags. Both Atlas UIs show the coverage. See the
-[complete reconciliation map](docs/ATLAS_RECONCILIATION_R1.md). R2–R5 remain
-planned; no new physics or parallel model/worker layer is introduced.
+[complete reconciliation map](docs/ATLAS_RECONCILIATION_R1.md). R2–R5 reviews
+and additive metadata freeze are implemented; no new physics or parallel
+model/worker layer is introduced. See the
+[acceptance record](docs/RELEASE_ATLAS_RECONCILIATION_V1.md).
 
 ## Run on Windows
 

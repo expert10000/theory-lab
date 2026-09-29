@@ -25,9 +25,9 @@ All 68 entries have an explicit disposition. The nine existing bindings remain e
 | `floquet_two_level` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `driven_harmonic_oscillator` | new-model-required | no | Standalone drive/displacement and truncation diagnostics are needed; open JC has an additional qubit and dissipation. |
 | `parametric_oscillator` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
-| `tavis_cummings` | new-model-required | no | Source uses emitters x cavity, rotating-frame Delta*sum(Pe)+g*(a^dag J_-+a J_+). New collective parameters, 2^N*cutoff budget and result shapes are needed; test N=1 limit, sqrt(N) bright coupling and dark states. Do not map to single-emitter JC. |
+| `tavis_cummings` | new-model-required | no | Source uses emitters x cavity, rotating-frame Delta*sum(Pe)+g*(a^dag J_-+a J_+). At hbar=1, J_z=sum(Pe)-N/2 and Delta=omega_q-omega_c: H_source=H_Atlas-omega_c*(n+sum(Pe))+N*omega_q*I/2. Atlas has no default emitter count, so N/basis/cutoff must be explicit new model data. Bound 2^N*cutoff and result shapes; test N=1, sqrt(N) bright coupling and dark states. Do not map to single-emitter JC. |
 | `dicke` | new-model-required | no | Collective model required; one-qubit Rabi is only the N=1 restriction, not an enabled mapping. |
-| `dispersive_jc` | new-model-required | no | Source uses atom x cavity and rotating-frame H_eff=(Delta+chi)Pe+chi*n*sigma_z, chi=g^2/Delta. Freeze a nonzero-detuning validity domain, n_crit, state/basis/global-shift conversions and compare to full JC before integration. |
+| `dispersive_jc` | new-model-required | no | Source uses atom x cavity and rotating-frame H_eff=(Delta+chi)Pe+chi*n*sigma_z, chi=g^2/Delta, sigma_z=2Pe-I. At hbar=1: Delta=omega_q-omega_c; H_source=H_Atlas-omega_c*(n+Pe)+(omega_q+chi)*I/2 after tensor conversion. Inferring g from Atlas chi requires chi*Delta>=0 and an explicit coupling-sign convention, not a unique default. Freeze nonzero detuning, |g/Delta|<<1, n<<n_crit and compare to full JC before integration. |
 | `free_particle` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `particle_in_box` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `finite_square_well` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
@@ -49,7 +49,7 @@ All 68 entries have an explicit disposition. The nine existing bindings remain e
 | `weyl_minimal` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `nodal_line_two_band` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `two_level_pauli` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
-| `spin_half_zeeman` | adapter-candidate | no | Adapter candidate only: derive gyromagnetic sign and hbar/2 factors, restrict transverse field to the real x-z plane, specify physical energy scale. The full vector/y component needs a model extension. |
+| `spin_half_zeeman` | adapter-candidate | no | Adapter candidate only: with hbar=1 and B_y=0, delta=-gamma*B_z and omega=-gamma*B_x reproduce the Atlas -hbar*gamma*B.sigma/2. Declare angular-frequency versus physical energy units and signed gamma. Atlas B has a model-defined vector default, so no automatic numeric field can be loaded. The full y component needs an additive model extension. |
 | `pauli_particle_em` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `linear_stark` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `spin_orbit_ls` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
@@ -534,4 +534,46 @@ Acceptance requirements:
 
 Recommended next physics milestone after reconciliation: an additive standalone 1D harmonic-oscillator lab within G02, with analytic ladder and cutoff acceptance. G01 adapter candidates can be handled independently. Rice–Mele and XY/Heisenberg are further bounded candidates. No D1 solver is implemented by this review; all current labs remain available.
 
-R5 remains planned until its freeze artifact and acceptance gates land.
+## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)
+
+The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
+
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `fa56813201f25f1f66a94363d1f02b48be663b730655d0e6da11dbcb4678fd61`. Digests detect drift, not publisher identity or scientific truth.
+
+### Existing scientific protocol schemas retained byte-semantically
+
+Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platform line-ending differences. No existing job/result/scene schema was edited by R2–R5.
+
+| Existing schema | Semantic SHA-256 |
+| --- | --- |
+| packages/contracts/schemas/quantum-job.v1.json | `40175f6671a7b9593ceeff8e9e9b3a514c8e8e4558e3bf7e5f3c0b99b211c916` |
+| packages/contracts/schemas/quantum-result.v1.json | `a41a3f6af07ff327d9102911b0fd2bda0eb7e850abc3645410dd7a2453ffa287` |
+| packages/contracts/schemas/worker-capabilities.v1.json | `7d27945acaf300a83a0975ea1077755c8edbfac6bb73a27d29deb7e644ae11dc` |
+| packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
+| packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |
+
+### Additive change policy
+
+- Keep all existing IDs, labs, bindings, operations, engines, host controls and scene formats. New mappings require explicit scientific conversions, bounded contracts and independent numerical acceptance.
+- Execution remains in existing atlasBinding + host/worker validation and runtime capabilities. This metadata, a source path, a related model or a geometry fixture cannot authorize execution.
+- Extend existing typed model modules/contracts and QVIS adapters. No B job/result workspace or C free-form bridge protocol is adopted; Math3D remains a separate consumer track.
+- Regenerate metadata/report only after reviewing changed definitions and evidence. Do not silently broaden scientific scope or weaken validation/budgets to make a new model fit.
+- Backward-compatible new optional fields or enum cases still require updated strict consumers and compatibility fixtures. A breaking semantic change requires a new contract version and migration; the metadata version does not version or replace quantum-job/result/scene protocols.
+- R5 freezes the reconciliation baseline, not the whole application. Future extensions stay possible and are recorded with additive tests; no existing capability is reduced.
+
+### Reproduce acceptance
+
+```powershell
+node scripts/sync-atlas.mjs --check
+npx tsx scripts/report-atlas.ts --check
+npx tsx scripts/freeze-atlas.ts --check
+npx tsx scripts/report-reconciliation.ts --check
+npm run typecheck
+npm test
+npm run test:worker
+npm run test:desktop
+npm run test:web
+npm run test:scenes
+```
+
+R2–R5 implementation means the mapping review, compatibility review, gap review and metadata freeze are delivered. It does not mean 59 additional Atlas entries, chemistry, periodic crystals or Math3D are implemented. All original feature paths and tests are retained.

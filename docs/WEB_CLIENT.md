@@ -21,6 +21,12 @@ bindings. A declared source path or source catalog flag never enables a web
 Run/Load action. Reference and related-only entries remain browsable without
 authentication. The full capability inventory is in ATLAS_RECONCILIATION_R1.md.
 
+R2–R5 add read-only executable-convention, C2–C8 compatibility and ranked
+physics-gap details in the same Atlas inspector. The frozen
+atlas-lab-reconciliation/v1 metadata does not enable jobs, import scripts or
+change authentication/CSP. All previous web and desktop controls remain intact.
+See ATLAS_RECONCILIATION_R2_R5.md and RELEASE_ATLAS_RECONCILIATION_V1.md.
+
 For computation, the bearer token is kept in React memory and is never stored
 in browser storage. The gateway checks token and origin, validates bounded
 `quantum-job/v1` requests, supervises the worker, checks that topology results

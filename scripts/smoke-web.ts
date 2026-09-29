@@ -75,7 +75,22 @@ try {
       new RegExp(`Theory example: ${kind}.*Lab executable binding: none`),
     );
     assert.equal(await page.getByTestId("web-atlas-load").count(), 0);
+    assert.match(await page.getByTestId("atlas-freeze-status").innerText(), /atlas-lab-reconciliation\/v1.*68 entries/);
+    assert.ok(await page.getByTestId("atlas-executable-review").isVisible());
+    assert.ok(await page.getByTestId("atlas-scene-review").isVisible());
+    assert.ok(await page.getByTestId("atlas-gap-review").isVisible());
   }
+  await page.getByTestId("atlas-executable-review").locator("summary").click();
+  assert.match(await page.getByTestId("atlas-executable-review").innerText(), /Adapter candidate only.*reduced mass/);
+  await page.getByTestId("atlas-gap-review").locator("summary").click();
+  assert.match(await page.getByTestId("atlas-gap-review").innerText(), /G01.*Restricted Coulomb\/Zeeman/);
+  await page.getByTestId("atlas-scene-review").locator("summary").click();
+  assert.equal(await page.getByTestId("atlas-scene-review").locator("h4").count(), 7);
+  assert.equal(await page.getByTestId("web-atlas-load").count(), 0);
+  await page.getByTestId("atlas-scene-review").locator("summary").click();
+  await page.screenshot({ path: join(root, "artifacts", "web-atlas-r2-r5.png"), fullPage: true });
+  await page.getByTestId("atlas-executable-review").locator("summary").click();
+  await page.getByTestId("atlas-gap-review").locator("summary").click();
   await page.screenshot({
     path: join(root, "artifacts", "web-atlas-r1.png"),
     fullPage: true,

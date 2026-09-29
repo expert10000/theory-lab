@@ -31,7 +31,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
       ["R2", "Implemented"],
       ["R3", "Implemented"],
       ["R4", "Implemented"],
-      ["R5", "Planned"],
+      ["R5", "Implemented"],
     ],
   );
   assert.equal(

@@ -16,6 +16,12 @@ See [the complete R1 map](ATLAS_RECONCILIATION_R1.md) for all 68 entries,
 typed implementation modules, related-but-unbound physics and genuine gaps.
 The app never fetches live source metadata or executes runner paths from it.
 
+R2–R5 extend this inspector with scientific conversion evidence, C2–C8 scene
+compatibility, a complete ranked gap review and strict frozen reconciliation
+metadata. Existing nine bindings, scientific protocols and all labs remain
+unchanged. See [the complete review](ATLAS_RECONCILIATION_R2_R5.md) and
+[acceptance evidence](RELEASE_ATLAS_RECONCILIATION_V1.md).
+
 ## Tested bindings
 
 | Atlas ID | Lab | Important mapping |

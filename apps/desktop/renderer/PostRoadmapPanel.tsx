@@ -53,6 +53,11 @@ export function PostRoadmapPanel() {
         examples are not Lab worker permissions; no second model/workspace layer
         is introduced. Full inventory: docs/ATLAS_RECONCILIATION_R1.md.
       </p>
+      <p data-testid="reconciliation-freeze-status">
+        R2–R5 reviews and additive metadata freeze are implemented. All existing
+        labs and features are retained. Reviewed model gaps are not newly
+        implemented solvers. Complete review: docs/ATLAS_RECONCILIATION_R2_R5.md.
+      </p>
       {ATLAS_RECONCILIATION_STEPS.map((entry) => (
         <div
           className="roadmap-row"

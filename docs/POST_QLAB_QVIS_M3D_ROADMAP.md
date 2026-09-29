@@ -82,7 +82,9 @@ implemented (nine bindings preserved; candidates remain disabled), recorded in
 ATLAS_RECONCILIATION_R2_R5.md. R3 C/QVIS vocabulary review is implemented
 (seven ideas retained, regular-grid conversion tested). R4 genuine physics gap
 review is implemented (all 68 entries classified; 12 additive backlog groups).
-R5 reconciled contract freeze remains planned.
+R5 is implemented: strict additive atlas-lab-reconciliation/v1 metadata with
+coverage/digests and compatibility gates. Existing Lab features and scientific
+protocols are retained; no unbound solver is claimed implemented.
 B/C scaffolding is not imported as a parallel architecture;
 no D1 physics model or Math3D integration has been started.
 

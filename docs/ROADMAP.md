@@ -33,7 +33,10 @@ gaps are recorded; a tested regular-grid utility preserves supplied z/y/x data
 in the existing scene order. R4 gap review is implemented: every Atlas ID is
 classified, with 12 ranked additive groups and scientific acceptance criteria.
 The existing nine bindings remain intact; 59 entries are not newly implemented.
-R5 reconciled contract freeze remains planned. D1 is not started.
+R5 is implemented: strict additive atlas-lab-reconciliation/v1 metadata is
+frozen with full coverage/digests and schema/semantic compatibility tests.
+Existing scientific protocols and all feature paths are retained. Future
+physics extensions remain available; D1 is not started by reconciliation.
 
 ## 1. Technology decision
 

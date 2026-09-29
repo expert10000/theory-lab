@@ -1,0 +1,1146 @@
+{
+  "schema": "atlas-lab-reconciliation/v1",
+  "source": {
+    "repository": "https://github.com/expert10000/theory",
+    "revision": "48e2036ba7c7dd5c79d54749341a79d41770cbb7"
+  },
+  "policy": {
+    "extension": "additive-reviewed",
+    "executionAuthority": "existing-tested-atlasBinding",
+    "sourceExamplesAuthorizeExecution": false,
+    "sceneFlow": "QuantumResult -> QuantumScene -> independent consumers",
+    "math3dConnected": false
+  },
+  "existingFormats": [
+    "quantum-job/v1",
+    "quantum-result/v1",
+    "worker-capabilities/v1",
+    "worker-resources/v1",
+    "quantum-scene/v1",
+    "quantum-scene-bundle/v1",
+    "quantum-scene-stream/v1",
+    "quantum-scene-stream-bundle/v1"
+  ],
+  "protectedSchemas": [
+    {
+      "path": "packages/contracts/schemas/quantum-job.v1.json",
+      "sha256": "40175f6671a7b9593ceeff8e9e9b3a514c8e8e4558e3bf7e5f3c0b99b211c916"
+    },
+    {
+      "path": "packages/contracts/schemas/quantum-result.v1.json",
+      "sha256": "a41a3f6af07ff327d9102911b0fd2bda0eb7e850abc3645410dd7a2453ffa287"
+    },
+    {
+      "path": "packages/contracts/schemas/worker-capabilities.v1.json",
+      "sha256": "7d27945acaf300a83a0975ea1077755c8edbfac6bb73a27d29deb7e644ae11dc"
+    },
+    {
+      "path": "packages/contracts/schemas/worker-resources.v1.json",
+      "sha256": "200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436"
+    },
+    {
+      "path": "packages/quantum-scene/quantum-scene.v1.json",
+      "sha256": "b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc"
+    }
+  ],
+  "catalogSha256": "f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a",
+  "reviewSha256": "fa56813201f25f1f66a94363d1f02b48be663b730655d0e6da11dbcb4678fd61",
+  "sceneReviewIds": [
+    "C2",
+    "C3",
+    "C4",
+    "C5",
+    "C6",
+    "C7",
+    "C8"
+  ],
+  "gapGroupIds": [
+    "G01",
+    "G02",
+    "G03",
+    "G04",
+    "G05",
+    "G06",
+    "G07",
+    "G08",
+    "G09",
+    "G10",
+    "G11",
+    "G12"
+  ],
+  "entries": [
+    {
+      "atlasId": "harmonic_oscillator",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "jaynes_cummings"
+      ],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G02",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "rabi",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "quantum_rabi",
+        "operation": "cavity",
+        "parameters": {
+          "qubitFrequency": 1,
+          "cavityFrequency": 1,
+          "coupling": 0.05,
+          "cutoff": 8
+        },
+        "convention": "ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq|e⟩⟨e| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "jaynes_cummings",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/jaynes_cummings.py",
+        "example": "examples/python/qutip/run_jaynes_cummings_cavity_qed_lab.py",
+        "kind": "direct",
+        "notes": "Direct cavity-QED model binding."
+      },
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "jaynes_cummings",
+        "operation": "cavity",
+        "parameters": {
+          "qubitFrequency": 1,
+          "cavityFrequency": 1,
+          "coupling": 0.05,
+          "cutoff": 6
+        },
+        "convention": "ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq|e⟩⟨e| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": []
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "ssh",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "ssh",
+        "operation": "topology",
+        "parameters": {
+          "t1": 0.6,
+          "t2": 1,
+          "cells": 16,
+          "kPoints": 101
+        },
+        "convention": "Atlas t₁/t₂ are the lab intracell/intercell hoppings. Bloch H(k)=(t₁+t₂ cos k)σx+t₂ sin k σy; open chain uses |n,A⟩,|n,B⟩ and 16 cells. Winding requires nonzero bulk gap.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "topology",
+        "sceneViews": [
+          "standard",
+          "bands"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "rice_mele",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "hubbard",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G10",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "kitaev_chain",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G11",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "surface_code_stabilizer",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/surface_code_d3.py",
+        "example": "examples/python/qutip/run_surface_code_d3_lab.py",
+        "kind": "reference_lab",
+        "notes": "Core surface-code reference laboratory; decoder/scaling labs remain related consumers."
+      },
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "landau_zener",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "landau_zener",
+        "operation": "evolve",
+        "parameters": {
+          "sweepRate": 1,
+          "gap": 0.2,
+          "bias": 0
+        },
+        "convention": "Atlas H = vt σz/2 + Δ σx/2; lab sweepRate = v, gap = Δ, bias = 0. Finite simulation window does not equal asymptotic LZ scattering.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": "evolve",
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "semiclassical_rabi_drive",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "driven_two_level",
+        "operation": "evolve",
+        "parameters": {
+          "delta": 1,
+          "amplitude": 0.2,
+          "frequency": 1,
+          "phase": 0
+        },
+        "convention": "ħ = 1; lab Δ = ω₀, A = 2Ω, ω = ωd, φ unchanged. This is a classical drive, not the quantum Rabi cavity model.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "evolve",
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "rotating_frame_qubit",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "driven_two_level"
+      ],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G05",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "ramsey_sequence_effective",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "driven_two_level"
+      ],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G05",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "floquet_two_level",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "strong_drive",
+        "operation": "evolve",
+        "parameters": {
+          "delta": 1,
+          "amplitude": 1,
+          "frequency": 1,
+          "phase": 0
+        },
+        "convention": "Lab uses A_lab cos(ωt + φ) σx/2: A_lab = 2A_Atlas, φ = 0, ħ = 1. Quasienergies are modulo ω.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": "evolve",
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "driven_harmonic_oscillator",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "open_jaynes_cummings"
+      ],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G02",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "parametric_oscillator",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G02",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "tavis_cummings",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/tavis_cummings.py",
+        "example": "examples/python/qutip/run_tavis_cummings_collective_qed_lab.py",
+        "kind": "direct",
+        "notes": "Direct collective cavity-QED binding."
+      },
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G06",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "dicke",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "quantum_rabi"
+      ],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G06",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "dispersive_jc",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/dispersive_jc.py",
+        "example": "examples/python/qutip/run_dispersive_jc_spectroscopy_lab.py",
+        "kind": "direct",
+        "notes": "Direct dispersive Jaynes-Cummings spectroscopy binding."
+      },
+      "relatedModelIds": [
+        "jaynes_cummings"
+      ],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G06",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "free_particle",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G03",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "particle_in_box",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G03",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "finite_square_well",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G03",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "delta_potential",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G03",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "harmonic_oscillator_nd",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G02",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "anharmonic_oscillator",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G02",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "double_well",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G02",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "linear_potential",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G03",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "central_potential",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G03",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "coulomb_one_body",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "hydrogenic"
+      ],
+      "binding": null,
+      "executionReview": "adapter-candidate",
+      "physicsGap": {
+        "status": "parameter-adapter",
+        "groupId": "G01",
+        "priority": 1
+      }
+    },
+    {
+      "atlasId": "tight_binding_generic",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "bloch_two_band",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "graphene_nn",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "dirac_2d",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "qwz",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "qwz",
+        "operation": "topology",
+        "parameters": {
+          "mass": 1,
+          "grid": 21
+        },
+        "convention": "Atlas H(k)=sin kₓ σx+sin kᵧ σy+(m+cos kₓ+cos kᵧ)σz, with lattice spacing, hopping scale and ħ set to 1. The lab computes the lower-band FHS Chern number and an independent midpoint Berry-curvature integral; at m=−2, 0, 2 the invariant is undefined.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "topology",
+        "sceneViews": [
+          "standard",
+          "bands"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "haldane",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "bhz",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "bbh",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "weyl_minimal",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "nodal_line_two_band",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G07",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "two_level_pauli",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/models.py",
+        "example": "examples/python/qutip/run_two_level_dynamics_lab.py",
+        "kind": "family",
+        "notes": "Generic two-level computational family; exact model selection remains adapter-side."
+      },
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "two_level",
+        "operation": "diagonalize",
+        "parameters": {
+          "delta": 2,
+          "omega": 0
+        },
+        "convention": "Subspace d₀ = dᵧ = 0; lab Δ = 2d_z and Ω = 2d_x. Atlas's full four-parameter model is not implemented.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "diagonalize",
+        "sceneViews": []
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "spin_half_zeeman",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "two_level"
+      ],
+      "binding": null,
+      "executionReview": "adapter-candidate",
+      "physicsGap": {
+        "status": "parameter-adapter",
+        "groupId": "G01",
+        "priority": 1
+      }
+    },
+    {
+      "atlasId": "pauli_particle_em",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G04",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "linear_stark",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G04",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "spin_orbit_ls",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G04",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "hyperfine_dipole",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G04",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "ising_chain",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": {
+        "modelId": "ising_chain",
+        "operation": "many_body",
+        "parameters": {
+          "sites": 4,
+          "interaction": 1,
+          "transverse": 0.5,
+          "longitudinal": 0,
+          "boundary": "open"
+        },
+        "convention": "Finite open chain, four sites, zero longitudinal field. Lab H = −JΣσᶻᵢσᶻᵢ₊₁ − hΣσˣᵢ; no thermodynamic-limit claim.",
+        "desktopLoad": true,
+        "webLoad": false,
+        "gatewayOperation": null,
+        "sceneViews": [
+          "standard"
+        ]
+      },
+      "executionReview": "preserved-binding",
+      "physicsGap": {
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
+      }
+    },
+    {
+      "atlasId": "xy_chain",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G08",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "heisenberg_chain",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G08",
+        "priority": 2
+      }
+    },
+    {
+      "atlasId": "spin_one_zfs",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G04",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "landau_continuum",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G09",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "hofstadter",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G09",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "integer_qh_effective",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G09",
+        "priority": 3
+      }
+    },
+    {
+      "atlasId": "bose_hubbard",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G10",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "extended_hubbard",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G10",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "t_j_model",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G10",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "heisenberg_from_hubbard",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G10",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "bcs_reduced",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G11",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "bdg_swave",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G11",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "anderson_impurity",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G10",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "repetition_code_ising",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [
+        "ising_chain"
+      ],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "toric_code",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "surface_code_planar",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/surface_code_rotated.py",
+        "example": "examples/python/qutip/run_surface_code_rotated_lab.py",
+        "kind": "reference_lab",
+        "notes": "Planar/rotated surface-code reference implementation."
+      },
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "surface_code_with_fields",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "color_code_stabilizer",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "bacon_shor_gauge",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "stabilizer_penalty_generic",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "encoded_adiabatic_penalty",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "logical_pauli_effective",
+      "reference": true,
+      "sourceExample": null,
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "reference-only",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    },
+    {
+      "atlasId": "syndrome_defect_effective",
+      "reference": true,
+      "sourceExample": {
+        "adapter": "examples/python/qutip/adapters/surface_plaquette.py",
+        "example": "examples/python/qutip/run_surface_plaquette_lab.py",
+        "kind": "reference_lab",
+        "notes": "Plaquette/syndrome-graph laboratory is the closest verified executable reference."
+      },
+      "relatedModelIds": [],
+      "binding": null,
+      "executionReview": "new-model-required",
+      "physicsGap": {
+        "status": "new-model",
+        "groupId": "G12",
+        "priority": 4
+      }
+    }
+  ]
+}

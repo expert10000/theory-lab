@@ -144,6 +144,8 @@ try {
   assert.match(await page.getByTestId("qvis-release-status").innerText(), /QVIS-001–013 implemented/);
   assert.match(await page.getByTestId("reconciliation-R1").innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
+  for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
+  assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -174,7 +176,23 @@ try {
     await page.getByRole("button",{name:new RegExp(id)}).click();
     assert.match(await page.getByTestId("atlas-capability-status").innerText(),new RegExp(`Theory example: ${kind}.*Lab executable binding: none`));
     assert.equal(await page.getByTestId("open-atlas-binding").count(),0);
+    assert.match(await page.getByTestId("atlas-freeze-status").innerText(),/atlas-lab-reconciliation\/v1.*68 entries/);
+    assert.ok(await page.getByTestId("atlas-executable-review").isVisible());
+    assert.ok(await page.getByTestId("atlas-scene-review").isVisible());
+    assert.ok(await page.getByTestId("atlas-gap-review").isVisible());
   }
+  await page.getByTestId("atlas-executable-review").locator("summary").click();
+  assert.match(await page.getByTestId("atlas-executable-review").innerText(),/Adapter candidate only.*reduced mass/);
+  await page.getByTestId("atlas-gap-review").locator("summary").click();
+  assert.match(await page.getByTestId("atlas-gap-review").innerText(),/G01.*Restricted Coulomb\/Zeeman/);
+  await page.getByTestId("atlas-scene-review").locator("summary").click();
+  assert.equal(await page.getByTestId("atlas-scene-review").locator("h4").count(),7);
+  assert.equal(await page.getByTestId("open-atlas-binding").count(),0);
+  await page.getByTestId("atlas-scene-review").locator("summary").click();
+  await page.getByTestId("atlas-executable-review").scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-atlas-r2-r5.png",fullPage:true});
+  await page.getByTestId("atlas-executable-review").locator("summary").click();
+  await page.getByTestId("atlas-gap-review").locator("summary").click();
   await page.screenshot({ path: "artifacts/desktop-atlas.png", fullPage: true });
   await page.getByLabel("Search Atlas").fill("Su-Schrieffer-Heeger");
   await page.getByRole("button", { name: /Su-Schrieffer-Heeger model/ }).click();

@@ -161,7 +161,9 @@ All paths are checked in Git at the pinned revision during snapshot generation. 
 - **spin_half_zeeman → two_level**: A restricted spin Hamiltonian could embed in the real two-level subspace; vector/sign/unit conversion is not bound.
 - **repetition_code_ising → ising_chain**: Ising spectrum exists; repetition-code stabilizers, decoding and correction are not implemented.
 
-## Genuine gaps and the next reconciliation steps
+## Genuine gaps and the next steps at R1 delivery
+
+This section preserves the R1 planning context. R2–R5 are now reviewed/frozen in ATLAS_RECONCILIATION_R2_R5.md; the current Roadmap describes delivery status. Planned physics listed below is still not implemented by reconciliation.
 
 R2 — review additional executable mappings against existing quantum-job/v1 and quantum-result/v1. Hydrogenic Coulomb mapping is an adapter gap; source-side dispersive JC/Tavis–Cummings/QEC programs need separate bounded numerical integration and tests. Do not execute their paths from catalog flags.
 
