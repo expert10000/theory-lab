@@ -107,7 +107,22 @@ R5 is implemented: strict additive atlas-lab-reconciliation/v1 metadata with
 coverage/digests and compatibility gates. Existing Lab features and scientific
 protocols are retained; no unbound solver is claimed implemented.
 B/C scaffolding is not imported as a parallel architecture;
-no D1 physics model or Math3D integration has been started.
+D1 physics was not started by reconciliation itself; D1-001–010 were delivered
+subsequently as recorded above. Math3D integration remains a separate track.
+
+### Recommended next Lab sequence (planned, not implemented)
+
+| ID | Next delivery | Status |
+| --- | --- | --- |
+| D1-011 | Bounded Gaussian envelope, append-only contracts, independent worker engines and displacement/finite-model checks | Planned |
+| D1-012 | Pulse controls, drive plot and bounded cutoff/time-resolution inspection in the existing oscillator lab | Planned |
+| D1-013 | Durable pulse provenance/exports/restoration, reviewed existing Atlas mapping and regression acceptance | Planned |
+
+See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md). This proposal
+extends existing architecture and retains all delivered modes and eleven
+bindings. Gaussian pulses do not complete the general Atlas envelope family;
+arbitrary waveforms, damping and the other G02 requirements remain planned.
+No web compute permission, scene vocabulary or Math3D changes are included.
 
 1. **QVIS-008 — generic lattice scenes (implemented, bounded open examples)**
    `feat(qvis): add bounded lattice cells and supercell scene fixtures`
