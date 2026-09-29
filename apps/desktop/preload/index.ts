@@ -10,6 +10,7 @@ const bridge: QuantumBridge = {
   manyBody: (job) => ipcRenderer.invoke("quantum:many-body", job),
   circuit: (job) => ipcRenderer.invoke("quantum:circuit", job),
   oscillator: (job) => ipcRenderer.invoke("quantum:oscillator", job),
+  oscillatorEvolve: (job) => ipcRenderer.invoke("quantum:oscillator-evolve", job),
   topology: (job) => ipcRenderer.invoke("quantum:topology", job),
   openAtlasSource: (id) => ipcRenderer.invoke("quantum:open-atlas-source", id),
   cancel: (jobId) => ipcRenderer.invoke("quantum:cancel", jobId),

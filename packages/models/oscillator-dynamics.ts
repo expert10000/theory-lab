@@ -321,3 +321,51 @@ export function oscillatorDensity(
   );
   return { q, density, probability };
 }
+
+export function compareOscillatorMotion(
+  left: OscillatorEvolutionResult,
+  a: Float64Array,
+  right: OscillatorEvolutionResult,
+  b: Float64Array,
+) {
+  if (
+    JSON.stringify(left.model) !== JSON.stringify(right.model) ||
+    JSON.stringify(left.initialState) !== JSON.stringify(right.initialState) ||
+    JSON.stringify(left.solver) !== JSON.stringify(right.solver) ||
+    a.length !== b.length ||
+    a.length * 8 !== left.data.bytes ||
+    b.length * 8 !== right.data.bytes
+  )
+    throw new Error("Cannot compare mismatched oscillator jobs");
+  const n = left.model.parameters.cutoff,
+    stride = 10 + 2 * n;
+  let q = 0,
+    p = 0,
+    infidelity = 0;
+  for (let row = 0; row < left.data.rows; row++) {
+    const o = row * stride;
+    if (Math.abs(a[o] - b[o]) > 1e-8)
+      throw new Error("Oscillator comparison time grids differ");
+    q = Math.max(q, Math.abs(a[o + 1] - b[o + 1]));
+    p = Math.max(p, Math.abs(a[o + 2] - b[o + 2]));
+    let re = 0,
+      im = 0,
+      na = 0,
+      nb = 0;
+    for (let k = 0; k < n; k++) {
+      const ar = a[o + 10 + 2 * k],
+        ai = a[o + 11 + 2 * k],
+        br = b[o + 10 + 2 * k],
+        bi = b[o + 11 + 2 * k];
+      re += ar * br + ai * bi;
+      im += ar * bi - ai * br;
+      na += ar * ar + ai * ai;
+      nb += br * br + bi * bi;
+    }
+    infidelity = Math.max(
+      infidelity,
+      Math.max(0, 1 - (re * re + im * im) / (na * nb)),
+    );
+  }
+  return { q, p, infidelity };
+}

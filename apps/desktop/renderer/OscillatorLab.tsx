@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from "react";
+import { OscillatorDynamics } from "./OscillatorDynamics";
+import type { OscillatorDynamicsDraft } from "../../../packages/models/oscillator-dynamics";
 import type {
   OscillatorResult,
   QuantumBridge,
@@ -85,6 +87,8 @@ export function OscillatorLab({
   atlasDraft,
   atlasEpoch,
   onSnapshot,
+  restoredMotion,
+  onMotionSnapshot,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -93,7 +97,10 @@ export function OscillatorLab({
   atlasDraft?: OscillatorDraft;
   atlasEpoch?: number;
   onSnapshot?: (draft: OscillatorDraft) => void;
+  restoredMotion?: OscillatorDynamicsDraft;
+  onMotionSnapshot?: (draft: OscillatorDynamicsDraft) => void;
 }) {
+  const [view, setView] = useState<"static" | "dynamics">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
   const [result, setResult] = useState<OscillatorResult | null>(null),
     [reference, setReference] = useState<OscillatorResult | null>(null);
@@ -102,6 +109,7 @@ export function OscillatorLab({
   const [outcome, setOutcome] = useState("READY TO CALCULATE"),
     [error, setError] = useState("");
   function reset(value: OscillatorDraft) {
+    setView("static");
     setDraft(value);
     setResult(null);
     setReference(null);
@@ -188,204 +196,234 @@ export function OscillatorLab({
   ] as const;
   return (
     <div className="cavity-lab" data-testid="oscillator-lab">
-      <section className="hamiltonian-card">
-        <div>
-          <p className="eyebrow">STANDALONE OSCILLATOR / D1</p>
-          <div className="formula">H = ω (a†a + ½)</div>
-        </div>
-        <div className="model-convention">
-          <span>1D / FOCK BASIS</span>
-          <p>ℏ = 1 · q = (a + a†)/√2</p>
-        </div>
-      </section>
-      <section className="panel dynamics-settings">
-        <div>
-          <p className="eyebrow">STATIC SPECTRUM & NUMBER STATE</p>
-          <h2>A ladder and a stationary wavefunction.</h2>
-          <p>
-            Independent QuTiP/NumPy Fock operators; shared analytic Hermite
-            plotting. No time evolution, physical length calibration or
-            arbitrary initial wavefunction.
-          </p>
-        </div>
-        <div className="dynamics-fields">
-          {fields.map(([key, label, min, max, step]) => (
-            <label key={key}>
-              {label}
-              <input
-                aria-label={`Oscillator ${key}`}
-                type="number"
-                min={min}
-                max={max}
-                step={step}
-                value={draft[key]}
-                disabled={running}
-                onChange={(e) =>
-                  setDraft((d) => ({ ...d, [key]: e.target.value }))
-                }
-              />
-            </label>
-          ))}
-          <label>
-            Engine
-            <select
-              aria-label="Oscillator engine"
-              value={draft.engine}
-              disabled={running}
-              onChange={(e) =>
-                setDraft((d) => ({
-                  ...d,
-                  engine: e.target.value as OscillatorDraft["engine"],
-                }))
-              }
-            >
-              <option value="native" disabled={!c?.engines.native.available}>
-                Native · NumPy/SciPy
-              </option>
-              <option value="qutip" disabled={!c?.engines.qutip.available}>
-                QuTiP
-              </option>
-              <option
-                value="compare"
-                disabled={
-                  !c?.engines.qutip.available || !c?.engines.native.available
-                }
-              >
-                Compare QuTiP / Native
-              </option>
-            </select>
-          </label>
-        </div>
-        <div className="dynamics-actions">
-          <button
-            className="run-button"
-            data-testid="run-oscillator"
-            disabled={!preview || !ready || running}
-            onClick={() => void run()}
-          >
-            ▶ Run oscillator
-          </button>
-          <span data-testid="oscillator-state">{outcome}</span>
-        </div>
-        {!preview && (
-          <p className="validation">
-            ω 0.01–20; cutoff 8–64; 3–12 levels ≤ cutoff; state 0–10 below
-            cutoff−1; extent 2–12; odd points 101–401.
-          </p>
-        )}
-        {status.state === "READY" && !ready && (
-          <p className="validation">
-            Selected engine unavailable. Use an installed engine and restart the
-            worker.
-          </p>
-        )}
-      </section>
-      {error && (
-        <div className="error-message" role="alert">
-          {error}
-        </div>
-      )}
-      {result && (
-        <section
-          className="panel cavity-result"
-          data-testid="oscillator-result"
+      <div className="tabs" role="tablist" aria-label="Oscillator mode">
+        <button
+          role="tab"
+          aria-selected={view === "static"}
+          onClick={() => setView("static")}
         >
-          <div className="panel-heading">
-            <div>
-              <p className="eyebrow">
-                {result.engine.name.toUpperCase()} / n ={" "}
-                {result.model.parameters.state}
-              </p>
-              <h2>Oscillator result</h2>
-            </div>
-            <span className={`result-badge ${stale ? "stale" : ""}`}>
-              {stale ? "OUT OF DATE" : "COMPUTED"}
-            </span>
+          Stationary spectrum
+        </button>
+        <button
+          role="tab"
+          aria-selected={view === "dynamics"}
+          onClick={() => setView("dynamics")}
+        >
+          Free dynamics
+        </button>
+      </div>
+      <div hidden={view !== "static"}>
+        <section className="hamiltonian-card">
+          <div>
+            <p className="eyebrow">STANDALONE OSCILLATOR / D1</p>
+            <div className="formula">H = ω (a†a + ½)</div>
           </div>
-          <div className="cavity-metrics">
-            <div>
-              <span>ZERO-POINT ENERGY E₀</span>
-              <strong data-testid="oscillator-e0">
-                {result.spectrum.energies[0].toFixed(6)}
-              </strong>
-            </div>
-            <div>
-              <span>⟨q²⟩ = ⟨p²⟩</span>
-              <strong data-testid="oscillator-variance">
-                {result.analysis.qVariance.toFixed(6)}
-              </strong>
-            </div>
-            <div>
-              <span>FINITE-BOX PROBABILITY</span>
-              <strong>{result.analysis.gridProbability.toFixed(8)}</strong>
-            </div>
-            <div>
-              <span>MAX LADDER ERROR</span>
-              <strong>{result.analysis.ladderError.toExponential(3)}</strong>
-            </div>
-          </div>
-          <div className="sweep-visual">
-            <p className="eyebrow">Eₖ = ω(k + ½) / NORMALIZED ENERGY</p>
-            <svg
-              viewBox="0 0 800 220"
-              role="img"
-              aria-label="Oscillator energy ladder"
-            >
-              {result.spectrum.energies.map((v, i) => {
-                const x =
-                    70 + (660 * i) / (result.spectrum.energies.length - 1),
-                  y = 180 - (150 * v) / result.spectrum.energies.at(-1)!;
-                return (
-                  <g key={i}>
-                    <line
-                      x1={x - 25}
-                      x2={x + 25}
-                      y1={y}
-                      y2={y}
-                      stroke="#79d9c1"
-                      strokeWidth="3"
-                    />
-                    <text
-                      x={x}
-                      y="205"
-                      textAnchor="middle"
-                      fill="#acc1ca"
-                      fontSize="12"
-                    >
-                      {i}: {v.toFixed(3)}
-                    </text>
-                  </g>
-                );
-              })}
-            </svg>
-          </div>
-          <StationaryFigure result={result} />
-          <p>
-            Cutoff +4 drift: {result.analysis.cutoffDrift.toExponential(3)}.
-            Exact low Fock energies are cutoff-independent here; this is not a
-            general convergence test. Boundary occupation:{" "}
-            {result.analysis.boundaryOccupation.toExponential(2)}.
-          </p>
-          {comparison && (
-            <div className="comparison-report" data-testid="oscillator-compare">
-              <h3>QuTiP versus Native</h3>
-              <p>
-                Max |ΔE| {comparison.energy.toExponential(3)} · max quadrature
-                variance difference {comparison.moments.toExponential(3)}.
-                Hermite plotting is shared, not an independent spatial solver.
-              </p>
-            </div>
-          )}
-          <div className="plot-caption">
-            <span>
-              {result.engine.name} {result.engine.version} · Python{" "}
-              {result.provenance.pythonVersion} ·{" "}
-              {result.provenance.durationMs.toFixed(1)} ms
-            </span>
-            <span>Saved run · CSV/SVG/manifest in Saved runs</span>
+          <div className="model-convention">
+            <span>1D / FOCK BASIS</span>
+            <p>ℏ = 1 · q = (a + a†)/√2</p>
           </div>
         </section>
-      )}
+        <section className="panel dynamics-settings">
+          <div>
+            <p className="eyebrow">STATIC SPECTRUM & NUMBER STATE</p>
+            <h2>A ladder and a stationary wavefunction.</h2>
+            <p>
+              Independent QuTiP/NumPy Fock operators; shared analytic Hermite
+              plotting. No time evolution, physical length calibration or
+              arbitrary initial wavefunction.
+            </p>
+          </div>
+          <div className="dynamics-fields">
+            {fields.map(([key, label, min, max, step]) => (
+              <label key={key}>
+                {label}
+                <input
+                  aria-label={`Oscillator ${key}`}
+                  type="number"
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={draft[key]}
+                  disabled={running}
+                  onChange={(e) =>
+                    setDraft((d) => ({ ...d, [key]: e.target.value }))
+                  }
+                />
+              </label>
+            ))}
+            <label>
+              Engine
+              <select
+                aria-label="Oscillator engine"
+                value={draft.engine}
+                disabled={running}
+                onChange={(e) =>
+                  setDraft((d) => ({
+                    ...d,
+                    engine: e.target.value as OscillatorDraft["engine"],
+                  }))
+                }
+              >
+                <option value="native" disabled={!c?.engines.native.available}>
+                  Native · NumPy/SciPy
+                </option>
+                <option value="qutip" disabled={!c?.engines.qutip.available}>
+                  QuTiP
+                </option>
+                <option
+                  value="compare"
+                  disabled={
+                    !c?.engines.qutip.available || !c?.engines.native.available
+                  }
+                >
+                  Compare QuTiP / Native
+                </option>
+              </select>
+            </label>
+          </div>
+          <div className="dynamics-actions">
+            <button
+              className="run-button"
+              data-testid="run-oscillator"
+              disabled={!preview || !ready || running}
+              onClick={() => void run()}
+            >
+              ▶ Run oscillator
+            </button>
+            <span data-testid="oscillator-state">{outcome}</span>
+          </div>
+          {!preview && (
+            <p className="validation">
+              ω 0.01–20; cutoff 8–64; 3–12 levels ≤ cutoff; state 0–10 below
+              cutoff−1; extent 2–12; odd points 101–401.
+            </p>
+          )}
+          {status.state === "READY" && !ready && (
+            <p className="validation">
+              Selected engine unavailable. Use an installed engine and restart
+              the worker.
+            </p>
+          )}
+        </section>
+        {error && (
+          <div className="error-message" role="alert">
+            {error}
+          </div>
+        )}
+        {result && (
+          <section
+            className="panel cavity-result"
+            data-testid="oscillator-result"
+          >
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">
+                  {result.engine.name.toUpperCase()} / n ={" "}
+                  {result.model.parameters.state}
+                </p>
+                <h2>Oscillator result</h2>
+              </div>
+              <span className={`result-badge ${stale ? "stale" : ""}`}>
+                {stale ? "OUT OF DATE" : "COMPUTED"}
+              </span>
+            </div>
+            <div className="cavity-metrics">
+              <div>
+                <span>ZERO-POINT ENERGY E₀</span>
+                <strong data-testid="oscillator-e0">
+                  {result.spectrum.energies[0].toFixed(6)}
+                </strong>
+              </div>
+              <div>
+                <span>⟨q²⟩ = ⟨p²⟩</span>
+                <strong data-testid="oscillator-variance">
+                  {result.analysis.qVariance.toFixed(6)}
+                </strong>
+              </div>
+              <div>
+                <span>FINITE-BOX PROBABILITY</span>
+                <strong>{result.analysis.gridProbability.toFixed(8)}</strong>
+              </div>
+              <div>
+                <span>MAX LADDER ERROR</span>
+                <strong>{result.analysis.ladderError.toExponential(3)}</strong>
+              </div>
+            </div>
+            <div className="sweep-visual">
+              <p className="eyebrow">Eₖ = ω(k + ½) / NORMALIZED ENERGY</p>
+              <svg
+                viewBox="0 0 800 220"
+                role="img"
+                aria-label="Oscillator energy ladder"
+              >
+                {result.spectrum.energies.map((v, i) => {
+                  const x =
+                      70 + (660 * i) / (result.spectrum.energies.length - 1),
+                    y = 180 - (150 * v) / result.spectrum.energies.at(-1)!;
+                  return (
+                    <g key={i}>
+                      <line
+                        x1={x - 25}
+                        x2={x + 25}
+                        y1={y}
+                        y2={y}
+                        stroke="#79d9c1"
+                        strokeWidth="3"
+                      />
+                      <text
+                        x={x}
+                        y="205"
+                        textAnchor="middle"
+                        fill="#acc1ca"
+                        fontSize="12"
+                      >
+                        {i}: {v.toFixed(3)}
+                      </text>
+                    </g>
+                  );
+                })}
+              </svg>
+            </div>
+            <StationaryFigure result={result} />
+            <p>
+              Cutoff +4 drift: {result.analysis.cutoffDrift.toExponential(3)}.
+              Exact low Fock energies are cutoff-independent here; this is not a
+              general convergence test. Boundary occupation:{" "}
+              {result.analysis.boundaryOccupation.toExponential(2)}.
+            </p>
+            {comparison && (
+              <div
+                className="comparison-report"
+                data-testid="oscillator-compare"
+              >
+                <h3>QuTiP versus Native</h3>
+                <p>
+                  Max |ΔE| {comparison.energy.toExponential(3)} · max quadrature
+                  variance difference {comparison.moments.toExponential(3)}.
+                  Hermite plotting is shared, not an independent spatial solver.
+                </p>
+              </div>
+            )}
+            <div className="plot-caption">
+              <span>
+                {result.engine.name} {result.engine.version} · Python{" "}
+                {result.provenance.pythonVersion} ·{" "}
+                {result.provenance.durationMs.toFixed(1)} ms
+              </span>
+              <span>Saved run · CSV/SVG/manifest in Saved runs</span>
+            </div>
+          </section>
+        )}
+      </div>
+      <div hidden={view !== "dynamics"}>
+        <OscillatorDynamics
+          bridge={bridge}
+          status={status}
+          restored={restoredMotion}
+          restoreEpoch={restoreEpoch}
+          onSnapshot={onMotionSnapshot}
+        />
+      </div>
     </div>
   );
 }

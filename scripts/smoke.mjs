@@ -57,6 +57,7 @@ try {
       "openAtlasSource",
       "orbital",
       "oscillator",
+      "oscillatorEvolve",
       "readData",
       "readSceneChunk",
       "releaseSceneStream",
@@ -127,6 +128,43 @@ try {
   await page.getByLabel("Oscillator state",{exact:true}).fill("1");
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(()=>document.querySelector('input[aria-label="Oscillator state"]')?.value==="2");
+  await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
+  await page.getByLabel("Motion points",{exact:true}).fill("200");
+  assert.ok(await page.getByTestId("run-oscillator-motion").isDisabled());
+  await page.getByLabel("Motion points",{exact:true}).fill("201");
+  await page.getByTestId("run-oscillator-motion").click();
+  await page.getByTestId("oscillator-motion-state").filter({hasText:"COMPLETE"}).waitFor();
+  assert.equal(await page.getByTestId("motion-q").innerText(),"1.414214");
+  assert.ok(await page.getByTestId("oscillator-motion-compare").isVisible());
+  assert.ok(Number(await page.getByTestId("motion-compare-q").innerText())<1e-7);
+  await page.getByLabel("Oscillator motion time cursor",{exact:true}).fill("50");
+  assert.ok(Math.abs(Number(await page.getByTestId("motion-q").innerText()))<1e-6);
+  assert.equal(await page.getByTestId("motion-p").innerText(),"-1.414214");
+  await page.getByRole("img",{name:"Moving oscillator density",exact:true}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-oscillator-motion.png",fullPage:true});
+  await page.getByLabel("Motion engine",{exact:true}).selectOption("native");
+  await page.getByLabel("Motion alphaRe",{exact:true}).fill("2");
+  await page.getByLabel("Motion cutoff",{exact:true}).fill("8");
+  await page.getByTestId("motion-result-state").filter({hasText:"OUT OF DATE"}).waitFor();
+  await page.getByTestId("run-oscillator-motion").click();
+  await page.getByTestId("oscillator-motion-state").filter({hasText:"COMPLETE"}).waitFor();
+  assert.ok(await page.getByTestId("motion-truncation-warning").isVisible());
+  assert.ok(Number(await page.getByTestId("motion-omitted").innerText())>.05);
+  await page.getByLabel("Motion engine",{exact:true}).selectOption("qutip");
+  await page.getByLabel("Motion cutoff",{exact:true}).fill("64");
+  await page.getByLabel("Motion stop",{exact:true}).fill("100");
+  await page.getByLabel("Motion samples",{exact:true}).fill("1001");
+  // Cancel through the visible UI immediately after React renders its running state.
+  await page.evaluate(async()=>{
+    document.querySelector('[data-testid="run-oscillator-motion"]').click();
+    await new Promise(requestAnimationFrame);
+    const cancel=document.querySelector('[data-testid="cancel-oscillator-motion"]');
+    if(!cancel)throw new Error("Missing oscillator cancellation UI");cancel.click();
+  });
+  await page.getByTestId("oscillator-motion-state").filter({hasText:"CANCELLED"}).waitFor();
+  assert.ok(await page.getByRole("img",{name:"Moving oscillator density",exact:true}).isVisible(),"last verified plot survives cancellation");
+  await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
+  assert.equal(await page.getByLabel("Oscillator state",{exact:true}).inputValue(),"2");
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({
     path: "artifacts/desktop-spectrum.png",

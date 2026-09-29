@@ -21,6 +21,7 @@ import {
   checkOscillatorEvolutionData,
   consistentOscillatorEvolutionResult,
   oscillatorDensity,
+  compareOscillatorMotion,
 } from "../packages/models/oscillator-dynamics";
 
 test("D1-005 keeps all static and legacy job/result branches and definitions unchanged", () => {
@@ -163,6 +164,18 @@ test("supervised dynamics provides scientifically verified binary amplitudes, mo
     results[0].data.forEach((v, k) =>
       assert.ok(Math.abs(v - results[1].data[k]) < 1e-7, `sample ${k}`),
     );
+    const comparison = compareOscillatorMotion(results[0].result, results[0].data, results[1].result, results[1].data);
+    assert.ok(Object.values(comparison).every(v => v < 1e-7));
+    const phased = results[0].data.slice();
+    const stride = results[0].result.data.columns.length;
+    for (let row = 0; row < results[0].result.data.rows; row++)
+      for (let col = 10; col < stride; col += 2) {
+        const k = row * stride + col, re = phased[k];
+        phased[k] = -phased[k + 1]; phased[k + 1] = re;
+      }
+    assert.ok(compareOscillatorMotion(results[0].result, results[0].data, results[0].result, phased).infidelity < 1e-12);
+    assert.throws(() => compareOscillatorMotion(results[0].result, results[0].data,
+      {...results[1].result, solver: {...results[1].result.solver, tStop: 1}}, results[1].data));
     assert.ok(progress.includes(0) && progress.includes(201));
     cancelId = "motion-cancel";
     const cancelled = oscillatorEvolutionJob(

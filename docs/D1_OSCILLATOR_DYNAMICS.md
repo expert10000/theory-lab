@@ -7,7 +7,7 @@ Math3D connection is introduced.
 | ID | Delivery | Status |
 | --- | --- | --- |
 | D1-005 | Append-only contracts, supervised worker, independent engines and scientific binary checks | Implemented |
-| D1-006 | Electron dynamics controls, moving density, time cursor and comparison/cancellation | Planned |
+| D1-006 | Electron dynamics controls, moving density, time cursor and comparison/cancellation | Implemented |
 | D1-007 | Durable dynamics, exports, restoration, regression and roadmap acceptance | Planned |
 
 ## Scientific scope

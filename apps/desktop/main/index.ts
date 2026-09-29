@@ -87,6 +87,15 @@ app.whenReady().then(() => {
     await runs.record(value, result);
     return result;
   });
+  ipcMain.handle("quantum:oscillator-evolve", async (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if(value.operation!=="oscillator_evolve")throw new Error("Expected oscillator evolution job");
+    if(running)throw new Error("A spectrum calculation is already running");
+    const result=await evolution.run(value);
+    await runs.record(value,result);
+    return result;
+  });
   ipcMain.handle("quantum:orbital", async (event, value: unknown) => {
     trusted(event);
     assertJob(value);
