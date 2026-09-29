@@ -10,6 +10,7 @@ from quantum_worker.engines.sweep import sweep
 from quantum_worker.engines.orbital import orbital
 from quantum_worker.engines.oscillator_dynamics import oscillator_evolve
 from quantum_worker.engines.oscillator_drive import oscillator_drive
+from quantum_worker.engines.oscillator_pulse import oscillator_pulse
 
 class JobManager:
     def __init__(self):
@@ -28,7 +29,7 @@ class JobManager:
 
     def start(self, job, output_dir):
         validate("quantum-job", job)
-        if job["operation"] not in ("evolve", "cavity", "lindblad", "sweep", "orbital", "oscillator_evolve", "oscillator_drive"):
+        if job["operation"] not in ("evolve", "cavity", "lindblad", "sweep", "orbital", "oscillator_evolve", "oscillator_drive", "oscillator_pulse"):
             raise ValueError("Expected evolution, cavity, Lindblad, sweep, or orbital job")
         if job["operation"] != "orbital":
             settings = job["sweep"] if job["operation"] == "sweep" else job["solver"]
@@ -67,7 +68,7 @@ class JobManager:
     def _run(self, job, output_dir, cancel):
         method, payload = None, None
         try:
-            computation = {"evolve": evolve, "cavity": cavity, "lindblad": lindblad, "sweep": sweep, "orbital": orbital, "oscillator_evolve": oscillator_evolve, "oscillator_drive": oscillator_drive}[job["operation"]]
+            computation = {"evolve": evolve, "cavity": cavity, "lindblad": lindblad, "sweep": sweep, "orbital": orbital, "oscillator_evolve": oscillator_evolve, "oscillator_drive": oscillator_drive, "oscillator_pulse": oscillator_pulse}[job["operation"]]
             result = computation(job, output_dir, cancel, lambda completed, total: self.notify(
                 "job.progress", {"jobId": job["jobId"], "completed": completed,
                                  "total": total, "fraction": completed / total}))

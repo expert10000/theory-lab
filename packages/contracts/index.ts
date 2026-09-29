@@ -205,7 +205,23 @@ export interface DrivenOscillatorResult {
   analysis:Omit<OscillatorEvolutionResult["analysis"],"maxEnergyDrift"> & {maxNumberError:number;maxWorkBalanceError:number;energyOffset:number};
   provenance:SpectrumResult["provenance"];
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob;
+export interface PulsedOscillatorModel {
+  type:"driven_harmonic_oscillator";
+  parameters:DrivenOscillatorModel["parameters"] & {envelope:"gaussian";pulseWidth:number;pulseCenter:number};
+}
+export interface PulsedOscillatorJob {
+  schema:"quantum-job/v1";jobId:string;operation:"oscillator_pulse";engine:EngineName;
+  model:PulsedOscillatorModel;initialState:OscillatorInitialState;solver:EvolutionSolver & {maxStep:number};
+}
+export interface PulsedOscillatorResult {
+  schema:"quantum-result/v1";jobId:string;runId:string;status:"completed";operation:"oscillator_pulse";
+  model:PulsedOscillatorModel;initialState:OscillatorInitialState;solver:PulsedOscillatorJob["solver"];
+  engine:DrivenOscillatorResult["engine"];
+  data:Omit<DrivenOscillatorResult["data"],"schema"> & {schema:"quantum-pulsed-oscillator-data/v1"};
+  analysis:DrivenOscillatorResult["analysis"] & {startEnvelope:number;endEnvelope:number};
+  provenance:SpectrumResult["provenance"];
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -410,7 +426,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -429,7 +445,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -512,5 +528,14 @@ export function assertJob(value: unknown): asserts value is QuantumJob {
     if(p.points%2!==1 || dt<=0 || dt>20 || p.omega*dt>50 || Math.hypot(p.epsilonRe,p.epsilonIm)>0.5 ||
        alpha>2 || alpha+Math.hypot(p.epsilonRe,p.epsilonIm)*dt>4 || (i.type==="fock"&&i.index>=p.cutoff-1))
       throw new Error("Unsupported bounded monochromatic oscillator drive");
+  }
+  if(value.operation==="oscillator_pulse"){
+    const p=value.model.parameters,s=value.solver,i=value.initialState,dt=s.tStop-s.tStart;
+    const alpha=i.type==="coherent"?Math.hypot(i.alphaRe,i.alphaIm):0;
+    if(p.points%2!==1 || dt<=0 || dt>20 || p.omega*dt>50 || Math.hypot(p.epsilonRe,p.epsilonIm)>0.5 ||
+       alpha>2 || alpha+Math.hypot(p.epsilonRe,p.epsilonIm)*Math.min(dt,Math.sqrt(2*Math.PI)*p.pulseWidth)>4 ||
+       p.pulseCenter<0 || p.pulseCenter>dt || s.maxStep>p.pulseWidth/8 || dt/s.maxStep>20000 ||
+       (i.type==="fock"&&i.index>=p.cutoff-1))
+      throw new Error("Gaussian pulse requires bounded width/center, maxStep<=width/8 and <=20000 integration intervals");
   }
 }

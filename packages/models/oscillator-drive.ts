@@ -4,6 +4,7 @@ import type {
   DrivenOscillatorResult,
   EngineName,
   OscillatorInitialState,
+  PulsedOscillatorResult,
 } from "../contracts";
 import {
   OSCILLATOR_DYNAMICS_DEFAULTS,
@@ -200,8 +201,26 @@ export function checkDrivenOscillatorData(
     solver: r.solver,
     engine: r.engine.name,
   };
+  return checkForcedOscillatorData(r,bytes,{
+    consistent:consistentDrivenOscillatorResult(j,r),
+    at:finiteReference(r.model.parameters,r.initialState),
+    reference:tau=>drivenReference(r.model.parameters,r.initialState,tau),
+    envelope:tau=>{
+      const p=r.model.parameters,angle=p.driveFrequency*tau;
+      const re=p.epsilonRe*Math.cos(angle)+p.epsilonIm*Math.sin(angle),im=p.epsilonIm*Math.cos(angle)-p.epsilonRe*Math.sin(angle);
+      return {re,im,derivativeRe:p.driveFrequency*im,derivativeIm:-p.driveFrequency*re};
+    },
+  });
+}
+/** Shared numerical reader; each forcing mode supplies independent references. */
+export function checkForcedOscillatorData(
+  r:DrivenOscillatorResult|PulsedOscillatorResult,bytes:Uint8Array,
+  checks:{consistent:boolean;at:(tau:number)=>number[][];
+    reference:(tau:number)=>{q:number;p:number;number:number};
+    envelope:(tau:number)=>{re:number;im:number;derivativeRe:number;derivativeIm:number}},
+):Float64Array {
   if (
-    !consistentDrivenOscillatorResult(j, r) ||
+    !checks.consistent ||
     bytes.byteLength !== r.data.bytes
   )
     throw new Error("Invalid driven oscillator metadata/shape");
@@ -215,7 +234,7 @@ export function checkDrivenOscillatorData(
   const p = r.model.parameters,
     n = p.cutoff,
     stride = 13 + 2 * n,
-    at = finiteReference(p, r.initialState),
+    at = checks.at,
     near = (a: number, b: number) =>
       Math.abs(a - b) <= 2e-6 * Math.max(1, Math.abs(b));
   const diagnostics = {
@@ -246,16 +265,14 @@ export function checkDrivenOscillatorData(
         );
     }
     const m = oscillatorMoments(re, im),
-      ref = drivenReference(p, r.initialState, tau);
+      ref = checks.reference(tau);
     for (let k = 0; k < 7; k++)
       if (!near(v[o + 1 + k], m[k]))
         throw new Error("Inconsistent driven oscillator moments");
-    const angle = p.driveFrequency * tau,
-      er = p.epsilonRe * Math.cos(angle) + p.epsilonIm * Math.sin(angle),
-      ei = p.epsilonIm * Math.cos(angle) - p.epsilonRe * Math.sin(angle);
+    const {re:er,im:ei,derivativeRe,derivativeIm}=checks.envelope(tau);
     const energy =
         p.omega * (m[4] + 0.5) + Math.SQRT2 * (er * m[0] + ei * m[1]),
-      power = Math.SQRT2 * p.driveFrequency * (ei * m[0] - er * m[1]);
+      power = Math.SQRT2 * (derivativeRe*m[0]+derivativeIm*m[1]);
     for (const [col, value] of [
       [8, ref.q],
       [9, ref.p],

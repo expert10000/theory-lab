@@ -18,6 +18,7 @@ import {
 } from "../packages/atlas/reconciliation";
 import { supportsScene } from "../packages/quantum-scene/from-result";
 import { assertJob, type QuantumJob } from "../packages/contracts";
+import { pulsedOscillatorJob, PULSED_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-pulse";
 import {
   MODEL_REGISTRY,
   defaultsFor,
@@ -163,8 +164,9 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
     oscillatorJob("d1", OSCILLATOR_DEFAULTS, "native"),
     oscillatorEvolutionJob("d1-motion", OSCILLATOR_DYNAMICS_DEFAULTS, "native"),
     drivenOscillatorJob("d1-drive", DRIVEN_OSCILLATOR_DEFAULTS, "native"),
+    pulsedOscillatorJob("d1-pulse", PULSED_OSCILLATOR_DEFAULTS, "native"),
   ];
-  assert.equal(jobs.length, 16);
+  assert.equal(jobs.length, 17);
   assert.deepEqual(
     new Set(jobs.map((j) => j.model.type)),
     new Set(Object.keys(LAB_IMPLEMENTATIONS)),

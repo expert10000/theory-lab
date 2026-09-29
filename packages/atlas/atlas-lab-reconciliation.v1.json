@@ -24,15 +24,15 @@
   "protectedSchemas": [
     {
       "path": "packages/contracts/schemas/quantum-job.v1.json",
-      "sha256": "1f05c7b144d8caf33ddb8e2dc1696f5bee4a03418f1c909b5d570cada1ae979a"
+      "sha256": "6c4bf7cc1c2119967d0b4ae6f5761401aee44ba1bf381e903296561afa3957dd"
     },
     {
       "path": "packages/contracts/schemas/quantum-result.v1.json",
-      "sha256": "3e2d947093a1d50ce6beb228176d983e99385645dbc8eb266b25db6b1d6c94b2"
+      "sha256": "7c47d2e89b34b7df3c5849e99b614d7378d56474ded903450305c9005980f016"
     },
     {
       "path": "packages/contracts/schemas/worker-capabilities.v1.json",
-      "sha256": "51c7f98b1089a945287d5752daa85caec64db9a73746cfd6c664209b222f8090"
+      "sha256": "56c7ce1690cd5db61554e995fdc8dfcce84c35dfc28fefad5249e4b0469c37b2"
     },
     {
       "path": "packages/contracts/schemas/worker-resources.v1.json",
@@ -44,7 +44,7 @@
     }
   ],
   "catalogSha256": "f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a",
-  "reviewSha256": "a6f8444f4885b1312b878994576a4b2c7dc273e752988d62c977f2c8d805425e",
+  "reviewSha256": "e63609388c627fdb15dccd47ac8dc0eaaadba2c80a5fa9b5d46358a1f0f34553",
   "sceneReviewIds": [
     "C2",
     "C3",

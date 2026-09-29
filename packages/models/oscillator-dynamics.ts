@@ -4,6 +4,7 @@ import type {
   OscillatorEvolutionResult,
   OscillatorInitialState,
   DrivenOscillatorResult,
+  PulsedOscillatorResult,
 } from "../contracts";
 import { oscillatorAmplitude } from "./oscillator";
 
@@ -286,7 +287,7 @@ export function checkOscillatorEvolutionData(
   return values;
 }
 export function oscillatorDensity(
-  r: OscillatorEvolutionResult | DrivenOscillatorResult,
+  r: OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult,
   data: Float64Array,
   row: number,
 ) {
@@ -299,7 +300,7 @@ export function oscillatorDensity(
     throw new Error("Invalid oscillator time cursor");
   const p = r.model.parameters,
     o = row * r.data.columns.length,
-    coefficientStart = r.operation === "oscillator_drive" ? 13 : 10,
+    coefficientStart = r.operation !== "oscillator_evolve" ? 13 : 10,
     q = Array.from(
       { length: p.points },
       (_, k) => -p.extent + (2 * p.extent * k) / (p.points - 1),
@@ -325,9 +326,9 @@ export function oscillatorDensity(
 }
 
 export function compareOscillatorMotion(
-  left: OscillatorEvolutionResult | DrivenOscillatorResult,
+  left: OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult,
   a: Float64Array,
-  right: OscillatorEvolutionResult | DrivenOscillatorResult,
+  right: OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult,
   b: Float64Array,
 ) {
   if (
@@ -340,7 +341,7 @@ export function compareOscillatorMotion(
   )
     throw new Error("Cannot compare mismatched oscillator jobs");
   const n = left.model.parameters.cutoff,
-    start = left.operation === "oscillator_drive" ? 13 : 10,
+    start = left.operation !== "oscillator_evolve" ? 13 : 10,
     stride = start + 2 * n;
   let q = 0,
     p = 0,

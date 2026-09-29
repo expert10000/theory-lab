@@ -1,16 +1,35 @@
 # D1-011–013 — bounded Gaussian drive pulses (planned)
 
-Status: proposed next implementation sequence, not delivered. D1-001–010 remain
-implemented. This extends the existing oscillator lab, typed contracts, worker
+Status: D1-011 worker implemented; D1-012–013 remain planned until acceptance.
+D1-001–010 remain implemented. This extends the existing oscillator lab, typed contracts, worker
 supervision and durable numerical pipeline; it creates no parallel architecture.
 
 | Milestone | Proposed commit | Status |
 | --- | --- | --- |
-| D1-011 | `feat(worker): add bounded Gaussian oscillator pulses` | Planned |
+| D1-011 | `feat(worker): add bounded Gaussian oscillator pulses` | Implemented |
 | D1-012 | `feat(desktop): add pulse controls and oscillator convergence inspection` | Planned |
 | D1-013 | `feat(lab): persist pulsed oscillator runs and record acceptance` | Planned |
 
 ## D1-011 — contracts and independent worker engines
+
+Delivered worker bounds: width .05–5, center within elapsed interval, maxStep
+.001–.05 and <=width/8, duration/maxStep<=20000. Retain duration<=20,
+omega .1–5, omega*duration<=50, |epsilon0|<=.5, cutoff 8–64, initial |alpha|<=2
+or n<=10 below cutoff−1, samples 3–1001 and the existing odd plotting grid.
+Validation uses `|alpha|+|epsilon0|*min(duration,sqrt(2*pi)*width)<=4`.
+The maximum artifact is 1,129,128 bytes in
+`quantum-pulsed-oscillator-data/v1`: the same 13 moment/reference/energy/power
+columns followed by complex coefficients. The new `oscillator_pulse` branch
+leaves every previously delivered schema branch and definition unchanged.
+
+Native uses SciPy DOP853, QuTiP uses lab-frame SESolver; both retain raw output,
+rtol=1e-10, atol=1e-12 and bounded internal steps independent of plotted samples.
+Displacement uses adaptive scalar quadrature with explicit peak breakpoints.
+The host independently checks finite coefficients with interaction-picture RK4
+and displacement with composite Simpson quadrature, without renormalization.
+Endpoint envelopes and envelope-derivative power are verified alongside moments,
+phases, finite/full-reference discrepancies and sampled work. Gaussian tails are
+not silently dropped or renormalized. Cancellation removes partial artifacts.
 
 Start with one declarative envelope, not user code or arbitrary expressions:
 

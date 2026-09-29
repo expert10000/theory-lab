@@ -111,7 +111,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 
 | Lab model | Existing module | Operations | Engines (runtime availability required) | Web compute form | Gateway operations | Scene operation / views |
 | --- | --- | --- | --- | --- | --- | --- |
-| `driven_harmonic_oscillator` | packages/models/oscillator-drive.ts | oscillator_drive | native, qutip | no | — | — |
+| `driven_harmonic_oscillator` | packages/models/oscillator-drive.ts | oscillator_drive, oscillator_pulse | native, qutip | no | — | — |
 | `harmonic_oscillator` | packages/models/oscillator.ts | oscillator, oscillator_evolve | native, qutip | no | — | — |
 | `two_level` | packages/models/index.ts | diagonalize | native, qutip | yes | diagonalize | — |
 | `driven_two_level` | packages/models/index.ts | evolve, sweep | native, qutip, dynamiqs | yes | evolve | evolve / standard |
@@ -127,7 +127,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `qwz` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `hydrogenic` | packages/models/orbital.ts | orbital | native | no | — | orbital / standard |
 
-- **driven_harmonic_oscillator**: D1: bounded monochromatic complex forcing, free Fock/projected-coherent inputs, dimensionless q,p and hbar=1. Includes omega/2 energy offset relative to Atlas; no arbitrary envelope, damping, parametric/anharmonic/ND or scene/Math3D adapter.
+- **driven_harmonic_oscillator**: D1: bounded monochromatic and declarative Gaussian complex forcing (packages/models/oscillator-pulse.ts), Fock/projected-coherent inputs, dimensionless q,p and hbar=1. Includes omega/2 Atlas energy offset; existing Atlas preset remains monochromatic. No arbitrary waveform, damping, parametric/anharmonic/ND or scene/Math3D adapter.
 - **harmonic_oscillator**: D1: static spectrum/stationary density plus bounded free Fock/coherent evolution (packages/models/oscillator-dynamics.ts); dimensionless q,p and hbar=1. Atlas binding still loads static defaults. No driven/anharmonic/ND model or 3D scene adapter.
 - **two_level**: Restricted real two-level Hamiltonian; not all four Pauli coefficients.
 - **driven_two_level**: Classical periodic drive; web has evolution controls, not sweeps.

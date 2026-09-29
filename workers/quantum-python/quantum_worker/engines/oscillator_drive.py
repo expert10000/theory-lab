@@ -19,9 +19,9 @@ from quantum_worker.engines.qutip_engine import engine
 from quantum_worker.engines.oscillator_dynamics import initial_coefficients, MOMENT_COLUMNS
 
 
-def oscillator_drive(job, output_dir, cancelled, progress):
+def oscillator_drive(job, output_dir, cancelled, progress, _forcing=None):
     validate("quantum-job", job)
-    if job["operation"] != "oscillator_drive":
+    if job["operation"] != ("oscillator_pulse" if _forcing else "oscillator_drive"):
         raise ValueError("Expected monochromatic oscillator drive")
     started = perf_counter()
     np, scipy, _ = libraries()
@@ -31,7 +31,9 @@ def oscillator_drive(job, output_dir, cancelled, progress):
     psi0, probability = initial_coefficients(np, n, initial)
     a = np.diag(np.sqrt(np.arange(1, n)), 1)
     q, momentum = (a+a.T)/np.sqrt(2), -1j*(a-a.T)/np.sqrt(2)
-    if job["engine"] == "native":
+    if _forcing:
+        state_at, version = _forcing["states"](np, scipy, psi0)
+    elif job["engine"] == "native":
         rotating = np.diag((omega-nu)*np.arange(n)+omega/2)+eps*a.T+eps.conjugate()*a
         energies, vectors = scipy.linalg.eigh(rotating)
         coefficients = vectors.conj().T@psi0
@@ -62,6 +64,8 @@ def oscillator_drive(job, output_dir, cancelled, progress):
     analysis = {"projectionProbability": probability, "omittedProbability": max(0., 1-probability),
                 "maxNormDrift": 0., "maxBoundaryOccupation": 0., "maxQError": 0., "maxPError": 0.,
                 "maxNumberError": 0., "maxWorkBalanceError": 0., "energyOffset": omega/2}
+    if _forcing:
+        analysis.update(_forcing["analysis"])
     work = 0.
     previous_time = s["tStart"]
     previous_power = initial_energy = None
@@ -79,13 +83,18 @@ def oscillator_drive(job, output_dir, cancelled, progress):
                 qvar, pvar = float(np.vdot(qp, qp).real/norm-qm**2), float(np.vdot(pp, pp).real/norm-pm**2)
                 number, boundary = float(np.arange(n)@abs(psi)**2/norm), float(abs(psi[-1])**2/norm)
                 # np.sinc(x) = sin(pi*x)/(pi*x): stable through exact resonance.
-                displacement = -1j*eps*tau*np.exp(-.5j*(omega+nu)*tau)*np.sinc((omega-nu)*tau/(2*np.pi))
+                displacement = (_forcing["displacement"](tau) if _forcing else
+                    -1j*eps*tau*np.exp(-.5j*(omega+nu)*tau)*np.sinc((omega-nu)*tau/(2*np.pi)))
                 beta = alpha*np.exp(-1j*omega*tau)+displacement
                 qe, pe = float(np.sqrt(2)*beta.real), float(np.sqrt(2)*beta.imag)
                 ne = float(base_number+abs(beta)**2)
-                epsilon = eps*np.exp(-1j*nu*tau)
+                epsilon = _forcing["envelope"](tau) if _forcing else eps*np.exp(-1j*nu*tau)
                 energy = float(omega*(number+.5)+np.sqrt(2)*(epsilon.real*qm+epsilon.imag*pm))
-                power = float(np.sqrt(2)*nu*(epsilon.imag*qm-epsilon.real*pm))
+                if _forcing:
+                    derivative = _forcing["derivative"](tau)
+                    power = float(np.sqrt(2)*(derivative.real*qm+derivative.imag*pm))
+                else:
+                    power = float(np.sqrt(2)*nu*(epsilon.imag*qm-epsilon.real*pm))
                 if initial_energy is None:
                     initial_energy = energy
                 else:
@@ -109,15 +118,19 @@ def oscillator_drive(job, output_dir, cancelled, progress):
         if cancelled.is_set():
             return None
         result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-"+uuid4().hex,
-                  "status": "completed", "operation": "oscillator_drive", "model": job["model"],
+                  "status": "completed", "operation": job["operation"], "model": job["model"],
                   "initialState": initial, "solver": s, "engine": {"name": job["engine"], "version": version},
-                  "data": {"schema": "quantum-driven-oscillator-data/v1", "format": "f64le", "path": final.name,
+                  "data": {"schema": "quantum-pulsed-oscillator-data/v1" if _forcing else "quantum-driven-oscillator-data/v1", "format": "f64le", "path": final.name,
                            "rows": rows, "columns": columns, "bytes": rows*len(columns)*8, "sha256": digest.hexdigest()},
                   "analysis": analysis, "provenance": {"pythonVersion": platform.python_version(), "workerVersion": __version__,
                       "computedAt": datetime.now(timezone.utc).isoformat(), "durationMs": (perf_counter()-started)*1000}}
         validate("quantum-result", result)
         os.replace(temporary, final)
         return result
+    except InterruptedError:
+        if cancelled.is_set():
+            return None
+        raise
     finally:
         if temporary.exists():
             temporary.unlink()

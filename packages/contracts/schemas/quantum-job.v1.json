@@ -2,6 +2,8 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-job.v1.json",
   "definitions": {
+    "pulsedOscillatorModel": {"type":"object","additionalProperties":false,"required":["type","parameters"],"properties":{"type":{"const":"driven_harmonic_oscillator"},"parameters":{"type":"object","additionalProperties":false,"required":["omega","cutoff","extent","points","epsilonRe","epsilonIm","driveFrequency","envelope","pulseWidth","pulseCenter"],"properties":{"omega":{"type":"number","minimum":0.1,"maximum":5},"cutoff":{"type":"integer","minimum":8,"maximum":64},"extent":{"type":"number","minimum":2,"maximum":12},"points":{"type":"integer","minimum":101,"maximum":401},"epsilonRe":{"type":"number","minimum":-0.5,"maximum":0.5},"epsilonIm":{"type":"number","minimum":-0.5,"maximum":0.5},"driveFrequency":{"type":"number","minimum":0,"maximum":5},"envelope":{"const":"gaussian"},"pulseWidth":{"type":"number","minimum":0.05,"maximum":5},"pulseCenter":{"type":"number","minimum":0,"maximum":20}}}}},
+    "pulsedOscillatorSolver": {"type":"object","additionalProperties":false,"required":["type","tStart","tStop","samples","maxStep"],"properties":{"type":{"const":"schrodinger"},"tStart":{"type":"number","minimum":-100,"maximum":100},"tStop":{"type":"number","minimum":-100,"maximum":100},"samples":{"type":"integer","minimum":3,"maximum":1001},"maxStep":{"type":"number","minimum":0.001,"maximum":0.05}}},
     "drivenOscillatorModel": {
       "type": "object",
       "additionalProperties": false,
@@ -834,6 +836,7 @@
           "$ref": "#/definitions/oscillatorEvolutionSolver"
         }
       }
-    }
+    },
+    {"type":"object","additionalProperties":false,"required":["schema","jobId","operation","engine","model","initialState","solver"],"properties":{"schema":{"const":"quantum-job/v1"},"jobId":{"type":"string","minLength":1,"maxLength":100,"pattern":"^[A-Za-z0-9_-]+$"},"operation":{"const":"oscillator_pulse"},"engine":{"enum":["native","qutip"]},"model":{"$ref":"#/definitions/pulsedOscillatorModel"},"initialState":{"$ref":"#/definitions/oscillatorInitialState"},"solver":{"$ref":"#/definitions/pulsedOscillatorSolver"}}}
   ]
 }

@@ -38,7 +38,7 @@ export interface RunSummary {
   schema: "quantum-run-manifest/v1";
   runId: string;
   jobId: string;
-  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive";
+  operation: "diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse";
   model: string;
   engine: EvolutionEngineName | ManyBodyEngineName | import("./index").CircuitEngineName;
   engineVersion: string;

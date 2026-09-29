@@ -39,8 +39,8 @@ const implementation = (
 
 /** Existing code inventory, not a new execution registry. Engine availability is runtime-reported. */
 export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
-  driven_harmonic_oscillator: implementation("packages/models/oscillator-drive.ts", ["oscillator_drive"], ["native", "qutip"], false, [], [],
-    "D1: bounded monochromatic complex forcing, free Fock/projected-coherent inputs, dimensionless q,p and hbar=1. Includes omega/2 energy offset relative to Atlas; no arbitrary envelope, damping, parametric/anharmonic/ND or scene/Math3D adapter."),
+  driven_harmonic_oscillator: implementation("packages/models/oscillator-drive.ts", ["oscillator_drive", "oscillator_pulse"], ["native", "qutip"], false, [], [],
+    "D1: bounded monochromatic and declarative Gaussian complex forcing (packages/models/oscillator-pulse.ts), Fock/projected-coherent inputs, dimensionless q,p and hbar=1. Includes omega/2 Atlas energy offset; existing Atlas preset remains monochromatic. No arbitrary waveform, damping, parametric/anharmonic/ND or scene/Math3D adapter."),
   harmonic_oscillator: implementation("packages/models/oscillator.ts", ["oscillator", "oscillator_evolve"], ["native", "qutip"], false, [], [],
     "D1: static spectrum/stationary density plus bounded free Fock/coherent evolution (packages/models/oscillator-dynamics.ts); dimensionless q,p and hbar=1. Atlas binding still loads static defaults. No driven/anharmonic/ND model or 3D scene adapter."),
   two_level: implementation(

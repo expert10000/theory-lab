@@ -14,6 +14,16 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-job" and value["operation"] == "oscillator_pulse":
+        p, s, i = value["model"]["parameters"], value["solver"], value["initialState"]
+        duration = s["tStop"]-s["tStart"]
+        alpha = math.hypot(i["alphaRe"], i["alphaIm"]) if i["type"] == "coherent" else 0
+        drive = math.hypot(p["epsilonRe"], p["epsilonIm"])
+        if (p["points"] % 2 != 1 or duration <= 0 or duration > 20 or p["omega"]*duration > 50
+                or drive > .5 or alpha > 2 or alpha+drive*min(duration, math.sqrt(2*math.pi)*p["pulseWidth"]) > 4
+                or p["pulseCenter"] < 0 or p["pulseCenter"] > duration or s["maxStep"] > p["pulseWidth"]/8
+                or duration/s["maxStep"] > 20000 or (i["type"] == "fock" and i["index"] >= p["cutoff"]-1)):
+            raise ValueError("Unsupported Gaussian pulse width/center/integration budget")
     if name == "quantum-job" and value["operation"] == "oscillator_drive":
         p, s, i = value["model"]["parameters"], value["solver"], value["initialState"]
         duration = s["tStop"]-s["tStart"]
