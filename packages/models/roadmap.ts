@@ -106,9 +106,9 @@ export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {
     id: "R2",
     title: "Executable Atlas mappings to existing jobs/labs",
-    state: "Planned",
+    state: "Implemented",
     detail:
-      "Review explicit scientific conversions and bounded contract-valid numerical adapters.",
+      "68 reviewed dispositions; nine unchanged bindings with coefficient/basis/unit evidence; two restricted adapter candidates remain disabled. No new solver is claimed.",
   },
   {
     id: "R3",

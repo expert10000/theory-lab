@@ -143,7 +143,7 @@ try {
   assert.ok(await page.getByText("Reciprocal basis & Brillouin-zone inspection",{exact:true}).isVisible());
   assert.match(await page.getByTestId("qvis-release-status").innerText(), /QVIS-001–013 implemented/);
   assert.match(await page.getByTestId("reconciliation-R1").innerText(),/Implemented/);
-  assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Planned/);
+  assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);

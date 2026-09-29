@@ -1,5 +1,6 @@
 import React from "react";
 import { reconcileAtlas } from "../atlas/reconciliation";
+import { executableReview } from "../atlas/executable-review";
 import "./atlas-capabilities.css";
 
 /** Shared read-only explanation. Never creates a Run action or worker job. */
@@ -7,6 +8,7 @@ export function AtlasCapabilities({ id }: { id: string }) {
   const row = reconcileAtlas(id);
   if (!row) return null;
   const lab = row.lab;
+  const review = executableReview(id)!;
   return (
     <section
       className="atlas-binding atlas-bridge atlas-capabilities"
@@ -59,6 +61,15 @@ export function AtlasCapabilities({ id }: { id: string }) {
         </p>
       ))}
       <p>{row.gap}</p>
+      <details data-testid="atlas-executable-review">
+        <summary>R2 executable mapping review · {review.disposition}</summary>
+        {review.scientificMapping && <>
+          <p>{review.scientificMapping.conversion}</p>
+          <p>{review.scientificMapping.basis}</p>
+          <p>{review.scientificMapping.boundedScope}</p>
+        </>}
+        <p>{review.nextRequirement}</p>
+      </details>
       <p>
         Generic scene primitives do not mean this Hamiltonian has a numerical
         result adapter. No new worker or Math3D connection.

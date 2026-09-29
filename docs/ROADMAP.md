@@ -25,8 +25,11 @@ R1 is implemented: the canonical 68-entry Atlas is pinned and reconciled with
 existing typed Lab modules, seven source-example references and nine preserved
 tested bindings. No second model/workspace/worker architecture was added.
 See [ATLAS_RECONCILIATION_R1.md](ATLAS_RECONCILIATION_R1.md) for the full inventory.
-R2 executable mapping review, R3 QVIS vocabulary review, R4 genuine model gaps,
-and R5 the reconciled contract freeze remain planned. D1 is not started.
+R2 executable mapping review is implemented: all entries have dispositions,
+scientific conventions and evidence for the nine preserved bindings. No new
+binding is enabled by the review. See [R2–R5 review](ATLAS_RECONCILIATION_R2_R5.md).
+R3 QVIS vocabulary review, R4 genuine model gaps and R5 the reconciled contract
+freeze remain planned. D1 is not started.
 
 ## 1. Technology decision
 

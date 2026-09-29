@@ -1,5 +1,9 @@
 # Quantum Hamiltonian Lab
 
+Additive Atlas reconciliation: R2 reviews all 68 executable dispositions and
+preserves the nine existing tested bindings; no source runner is auto-enabled.
+See [the R2–R5 review](docs/ATLAS_RECONCILIATION_R2_R5.md).
+
 An Electron 44 + React/TypeScript desktop laboratory with a supervised Python worker. QLAB-000–017 form the tested v0.1 source release: two-level dynamics, cavity QED, Lindblad open systems, parameter sweeps, source-linked Volume VIII presets, QuTiP/native comparison, and durable workspaces/runs. QLAB-018–021 add optional Dynamiqs GPU evolution and sweeps plus a finite Ising-chain laboratory with optional QuSpin.
 
 The [delivery roadmap](docs/ROADMAP.md) and

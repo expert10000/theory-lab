@@ -28,7 +28,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
     ATLAS_RECONCILIATION_STEPS.map((r) => [r.id, r.state]),
     [
       ["R1", "Implemented"],
-      ["R2", "Planned"],
+      ["R2", "Implemented"],
       ["R3", "Planned"],
       ["R4", "Planned"],
       ["R5", "Planned"],
