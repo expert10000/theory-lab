@@ -39,8 +39,8 @@ const implementation = (
 
 /** Existing code inventory, not a new execution registry. Engine availability is runtime-reported. */
 export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
-  harmonic_oscillator: implementation("packages/models/oscillator.ts", ["oscillator"], ["native", "qutip"], false, [], [],
-    "D1: bounded 1D Fock spectrum and stationary Hermite density; dimensionless q, hbar=1. No driven/anharmonic/ND model or 3D scene adapter."),
+  harmonic_oscillator: implementation("packages/models/oscillator.ts", ["oscillator", "oscillator_evolve"], ["native", "qutip"], false, [], [],
+    "D1: static spectrum/stationary density plus bounded free Fock/coherent evolution (packages/models/oscillator-dynamics.ts); dimensionless q,p and hbar=1. Atlas binding still loads static defaults. No driven/anharmonic/ND model or 3D scene adapter."),
   two_level: implementation(
     "packages/models/index.ts",
     ["diagonalize"],

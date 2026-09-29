@@ -14,6 +14,11 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-job" and value["operation"] == "oscillator_evolve":
+        p, s, i = value["model"]["parameters"], value["solver"], value["initialState"]
+        if (p["points"] % 2 != 1 or s["tStop"] <= s["tStart"] or p["omega"]*(s["tStop"]-s["tStart"]) > 100
+                or (i["index"] >= p["cutoff"]-1 if i["type"] == "fock" else i["alphaRe"]**2+i["alphaIm"]**2 > 4)):
+            raise ValueError("Unsupported bounded oscillator evolution")
     if name == "quantum-job" and value["operation"] == "oscillator":
         p = value["model"]["parameters"]
         if p["levels"] > p["cutoff"] or p["state"] >= p["cutoff"] - 1 or p["points"] % 2 != 1:

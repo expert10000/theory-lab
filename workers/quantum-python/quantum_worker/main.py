@@ -32,6 +32,7 @@ def capabilities():
         result["operations"].append("orbital")
     if native["available"]:
         result["operations"].append("oscillator")
+        result["operations"].append("oscillator_evolve")
     validate("worker-capabilities", result)
     return result
 

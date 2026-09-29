@@ -110,7 +110,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 
 | Lab model | Existing module | Operations | Engines (runtime availability required) | Web compute form | Gateway operations | Scene operation / views |
 | --- | --- | --- | --- | --- | --- | --- |
-| `harmonic_oscillator` | packages/models/oscillator.ts | oscillator | native, qutip | no | — | — |
+| `harmonic_oscillator` | packages/models/oscillator.ts | oscillator, oscillator_evolve | native, qutip | no | — | — |
 | `two_level` | packages/models/index.ts | diagonalize | native, qutip | yes | diagonalize | — |
 | `driven_two_level` | packages/models/index.ts | evolve, sweep | native, qutip, dynamiqs | yes | evolve | evolve / standard |
 | `landau_zener` | packages/models/index.ts | evolve, sweep | native, qutip, dynamiqs | no | evolve | evolve / standard |
@@ -125,7 +125,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `qwz` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `hydrogenic` | packages/models/orbital.ts | orbital | native | no | — | orbital / standard |
 
-- **harmonic_oscillator**: D1: bounded 1D Fock spectrum and stationary Hermite density; dimensionless q, hbar=1. No driven/anharmonic/ND model or 3D scene adapter.
+- **harmonic_oscillator**: D1: static spectrum/stationary density plus bounded free Fock/coherent evolution (packages/models/oscillator-dynamics.ts); dimensionless q,p and hbar=1. Atlas binding still loads static defaults. No driven/anharmonic/ND model or 3D scene adapter.
 - **two_level**: Restricted real two-level Hamiltonian; not all four Pauli coefficients.
 - **driven_two_level**: Classical periodic drive; web has evolution controls, not sweeps.
 - **landau_zener**: Finite-time linear passage; not asymptotic scattering.

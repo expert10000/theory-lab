@@ -12,6 +12,9 @@ legacy scientific protocol fingerprints are tested independently.
 | D1-003 | Electron controls, stationary-state plots and persistence | Implemented |
 | D1-004 | Reviewed Atlas binding, acceptance and release gate | Implemented |
 
+Continuation D1-005–007: [free oscillator dynamics](D1_OSCILLATOR_DYNAMICS.md).
+The following scope/acceptance records the original static release.
+
 The first lab computes `H = omega (N + 1/2)`, with hbar = 1, low energies,
 stationary real Hermite amplitudes and density. Position is the dimensionless
 quadrature q, not a physical length. The canonical Atlas supplies omega; cutoff,

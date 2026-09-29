@@ -15,21 +15,24 @@ import {
   type SweepResult,
   type OrbitalJob,
   type OrbitalResult,
+  type OscillatorEvolutionJob,
+  type OscillatorEvolutionResult,
 } from "../../../packages/contracts";
 import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
+import { consistentOscillatorEvolutionResult, checkOscillatorEvolutionData } from "../../../packages/models/oscillator-dynamics";
 import { WorkerSupervisor } from "./worker";
 
 type Active = {
-  job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob;
+  job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob;
   acknowledged: boolean;
   cancelRequested: boolean;
-  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult) => void;
+  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 export class EvolutionCoordinator {
   private active?: Active;
-  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult>();
+  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult>();
   constructor(
     private worker: WorkerSupervisor,
     private artifactDir: string,
@@ -50,9 +53,10 @@ export class EvolutionCoordinator {
   run(job: LindbladJob): Promise<LindbladResult>;
   run(job: SweepJob): Promise<SweepResult>;
   run(job: OrbitalJob): Promise<OrbitalResult>;
-  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult> {
+  run(job: OscillatorEvolutionJob): Promise<OscillatorEvolutionResult>;
+  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult> {
     assertJob(job);
-    if (!["evolve", "cavity", "lindblad", "sweep", "orbital"].includes(job.operation)) throw new Error("Expected quantum data job");
+    if (!["evolve", "cavity", "lindblad", "sweep", "orbital", "oscillator_evolve"].includes(job.operation)) throw new Error("Expected quantum data job");
     const timing = job.operation === "orbital" ? null : job.operation === "sweep" ? job.sweep : job.solver;
     if (timing && timing.tStop <= timing.tStart)
       throw new Error("tStop must exceed tStart");
@@ -169,7 +173,11 @@ export class EvolutionCoordinator {
         this.reject(new Error("Worker returned an invalid quantum result"));
         return;
       }
-      if (value.operation === "orbital" && active.job.operation === "orbital") {
+      if (value.operation === "oscillator_evolve" && active.job.operation === "oscillator_evolve") {
+        if(!consistentOscillatorEvolutionResult(active.job,value)) {
+          this.reject(new Error("Worker returned inconsistent oscillator dynamics"));return;
+        }
+      } else if (value.operation === "orbital" && active.job.operation === "orbital") {
         if (!consistentOrbitalResult(active.job,value)) {
           this.reject(new Error("Worker returned inconsistent orbital data")); return;
         }
@@ -208,6 +216,7 @@ export class EvolutionCoordinator {
       void this.worker.fetchArtifact(value.jobId, value.data, this.artifactDir)
         .then(async () => {
           if (value.operation === "orbital") checkOrbitalData(value, await readFile(join(this.artifactDir, value.data.path)));
+          if (value.operation === "oscillator_evolve") checkOscillatorEvolutionData(value, await readFile(join(this.artifactDir, value.data.path)));
           this.completed.set(value.jobId, value); this.resolve(value);
         })
         .catch(error => this.reject(error instanceof Error ? error : new Error(String(error))));
@@ -222,7 +231,7 @@ export class EvolutionCoordinator {
         ),
       );
   }
-  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult) {
+  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult) {
     const active = this.active;
     if (!active) return;
     clearTimeout(active.timer);

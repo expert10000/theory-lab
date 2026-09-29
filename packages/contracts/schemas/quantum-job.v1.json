@@ -2,6 +2,9 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-job.v1.json",
   "definitions": {
+    "oscillatorEvolutionModel": {"type":"object","additionalProperties":false,"required":["type","parameters"],"properties":{"type":{"const":"harmonic_oscillator"},"parameters":{"type":"object","additionalProperties":false,"required":["omega","cutoff","extent","points"],"properties":{"omega":{"type":"number","minimum":0.01,"maximum":20},"cutoff":{"type":"integer","minimum":8,"maximum":64},"extent":{"type":"number","minimum":2,"maximum":12},"points":{"type":"integer","minimum":101,"maximum":401}}}}},
+    "oscillatorInitialState": {"oneOf":[{"type":"object","additionalProperties":false,"required":["type","index"],"properties":{"type":{"const":"fock"},"index":{"type":"integer","minimum":0,"maximum":10}}},{"type":"object","additionalProperties":false,"required":["type","alphaRe","alphaIm"],"properties":{"type":{"const":"coherent"},"alphaRe":{"type":"number","minimum":-2,"maximum":2},"alphaIm":{"type":"number","minimum":-2,"maximum":2}}}]},
+    "oscillatorEvolutionSolver": {"type":"object","additionalProperties":false,"required":["type","tStart","tStop","samples"],"properties":{"type":{"const":"schrodinger"},"tStart":{"type":"number","minimum":-100,"maximum":100},"tStop":{"type":"number","minimum":-100,"maximum":100},"samples":{"type":"integer","minimum":3,"maximum":1001}}},
     "oscillatorModel": {
       "type": "object", "additionalProperties": false,
       "required": ["type", "parameters"],
@@ -725,6 +728,7 @@
         "operation": {"const": "oscillator"}, "engine": {"enum": ["native", "qutip"]},
         "model": {"$ref": "#/definitions/oscillatorModel"}
       }
-    }
+    },
+    {"type":"object","additionalProperties":false,"required":["schema","jobId","operation","engine","model","initialState","solver"],"properties":{"schema":{"const":"quantum-job/v1"},"jobId":{"type":"string","minLength":1,"maxLength":100,"pattern":"^[A-Za-z0-9_-]+$"},"operation":{"const":"oscillator_evolve"},"engine":{"enum":["native","qutip"]},"model":{"$ref":"#/definitions/oscillatorEvolutionModel"},"initialState":{"$ref":"#/definitions/oscillatorInitialState"},"solver":{"$ref":"#/definitions/oscillatorEvolutionSolver"}}}
   ]
 }
