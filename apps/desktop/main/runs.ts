@@ -5,6 +5,7 @@ import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
+import { consistentOscillatorResult } from "../../../packages/models/oscillator";
 import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
 import { bandSceneFromResult } from "../../../packages/quantum-scene/bands";
 import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -39,6 +40,8 @@ export class RunStore {
     if (job.operation === "orbital" && (result.operation !== "orbital" || !consistentOrbitalResult(job, result)))
       throw new Error("Cannot persist inconsistent orbital data");
     verifyId(result.runId);
+    if (job.operation === "oscillator" && (result.operation !== "oscillator" || !consistentOscillatorResult(job, result)))
+      throw new Error("Cannot persist inconsistent oscillator data");
     const dir = join(this.root, result.runId);
     await this.ensureRoot();
     await mkdir(dir, { recursive: false });
@@ -75,7 +78,7 @@ export class RunStore {
             typeof value.durationMs === "number" && Number.isFinite(value.durationMs) &&
             (value.artifactSha256 === null || (typeof value.artifactSha256 === "string" && /^[a-f0-9]{64}$/.test(value.artifactSha256))) &&
             ["qutip", "native", "dynamiqs", "quspin", "scqubits"].includes(value.engine) &&
-            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital"].includes(value.operation))
+            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital", "oscillator"].includes(value.operation))
           runs.push({ schema: value.schema, runId: value.runId, jobId: value.jobId,
             operation: value.operation, model: value.model, engine: value.engine,
             engineVersion: value.engineVersion, computedAt: value.computedAt,
@@ -107,6 +110,8 @@ export class RunStore {
     if (job.operation === "orbital" && (result.operation !== "orbital" || !consistentOrbitalResult(job, result)))
       throw new Error("Stored orbital data failed consistency check");
     let data: Buffer | null = null;
+    if (job.operation === "oscillator" && (result.operation !== "oscillator" || !consistentOscillatorResult(job, result)))
+      throw new Error("Stored oscillator data failed consistency check");
     if ("data" in result) {
       if (manifest.files.data !== "data.f64") throw new Error("Missing run data file");
       data = await readFile(join(dir, "data.f64"));
@@ -147,6 +152,9 @@ function rowsOf(result: Extract<QuantumResult, { data: unknown }>, data: Buffer)
   return Array.from({ length: count }, (_, row) => Array.from({ length: stride }, (_, col) => view.getFloat64((row * stride + col) * 8, true)));
 }
 export function numericalCsv(result: QuantumResult, data: Buffer | null): string {
+  if (result.operation === "oscillator")
+    return ["level,energy,units", ...result.spectrum.energies.map((e,n) => `${n},${e},normalized`), "", "q,real_amplitude,density",
+      ...result.state.q.map((q,i)=>`${q},${result.state.amplitude[i]},${result.state.density[i]}`)].join("\n")+"\n";
   if (result.operation === "diagonalize")
     return `level,energy,units\nE-,${result.spectrum.eigenvalues[0]},normalized\nE+,${result.spectrum.eigenvalues[1]},normalized\n`;
   if (result.operation === "many_body")
@@ -213,7 +221,7 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
       return `<path d="M${120 + index * 86} ${y} h58" stroke="#79d9c1" stroke-width="4"/><text x="${120 + index * 86}" y="${y - 10}" fill="white" font-family="sans-serif" font-size="11">E${index} ${energy.toFixed(3)}</text>`;
     }).join("") + `</svg>\n`;
   }
-  if (result.operation === "circuit") {
+  if (result.operation === "circuit" || result.operation === "oscillator") {
     const energies = result.spectrum.energies;
     const low = energies[0], span = Math.max(1e-9, energies[energies.length - 1] - low);
     return head + energies.map((energy, index) => {

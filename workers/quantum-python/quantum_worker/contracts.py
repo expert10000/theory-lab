@@ -14,6 +14,10 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-job" and value["operation"] == "oscillator":
+        p = value["model"]["parameters"]
+        if p["levels"] > p["cutoff"] or p["state"] >= p["cutoff"] - 1 or p["points"] % 2 != 1:
+            raise ValueError("Oscillator needs levels<=cutoff, state<cutoff-1 and an odd grid")
     if name == "quantum-job" and value["operation"] == "orbital":
         p = value["model"]["parameters"]
         if p["l"] >= p["n"] or abs(p["m"]) > p["l"] or (p["basis"] != "complex" and p["m"] < 0) or (p["basis"] == "real_sin" and p["m"] == 0):

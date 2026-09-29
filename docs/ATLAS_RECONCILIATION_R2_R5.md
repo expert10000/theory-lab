@@ -538,7 +538,7 @@ Recommended next physics milestone after reconciliation: an additive standalone 
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `fa56813201f25f1f66a94363d1f02b48be663b730655d0e6da11dbcb4678fd61`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `b12fb7ffc6e61b44e5cd047bea0be3a8fecab31c141cdd4a06b95c0fddd47ec9`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Existing scientific protocol schemas retained byte-semantically
 
@@ -546,9 +546,9 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
-| packages/contracts/schemas/quantum-job.v1.json | `40175f6671a7b9593ceeff8e9e9b3a514c8e8e4558e3bf7e5f3c0b99b211c916` |
-| packages/contracts/schemas/quantum-result.v1.json | `a41a3f6af07ff327d9102911b0fd2bda0eb7e850abc3645410dd7a2453ffa287` |
-| packages/contracts/schemas/worker-capabilities.v1.json | `7d27945acaf300a83a0975ea1077755c8edbfac6bb73a27d29deb7e644ae11dc` |
+| packages/contracts/schemas/quantum-job.v1.json | `fe68dc3b3e5d917d294ab0567c5ea9c5ea399d6abedb66d8cc1c7c1ce231e94c` |
+| packages/contracts/schemas/quantum-result.v1.json | `3ae2dc40584441420f90565cc1b6f0f9f85f701572b8d0741289260420098520` |
+| packages/contracts/schemas/worker-capabilities.v1.json | `aafde40323b8273b4ff947d984f0fdb77e2802cfec8ea15738a298c653f70948` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
 | packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |
 

@@ -158,7 +158,22 @@ export interface OrbitalResult {
     radialNodes?: number[]; cubeProbabilityBounds?: [number, number] };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob;
+export interface OscillatorModel {
+  type: "harmonic_oscillator";
+  parameters: { omega: number; cutoff: number; levels: number; state: number; extent: number; points: number };
+}
+export interface OscillatorJob {
+  schema: "quantum-job/v1"; jobId: string; operation: "oscillator"; engine: EngineName; model: OscillatorModel;
+}
+export interface OscillatorResult {
+  schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
+  operation: "oscillator"; engine: { name: EngineName; version: string }; model: OscillatorModel;
+  spectrum: { energies: number[]; units: "normalized"; hbar: 1 };
+  state: { q: number[]; amplitude: number[]; density: number[] };
+  analysis: { ladderError: number; cutoffDrift: number; qVariance: number; pVariance: number; boundaryOccupation: number; gridProbability: number };
+  provenance: SpectrumResult["provenance"];
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -363,7 +378,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -382,7 +397,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -444,5 +459,10 @@ export function assertJob(value: unknown): asserts value is QuantumJob {
     const { n, l, m, basis } = value.model.parameters;
     if (l >= n || Math.abs(m) > l || (basis !== "complex" && m < 0) || (basis === "real_sin" && m === 0))
       throw new Error("Invalid orbital quantum numbers or real-harmonic convention");
+  }
+  if (value.operation === "oscillator") {
+    const p = value.model.parameters;
+    if (p.levels > p.cutoff || p.state >= p.cutoff - 1 || p.points % 2 !== 1)
+      throw new Error("Oscillator needs levels<=cutoff, state<cutoff-1 and an odd grid");
   }
 }

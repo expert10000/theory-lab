@@ -2,6 +2,22 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-result.v1.json",
   "definitions": {
+    "oscillatorModel": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "parameters"],
+      "properties": {"type": {"const": "harmonic_oscillator"}, "parameters": {
+        "type": "object", "additionalProperties": false,
+        "required": ["omega", "cutoff", "levels", "state", "extent", "points"],
+        "properties": {
+          "omega": {"type": "number", "minimum": 0.01, "maximum": 20},
+          "cutoff": {"type": "integer", "minimum": 8, "maximum": 64},
+          "levels": {"type": "integer", "minimum": 3, "maximum": 12},
+          "state": {"type": "integer", "minimum": 0, "maximum": 10},
+          "extent": {"type": "number", "minimum": 2, "maximum": 12},
+          "points": {"type": "integer", "minimum": 101, "maximum": 401}
+        }
+      }}
+    },
     "orbitalModel": {
       "type": "object",
       "additionalProperties": false,
@@ -1215,6 +1231,37 @@
         "analysis",
         "provenance"
       ]
+    },
+    {"type": "object", "additionalProperties": false,
+      "required": ["schema", "jobId", "runId", "status", "operation", "model", "engine", "spectrum", "state", "analysis", "provenance"],
+      "properties": {
+        "schema": {"const": "quantum-result/v1"},
+        "jobId": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$"},
+        "runId": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$"},
+        "status": {"const": "completed"}, "operation": {"const": "oscillator"},
+        "model": {"$ref": "#/definitions/oscillatorModel"},
+        "engine": {"type": "object", "additionalProperties": false, "required": ["name", "version"],
+          "properties": {"name": {"enum": ["native", "qutip"]}, "version": {"type": "string", "minLength": 1, "maxLength": 100}}},
+        "spectrum": {"type": "object", "additionalProperties": false, "required": ["energies", "units", "hbar"],
+          "properties": {"energies": {"type": "array", "minItems": 3, "maxItems": 12, "items": {"type": "number", "minimum": 0, "maximum": 1280}}, "units": {"const": "normalized"}, "hbar": {"const": 1}}},
+        "state": {"type": "object", "additionalProperties": false, "required": ["q", "amplitude", "density"],
+          "properties": {
+            "q": {"type": "array", "minItems": 101, "maxItems": 401, "items": {"type": "number", "minimum": -12, "maximum": 12}},
+            "amplitude": {"type": "array", "minItems": 101, "maxItems": 401, "items": {"type": "number", "minimum": -10, "maximum": 10}},
+            "density": {"type": "array", "minItems": 101, "maxItems": 401, "items": {"type": "number", "minimum": 0, "maximum": 100}}
+          }},
+        "analysis": {"type": "object", "additionalProperties": false,
+          "required": ["ladderError", "cutoffDrift", "qVariance", "pVariance", "boundaryOccupation", "gridProbability"],
+          "properties": {
+            "ladderError": {"type": "number", "minimum": 0, "maximum": 1280},
+            "cutoffDrift": {"type": "number", "minimum": 0, "maximum": 1280},
+            "qVariance": {"type": "number", "minimum": 0, "maximum": 64},
+            "pVariance": {"type": "number", "minimum": 0, "maximum": 64},
+            "boundaryOccupation": {"type": "number", "minimum": 0, "maximum": 1},
+            "gridProbability": {"type": "number", "minimum": 0, "maximum": 1.2}
+          }},
+        "provenance": {"$ref": "#/oneOf/5/properties/provenance"}
+      }
     }
   ]
 }

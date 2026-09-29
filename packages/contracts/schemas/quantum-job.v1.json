@@ -2,6 +2,22 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "schemas/quantum-job.v1.json",
   "definitions": {
+    "oscillatorModel": {
+      "type": "object", "additionalProperties": false,
+      "required": ["type", "parameters"],
+      "properties": {"type": {"const": "harmonic_oscillator"}, "parameters": {
+        "type": "object", "additionalProperties": false,
+        "required": ["omega", "cutoff", "levels", "state", "extent", "points"],
+        "properties": {
+          "omega": {"type": "number", "minimum": 0.01, "maximum": 20},
+          "cutoff": {"type": "integer", "minimum": 8, "maximum": 64},
+          "levels": {"type": "integer", "minimum": 3, "maximum": 12},
+          "state": {"type": "integer", "minimum": 0, "maximum": 10},
+          "extent": {"type": "number", "minimum": 2, "maximum": 12},
+          "points": {"type": "integer", "minimum": 101, "maximum": 401}
+        }
+      }}
+    },
     "orbitalModel": {
       "type": "object",
       "additionalProperties": false,
@@ -700,6 +716,15 @@
         "engine",
         "model"
       ]
+    },
+    {"type": "object", "additionalProperties": false,
+      "required": ["schema", "jobId", "operation", "engine", "model"],
+      "properties": {
+        "schema": {"const": "quantum-job/v1"},
+        "jobId": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$"},
+        "operation": {"const": "oscillator"}, "engine": {"enum": ["native", "qutip"]},
+        "model": {"$ref": "#/definitions/oscillatorModel"}
+      }
     }
   ]
 }
