@@ -9,7 +9,7 @@ legacy scientific protocol fingerprints are tested independently.
 | --- | --- | --- |
 | D1-001 | Bounded oscillator contracts, typed model and compatibility | Implemented |
 | D1-002 | Native/QuTiP Fock engines and worker protocol | Implemented |
-| D1-003 | Electron controls, stationary-state plots and persistence | Planned |
+| D1-003 | Electron controls, stationary-state plots and persistence | Implemented |
 | D1-004 | Reviewed Atlas binding, acceptance and release gate | Planned |
 
 The first lab computes `H = omega (N + 1/2)`, with hbar = 1, low energies,

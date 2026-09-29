@@ -56,6 +56,7 @@ try {
       "onProgress",
       "openAtlasSource",
       "orbital",
+      "oscillator",
       "readData",
       "readSceneChunk",
       "releaseSceneStream",
@@ -98,6 +99,27 @@ try {
   });
   assert.ok(rejected, "IPC must validate renderer input");
   await mkdir("artifacts", { recursive: true });
+  await page.getByTestId("open-oscillator").click();
+  await page.getByTestId("run-oscillator").click();
+  await page.getByTestId("oscillator-state").filter({hasText:"COMPLETE"}).waitFor();
+  assert.equal(await page.getByTestId("oscillator-e0").innerText(),"0.500000");
+  assert.ok(await page.getByTestId("oscillator-compare").isVisible());
+  assert.ok(await page.getByRole("img",{name:"Oscillator stationary density and real amplitude"}).isVisible());
+  await page.getByLabel("Oscillator points",{exact:true}).fill("200");
+  assert.ok(await page.getByTestId("run-oscillator").isDisabled());
+  await page.getByLabel("Oscillator points",{exact:true}).fill("201");
+  await page.getByLabel("Oscillator state",{exact:true}).fill("2");
+  await page.getByTestId("oscillator-result").getByText("OUT OF DATE").waitFor();
+  await page.getByTestId("run-oscillator").click();
+  await page.getByTestId("oscillator-state").filter({hasText:"COMPLETE"}).waitFor();
+  assert.equal(await page.getByTestId("oscillator-variance").innerText(),"2.500000");
+  await page.screenshot({path:"artifacts/desktop-oscillator.png",fullPage:true});
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
+  await page.getByLabel("Oscillator state",{exact:true}).fill("1");
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Oscillator state"]')?.value==="2");
+  await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({
     path: "artifacts/desktop-spectrum.png",
     fullPage: true,
@@ -872,6 +894,7 @@ try {
   assert.ok(runIds.includes(preservedRunId), "saved run must survive app restart");
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
+  await page.waitForFunction(() => document.querySelector('input[aria-label="Oscillator state"]')?.value === "2");
   assert.ok(await page.getByTestId("preset-loaded").getByText(/Damped cavity occupation/).isVisible());
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {

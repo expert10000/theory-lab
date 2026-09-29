@@ -18,6 +18,7 @@ import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-sce
 import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
 import { consistentTopologyResult } from "../../../packages/models/topology";
+import { consistentOscillatorResult } from "../../../packages/models/oscillator";
 import { atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
   type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
@@ -192,6 +193,22 @@ app.whenReady().then(() => {
           result.jobId !== value.jobId || result.engine.name !== value.engine ||
           JSON.stringify(result.model) !== JSON.stringify(value.model))
         throw new Error("Worker returned an invalid or mismatched circuit result");
+      await runs.record(value, result);
+      return result;
+    } finally { running = false; }
+  });
+  ipcMain.handle("quantum:oscillator", async (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if (value.operation !== "oscillator") throw new Error("Expected oscillator job");
+    if (worker.status.state !== "READY" || !worker.status.capabilities?.operations.includes("oscillator") ||
+        !worker.status.capabilities.engines[value.engine].available) throw new Error(`${value.engine} oscillator engine is not ready`);
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const result = await worker.request("quantum.run", value);
+      if (!isQuantumResult(result) || result.operation !== "oscillator" || !consistentOscillatorResult(value, result))
+        throw new Error("Worker returned an invalid or inconsistent oscillator result");
       await runs.record(value, result);
       return result;
     } finally { running = false; }

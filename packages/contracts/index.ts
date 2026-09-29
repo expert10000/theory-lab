@@ -425,6 +425,7 @@ export interface QuantumBridge {
   sweep(job: SweepJob): Promise<SweepResult>;
   manyBody(job: ManyBodyJob): Promise<ManyBodyResult>;
   circuit(job: CircuitJob): Promise<CircuitResult>;
+  oscillator(job: OscillatorJob): Promise<OscillatorResult>;
   topology(job: TopologyJob): Promise<TopologyResult>;
   orbital(job: OrbitalJob): Promise<OrbitalResult>;
   openAtlasSource(id: string): Promise<void>;
