@@ -45,6 +45,15 @@ test("workspace v1 accepts all lab drafts and rejects unknown or unsafe fields",
   assert.equal(isWorkspaceSnapshot({ ...workspace, spectrum: { ...workspace.spectrum, parameters: { delta: "x".repeat(200) } } }), false);
 });
 
+test("two-level energy-study draft is additive and does not relabel the old dynamics sweep",()=>{
+  assert.ok(isWorkspaceSnapshot(workspace));
+  const draft={omega:"0.8",start:"-2",stop:"2",points:"21",engine:"native"};
+  assert.ok(isWorkspaceSnapshot({...workspace,sweepView:"two_level",spectrumStudy:draft}));
+  assert.equal(isWorkspaceSnapshot({...workspace,sweepView:"unknown",spectrumStudy:draft}),false);
+  assert.equal(isWorkspaceSnapshot({...workspace,spectrumStudy:{...draft,code:"eval()"}}),false);
+  assert.equal(isWorkspaceSnapshot({...workspace,spectrumStudy:{...draft,points:"1".repeat(101)}}),false);
+});
+
 test("many-body job bounds and additive workspace v1 compatibility", () => {
   const job = manyBodyJob("ising-test", MANY_BODY_DEFAULTS, "open", "native");
   assert.deepEqual(job.model.parameters, { sites: 4, interaction: 1, transverse: 0.8, longitudinal: 0.15, boundary: "open" });

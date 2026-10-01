@@ -115,7 +115,14 @@ views, and old energy-only saved results remain readable without invented
 state data. The formula's parameter/operator buttons remain keyboard usable.
 Bounded coarse Δ/Ω sliders now mirror the exact draft without clamping
 out-of-range numeric inputs. Wider model adapters are still future work.
-UI-4–8 are **Planned**. Their numbers are UI-specific and
+UI-4 is **Partial**: the two-level Sweeps view now plots E₋/E₊ against Δ at
+fixed Ω from separately verified, saved spectrum runs. Keyboard-selectable
+points can open their exact saved run or populate an uncomputed draft;
+workspace restore keeps bounded study inputs but does not invent a completed
+study. The original dynamics sweep continues to mean final P₁. Cancellation
+occurs between points; a cancelled study leaves its already verified point
+runs available. A durable study-level manifest, other model/output adapters
+and broader sweep comparison remain future work. UI-5–8 are **Planned**. Their numbers are UI-specific and
 do not relabel existing QLAB or QVIS commits. Implement them in order unless
 an explicit dependency is split out and tested independently.
 
@@ -175,8 +182,8 @@ Implementation choice: a separate `quantum-spectrum-study/v1` plan now composes
 3–31 existing verified `diagonalize` jobs, one durable run per sampled Δ.
 Each point records its exact coordinate and source run ID; cancellation is
 between points. This adds no new worker operation or change to the existing
-final-`P₁` sweep. The interactive Lab surface and linked-point workflow are
-the next UI-4 slice; the overall gate is not yet complete.
+final-`P₁` sweep. The interactive Lab view links plotted points to their saved
+spectra or to fresh parameter drafts; the overall gate is not yet complete.
 
 Acceptance: sampled energies match direct two-level jobs and the analytic
 formula within declared tolerance; zero-gap degeneracy is handled; each

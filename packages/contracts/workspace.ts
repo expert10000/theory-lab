@@ -23,6 +23,9 @@ export interface WorkspaceSnapshot {
   sweep: { modelId: "driven_two_level" | "landau_zener" | "stuckelberg" | "strong_drive";
     parameters: Record<string, string>; x: SweepAxis; y: SweepAxis; twoD: boolean;
     start: string; stop: string; initialIndex: 0 | 1; engine: SweepEngineName };
+  /** Optional: older workspaces and dynamics-sweep drafts remain unchanged. */
+  sweepView?: "two_level" | "dynamics";
+  spectrumStudy?: {omega:string;start:string;stop:string;points:string;engine:EngineName};
   manyBody?: { sites: string; interaction: string; transverse: string; longitudinal: string;
     boundary: "open" | "periodic"; engine: ManyBodyWorkspaceEngine };
   circuit?: { EJ: string; EC: string; ng: string; ncut: string; levels: string;
@@ -85,6 +88,10 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   sweep: block(["modelId", "parameters", "x", "y", "twoD", "start", "stop", "initialIndex", "engine"], {
     modelId: evolutionModel, parameters: values, x: axis, y: axis, twoD: { type: "boolean" },
     start: shortText, stop: shortText, initialIndex: { enum: [0, 1] }, engine: { enum: ["qutip", "native", "dynamiqs"] },
+  }),
+  sweepView: {enum:["two_level","dynamics"]},
+  spectrumStudy: block(["omega","start","stop","points","engine"],{
+    omega:shortText,start:shortText,stop:shortText,points:shortText,engine,
   }),
   manyBody: block(["sites", "interaction", "transverse", "longitudinal", "boundary", "engine"], {
     sites: shortText, interaction: shortText, transverse: shortText, longitudinal: shortText,

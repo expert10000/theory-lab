@@ -1239,6 +1239,22 @@ h1 {
 .scientific-selection code { color: #c8ebdf; }
 .operator-matrix { display: grid; grid-template-columns: repeat(2,32px); gap: 6px 15px; width: max-content; padding: 6px 13px; border-left: 2px solid #79d9c1; border-right: 2px solid #79d9c1; margin: 8px 0; text-align: center; color: #d4e7e0; font: 16px Consolas,monospace; }
 .inspector input.selected-parameter { border-color: #79d9c1; box-shadow: 0 0 0 1px rgba(121,217,193,.35); }
+.spectrum-study-lab { max-width: 1000px; padding: 26px; }
+.spectrum-study-lab h2 { margin: 3px 0 8px; }
+.spectrum-study-lab p { color: #a9bac4; line-height: 1.6; }
+.spectrum-study-fields { display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr)); gap: 12px; margin: 20px 0; }
+.spectrum-study-fields label { display: grid; gap: 6px; color: #9bdac9; font-size: 11px; }
+.spectrum-study-fields input,.spectrum-study-fields select { min-width: 0; width: 100%; background: #101a24; border: 1px solid #344b50; border-radius: 5px; color: #dce9e7; padding: 9px; }
+.spectrum-study-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 16px 0; }
+.spectrum-study-actions button { border: 1px solid #478675; border-radius: 5px; background: #204039; color: #b1efdd; padding: 9px 12px; cursor: pointer; }
+.spectrum-study-actions button:disabled { opacity: .45; cursor: not-allowed; }
+.spectrum-study-actions button:focus-visible,.spectrum-study-chart g:focus-visible { outline: 2px solid #8dd7c5; outline-offset: 2px; }
+.spectrum-study-actions span { color: #9dadb9; font-size: 11px; }
+.spectrum-study-chart { width: 100%; max-height: 350px; border: 1px solid #2e424d; border-radius: 6px; background: #111c26; }
+.spectrum-study-chart g { cursor: pointer; }
+.spectrum-study-chart g[aria-pressed="true"] circle { stroke: #fff; stroke-width: 2; }
+.spectrum-study-selection { margin-top: 15px; padding: 15px; border: 1px solid #47736b; border-radius: 6px; }
+.spectrum-study-selection code { overflow-wrap: anywhere; color: #b2d9cc; }
 .inspector input.spectrum-parameter-slider { padding: 0; margin: 8px 0 2px; height: 18px; accent-color: #79d9c1; cursor: pointer; }
 .slider-unavailable { display: block; margin-top: 5px; color: #8a9aab; font-size: 10px; line-height: 1.4; }
 .inspector [hidden] { display: none !important; }

@@ -39,7 +39,7 @@ try {
   const workspaceModes=page.getByRole("tablist",{name:/Workspace modes for/});
   assert.deepEqual(await workspaceModes.getByRole("tab").allTextContents(),
     ["Explore","Dynamics","Sweeps","Analysis","Scenes","Runs"]);
-  assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isDisabled(),true);
+  assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isDisabled(),false);
   assert.equal(await page.getByRole("button",{name:/Two-level system/}).getAttribute("aria-pressed"),"true");
   assert.equal(await page.getByRole("navigation",{name:"Model families"}).locator("details").count(),7);
   const lightMatter=page.locator('[data-model-group="light-matter"]');
@@ -192,6 +192,36 @@ try {
   await page.getByRole("button",{name:/Rabi dynamics/}).click();
   await page.getByRole("button",{name:/Two-level system/}).click();
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"model change invalidates selection");
+  await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
+  await page.getByTestId("spectrum-study-lab").waitFor();
+  assert.match(await page.getByTestId("spectrum-study-lab").innerText(),/not the final-state probability/);
+  await page.getByLabel("Study points").fill("3");
+  await page.getByLabel("Study engine").selectOption("native");
+  await page.getByTestId("run-spectrum-study").click();
+  await page.getByTestId("spectrum-study-status").filter({hasText:"Study complete"}).waitFor();
+  assert.match(await page.getByTestId("spectrum-study-progress").innerText(),/3\/3 verified points/);
+  await page.screenshot({path:"artifacts/desktop-spectrum-study.png",fullPage:true});
+  await page.getByRole("button",{name:/Select energy sample 1,/}).click();
+  const studyRunId=await page.getByTestId("spectrum-study-selection").locator("code").innerText();
+  await page.getByRole("button",{name:"Use as parameter draft"}).click();
+  assert.equal(await page.locator("#delta").inputValue(),"-2");
+  assert.equal(await page.getByTestId("result-state").innerText(),"AWAITING WORKER");
+  await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
+  await page.getByRole("button",{name:/Select energy sample 1,/}).click();
+  await page.getByRole("button",{name:"Open verified spectrum"}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:studyRunId}).waitFor();
+  assert.equal(await page.locator("#delta").inputValue(),"-2");
+  await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
+  await page.getByTestId("save-workspace").click();
+  await page.getByLabel("Study points").fill("5");
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Study points"]')?.value==="3");
+  assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/sweep");
+  assert.equal(await page.getByTestId("spectrum-study-chart").count(),0,"workspace restore carries inputs, not stale study results");
+  await page.getByRole("tab",{name:"Explore",exact:true}).click();
+  await page.getByRole("button",{name:"Restore smoke values"}).click();
+  await page.getByRole("button",{name:/Run spectrum/}).click();
+  await page.getByTestId("energy-low").filter({hasText:"-0.640312"}).waitFor();
   const circuit = await page.evaluate(() => window.quantum.circuit({
     schema: "quantum-job/v1", jobId: `circuit-${crypto.randomUUID()}`, operation: "circuit", engine: "native",
     model: { type: "transmon", parameters: { EJ: 20, EC: 0.25, ng: 0.2, ncut: 12, levels: 5 } },
@@ -494,7 +524,7 @@ try {
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
   assert.match(await page.getByTestId("linked-workspace-status").innerText(),/navigation slice implemented/);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"].includes(id)?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4"].includes(id)?/Partial/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);

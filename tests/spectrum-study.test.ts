@@ -1,5 +1,7 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
+import Ajv from "ajv";
+import schema from "../packages/contracts/schemas/quantum-spectrum-study.v1.json";
 import {mkdtemp,rm} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
@@ -19,12 +21,15 @@ function fakeSpectrum(job:SpectrumJob):SpectrumResult{
 
 test("versioned avoided-crossing plan is bounded and never a final-population sweep",async()=>{
   const plan=spectrumStudyPlan("study-1","native",.8,-2,2,5);
+  const schemaValid=new Ajv({strict:true}).compile(schema);
   assert.ok(isSpectrumStudyPlan(plan));
+  assert.ok(schemaValid(plan));
   assert.deepEqual(Array.from({length:5},(_,i)=>studyDelta(plan,i)),[-2,-1,0,1,2]);
   for(const bad of [{...plan,output:"final_p1"},{...plan,engine:"dynamiqs"},
     {...plan,axis:{...plan.axis,points:32}},{...plan,axis:{...plan.axis,start:2,stop:-2}},
     {...plan,fixed:{omega:Infinity}},{...plan,unknown:true}])
     await assert.rejects(runSpectrumStudy(bad as typeof plan,async()=>null),/Invalid bounded/);
+  assert.equal(schemaValid({...plan,output:"final_p1"}),false);
 });
 
 test("composition preserves point lineage, detects forged spectra and cancels between durable points",async()=>{
@@ -37,6 +42,7 @@ test("composition preserves point lineage, detects forged spectra and cancels be
   assert.deepEqual(seen,[0,1]);
   assert.deepEqual(result.points.map(point=>point.runId),["run-study-cancel-0","run-study-cancel-1"]);
   assert.ok(isSpectrumStudyResult(result));
+  assert.ok(new Ajv({strict:true}).compile(schema)(result));
   await assert.rejects(runSpectrumStudy(plan,async job=>({...fakeSpectrum(job),model:{...job.model,parameters:{delta:0,omega:0}}})),/lineage/);
 });
 

@@ -61,7 +61,7 @@ export function modeForTab(tab:WorkspaceTab):WorkspaceMode|null{
 export function tabForMode(model:WorkspaceModel,mode:WorkspaceMode):WorkspaceTab|null{
   if(mode==="scenes"||mode==="runs")return mode;
   if(mode==="analysis")return model==="two_level"?"hamiltonian":null;
-  if(mode==="sweeps")return ["driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(model)?"sweep":null;
+  if(mode==="sweeps")return ["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(model)?"sweep":null;
   if(mode==="dynamics")return model==="lindblad"?"open":
     ["driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(model)?"dynamics":null;
   switch(model){
@@ -79,7 +79,7 @@ export function tabForMode(model:WorkspaceModel,mode:WorkspaceMode):WorkspaceTab
 export function modelForSnapshot(snapshot:WorkspaceSnapshot):WorkspaceModel{
   switch(snapshot.tab){
     case "dynamics":return snapshot.dynamics.modelId;
-    case "sweep":return snapshot.sweep.modelId;
+    case "sweep":return snapshot.sweepView==="two_level"?"two_level":snapshot.sweep.modelId;
     case "cavity":return snapshot.cavity.modelId;
     case "open":return "lindblad";
     case "many_body":return "ising_chain";

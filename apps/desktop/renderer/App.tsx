@@ -9,6 +9,7 @@ import type {
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
 import {ScientificSelectionPanel} from "./ScientificSelectionPanel";
+import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
@@ -80,7 +81,7 @@ export function App() {
     return model==="quantum_rabi"?"quantum_rabi":"jaynes_cummings";
   });
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
-  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse" | "oscillatorDamped" | "oscillatorParametric" | "oscillatorAnharmonic">>>({});
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "spectrumStudy" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse" | "oscillatorDamped" | "oscillatorParametric" | "oscillatorAnharmonic">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
@@ -92,6 +93,7 @@ export function App() {
   const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
   const collectOpen = useCallback((value: WorkspaceSnapshot["open"]) => { workspaceParts.current.open = value; checkParts(); }, []);
   const collectSweep = useCallback((value: WorkspaceSnapshot["sweep"]) => { workspaceParts.current.sweep = value; checkParts(); }, []);
+  const collectSpectrumStudy=useCallback((value:NonNullable<WorkspaceSnapshot["spectrumStudy"]>)=>{workspaceParts.current.spectrumStudy=value;},[]);
   const collectManyBody = useCallback((value: NonNullable<WorkspaceSnapshot["manyBody"]>) => { workspaceParts.current.manyBody = value; checkParts(); }, []);
   const collectCircuit = useCallback((value: NonNullable<WorkspaceSnapshot["circuit"]>) => { workspaceParts.current.circuit = value; checkParts(); }, []);
   const collectTopology = useCallback((value: NonNullable<WorkspaceSnapshot["topology"]>) => { workspaceParts.current.topology = value; }, []);
@@ -313,6 +315,8 @@ export function App() {
       tab, selectedPresetId: selectedPreset?.id ?? null,
       spectrum: { parameters, engine: engineMode }, dynamics: parts.dynamics,
       cavity: parts.cavity, open: parts.open, sweep: parts.sweep, manyBody: parts.manyBody, circuit: parts.circuit,
+      sweepView:tab==="sweep"&&activeModel==="two_level"?"two_level":"dynamics",
+      spectrumStudy:parts.spectrumStudy??SPECTRUM_STUDY_DEFAULTS,
       topology: parts.topology ?? TOPOLOGY_DEFAULTS, orbital: parts.orbital ?? ORBITAL_DEFAULTS,
       oscillator: parts.oscillator ?? OSCILLATOR_DEFAULTS,
       oscillatorDynamics: parts.oscillatorDynamics ?? OSCILLATOR_DYNAMICS_DEFAULTS,
@@ -351,7 +355,7 @@ export function App() {
   };
   const utility=utilityLocation[tab];
   const experiment=tab==="spectrum"?"SPECTRUM":tab==="hamiltonian"?"HAMILTONIAN":
-    tab==="sweep"?"FINAL-POPULATION SWEEP":tab==="scenes"?"PORTABLE SCENES":
+    tab==="sweep"?(activeModel==="two_level"?"EIGENENERGY STUDY":"FINAL-POPULATION SWEEP"):tab==="scenes"?"PORTABLE SCENES":
     tab==="runs"?"SAVED RUNS":null;
   const visibleRunId=activeModel==="two_level"&&(tab==="spectrum"||tab==="hamiltonian")?result?.runId:null;
   return (
@@ -450,7 +454,7 @@ export function App() {
                       : tab === "open"
                         ? "OPEN-SYSTEM LABORATORY / 008"
                         : tab === "sweep"
-                          ? "SWEEP LABORATORY / 009"
+                          ? activeModel==="two_level"?"EIGENENERGY STUDY / QLAB-UI-4":"SWEEP LABORATORY / 009"
                         : tab === "many_body"
                           ? "MANY-BODY LABORATORY / 021"
                         : tab === "topology" ? "LATTICE TOPOLOGY / 027–028"
@@ -473,7 +477,7 @@ export function App() {
                       : tab === "open"
                         ? "A system meets its environment."
                         : tab === "sweep"
-                          ? "The landscape of a model."
+                          ? activeModel==="two_level"?"An avoided crossing, point by point.":"The landscape of a model."
                         : tab === "many_body"
                           ? "One qubit becomes a chain."
                         : tab === "topology" ? "Bands acquire topology."
@@ -496,7 +500,7 @@ export function App() {
                       : tab === "open"
                         ? "Explore relaxation, dephasing, cavity loss and stationary states."
                       : tab === "sweep"
-                        ? "Sweep one or two parameters with checkpoints, cancellation and resume."
+                        ? activeModel==="two_level"?"Scan static eigenenergies across Δ at fixed Ω; every point is a saved spectrum run.":"Sweep one or two parameters with checkpoints, cancellation and resume."
                       : tab === "many_body"
                         ? "Explore a finite Ising chain with independent QuSpin and NumPy engines."
                       : tab === "topology" ? "Computed band topology for finite and periodic lattice models."
@@ -533,9 +537,14 @@ export function App() {
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} /></div>
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} /></div>
-          <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status}
-            selectedModel={tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
+          <div hidden={tab !== "sweep"||activeModel==="two_level"}><SweepLab bridge={window.quantum} status={status}
+            selectedModel={activeModel!=="two_level"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
             onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
+          <div hidden={tab!=="sweep"||activeModel!=="two_level"}><SpectrumStudyLab bridge={window.quantum} status={status}
+            restored={restored?.snapshot.spectrumStudy} restoreEpoch={restored?.epoch} onSnapshot={collectSpectrumStudy}
+            onOpenPoint={openSavedSpectrum}
+            onDraftPoint={(delta,omega)=>{setParameters({delta:String(delta),omega:String(omega)});
+              setResult(null);setResultMode(null);setComparison(null);setSelection(null);setTab("spectrum");}}/></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} /></div>
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
