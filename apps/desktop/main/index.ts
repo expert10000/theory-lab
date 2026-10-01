@@ -14,6 +14,7 @@ import { pathToFileURL } from "node:url";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
+import { SpectrumStudyStore } from "./spectrum-studies";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
@@ -69,6 +70,7 @@ app.whenReady().then(() => {
   let running = false;
   const artifactDir = join(app.getPath("userData"), "artifacts");
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir);
+  const spectrumStudies = new SpectrumStudyStore(join(app.getPath("userData"), "spectrum-studies"), runs);
   const workspaceFile = join(app.getPath("userData"), "workspace.json");
   const evolution = new EvolutionCoordinator(
     worker,
@@ -352,6 +354,19 @@ app.whenReady().then(() => {
     trusted(event);
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid spectrum run ID");
     return runs.spectrum(runId);
+  });
+  ipcMain.handle("quantum:save-spectrum-study", (event, result:unknown) => {
+    trusted(event);
+    return spectrumStudies.save(result);
+  });
+  ipcMain.handle("quantum:get-spectrum-study", (event, studyId:unknown) => {
+    trusted(event);
+    if(typeof studyId!=="string")throw new Error("Invalid spectrum study ID");
+    return spectrumStudies.get(studyId);
+  });
+  ipcMain.handle("quantum:list-spectrum-studies", (event) => {
+    trusted(event);
+    return spectrumStudies.list();
   });
   ipcMain.handle("quantum:scene", (event, runId: unknown, view: unknown) => {
     trusted(event);

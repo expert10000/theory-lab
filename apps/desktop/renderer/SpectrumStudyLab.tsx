@@ -1,6 +1,6 @@
 import React,{useEffect,useRef,useState} from "react";
 import type {EngineName,QuantumBridge,WorkerStatus,WorkspaceSnapshot} from "../../../packages/contracts";
-import type {SpectrumStudyPlan,SpectrumStudyPoint,SpectrumStudyResult} from "../../../packages/contracts/spectrum-study";
+import type {SpectrumStudyPlan,SpectrumStudyPoint,SpectrumStudyResult,SpectrumStudySummary} from "../../../packages/contracts/spectrum-study";
 import {runSpectrumStudy,spectrumStudyPlan} from "../../../packages/models/spectrum-study";
 import {format} from "./Spectrum";
 
@@ -18,7 +18,9 @@ export function SpectrumStudyLab({bridge,status,restored,restoreEpoch,onSnapshot
   const [selected,setSelected]=useState<number|null>(null);
   const [running,setRunning]=useState(false);
   const [message,setMessage]=useState("");
+  const [savedStudies,setSavedStudies]=useState<SpectrumStudySummary[]>([]);
   const cancelRef=useRef<AbortController|null>(null);
+  useEffect(()=>{void bridge.listSpectrumStudies().then(setSavedStudies).catch(()=>{});},[bridge]);
   useEffect(()=>{if(restoreEpoch){setDraft(restored??SPECTRUM_STUDY_DEFAULTS);setResult(null);setLivePoints([]);setLivePlan(null);setSelected(null);setMessage("Workspace inputs restored; recompute the study.");}},[restoreEpoch]);
   useEffect(()=>onSnapshot?.(draft),[draft,onSnapshot]);
   let preview:SpectrumStudyPlan|null=null;
@@ -33,20 +35,55 @@ export function SpectrumStudyLab({bridge,status,restored,restoreEpoch,onSnapshot
   const selectedPoint=selected===null?null:points.find(point=>point.index===selected)??null;
   const stale=!!result&&(!preview||result.plan.engine!==preview.engine||result.plan.fixed.omega!==preview.fixed.omega||
     JSON.stringify(result.plan.axis)!==JSON.stringify(preview.axis));
-  async function run(){
-    if(!preview||!ready||running)return;
-    const plan={...preview,studyId:`study-${crypto.randomUUID()}`};
+  async function execute(plan:SpectrumStudyPlan,prefix:readonly SpectrumStudyPoint[]=[]){
+    if(status.state!=="READY"||!status.capabilities?.operations.includes("diagonalize")||
+      !status.capabilities.engines[plan.engine]?.available||running)return;
     const controller=new AbortController();cancelRef.current=controller;
-    setRunning(true);setMessage("Calculating verified spectrum points…");setResult(null);setLivePoints([]);setLivePlan(plan);setSelected(null);
+    setRunning(true);setMessage(prefix.length?"Resuming from verified saved points…":"Calculating verified spectrum points…");
+    setResult(null);setLivePoints([...prefix]);setLivePlan(plan);setSelected(prefix.length?prefix.length-1:null);
+    const liveBuffer:SpectrumStudyPoint[]=[];
     try{
-      const completed=await runSpectrumStudy(plan,job=>bridge.run(job),point=>{
+      if(!prefix.length)await bridge.saveSpectrumStudy({schema:"quantum-spectrum-study-result/v1",studyId:plan.studyId,
+        plan,status:"cancelled",points:[],computedAt:new Date().toISOString()});
+      const completed=await runSpectrumStudy(plan,job=>bridge.run(job),async point=>{
+        const checkpoint:SpectrumStudyResult={schema:"quantum-spectrum-study-result/v1",studyId:plan.studyId,plan,
+          status:point.index===plan.axis.points-1?"completed":"cancelled",
+          points:([...prefix,...liveBuffer,point]),computedAt:new Date().toISOString()};
+        await bridge.saveSpectrumStudy(checkpoint);
+        liveBuffer.push(point);
         setLivePoints(current=>[...current,point]);setSelected(point.index);
-      },controller.signal);
-      setResult(completed);
+      },controller.signal,prefix);
+      const durable=await bridge.getSpectrumStudy(plan.studyId);
+      setResult(durable);
+      setSavedStudies(await bridge.listSpectrumStudies());
       setMessage(completed.status==="completed"?"Study complete; every point is a saved spectrum run.":
         `Cancelled after ${completed.points.length} saved points; no later points were launched.`);
-    }catch(error){setMessage(error instanceof Error?error.message:String(error));}
+    }catch(error){
+      setMessage(`Study stopped: ${error instanceof Error?error.message:String(error)}. Reopen the saved checkpoint to retry.`);
+      setSavedStudies(await bridge.listSpectrumStudies().catch(()=>[]));
+    }
     finally{cancelRef.current=null;setRunning(false);}
+  }
+  async function run(){
+    if(!preview||!ready||running)return;
+    await execute({...preview,studyId:`study-${crypto.randomUUID()}`});
+  }
+  async function openStudy(studyId:string){
+    if(running)return;
+    try{
+      const saved=await bridge.getSpectrumStudy(studyId);
+      setResult(saved);setLivePlan(null);setLivePoints([]);setSelected(saved.points.length?0:null);
+      setDraft({omega:String(saved.plan.fixed.omega),start:String(saved.plan.axis.start),
+        stop:String(saved.plan.axis.stop),points:String(saved.plan.axis.points),engine:saved.plan.engine});
+      setMessage(saved.status==="completed"?"Verified saved study reopened.":"Verified partial study reopened; resume to compute remaining points.");
+    }catch(error){setMessage(`Cannot reopen study: ${error instanceof Error?error.message:String(error)}`);}
+  }
+  async function resume(){
+    if(!result||result.status!=="cancelled"||running)return;
+    try{
+      const saved=await bridge.getSpectrumStudy(result.studyId);
+      await execute(saved.plan,saved.points);
+    }catch(error){setMessage(`Cannot resume study: ${error instanceof Error?error.message:String(error)}`);}
   }
   async function openPoint(runId:string){
     try{await onOpenPoint(runId)}catch(error){setMessage(error instanceof Error?error.message:String(error));}
@@ -75,10 +112,20 @@ export function SpectrumStudyLab({bridge,status,restored,restoreEpoch,onSnapshot
     {!ready&&<p className="validation">Selected engine is not ready.</p>}
     <div className="spectrum-study-actions">
       <button type="button" onClick={()=>void run()} disabled={!preview||!ready||running} data-testid="run-spectrum-study">Run energy study</button>
+      {result?.status==="cancelled"&&<button type="button" onClick={()=>void resume()}
+        disabled={status.state!=="READY"||!status.capabilities?.engines[result.plan.engine]?.available||running}
+        data-testid="resume-spectrum-study">Resume saved study</button>}
       {running&&<button type="button" onClick={()=>{cancelRef.current?.abort();setMessage("Stopping after the current point…");}} data-testid="cancel-spectrum-study">Cancel between points</button>}
       <span data-testid="spectrum-study-progress">{points.length}/{shownPlan?.axis.points??draft.points} verified points</span>
     </div>
     {message&&<p role="status" data-testid="spectrum-study-status">{message}</p>}
+    {savedStudies.length>0&&<div className="spectrum-study-saved" data-testid="saved-spectrum-studies">
+      <p className="eyebrow">VERIFIED SAVED STUDIES</p>
+      {savedStudies.slice(0,10).map(study=><button key={study.studyId} type="button" disabled={running}
+        onClick={()=>void openStudy(study.studyId)} data-testid={`open-study-${study.studyId}`}>
+        {study.computedAt.slice(0,19).replace("T"," ")} · E±(Δ {format(study.deltaStart)}→{format(study.deltaStop)}, Ω {format(study.fixedOmega)}) · {study.engine} · {study.completedPoints}/{study.totalPoints} · {study.status}
+      </button>)}
+    </div>}
     {shownPlan&&points.length>0&&<>
       <svg className="spectrum-study-chart" viewBox="0 0 720 300" role="img" aria-label="Two-level eigenenergy sweep" data-testid="spectrum-study-chart">
         <line x1="40" y1="150" x2="680" y2="150" stroke="#536777" strokeDasharray="4 5"/>

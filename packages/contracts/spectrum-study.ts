@@ -17,6 +17,18 @@ export interface SpectrumStudyResult {
   points:SpectrumStudyPoint[];
   computedAt:string;
 }
+export interface SpectrumStudySummary {
+  studyId:string;
+  engine:SpectrumStudyPlan["engine"];
+  fixedOmega:number;
+  deltaStart:number;
+  deltaStop:number;
+  output:SpectrumStudyPlan["output"];
+  status:SpectrumStudyResult["status"];
+  completedPoints:number;
+  totalPoints:number;
+  computedAt:string;
+}
 const record=(value:unknown):value is Record<string,unknown>=>!!value&&typeof value==="object"&&!Array.isArray(value);
 const exactKeys=(value:Record<string,unknown>,keys:string[])=>
   Object.keys(value).length===keys.length&&keys.every(key=>Object.hasOwn(value,key));

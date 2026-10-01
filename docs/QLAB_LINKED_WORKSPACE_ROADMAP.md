@@ -115,14 +115,15 @@ views, and old energy-only saved results remain readable without invented
 state data. The formula's parameter/operator buttons remain keyboard usable.
 Bounded coarse Δ/Ω sliders now mirror the exact draft without clamping
 out-of-range numeric inputs. Wider model adapters are still future work.
-UI-4 is **Partial**: the two-level Sweeps view now plots E₋/E₊ against Δ at
-fixed Ω from separately verified, saved spectrum runs. Keyboard-selectable
-points can open their exact saved run or populate an uncomputed draft;
-workspace restore keeps bounded study inputs but does not invent a completed
-study. The original dynamics sweep continues to mean final P₁. Cancellation
-occurs between points; a cancelled study leaves its already verified point
-runs available. A durable study-level manifest, other model/output adapters
-and broader sweep comparison remain future work. UI-5–8 are **Planned**. Their numbers are UI-specific and
+UI-4 is **Implemented for declared adapters**: the two-level Sweeps view plots
+E₋/E₊ against Δ at fixed Ω from separately verified, saved spectrum runs.
+Keyboard-selectable points open their exact saved run or populate an
+uncomputed draft. The original dynamics sweep remains final P₁. A durable
+study-level manifest is checkpointed after every verified point and can be
+reopened or resumed after cancellation or restart. Workspace restore keeps
+bounded inputs, without inventing a completed study. Other model/output
+adapters and broader sweep comparison remain future extensions. UI-5–8 are
+**Planned**. Their numbers are UI-specific and
 do not relabel existing QLAB or QVIS commits. Implement them in order unless
 an explicit dependency is split out and tested independently.
 
@@ -183,13 +184,25 @@ Implementation choice: a separate `quantum-spectrum-study/v1` plan now composes
 Each point records its exact coordinate and source run ID; cancellation is
 between points. This adds no new worker operation or change to the existing
 final-`P₁` sweep. The interactive Lab view links plotted points to their saved
-spectra or to fresh parameter drafts; the overall gate is not yet complete.
+spectra or to fresh parameter drafts. The Electron main process atomically
+checkpoints a versioned, SHA-256-protected study manifest after each verified
+point. Reopening checks every source run, exact model parameters, engine,
+sample coordinate and analytic energy. Cancelled/interrupted studies can resume
+from that verified prefix without recomputing previous points; workspace
+restore remains input-only, with saved studies reopened explicitly.
 
 Acceptance: sampled energies match direct two-level jobs and the analytic
 formula within declared tolerance; zero-gap degeneracy is handled; each
 point records exact parameters, engine and source; cancel/retry and maximum
 sampling/compute budget are tested. Other models join only with their own
 declared sweep parameters and observables.
+
+Status: **Implemented for declared sweep-capable models.** The shared Sweeps
+workspace routes two-level models to eigenenergy studies and existing dynamics
+models to final-`P₁` sweeps. It does not present unsupported models or silently
+reinterpret an observable. The 3–31-point cap is the computation budget for
+this adapter; additional model/output adapters are future extensions, not a
+prerequisite to the current gate.
 
 ### QLAB-UI-5 State visualization
 

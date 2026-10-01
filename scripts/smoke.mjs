@@ -14,6 +14,7 @@ delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
 let preservedSpectrumRunId = null;
+let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
 let preservedPulseRunId = null;
@@ -72,11 +73,13 @@ try {
       "getScene",
       "getSceneExample",
       "getSpectrumRun",
+      "getSpectrumStudy",
       "getStatus",
       "importScene",
       "importSceneStream",
       "lindblad",
       "listRuns",
+      "listSpectrumStudies",
       "loadWorkspace",
       "manyBody",
       "onProgress",
@@ -94,6 +97,7 @@ try {
       "releaseSceneStream",
       "restart",
       "run",
+      "saveSpectrumStudy",
       "saveWorkspace",
       "sweep",
       "topology",
@@ -218,6 +222,14 @@ try {
   await page.waitForFunction(()=>document.querySelector('input[aria-label="Study points"]')?.value==="3");
   assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/sweep");
   assert.equal(await page.getByTestId("spectrum-study-chart").count(),0,"workspace restore carries inputs, not stale study results");
+    const studyId=(await page.evaluate(()=>window.quantum.listSpectrumStudies()))
+      .find(study=>study.status==="completed"&&study.totalPoints===3)?.studyId;
+    assert.ok(studyId,"completed study is present in durable manifest list");
+    preservedStudyId=studyId;
+    await page.getByTestId(`open-study-${studyId}`).click();
+    await page.getByTestId("spectrum-study-status").filter({hasText:"Verified saved study reopened"}).waitFor();
+    assert.equal(await page.getByTestId("spectrum-study-chart").count(),1,"verified study can be reopened separately from workspace inputs");
+    assert.match(await page.getByTestId("spectrum-study-progress").innerText(),/3\/3 verified points/);
   await page.getByRole("tab",{name:"Explore",exact:true}).click();
   await page.getByRole("button",{name:"Restore smoke values"}).click();
   await page.getByRole("button",{name:/Run spectrum/}).click();
@@ -524,7 +536,7 @@ try {
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
   assert.match(await page.getByTestId("linked-workspace-status").innerText(),/navigation slice implemented/);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4"].includes(id)?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-4"?/Implemented/:["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"].includes(id)?/Partial/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -1308,6 +1320,9 @@ try {
   assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
   assert.ok(runIds.includes(preservedPulseRunId),"saved pulse envelope and coefficients survive full restart");
   assert.ok(runIds.includes(preservedSpectrumRunId),"saved spectrum survives full restart");
+  const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
+  assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
+  assert.equal(reopenedStudy.points.length,3);
   await page.getByRole("button",{name:`Open spectrum ${preservedSpectrumRunId}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:preservedSpectrumRunId}).waitFor();
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"reopening after restart invents no selection");

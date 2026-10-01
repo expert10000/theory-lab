@@ -1255,6 +1255,11 @@ h1 {
 .spectrum-study-chart g[aria-pressed="true"] circle { stroke: #fff; stroke-width: 2; }
 .spectrum-study-selection { margin-top: 15px; padding: 15px; border: 1px solid #47736b; border-radius: 6px; }
 .spectrum-study-selection code { overflow-wrap: anywhere; color: #b2d9cc; }
+.spectrum-study-saved { display: grid; gap: 7px; margin: 18px 0; padding: 12px; border: 1px solid #344b50; border-radius: 6px; }
+.spectrum-study-saved .eyebrow { margin: 0 0 3px; }
+.spectrum-study-saved button { width: 100%; text-align: left; background: #13252a; color: #b9d9d0; border: 1px solid #34544f; border-radius: 5px; padding: 8px 10px; cursor: pointer; }
+.spectrum-study-saved button:hover:not(:disabled),.spectrum-study-saved button:focus-visible { background: #204039; outline: 2px solid #8dd7c5; }
+.spectrum-study-saved button:disabled { opacity: .5; cursor: not-allowed; }
 .inspector input.spectrum-parameter-slider { padding: 0; margin: 8px 0 2px; height: 18px; accent-color: #79d9c1; cursor: pointer; }
 .slider-unavailable { display: block; margin-top: 5px; color: #8a9aab; font-size: 10px; line-height: 1.4; }
 .inspector [hidden] { display: none !important; }
