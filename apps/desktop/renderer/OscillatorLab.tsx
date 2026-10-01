@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { OscillatorDynamics } from "./OscillatorDynamics";
 import { DrivenOscillator } from "./DrivenOscillator";
+import { DampedOscillator } from "./DampedOscillator";
 import type { DrivenOscillatorDraft } from "../../../packages/models/oscillator-drive";
 import type { PulsedOscillatorDraft } from "../../../packages/models/oscillator-pulse";
 import type { OscillatorDynamicsDraft } from "../../../packages/models/oscillator-dynamics";
@@ -110,8 +111,8 @@ export function OscillatorLab({
   onSnapshot?: (draft: OscillatorDraft) => void;
   restoredMotion?: OscillatorDynamicsDraft;
   onMotionSnapshot?: (draft: OscillatorDynamicsDraft) => void;
-  restoredMode?: "static" | "dynamics" | "driven" | "pulse";
-  onModeSnapshot?: (mode: "static" | "dynamics" | "driven" | "pulse") => void;
+  restoredMode?: "static" | "dynamics" | "driven" | "pulse" | "damped";
+  onModeSnapshot?: (mode: "static" | "dynamics" | "driven" | "pulse" | "damped") => void;
   restoredDriven?: DrivenOscillatorDraft;
   onDrivenSnapshot?: (draft: DrivenOscillatorDraft) => void;
   atlasDrivenDraft?: DrivenOscillatorDraft;
@@ -119,7 +120,7 @@ export function OscillatorLab({
   restoredPulse?:PulsedOscillatorDraft;
   onPulseSnapshot?:(draft:PulsedOscillatorDraft)=>void;
 }) {
-  const [view, setView] = useState<"static" | "dynamics" | "driven" | "pulse">("static");
+  const [view, setView] = useState<"static" | "dynamics" | "driven" | "pulse" | "damped">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
   const [result, setResult] = useState<OscillatorResult | null>(null),
     [reference, setReference] = useState<OscillatorResult | null>(null);
@@ -247,6 +248,7 @@ export function OscillatorLab({
         <button role="tab" aria-selected={view === "pulse"} onClick={() => setView("pulse")}>
           Gaussian pulse
         </button>
+        <button role="tab" aria-selected={view === "damped"} onClick={() => setView("damped")}>Damped / thermal</button>
       </div>
       <div hidden={view !== "static"}>
         <section className="hamiltonian-card">
@@ -474,6 +476,7 @@ export function OscillatorLab({
       <div hidden={view !== "pulse"}>
         <DrivenOscillator bridge={bridge} status={status} forcing="gaussian" restoredPulse={restoredPulse} restoreEpoch={restoreEpoch} onPulseSnapshot={onPulseSnapshot}/>
       </div>
+      <div hidden={view !== "damped"}><DampedOscillator bridge={bridge} status={status}/></div>
     </div>
   );
 }

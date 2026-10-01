@@ -33,7 +33,7 @@ export interface WorkspaceSnapshot {
   oscillatorDynamics?: import("../models/oscillator-dynamics").OscillatorDynamicsDraft;
   oscillatorDriven?: import("../models/oscillator-drive").DrivenOscillatorDraft;
   oscillatorPulse?: import("../models/oscillator-pulse").PulsedOscillatorDraft;
-  oscillatorMode?: "static" | "dynamics" | "driven" | "pulse";
+  oscillatorMode?: "static" | "dynamics" | "driven" | "pulse" | "damped";
 }
 export interface RunSummary {
   schema: "quantum-run-manifest/v1";
@@ -103,7 +103,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
     omega: shortText, cutoff: shortText, levels: shortText, state: shortText, extent: shortText, points: shortText,
     engine: { enum: ["qutip", "native", "compare"] },
   }),
-  oscillatorMode: { enum: ["static", "dynamics", "driven", "pulse"] },
+  oscillatorMode: { enum: ["static", "dynamics", "driven", "pulse", "damped"] },
   oscillatorPulse: block(["omega", "cutoff", "extent", "points", "initial", "index", "alphaRe", "alphaIm", "start", "stop", "samples", "engine", "epsilonRe", "epsilonIm", "driveFrequency", "pulseWidth", "pulseCenter", "maxStep"], {
     omega: shortText, cutoff: shortText, extent: shortText, points: shortText,
     initial: { enum: ["fock", "coherent"] }, index: shortText, alphaRe: shortText, alphaIm: shortText,
