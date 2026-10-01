@@ -13,6 +13,7 @@ env.QLAB_TEST_PROFILE=await mkdtemp(join(tmpdir(),"qlab-desktop-acceptance-"));
 delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
+let preservedSpectrumRunId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
 let preservedPulseRunId = null;
@@ -70,6 +71,7 @@ try {
       "getResources",
       "getScene",
       "getSceneExample",
+      "getSpectrumRun",
       "getStatus",
       "importScene",
       "importSceneStream",
@@ -158,6 +160,20 @@ try {
   await page.getByRole("button",{name:/Run spectrum/}).click();
   await page.waitForFunction(oldRunId=>document.querySelector('[data-testid="workspace-run-id"]')?.textContent!==oldRunId,selectedRunId);
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"new verified run clears old run-scoped selection");
+  preservedSpectrumRunId=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByRole("button",{name:"Select upper energy E plus"}).click();
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open spectrum ${preservedSpectrumRunId}`}).scrollIntoViewIfNeeded();
+  await page.screenshot({path:"artifacts/desktop-reopen-spectrum.png",fullPage:true});
+  await page.getByRole("button",{name:`Open spectrum ${preservedSpectrumRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedSpectrumRunId}).waitFor();
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/,
+    "a verified selection survives reopening its exact source run");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open spectrum ${selectedRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:selectedRunId}).waitFor();
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/E₋ = -0\.640312/,
+    "reopening the older run restores its own level, not the newer run's selection");
   await page.getByRole("button",{name:"Select upper energy E plus"}).click();
   await page.getByRole("button",{name:/Rabi dynamics/}).click();
   await page.getByRole("button",{name:/Two-level system/}).click();
@@ -168,6 +184,8 @@ try {
   }));
   assert.equal(circuit.operation, "circuit");
   assert.ok(circuit.spectrum.e01 > 0 && circuit.spectrum.cutoffDriftE01 < 1e-4);
+  assert.equal(await page.evaluate(async id=>{try{await window.quantum.getSpectrumRun(id);return false;}catch{return true;}},circuit.runId),true);
+  assert.equal(await page.evaluate(async()=>{try{await window.quantum.getSpectrumRun("../other");return false;}catch{return true;}}),true);
   const rejected = await page.evaluate(async () => {
     try {
       await window.quantum.run({ schema: "quantum-job/v2" });
@@ -1245,6 +1263,11 @@ try {
   assert.ok(runIds.includes(preservedMotionRunId),"saved motion amplitudes survive full restart");
   assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
   assert.ok(runIds.includes(preservedPulseRunId),"saved pulse envelope and coefficients survive full restart");
+  assert.ok(runIds.includes(preservedSpectrumRunId),"saved spectrum survives full restart");
+  await page.getByRole("button",{name:`Open spectrum ${preservedSpectrumRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedSpectrumRunId}).waitFor();
+  assert.equal(await page.getByTestId("scientific-selection").count(),0,"reopening after restart invents no selection");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);
   await page.getByRole("button",{name:`Export CSV ${preservedPulseRunId}`}).click();

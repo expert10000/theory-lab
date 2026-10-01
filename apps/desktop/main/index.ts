@@ -347,6 +347,11 @@ app.whenReady().then(() => {
     trusted(event);
     return runs.list();
   });
+  ipcMain.handle("quantum:spectrum-run", (event, runId:unknown) => {
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid spectrum run ID");
+    return runs.spectrum(runId);
+  });
   ipcMain.handle("quantum:scene", (event, runId: unknown, view: unknown) => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");

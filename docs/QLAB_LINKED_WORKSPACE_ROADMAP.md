@@ -99,9 +99,12 @@ legacy snapshot mapping and the two-level persisted-run breadcrumb are tested.
 Other labs still need run-context breadcrumb adapters; no result is inferred from
 their inputs. QLAB-UI-2 is **Partial**: the two-level pilot now has typed
 run-scoped energy references, draft parameter/operator references, keyboard
-selection, linked highlights and invalidation on a new run or model. The
-`quantum-result/v1` spectrum has energies but no eigenvectors, so the UI
-explicitly declines to display an eigenstate. Saved-run reopening and broader
+selection, linked highlights and invalidation on a new run or model. The Runs
+view now reopens a hash-verified saved two-level spectrum from the existing
+run store; only a selection naming that exact run survives reopening. A
+different or missing run cannot inherit it, and no selection is invented after
+an app restart. The `quantum-result/v1` spectrum has energies but no
+eigenvectors, so the UI explicitly declines to display an eigenstate. Wider
 model adapters remain future gates. UI-3–8 are **Planned**. Their numbers are UI-specific and
 do not relabel existing QLAB or QVIS commits. Implement them in order unless
 an explicit dependency is split out and tested independently.

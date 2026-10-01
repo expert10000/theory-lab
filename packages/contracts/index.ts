@@ -529,6 +529,7 @@ export interface QuantumBridge {
   saveWorkspace(snapshot: import("./workspace").WorkspaceSnapshot): Promise<void>;
   loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
   listRuns(): Promise<import("./workspace").RunSummary[]>;
+  getSpectrumRun(runId:string):Promise<SpectrumResult>;
   getScene(runId: string, view?: "standard" | "bands"): Promise<import("../quantum-scene").ScenePayload>;
   exportScene(runId: string, view?: "standard" | "bands", format?: "regular"|"stream"): Promise<string | null>;
   importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
@@ -175,6 +175,15 @@ export class RunStore {
       if (result.operation === "oscillator_parametric") checkParametricData(result, data);
     }
     return { manifest, job, result, data };
+  }
+  async spectrum(runId:string):Promise<SpectrumResult>{
+    const {manifest,job,result,data}=await this.load(runId);
+    if(job.operation!=="diagonalize"||result.operation!=="diagonalize"||data!==null||
+      manifest.operation!=="diagonalize"||manifest.model!=="two_level"||
+      manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
+      manifest.files.data!==null||manifest.artifactSha256!==null)
+      throw new Error("Saved run is not a verified two-level spectrum");
+    return result;
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
     const { manifest, job, result, data } = await this.load(runId);

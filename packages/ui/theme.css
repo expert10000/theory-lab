@@ -1458,6 +1458,8 @@ h1 {
 .run-row small, .run-row code { display: block; color: #94a8b4; margin-top: 4px; font-size: 11px; }
 .run-exports { display: flex; gap: 7px; flex-shrink: 0; }
 .run-exports button { border: 1px solid #49645f; border-radius: 5px; background: #1d3535; color: #c7ebe1; padding: 7px 10px; font: 10px Consolas,monospace; }
+.run-exports .run-open { border-color: #70bca9; background: #28534a; color: #e1fff4; }
+.run-exports button:disabled { opacity: .55; cursor: wait; }
 .atlas-controls { display: flex; gap: 12px; margin: 22px 0; }
 .atlas-controls input, .atlas-controls select { background: #101b25; color: #e5f4f1; border: 1px solid #34505a; border-radius: 6px; padding: 10px 12px; }
 .atlas-controls input { flex: 1; }

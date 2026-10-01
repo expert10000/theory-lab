@@ -33,6 +33,7 @@ const bridge: QuantumBridge = {
   saveWorkspace: (snapshot) => ipcRenderer.invoke("quantum:save-workspace", snapshot),
   loadWorkspace: () => ipcRenderer.invoke("quantum:load-workspace"),
   listRuns: () => ipcRenderer.invoke("quantum:list-runs"),
+  getSpectrumRun: (runId) => ipcRenderer.invoke("quantum:spectrum-run", runId),
   getScene: (runId, view) => ipcRenderer.invoke("quantum:scene", runId, view),
   exportScene: (runId, view, format) => ipcRenderer.invoke("quantum:export-scene", runId, view, format),
   importSceneStream: () => ipcRenderer.invoke("quantum:import-scene-stream"),

@@ -106,6 +106,18 @@ export function App() {
   function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody && workspaceParts.current.circuit) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [selection,setSelection]=useState<ScientificSelection|null>(null);
+  const runSelections=useRef(new Map<string,ScientificSelection>());
+  function chooseSelection(next:ScientificSelection){
+    if(result){
+      if(next.kind==="energy"){
+        if(!runSelections.current.has(result.runId)&&runSelections.current.size>=100)
+          runSelections.current.delete(runSelections.current.keys().next().value!);
+        runSelections.current.set(result.runId,next);
+      }
+      else runSelections.current.delete(result.runId);
+    }
+    setSelection(next);
+  }
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
   const [resultMode, setResultMode] = useState<EngineMode | null>(null);
   const [comparison, setComparison] = useState<SpectrumComparison | null>(null);
@@ -322,6 +334,15 @@ export function App() {
       setWorkspaceMessage(`Workspace restored · ${new Date(snapshot.savedAt).toLocaleString()}`);
     } catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
   }
+  async function openSavedSpectrum(runId:string){
+    const saved=await window.quantum.getSpectrumRun(runId);
+    setSelection(validatedSelection(runSelections.current.get(saved.runId),"two_level",saved));
+    setParameters({delta:String(saved.model.parameters.delta),omega:String(saved.model.parameters.omega)});
+    setEngineMode(saved.engine.name);setResultMode(saved.engine.name);
+    setComparison(null);setResult(saved);setSelectedPreset(null);
+    setActiveModel("two_level");setTab("spectrum");
+    setWorkspaceMessage(`Verified spectrum reopened · ${saved.runId}`);
+  }
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
     presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
@@ -518,7 +539,7 @@ export function App() {
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic}/></div>
-          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} /> : tab === "backend" ? (
+          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -594,22 +615,22 @@ export function App() {
                     H ={" "}
                     <button type="button" className="formula-target fraction" aria-label="Select detuning Delta"
                       aria-pressed={currentSelection?.kind==="parameter"&&currentSelection.key==="delta"}
-                      onClick={()=>{setSelection({kind:"parameter",model:"two_level",key:"delta"});document.getElementById("delta")?.focus();}}>
+                      onClick={()=>{chooseSelection({kind:"parameter",model:"two_level",key:"delta"});document.getElementById("delta")?.focus();}}>
                       <span>Δ</span>
                       <span>2</span>
                     </button>{" "}
                     <button type="button" className="formula-target" aria-label="Select sigma z operator"
                       aria-pressed={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_z"}
-                      onClick={()=>setSelection({kind:"operator",model:"two_level",key:"sigma_z"})}>σ<sub>z</sub></button> +{" "}
+                      onClick={()=>chooseSelection({kind:"operator",model:"two_level",key:"sigma_z"})}>σ<sub>z</sub></button> +{" "}
                     <button type="button" className="formula-target fraction" aria-label="Select transverse coupling Omega"
                       aria-pressed={currentSelection?.kind==="parameter"&&currentSelection.key==="omega"}
-                      onClick={()=>{setSelection({kind:"parameter",model:"two_level",key:"omega"});document.getElementById("omega")?.focus();}}>
+                      onClick={()=>{chooseSelection({kind:"parameter",model:"two_level",key:"omega"});document.getElementById("omega")?.focus();}}>
                       <span>Ω</span>
                       <span>2</span>
                     </button>{" "}
                     <button type="button" className="formula-target" aria-label="Select sigma x operator"
                       aria-pressed={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_x"}
-                      onClick={()=>setSelection({kind:"operator",model:"two_level",key:"sigma_x"})}>σ<sub>x</sub></button>
+                      onClick={()=>chooseSelection({kind:"operator",model:"two_level",key:"sigma_x"})}>σ<sub>x</sub></button>
                   </div>
                 </div>
                 <div className="model-convention">
@@ -665,7 +686,7 @@ export function App() {
                     {result ? (
                       <Spectrum result={result}
                         selectedLevel={currentSelection?.kind==="energy"?currentSelection.level:null}
-                        onSelectLevel={level=>setSelection({kind:"energy",model:"two_level",runId:result.runId,level})}/>
+                        onSelectLevel={level=>chooseSelection({kind:"energy",model:"two_level",runId:result.runId,level})}/>
                     ) : (
                       <div className="empty-spectrum">
                         <span>±</span>

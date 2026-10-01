@@ -220,7 +220,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
       <article className="panel backend-card backend-wide">
         <p className="eyebrow">DURABLE RUNS / WORKSPACE</p>
         <h2>Provenance that survives a restart.</h2>
-        <p>Electron main saves each completed job and result with a `quantum-run-manifest/v1` record under application user data, plus a verified copy of any Float64 artifact. A `quantum-workspace/v1` snapshot stores all laboratory controls and the selected tab. The Runs tab rechecks saved hashes before exporting numerical CSV, an SVG figure, or a JSON provenance bundle. The renderer still has no direct file-system access.</p>
+        <p>Electron main saves each completed job and result with a `quantum-run-manifest/v1` record under application user data, plus a verified copy of any Float64 artifact. A `quantum-workspace/v1` snapshot stores all laboratory controls and the selected tab. The Runs view rechecks saved hashes before exporting numerical CSV, an SVG figure, or a JSON provenance bundle. Its bounded `getSpectrumRun` preload call reopens only a verified inline two-level spectrum; no renderer path or arbitrary result is accepted. The renderer still has no direct file-system access.</p>
       </article>
     </section>
   );

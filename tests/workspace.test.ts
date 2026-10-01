@@ -106,6 +106,9 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
       spectrum: { eigenvalues: [-.64, .64] as [number, number], units: "normalized" as const, hbar: 1 as const },
       provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:00Z", durationMs: 1 } };
     await store.record(spectrumInput, spectrum);
+    assert.deepEqual(await store.spectrum(spectrum.runId),spectrum);
+    await assert.rejects(store.spectrum("../bad"),/Invalid run ID/);
+    await assert.rejects(store.spectrum("missing-spectrum"),/ENOENT/);
     const job = evolutionJob("driven_two_level", "job-data-test", defaultsFor("driven_two_level"), 0, 0, 2, 3);
     const binary = Buffer.alloc(3 * 10 * 8);
     const view = new DataView(binary.buffer, binary.byteOffset, binary.byteLength);
@@ -119,6 +122,7 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
         rows: 3, columns: EVOLUTION_COLUMNS, bytes: binary.byteLength, sha256: digest },
       provenance: { pythonVersion: "3.12", workerVersion: "0.1", computedAt: "2026-09-27T00:00:01Z", durationMs: 2 } };
     await store.record(job, result);
+    await assert.rejects(store.spectrum(result.runId),/not a verified two-level spectrum/);
     assert.deepEqual((await store.list()).map(item => item.runId), ["run-data-test", "run-spectrum-test"]);
     const csv = join(root, "data.csv"), svg = join(root, "figure.svg"), manifest = join(root, "manifest.json");
     await store.export(result.runId, "csv", csv);
@@ -132,6 +136,8 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
     assert.match(await readFile(join(root, "spectrum.csv"), "utf8"), /E\+,0.64/);
     await writeFile(join(root, "runs", result.runId, "data.f64"), Buffer.alloc(binary.byteLength));
     await assert.rejects(store.export(result.runId, "csv", join(root, "bad.csv")), /integrity check/);
+    await writeFile(join(root,"runs",spectrum.runId,"result.json"),"{}\n");
+    await assert.rejects(store.spectrum(spectrum.runId),/integrity check/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 test("driven workspace settings are optional, bounded strings and reject executable or unsupported fields",()=>{
