@@ -23,25 +23,28 @@ import {
   type PulsedOscillatorResult,
   type DampedOscillatorJob,
   type DampedOscillatorResult,
+  type ParametricOscillatorJob,
+  type ParametricOscillatorResult,
 } from "../../../packages/contracts";
 import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
 import { consistentOscillatorEvolutionResult, checkOscillatorEvolutionData } from "../../../packages/models/oscillator-dynamics";
 import { consistentDrivenOscillatorResult, checkDrivenOscillatorData } from "../../../packages/models/oscillator-drive";
 import { consistentPulsedOscillatorResult, checkPulsedOscillatorData } from "../../../packages/models/oscillator-pulse";
 import { consistentDampedOscillatorResult, checkDampedOscillatorData } from "../../../packages/models/oscillator-damped";
+import { consistentParametricResult, checkParametricData } from "../../../packages/models/oscillator-parametric";
 import { WorkerSupervisor } from "./worker";
 
 type Active = {
-  job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob;
+  job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob | ParametricOscillatorJob;
   acknowledged: boolean;
   cancelRequested: boolean;
-  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult) => void;
+  resolve: (result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
 export class EvolutionCoordinator {
   private active?: Active;
-  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult>();
+  private completed = new Map<string, EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult>();
   constructor(
     private worker: WorkerSupervisor,
     private artifactDir: string,
@@ -66,9 +69,10 @@ export class EvolutionCoordinator {
   run(job: DrivenOscillatorJob): Promise<DrivenOscillatorResult>;
   run(job: PulsedOscillatorJob): Promise<PulsedOscillatorResult>;
   run(job: DampedOscillatorJob): Promise<DampedOscillatorResult>;
-  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult> {
+  run(job: ParametricOscillatorJob): Promise<ParametricOscillatorResult>;
+  run(job: EvolutionJob | CavityJob | LindbladJob | SweepJob | OrbitalJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob | ParametricOscillatorJob): Promise<EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult> {
     assertJob(job);
-    if (!["evolve", "cavity", "lindblad", "sweep", "orbital", "oscillator_evolve", "oscillator_drive", "oscillator_pulse", "oscillator_damped"].includes(job.operation)) throw new Error("Expected quantum data job");
+    if (!["evolve", "cavity", "lindblad", "sweep", "orbital", "oscillator_evolve", "oscillator_drive", "oscillator_pulse", "oscillator_damped", "oscillator_parametric"].includes(job.operation)) throw new Error("Expected quantum data job");
     const timing = job.operation === "orbital" ? null : job.operation === "sweep" ? job.sweep : job.solver;
     if (timing && timing.tStop <= timing.tStart)
       throw new Error("tStop must exceed tStart");
@@ -185,7 +189,9 @@ export class EvolutionCoordinator {
         this.reject(new Error("Worker returned an invalid quantum result"));
         return;
       }
-      if (value.operation === "oscillator_damped" && active.job.operation === "oscillator_damped") {
+      if (value.operation === "oscillator_parametric" && active.job.operation === "oscillator_parametric") {
+        if(!consistentParametricResult(active.job,value)) {this.reject(new Error("Worker returned inconsistent parametric oscillator data"));return;}
+      } else if (value.operation === "oscillator_damped" && active.job.operation === "oscillator_damped") {
         if(!consistentDampedOscillatorResult(active.job,value)) {this.reject(new Error("Worker returned inconsistent damped oscillator data"));return;}
       } else if (value.operation === "oscillator_pulse" && active.job.operation === "oscillator_pulse") {
         if(!consistentPulsedOscillatorResult(active.job,value)) {this.reject(new Error("Worker returned inconsistent pulsed oscillator data"));return;}
@@ -237,6 +243,7 @@ export class EvolutionCoordinator {
           if (value.operation === "oscillator_drive") checkDrivenOscillatorData(value, await readFile(join(this.artifactDir, value.data.path)));
           if (value.operation === "oscillator_pulse") checkPulsedOscillatorData(value, await readFile(join(this.artifactDir, value.data.path)));
           if (value.operation === "oscillator_damped") checkDampedOscillatorData(value, await readFile(join(this.artifactDir, value.data.path)));
+          if (value.operation === "oscillator_parametric") checkParametricData(value, await readFile(join(this.artifactDir, value.data.path)));
           if (value.operation === "oscillator_evolve") checkOscillatorEvolutionData(value, await readFile(join(this.artifactDir, value.data.path)));
           this.completed.set(value.jobId, value); this.resolve(value);
         })
@@ -252,7 +259,7 @@ export class EvolutionCoordinator {
         ),
       );
   }
-  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult) {
+  private resolve(result: EvolutionResult | CavityResult | LindbladResult | SweepResult | OrbitalResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult) {
     const active = this.active;
     if (!active) return;
     clearTimeout(active.timer);

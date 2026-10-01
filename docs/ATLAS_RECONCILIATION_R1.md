@@ -111,6 +111,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 
 | Lab model | Existing module | Operations | Engines (runtime availability required) | Web compute form | Gateway operations | Scene operation / views |
 | --- | --- | --- | --- | --- | --- | --- |
+| `parametric_oscillator` | packages/models/oscillator-parametric.ts | oscillator_parametric | native, qutip | no | — | — |
 | `damped_harmonic_oscillator` | packages/models/oscillator-damped.ts | oscillator_damped | native, qutip | no | — | — |
 | `driven_harmonic_oscillator` | packages/models/oscillator-drive.ts | oscillator_drive, oscillator_pulse | native, qutip | no | — | — |
 | `harmonic_oscillator` | packages/models/oscillator.ts | oscillator, oscillator_evolve | native, qutip | no | — | — |
@@ -128,6 +129,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `qwz` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `hydrogenic` | packages/models/orbital.ts | orbital | native | no | — | orbital / standard |
 
+- **parametric_oscillator**: D1: bounded stable quadratic coupling, vacuum input and finite Fock spectrum/dynamics with squeezing diagnostics. Atlas default remains reference-only until mapping review; no web/scene/Math3D coupling.
 - **damped_harmonic_oscillator**: D1: bounded loss/thermal Lindblad oscillator in a finite Fock basis. No Atlas binding, web computation, scene adapter or Math3D coupling.
 - **driven_harmonic_oscillator**: D1: bounded monochromatic and declarative Gaussian complex forcing (packages/models/oscillator-pulse.ts), Fock/projected-coherent inputs, dimensionless q,p and hbar=1. Includes omega/2 Atlas energy offset; existing Atlas preset remains monochromatic. No arbitrary waveform, damping, parametric/anharmonic/ND or scene/Math3D adapter.
 - **harmonic_oscillator**: D1: static spectrum/stationary density plus bounded free Fock/coherent evolution (packages/models/oscillator-dynamics.ts); dimensionless q,p and hbar=1. Atlas binding still loads static defaults. No driven/anharmonic/ND model or 3D scene adapter.

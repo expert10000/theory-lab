@@ -39,6 +39,8 @@ const implementation = (
 
 /** Existing code inventory, not a new execution registry. Engine availability is runtime-reported. */
 export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
+  parametric_oscillator: implementation("packages/models/oscillator-parametric.ts", ["oscillator_parametric"], ["native", "qutip"], false, [], [],
+    "D1: bounded stable quadratic coupling, vacuum input and finite Fock spectrum/dynamics with squeezing diagnostics. Atlas default remains reference-only until mapping review; no web/scene/Math3D coupling."),
   damped_harmonic_oscillator: implementation("packages/models/oscillator-damped.ts", ["oscillator_damped"], ["native", "qutip"], false, [], [],
     "D1: bounded loss/thermal Lindblad oscillator in a finite Fock basis. No Atlas binding, web computation, scene adapter or Math3D coupling."),
   driven_harmonic_oscillator: implementation("packages/models/oscillator-drive.ts", ["oscillator_drive", "oscillator_pulse"], ["native", "qutip"], false, [], [],

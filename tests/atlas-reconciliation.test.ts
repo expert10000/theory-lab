@@ -20,6 +20,7 @@ import { supportsScene } from "../packages/quantum-scene/from-result";
 import { assertJob, type QuantumJob } from "../packages/contracts";
 import { pulsedOscillatorJob, PULSED_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-pulse";
 import { dampedOscillatorJob, DAMPED_OSCILLATOR_DEFAULTS } from "../packages/models/oscillator-damped";
+import { parametricOscillatorJob, PARAMETRIC_DEFAULTS } from "../packages/models/oscillator-parametric";
 import {
   MODEL_REGISTRY,
   defaultsFor,
@@ -167,8 +168,9 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
     drivenOscillatorJob("d1-drive", DRIVEN_OSCILLATOR_DEFAULTS, "native"),
     pulsedOscillatorJob("d1-pulse", PULSED_OSCILLATOR_DEFAULTS, "native"),
     dampedOscillatorJob("d1-damped", DAMPED_OSCILLATOR_DEFAULTS, "native"),
+    parametricOscillatorJob("d1-parametric", PARAMETRIC_DEFAULTS, "native"),
   ];
-  assert.equal(jobs.length, 18);
+  assert.equal(jobs.length, 19);
   assert.deepEqual(
     new Set(jobs.map((j) => j.model.type)),
     new Set(Object.keys(LAB_IMPLEMENTATIONS)),

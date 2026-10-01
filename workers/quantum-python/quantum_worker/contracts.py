@@ -14,6 +14,12 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-job" and value["operation"] == "oscillator_parametric":
+        p,s = value["model"]["parameters"],value["solver"]
+        duration=s["tStop"]-s["tStart"]
+        coupling=math.hypot(p["lambdaRe"],p["lambdaIm"])
+        if duration<=0 or duration>20 or p["omega"]*duration>50 or coupling>=.9*p["omega"] or coupling*duration>8:
+            raise ValueError("Unsupported stable parametric oscillator scope")
     if name == "quantum-job" and value["operation"] == "oscillator_damped":
         p, s, i = value["model"]["parameters"], value["solver"], value["initialState"]
         duration = s["tStop"]-s["tStart"]

@@ -236,7 +236,20 @@ export interface DampedOscillatorResult {
   analysis:{projectionProbability:number;maxTraceError:number;minimumEigenvalue:number;maxBoundaryOccupation:number;maxNumberReferenceError:number};
   provenance:SpectrumResult["provenance"];
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob;
+export interface ParametricOscillatorJob {
+  schema:"quantum-job/v1";jobId:string;operation:"oscillator_parametric";engine:EngineName;
+  model:{type:"parametric_oscillator";parameters:{omega:number;lambdaRe:number;lambdaIm:number;cutoff:number}};
+  initialState:{type:"vacuum"};solver:{type:"schrodinger";tStart:number;tStop:number;samples:number};
+}
+export interface ParametricOscillatorResult {
+  schema:"quantum-result/v1";jobId:string;runId:string;status:"completed";operation:"oscillator_parametric";
+  model:ParametricOscillatorJob["model"];initialState:ParametricOscillatorJob["initialState"];solver:ParametricOscillatorJob["solver"];
+  engine:{name:EngineName;version:string};
+  data:{schema:"quantum-parametric-oscillator-data/v1";format:"f64le";path:string;rows:number;columns:string[];bytes:number;sha256:string};
+  analysis:{maxNormDrift:number;maxBoundaryOccupation:number;maxParityDrift:number;maxNumberReferenceError:number;maxQVarianceReferenceError:number;maxPVarianceReferenceError:number;bogoliubovFrequency:number;energyOffset:number};
+  provenance:SpectrumResult["provenance"];
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob | ParametricOscillatorJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -441,7 +454,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -460,7 +473,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse" | "oscillator_damped")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse" | "oscillator_damped" | "oscillator_parametric")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -493,6 +506,7 @@ export interface QuantumBridge {
   oscillatorDrive(job: DrivenOscillatorJob): Promise<DrivenOscillatorResult>;
   oscillatorPulse(job: PulsedOscillatorJob): Promise<PulsedOscillatorResult>;
   oscillatorDamped(job: DampedOscillatorJob): Promise<DampedOscillatorResult>;
+  oscillatorParametric(job: ParametricOscillatorJob): Promise<ParametricOscillatorResult>;
   topology(job: TopologyJob): Promise<TopologyResult>;
   orbital(job: OrbitalJob): Promise<OrbitalResult>;
   openAtlasSource(id: string): Promise<void>;
@@ -560,5 +574,11 @@ export function assertJob(value: unknown): asserts value is QuantumJob {
     if(dt<=0 || dt>20 || p.omega*dt>60 || p.loss*dt>12 ||
        (i.type==="fock"?i.index>=p.cutoff-1:i.alphaRe**2+i.alphaIm**2>4))
       throw new Error("Unsupported bounded damped oscillator");
+  }
+  if(value.operation==="oscillator_parametric"){
+    const p=value.model.parameters,s=value.solver,dt=s.tStop-s.tStart;
+    if(dt<=0||dt>20||p.omega*dt>50||Math.hypot(p.lambdaRe,p.lambdaIm)>=.9*p.omega||
+       Math.hypot(p.lambdaRe,p.lambdaIm)*dt>8)
+      throw new Error("Parametric oscillator requires bounded stable coupling, duration and cutoff");
   }
 }

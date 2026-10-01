@@ -14,6 +14,7 @@ const bridge: QuantumBridge = {
   oscillatorDrive: (job) => ipcRenderer.invoke("quantum:oscillator-drive", job),
   oscillatorPulse: (job) => ipcRenderer.invoke("quantum:oscillator-pulse", job),
   oscillatorDamped: (job) => ipcRenderer.invoke("quantum:oscillator-damped", job),
+  oscillatorParametric: (job) => ipcRenderer.invoke("quantum:oscillator-parametric", job),
   topology: (job) => ipcRenderer.invoke("quantum:topology", job),
   openAtlasSource: (id) => ipcRenderer.invoke("quantum:open-atlas-source", id),
   cancel: (jobId) => ipcRenderer.invoke("quantum:cancel", jobId),
