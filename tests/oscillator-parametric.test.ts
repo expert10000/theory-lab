@@ -22,9 +22,9 @@ test("D1-017 validates bounded stable parametric jobs",()=>{
 
 test("D1-017 appends to D1-016 protocols without altering earlier branches or definitions",()=>{
   const digest=(value:unknown)=>createHash("sha256").update(JSON.stringify(value)).digest("hex");
-  assert.equal(digest({variants:jobSchema.oneOf.slice(0,-1),definitions:jobSchema.definitions}),
+  assert.equal(digest({variants:jobSchema.oneOf.slice(0,-2),definitions:jobSchema.definitions}),
     "aef61504eff6a9a0e5435413e3381384eb95b0deef55701d4f11f3141326735c");
-  assert.equal(digest({variants:resultSchema.oneOf.slice(0,-1),definitions:resultSchema.definitions}),
+  assert.equal(digest({variants:resultSchema.oneOf.slice(0,-2),definitions:resultSchema.definitions}),
     "79c7c23955d24d4135187c174a688e3275cef44b83262f1063190a30468de983");
 });
 

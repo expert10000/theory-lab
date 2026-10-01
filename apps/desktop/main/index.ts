@@ -19,6 +19,7 @@ import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentOscillatorResult } from "../../../packages/models/oscillator";
+import { consistentAnharmonicResult } from "../../../packages/models/oscillator-anharmonic";
 import { atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
   type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
@@ -262,6 +263,22 @@ app.whenReady().then(() => {
       await runs.record(value, result);
       return result;
     } finally { running = false; }
+  });
+  ipcMain.handle("quantum:oscillator-anharmonic", async (event, value: unknown) => {
+    trusted(event);
+    assertJob(value);
+    if(value.operation!=="oscillator_anharmonic")throw new Error("Expected anharmonic oscillator job");
+    if(worker.status.state!=="READY"||!worker.status.capabilities?.operations.includes("oscillator_anharmonic")||
+       !worker.status.capabilities.engines[value.engine].available)throw new Error("Anharmonic oscillator engine is not ready");
+    if(running||evolution.isRunning)throw new Error("A calculation is already running");
+    running=true;
+    try{
+      const result=await worker.request("quantum.run",value,60000);
+      if(!isQuantumResult(result)||result.operation!=="oscillator_anharmonic"||!consistentAnharmonicResult(value,result))
+        throw new Error("Worker returned an inconsistent anharmonic spectrum");
+      await runs.record(value,result);
+      return result;
+    }finally{running=false;}
   });
   ipcMain.handle("quantum:topology", async (event, value: unknown) => {
     trusted(event);

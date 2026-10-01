@@ -15,6 +15,7 @@ from quantum_worker.engines.circuit import scqubits_availability, solve as circu
 from quantum_worker.engines.topology import solve as topology_solve
 from quantum_worker.engines.orbital import available as orbital_available
 from quantum_worker.engines.oscillator import solve as oscillator_solve
+from quantum_worker.engines.oscillator_anharmonic import solve as anharmonic_solve
 from quantum_worker.jobs.manager import JobManager
 
 MAX_MESSAGE = 65536
@@ -37,6 +38,7 @@ def capabilities():
         result["operations"].append("oscillator_pulse")
         result["operations"].append("oscillator_damped")
         result["operations"].append("oscillator_parametric")
+        result["operations"].append("oscillator_anharmonic")
     validate("worker-capabilities", result)
     return result
 
@@ -81,6 +83,8 @@ def dispatch(method, params):
             return topology_solve(params)
         if params.get("operation") == "oscillator":
             return oscillator_solve(params)
+        if params.get("operation") == "oscillator_anharmonic":
+            return anharmonic_solve(params)
         if params.get("engine") == "native":
             return native_diagonalize(params)
         return diagonalize(params)

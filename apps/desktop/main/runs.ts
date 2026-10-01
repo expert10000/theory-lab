@@ -10,6 +10,7 @@ import { consistentOscillatorEvolutionResult, checkOscillatorEvolutionData } fro
 import { consistentDrivenOscillatorResult, checkDrivenOscillatorData } from "../../../packages/models/oscillator-drive";
 import { consistentPulsedOscillatorResult, checkPulsedOscillatorData } from "../../../packages/models/oscillator-pulse";
 import { consistentDampedOscillatorResult, checkDampedOscillatorData } from "../../../packages/models/oscillator-damped";
+import { consistentAnharmonicResult } from "../../../packages/models/oscillator-anharmonic";
 import { consistentParametricResult, checkParametricData } from "../../../packages/models/oscillator-parametric";
 import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
 import { bandSceneFromResult } from "../../../packages/quantum-scene/bands";
@@ -57,6 +58,8 @@ export class RunStore {
       throw new Error("Cannot persist inconsistent damped oscillator data");
     if (job.operation === "oscillator_parametric" && (result.operation !== "oscillator_parametric" || !consistentParametricResult(job, result)))
       throw new Error("Cannot persist inconsistent parametric oscillator data");
+    if (job.operation === "oscillator_anharmonic" && (result.operation !== "oscillator_anharmonic" || !consistentAnharmonicResult(job, result)))
+      throw new Error("Cannot persist inconsistent anharmonic oscillator data");
     // Verify the new binary path before creating a durable run, and persist the
     // exact checked bytes rather than reopening a mutable source artifact.
     let motionData: Buffer | null = null;
@@ -112,7 +115,7 @@ export class RunStore {
             typeof value.durationMs === "number" && Number.isFinite(value.durationMs) &&
             (value.artifactSha256 === null || (typeof value.artifactSha256 === "string" && /^[a-f0-9]{64}$/.test(value.artifactSha256))) &&
             ["qutip", "native", "dynamiqs", "quspin", "scqubits"].includes(value.engine) &&
-            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital", "oscillator", "oscillator_evolve", "oscillator_drive", "oscillator_pulse", "oscillator_damped", "oscillator_parametric"].includes(value.operation))
+            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital", "oscillator", "oscillator_evolve", "oscillator_drive", "oscillator_pulse", "oscillator_damped", "oscillator_parametric", "oscillator_anharmonic"].includes(value.operation))
           runs.push({ schema: value.schema, runId: value.runId, jobId: value.jobId,
             operation: value.operation, model: value.model, engine: value.engine,
             engineVersion: value.engineVersion, computedAt: value.computedAt,
@@ -156,6 +159,8 @@ export class RunStore {
       throw new Error("Stored damped oscillator failed consistency check");
     if (job.operation === "oscillator_parametric" && (result.operation !== "oscillator_parametric" || !consistentParametricResult(job, result)))
       throw new Error("Stored parametric oscillator failed consistency check");
+    if (job.operation === "oscillator_anharmonic" && (result.operation !== "oscillator_anharmonic" || !consistentAnharmonicResult(job, result)))
+      throw new Error("Stored anharmonic oscillator failed consistency check");
     if ("data" in result) {
       if (manifest.files.data !== "data.f64") throw new Error("Missing run data file");
       data = await readFile(join(dir, "data.f64"));
@@ -201,6 +206,10 @@ function rowsOf(result: Extract<QuantumResult, { data: unknown }>, data: Buffer)
   return Array.from({ length: count }, (_, row) => Array.from({ length: stride }, (_, col) => view.getFloat64((row * stride + col) * 8, true)));
 }
 export function numericalCsv(result: QuantumResult, data: Buffer | null): string {
+  if(result.operation==="oscillator_anharmonic")
+    return ["level,energy,harmonic_energy,shift,units",...result.spectrum.energies.map((energy,index)=>
+      `${index},${energy},${result.model.parameters.omega*(index+.5)},${energy-result.model.parameters.omega*(index+.5)},normalized`),
+      "",`ground_x2,${result.analysis.groundX2}`,`ground_x4,${result.analysis.groundX4}`,`ground_parity,${result.analysis.groundParity}`].join("\n")+"\n";
   if (result.operation === "oscillator")
     return ["level,energy,units", ...result.spectrum.energies.map((e,n) => `${n},${e},normalized`), "", "q,real_amplitude,density",
       ...result.state.q.map((q,i)=>`${q},${result.state.amplitude[i]},${result.state.density[i]}`)].join("\n")+"\n";
@@ -270,12 +279,12 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
       return `<path d="M${120 + index * 86} ${y} h58" stroke="#79d9c1" stroke-width="4"/><text x="${120 + index * 86}" y="${y - 10}" fill="white" font-family="sans-serif" font-size="11">E${index} ${energy.toFixed(3)}</text>`;
     }).join("") + `</svg>\n`;
   }
-  if (result.operation === "circuit" || result.operation === "oscillator") {
+  if (result.operation === "circuit" || result.operation === "oscillator" || result.operation === "oscillator_anharmonic") {
     const energies = result.spectrum.energies;
     const low = energies[0], span = Math.max(1e-9, energies[energies.length - 1] - low);
     return head + energies.map((energy, index) => {
       const y = 410 - (energy - low) * 290 / span;
-      const x = result.operation === "oscillator" ? 80 + index * 700 / (energies.length - 1) : 120 + index * 86;
+      const x = result.operation === "oscillator" || result.operation === "oscillator_anharmonic" ? 80 + index * 700 / (energies.length - 1) : 120 + index * 86;
       return `<path d="M${x} ${y} h58" stroke="#79d9c1" stroke-width="4"/><text x="${x}" y="${y - 10}" fill="white" font-family="sans-serif" font-size="11">E${index} ${energy.toFixed(3)}</text>`;
     }).join("") + `</svg>\n`;
   }

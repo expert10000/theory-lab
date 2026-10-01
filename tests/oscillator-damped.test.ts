@@ -23,9 +23,9 @@ test("D1-014 bounds declarative thermal oscillator jobs",()=>{
 
 test("D1-014 appends contracts without changing any D1-013 branch or definition",()=>{
   const digest=(value:unknown)=>createHash("sha256").update(JSON.stringify(value)).digest("hex");
-  assert.equal(digest({variants:jobSchema.oneOf.slice(0,-2),definitions:jobSchema.definitions}),
+  assert.equal(digest({variants:jobSchema.oneOf.slice(0,-3),definitions:jobSchema.definitions}),
     "3561ffbd1363e182eaea0c641872609f1a5d9d7eb03b59152f30c46d5c1ff3ff");
-  assert.equal(digest({variants:resultSchema.oneOf.slice(0,-2),definitions:resultSchema.definitions}),
+  assert.equal(digest({variants:resultSchema.oneOf.slice(0,-3),definitions:resultSchema.definitions}),
     "9a204bef6aac1914bd678aca2d31be95278729ffb6153ee3343ac669154ddfe4");
 });
 

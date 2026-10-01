@@ -14,6 +14,10 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-job" and value["operation"] == "oscillator_anharmonic":
+        p = value["model"]["parameters"]
+        if p["levels"] > p["cutoff"] - 2:
+            raise ValueError("Anharmonic levels must leave two Fock boundary states")
     if name == "quantum-job" and value["operation"] == "oscillator_parametric":
         p,s = value["model"]["parameters"],value["solver"]
         duration=s["tStop"]-s["tStart"]

@@ -249,7 +249,19 @@ export interface ParametricOscillatorResult {
   analysis:{maxNormDrift:number;maxBoundaryOccupation:number;maxParityDrift:number;maxNumberReferenceError:number;maxQVarianceReferenceError:number;maxPVarianceReferenceError:number;bogoliubovFrequency:number;energyOffset:number};
   provenance:SpectrumResult["provenance"];
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob | ParametricOscillatorJob;
+export interface AnharmonicOscillatorJob {
+  schema:"quantum-job/v1";jobId:string;operation:"oscillator_anharmonic";engine:EngineName;
+  model:{type:"anharmonic_oscillator";parameters:{mass:1;omega:number;lambda:number;cutoff:number;levels:number}};
+}
+export interface AnharmonicOscillatorResult {
+  schema:"quantum-result/v1";jobId:string;runId:string;status:"completed";operation:"oscillator_anharmonic";
+  model:AnharmonicOscillatorJob["model"];engine:{name:EngineName;version:string};
+  spectrum:{energies:number[];units:"normalized";hbar:1};
+  states:{coefficients:number[][]};
+  analysis:{groundX2:number;groundX4:number;groundParity:number;harmonicGround:number};
+  provenance:SpectrumResult["provenance"];
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob | ParametricOscillatorJob | AnharmonicOscillatorJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -454,7 +466,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult | AnharmonicOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -473,7 +485,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse" | "oscillator_damped" | "oscillator_parametric")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse" | "oscillator_damped" | "oscillator_parametric" | "oscillator_anharmonic")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -507,6 +519,7 @@ export interface QuantumBridge {
   oscillatorPulse(job: PulsedOscillatorJob): Promise<PulsedOscillatorResult>;
   oscillatorDamped(job: DampedOscillatorJob): Promise<DampedOscillatorResult>;
   oscillatorParametric(job: ParametricOscillatorJob): Promise<ParametricOscillatorResult>;
+  oscillatorAnharmonic(job: AnharmonicOscillatorJob): Promise<AnharmonicOscillatorResult>;
   topology(job: TopologyJob): Promise<TopologyResult>;
   orbital(job: OrbitalJob): Promise<OrbitalResult>;
   openAtlasSource(id: string): Promise<void>;
@@ -581,4 +594,6 @@ export function assertJob(value: unknown): asserts value is QuantumJob {
        Math.hypot(p.lambdaRe,p.lambdaIm)*dt>8)
       throw new Error("Parametric oscillator requires bounded stable coupling, duration and cutoff");
   }
+  if(value.operation==="oscillator_anharmonic" && value.model.parameters.levels>value.model.parameters.cutoff-2)
+    throw new Error("Anharmonic levels must leave at least two Fock boundary states");
 }

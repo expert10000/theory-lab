@@ -39,6 +39,8 @@ const implementation = (
 
 /** Existing code inventory, not a new execution registry. Engine availability is runtime-reported. */
 export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
+  anharmonic_oscillator: implementation("packages/models/oscillator-anharmonic.ts", ["oscillator_anharmonic"], ["native", "qutip"], false, [], [],
+    "D1: bounded m=1 confining quartic oscillator in a truncated harmonic Fock basis; reviewed eigenpairs, no automatic Atlas binding, web/scene/Math3D path or double-well scope."),
   parametric_oscillator: implementation("packages/models/oscillator-parametric.ts", ["oscillator_parametric"], ["native", "qutip"], false, [], [],
     "D1: bounded stable quadratic coupling, vacuum input and finite Fock spectrum/dynamics with squeezing diagnostics. Atlas default remains reference-only until mapping review; no web/scene/Math3D coupling."),
   damped_harmonic_oscillator: implementation("packages/models/oscillator-damped.ts", ["oscillator_damped"], ["native", "qutip"], false, [], [],
