@@ -18,7 +18,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
     ),
   );
   assert.ok(DELIVERED_QVIS.every((r) => r.state === "Implemented"));
-  assert.deepEqual(D1_OSCILLATOR_STEPS.map(r=>[r.id,r.state]),Array.from({length:19},(_,i)=>[`D1-${String(i+1).padStart(3,"0")}`,"Implemented"]));
+  assert.deepEqual(D1_OSCILLATOR_STEPS.map(r=>[r.id,r.state]),Array.from({length:22},(_,i)=>[`D1-${String(i+1).padStart(3,"0")}`,"Implemented"]));
   assert.match(DELIVERED_QVIS[5].title, /bundle import/);
   assert.match(DELIVERED_QVIS[6].title, /convergence/);
   assert.deepEqual(

@@ -62,6 +62,7 @@ try {
       "openAtlasSource",
       "orbital",
       "oscillator",
+      "oscillatorAnharmonic",
       "oscillatorDamped",
       "oscillatorDrive",
       "oscillatorEvolve",
@@ -321,6 +322,26 @@ try {
   await page.waitForFunction(()=>document.querySelector('input[aria-label="Parametric lambdaRe"]')?.value===".1");
   assert.equal(await page.getByRole("tab",{name:"Parametric squeezing",exact:true}).getAttribute("aria-selected"),"true");
   assert.equal(await page.getByTestId("parametric-result").count(),0,"restore must not fabricate squeezing data");
+  await page.getByRole("tab",{name:"Quartic anharmonic",exact:true}).click();
+  const initialQuarticRuns=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_anharmonic").length));
+  await page.getByLabel("Anharmonic engine",{exact:true}).selectOption("native");
+  await page.getByTestId("run-anharmonic").click();
+  await page.getByTestId("anharmonic-result").waitFor();
+  assert.ok(await page.getByRole("img",{name:"Quartic and harmonic energy ladder",exact:true}).isVisible());
+  await page.getByTestId("anharmonic-cutoff").click();
+  await page.getByTestId("anharmonic-comparison").filter({hasText:"N 20 → 28"}).waitFor();
+  await page.getByLabel("Anharmonic engine",{exact:true}).selectOption("compare");
+  await page.getByTestId("run-anharmonic").click();
+  await page.getByTestId("anharmonic-comparison").filter({hasText:"QuTiP ↔ native"}).waitFor();
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_anharmonic").length)),initialQuarticRuns+5);
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
+  await page.getByLabel("Anharmonic lambda",{exact:true}).fill(".08");
+  await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Anharmonic lambda"]')?.value===".05");
+  assert.equal(await page.getByRole("tab",{name:"Quartic anharmonic",exact:true}).getAttribute("aria-selected"),"true");
+  assert.equal(await page.getByTestId("anharmonic-result").count(),0,"restore must not fabricate eigenpairs");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({

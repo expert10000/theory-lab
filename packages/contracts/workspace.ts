@@ -35,6 +35,7 @@ export interface WorkspaceSnapshot {
   oscillatorPulse?: import("../models/oscillator-pulse").PulsedOscillatorDraft;
   oscillatorDamped?: import("../models/oscillator-damped").DampedOscillatorDraft;
   oscillatorParametric?: import("../models/oscillator-parametric").ParametricOscillatorDraft;
+  oscillatorAnharmonic?: import("../models/oscillator-anharmonic").AnharmonicDraft;
   oscillatorMode?: "static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric" | "anharmonic";
 }
 export interface RunSummary {
@@ -121,6 +122,9 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   oscillatorParametric: block(["omega", "lambdaRe", "lambdaIm", "cutoff", "start", "stop", "samples", "engine"], {
     omega:shortText,lambdaRe:shortText,lambdaIm:shortText,cutoff:shortText,start:shortText,stop:shortText,samples:shortText,
     engine:{enum:["qutip","native","compare"]},
+  }),
+  oscillatorAnharmonic: block(["omega", "lambda", "cutoff", "levels", "engine"], {
+    omega:shortText,lambda:shortText,cutoff:shortText,levels:shortText,engine:{enum:["qutip","native","compare"]},
   }),
   oscillatorDriven: block(["omega", "cutoff", "extent", "points", "initial", "index", "alphaRe", "alphaIm", "start", "stop", "samples", "engine", "epsilonRe", "epsilonIm", "driveFrequency"], {
     omega: shortText, cutoff: shortText, extent: shortText, points: shortText,

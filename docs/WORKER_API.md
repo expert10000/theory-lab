@@ -62,6 +62,16 @@ storage and CSV/variance-SVG/manifest export. No gateway route, scene
 adapter or Math3D call is added. See
 [D1_PARAMETRIC_OSCILLATOR.md](D1_PARAMETRIC_OSCILLATOR.md).
 
+### Anharmonic oscillator operation (D1-020–022, Electron only)
+
+`quantum.run` accepts the bounded inline `oscillator_anharmonic` job and the
+trusted preload exposes `oscillatorAnharmonic(job)`. The result carries low
+eigenvalues, complete real Fock eigenvectors, ground moments and provenance.
+QuTiP and native SciPy construct/diagonalize independently; the host checks
+matrix residuals, orthonormality, moments and parity before persistence or
+export. No binary artifact, gateway route, scene adapter or Math3D call is
+added. See [D1_ANHARMONIC_OSCILLATOR.md](D1_ANHARMONIC_OSCILLATOR.md).
+
 ## Gateway routes
 
 The separate Node gateway requires `Authorization: Bearer <token>` on every `/api/*` route. It uses HTTP only on loopback; non-loopback binding requires TLS and an explicit origin. Jobs are checked against `quantum-job/v1` and return `quantum-result/v1`. The browser-facing job route currently supports `diagonalize`, `evolve`, `circuit` and bounded native `topology`; other worker operations remain desktop-only. SSH and QWZ topology responses are checked against the submitted model before persistence and again in the browser before plotting.

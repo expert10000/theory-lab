@@ -78,6 +78,12 @@ inspection, verified saved runs and input-only workspace restoration. See
 [the delivered scope](docs/D1_PARAMETRIC_OSCILLATOR.md). The existing eleven
 Atlas presets and the web/Math3D boundaries remain unchanged.
 
+**Quartic anharmonic** (D1-020–022) adds a bounded, confining `m=1` static
+spectrum with independent QuTiP/native eigenpairs, level shifts, cutoff
+inspection and verified saved runs. See
+[the delivered scope](docs/D1_ANHARMONIC_OSCILLATOR.md). It does not add an
+Atlas load preset, web compute, 3D scene or Math3D call.
+
 The startup example automatically computes the static Hamiltonian **H = (Δ σz + Ω σx)/2**, in normalized energy units with **ħ = 1**. Δ = 1 and Ω = 0.8 give **E± = ±0.640312423743…**. QuTiP builds the operator and computes its eigenenergies. The renderer compares them with the exact formula ±√(Δ² + Ω²)/2.
 
 Edit Δ or Ω, then select **Run spectrum**. Existing results are marked **OUT OF DATE** until recalculated. Select QuTiP, Native, or Compare in the inspector; Compare runs both engines for the same Hamiltonian and reports the maximum eigenvalue difference and each runtime. The Hamiltonian tab shows the draft matrix; the spectrum always identifies the parameters actually used. Roadmap shows milestones, while Backend explains the methods and formats. **Restart worker** recovers a failed Python process.

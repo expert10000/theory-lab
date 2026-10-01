@@ -75,6 +75,14 @@ not automatically a load preset. Web compute permissions, `quantum-scene/v1`
 and Math3D are unchanged. See
 [D1_PARAMETRIC_OSCILLATOR.md](D1_PARAMETRIC_OSCILLATOR.md).
 
+D1-020–022 add a bounded confining quartic static spectrum to the existing
+Electron Oscillator lab. Independent QuTiP/native finite-Fock eigenpairs,
+host residual/moment checks, level shifts, cutoff/engine comparison,
+durable exports and input-only workspace restoration are implemented. The
+eleven Atlas load presets, web compute permissions, QVIS schema and Math3D
+remain unchanged. See
+[D1_ANHARMONIC_OSCILLATOR.md](D1_ANHARMONIC_OSCILLATOR.md).
+
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |
 | QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |

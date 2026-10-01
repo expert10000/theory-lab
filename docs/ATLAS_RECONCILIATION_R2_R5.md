@@ -395,9 +395,9 @@ Entries: `harmonic_oscillator_nd`, `parametric_oscillator`, `anharmonic_oscillat
 
 Reuse: Cavity Fock mathematics, existing supervised jobs, binary artifacts, sweeps, native/QuTiP comparisons and scalar/complex viewers.
 
-Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below; driven_harmonic_oscillator: D1 bounded monochromatic and declarative Gaussian complex forcing; general envelopes/pulses and broader driven requirements remain missing below.
+Delivered bounded subspaces: harmonic_oscillator: D1 static 1D Fock spectrum and stationary Hermite density; bounded free Fock/projected-coherent motion, verified amplitudes and q/p comparison/persistence; broader scope remains below; driven_harmonic_oscillator: D1 bounded monochromatic and declarative Gaussian complex forcing; general envelopes/pulses and broader driven requirements remain missing below; damped_harmonic_oscillator: bounded thermal Lindblad density-matrix dynamics; parametric_oscillator: stable vacuum quadratic-coupling squeezing in a finite Fock basis; anharmonic_oscillator: m=1 confining quartic low-energy eigenpairs in a finite harmonic Fock basis.
 
-Missing: D1 now delivers static/free 1D, bounded monochromatic forcing and Gaussian pulses with independent displacement/finite dynamics, cutoff/step diagnostics and persistence. Arbitrary-state dynamics, arbitrary waveforms and general driven envelopes/pulses beyond Gaussian, parametric/anharmonic/ND/double-well solvers and physical length calibration remain missing. Partial driven coverage is recorded in deliveredSubspaces, not a full-envelope completion. JC components remain distinct.
+Missing: D1 now delivers static/free 1D motion, bounded monochromatic/Gaussian forcing, thermal damping, stable vacuum parametric squeezing and m=1 confining quartic low-energy eigenpairs, each only in declared finite bases. Arbitrary-state dynamics, arbitrary waveforms and general driven envelopes/pulses, unstable/time-dependent parametric pumping, anharmonic dynamics, ND/double-well solvers and physical length calibration remain missing. Partial coverage is recorded in deliveredSubspaces, not a full-family completion. JC components remain distinct.
 
 Acceptance requirements:
 
@@ -562,7 +562,7 @@ D1 now delivers bounded static/free 1D motion and monochromatic coherent forcing
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `c4adba8f4aab3bbc2edb5803703b8911239ef78c3f3f84786b973b89afd63f81`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `ed2241ba583658ad036e4f7506f1520514645a72d5e0e8351f87a22185241e84`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 

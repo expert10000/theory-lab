@@ -72,7 +72,7 @@ export function PostRoadmapPanel() {
         </div>
       ))}
       <h3>D1 · standalone harmonic oscillator</h3>
-      <p>D1-001–019 deliver static/free motion, bounded monochromatic/Gaussian forcing, damped thermal dynamics and stable vacuum parametric squeezing in the existing Electron lab. QuTiP/native samples, scientific diagnostics and durable exports are verified. All eleven Atlas load presets remain unchanged. Arbitrary waveforms, general open oscillator, unstable parametric pumping, anharmonic/ND scope, oscillator scenes, web compute and Math3D remain future work. See docs/D1_PARAMETRIC_OSCILLATOR.md for the latest limits.</p>
+      <p>D1-001–022 deliver static/free motion, bounded monochromatic/Gaussian forcing, damped thermal dynamics, stable vacuum parametric squeezing and a confining quartic static spectrum in the existing Electron lab. QuTiP/native results, scientific diagnostics and durable exports are verified. All eleven Atlas load presets remain unchanged. Arbitrary waveforms, general open oscillator, unstable parametric pumping, anharmonic dynamics/double wells/ND scope, oscillator scenes, web compute and Math3D remain future work. See docs/D1_ANHARMONIC_OSCILLATOR.md for the latest limits.</p>
       {D1_OSCILLATOR_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`oscillator-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
       <details data-testid="source-plan-coverage">
         <summary>

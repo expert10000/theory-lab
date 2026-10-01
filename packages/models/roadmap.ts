@@ -115,6 +115,9 @@ export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
   {id:"D1-017",title:"Bounded parametric oscillator engines",state:"Implemented",detail:"Append-only vacuum quadratic-coupling job, independent QuTiP and native SciPy finite-Fock solvers, full complex amplitudes and independent propagation/readout validation."},
   {id:"D1-018",title:"Desktop squeezing and cutoff inspection",state:"Implemented",detail:"Existing Oscillator lab gains complex-coupling controls, quadrature-variance curves, stable Bogoliubov reference, engine comparison and N-to-N+8 sensitivity."},
   {id:"D1-019",title:"Durable parametric runs and acceptance",state:"Implemented",detail:"Scientifically verified saved amplitudes, CSV/variance SVG/manifest exports, optional input-only workspace restoration and regression acceptance. The eleven reviewed Atlas bindings, web permissions, scene vocabulary and Math3D boundary remain unchanged."},
+  {id:"D1-020",title:"Bounded quartic oscillator eigenpairs",state:"Implemented",detail:"Append-only m=1 confining quartic job; independent QuTiP/native finite-Fock eigensolvers, full low-state coefficients and host residual/orthogonality/moment verification."},
+  {id:"D1-021",title:"Electron quartic spectrum inspection",state:"Implemented",detail:"Existing oscillator tab gains λ controls, harmonic-baseline level shifts, ⟨x²⟩/⟨x⁴⟩, engine comparison and N-to-N+8 cutoff sensitivity."},
+  {id:"D1-022",title:"Durable quartic runs and acceptance",state:"Implemented",detail:"Reopen-time eigenpair verification, CSV/SVG/manifest exports, input-only workspace restoration and desktop/scientific acceptance. Eleven Atlas bindings, web/scene and Math3D boundaries unchanged."},
 ];
 export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {

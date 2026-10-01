@@ -106,6 +106,19 @@ the generic Atlas parametric entry is not silently enabled as a preset.
 Web oscillator compute, scenes, Math3D, unstable pumping, arbitrary initial
 states and broader G02 goals remain future work.
 
+### Confining quartic oscillator continuation (implemented)
+
+D1-020–022 add a bounded `m=1`, `λ≥0` static quartic spectrum to the same
+Electron Oscillator lab. QuTiP and native SciPy independently diagonalize a
+finite harmonic Fock matrix; host-side residual, orthogonality, moment and
+parity checks verify every low eigenpair before durable storage and exports.
+The UI shows harmonic-baseline shifts, engine comparison and an N→N+8
+cutoff study. Workspace restoration is input-only. See
+[D1_ANHARMONIC_OSCILLATOR.md](D1_ANHARMONIC_OSCILLATOR.md). All eleven
+reviewed Atlas load presets are unchanged, and broader masses/bases,
+anharmonic dynamics, double wells, ND oscillators, web compute, scenes and
+Math3D remain planned.
+
 ## 1. Technology decision
 
 ### V1
