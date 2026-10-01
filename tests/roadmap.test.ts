@@ -76,3 +76,18 @@ test("tracked post-QLAB document keeps the source plan and a separate status ove
     /Lab continuation milestones \(status updated per delivery\)/,
   );
 });
+
+test("linked-workspace roadmap names delivered, partial and next UI gates",async()=>{
+  const doc=await readFile("docs/QLAB_LINKED_WORKSPACE_ROADMAP.md","utf8");
+  assert.match(doc,/Status \(2026-10-01\): QLAB-UI-4 implemented for declared adapters; UI-1–3 partial; UI-5–8 planned/);
+  assert.match(doc,/\| Done \| QLAB-UI-4 \|/);
+  for(const id of ["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"])
+    assert.match(doc,new RegExp(`\\| Partially done \\| ${id} \\|`));
+  assert.match(doc,/\| Next \| QLAB-UI-5 \|/);
+  assert.match(doc,/\| Later \| QLAB-UI-6–8 \|/);
+  for(const path of ["docs/ROADMAP.md","docs/POST_QLAB_QVIS_M3D_ROADMAP.md"]){
+    const overview=await readFile(path,"utf8");
+    assert.match(overview,/UI-4 is implemented for\s+declared sweep adapters/);
+    assert.match(overview,/UI-1–3 are partial and UI-5–8 are planned/);
+  }
+});

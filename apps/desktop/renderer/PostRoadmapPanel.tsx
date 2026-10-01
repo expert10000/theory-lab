@@ -8,6 +8,9 @@ import {
 } from "../../../packages/models/roadmap";
 
 export function PostRoadmapPanel() {
+  const linkedDone=QLAB_UI_STEPS.filter(entry=>entry.state==="Implemented").map(entry=>entry.id).join(", ");
+  const linkedPartial=QLAB_UI_STEPS.filter(entry=>entry.state==="Partial").map(entry=>entry.id).join(", ");
+  const linkedNext=QLAB_UI_STEPS.find(entry=>entry.state==="Planned");
   return (
     <div data-testid="post-roadmap">
       <h2>After QLAB: Atlas, QVIS and Math3D.</h2>
@@ -75,8 +78,8 @@ export function PostRoadmapPanel() {
       <h3>D1 · standalone harmonic oscillator</h3>
       <p>D1-001–022 deliver static/free motion, bounded monochromatic/Gaussian forcing, damped thermal dynamics, stable vacuum parametric squeezing and a confining quartic static spectrum in the existing Electron lab. QuTiP/native results, scientific diagnostics and durable exports are verified. All eleven Atlas load presets remain unchanged. Arbitrary waveforms, general open oscillator, unstable parametric pumping, anharmonic dynamics/double wells/ND scope, oscillator scenes, web compute and Math3D remain future work. See docs/D1_ANHARMONIC_OSCILLATOR.md for the latest limits.</p>
       {D1_OSCILLATOR_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`oscillator-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
-      <h3>Linked scientific workspace · planned</h3>
-      <p data-testid="linked-workspace-status">QLAB-UI-1 navigation slice implemented; cross-lab run-context adapters remain. UI-2 has a partial two-level run-scoped selection pilot; UI-3–8 are planned. Six modes, grouped keyboard-accessible models, Library/System links, safe history routes and a two-level persisted-run breadcrumb retain existing labs and snapshots. Later slices link model → experiment → immutable run → verified spectrum, state, observables and scenes. Existing physics, eleven Atlas load presets, quantum-scene/v1 and the separate Math3D boundary stay intact. Detailed gates: docs/QLAB_LINKED_WORKSPACE_ROADMAP.md.</p>
+      <h3>Linked scientific workspace · status and next</h3>
+      <p data-testid="linked-workspace-status">Done: {linkedDone} for declared sweep adapters. Partially done: {linkedPartial}; wider model/run-context and linked-state adapters remain. Next: {linkedNext?.id} {linkedNext?.title} from verified two-level eigenvectors. UI-6–8 follow with comparison, reproducible rerun and compatible scenes. Existing physics, eleven Atlas load presets, quantum-scene/v1 and the separate Math3D boundary stay intact. Detailed gates: docs/QLAB_LINKED_WORKSPACE_ROADMAP.md.</p>
       {QLAB_UI_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`planned-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
       <details data-testid="source-plan-coverage">
         <summary>

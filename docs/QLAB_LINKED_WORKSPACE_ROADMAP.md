@@ -1,9 +1,26 @@
 # Quantum Lab linked workspace roadmap
 
-Status: QLAB-UI-1 and UI-2 partially implemented; remaining gates planned. Updated 2026-10-01. This roadmap translates
+Status (2026-10-01): QLAB-UI-4 implemented for declared adapters; UI-1–3 partial; UI-5–8 planned. This roadmap translates
 the supplied UI critique into an additive desktop plan after D1-020–022. It
 changes how existing physics is explored, not the worker architecture or the
 meaning of historical QLAB, QVIS and D1 milestones.
+
+## Delivery status and next work
+
+| State | Milestones | What this means now |
+| --- | --- | --- |
+| Done | QLAB-UI-4 | The model-selected Sweeps workspace has a bounded two-level eigenenergy study, verified point runs, durable study checkpoints, reopen and resume. Existing dynamics sweeps still mean final `P₁`. This gate is complete for declared adapters, not a claim that every model supports every output. |
+| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; run-context breadcrumbs still need per-lab adapters beyond the two-level pilot. |
+| Partially done | QLAB-UI-2 | Run-scoped two-level spectrum/parameter/operator selection and exact saved-run reopening work; linked state-view selection and broader model adapters remain. |
+| Partially done | QLAB-UI-3 | Verified two-level eigenstate diagnostics, inspector and interactive Hamiltonian work; wider model-specific observable/inspector adapters remain. |
+| Next | QLAB-UI-5 | Build the linked two-level Bloch/state view from a verified selected eigenvector, with basis/phase tests and explicit unavailable states. Reuse the existing run and selection rather than adding a solver. |
+| Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
+
+UI-5 can start on the verified two-level pilot while UI-1–3 remain partial;
+those milestones become complete only after their wider adapter/interaction
+gaps pass the individual acceptance gates below. Add other sweep-capable
+models through declared parameter/observable adapters, without reopening the
+completed UI-4 gate or implying universal physics support.
 
 ## Decision and current baseline
 
@@ -12,8 +29,9 @@ before adding another independent laboratory. The Electron app already has
 React model controls, a typed preload, supervised Python jobs, saved runs,
 Atlas definitions, presets and `quantum-scene/v1`. The desktop now renders six
 model-aware workspace modes and separate Library/System entries; it previously
-rendered 17 top-level tabs. A selected spectrum level is not a shared selection
-across matrix, state and visualization views. These are UI and result-adapter
+rendered 17 top-level tabs. The two-level pilot links spectrum, matrix,
+Hamiltonian and inspector references, but a selected state is not yet shared
+with a Bloch/state view or wider model views. These are UI and result-adapter
 gaps, not evidence that existing physics needs to be rebuilt.
 
 The proposed organizing chain is:
@@ -30,7 +48,7 @@ compare two runs without losing their input provenance.
 
 ## Navigation and scientific language
 
-The proposed primary workspace modes are **Explore, Dynamics, Sweeps,
+The current primary workspace modes are **Explore, Dynamics, Sweeps,
 Analysis, Scenes and Runs**. Explore hosts Spectrum, Hamiltonian, Eigenstates
 and State views where supported. These are navigation concepts, not six new
 worker operations. Presets and the pinned Atlas become a Library entry point;
@@ -62,7 +80,8 @@ are measured and adjusted after the information hierarchy works. Compact
 scientific badges such as `Hermitian`, `dim=2`, `closed system` and `exact
 diagonalization` must be derived from a model/run, not copied into every lab.
 
-The right inspector becomes **Parameters, Observables, Provenance**. Exact
+The two-level right inspector has **Parameters, Observables, Provenance**;
+other models need explicit adapters. Exact
 numeric input remains authoritative. A slider may accompany a bounded
 parameter but may not round or silently change the entered value; units and
 conventions stay visible. Sweep affordances appear only for parameters with a
@@ -71,7 +90,8 @@ the environment that actually executed it.
 
 ## Shared interaction boundaries
 
-These are proposed UI contracts, not a parallel quantum job registry.
+These are UI boundaries at different delivery stages, not a parallel quantum
+job registry.
 
 - **Workspace context:** stable model ID, experiment kind, draft input,
   selected run ID and source preset/Atlas reference. Existing jobs/results
@@ -91,7 +111,7 @@ These are proposed UI contracts, not a parallel quantum job registry.
   source job/result, engine, parameters, units and hashes where available.
   A click can populate a new draft without mutating the source run.
 
-## Planned milestones and acceptance gates
+## Milestone detail and acceptance gates
 
 QLAB-UI-1 is **Partial**: six-mode navigation, grouped native-keyboard model
 disclosures, separate Library/System links, safe fragment routes, back/forward,
@@ -103,9 +123,10 @@ selection, linked highlights and invalidation on a new run or model. The Runs
 view now reopens a hash-verified saved two-level spectrum from the existing
 run store; only a selection naming that exact run survives reopening. A
 different or missing run cannot inherit it, and no selection is invented after
-an app restart. The `quantum-result/v1` spectrum has energies but no
-eigenvectors, so the UI explicitly declines to display an eigenstate. Wider
-model adapters remain future gates. UI-3 is **Partial**: new two-level runs
+an app restart. Legacy energy-only `quantum-result/v1` spectra do not acquire
+invented eigenvectors; new two-level results have independently checked state
+diagnostics. The linked Bloch/state view and wider model adapters remain
+future gates. UI-3 is **Partial**: new two-level runs
 carry real normalized eigenvectors, populations, Bloch expectations and
 eigenpair residuals from QuTiP or native diagonalization. An independent
 Electron check validates them before display, persistence and reopening;
@@ -263,11 +284,12 @@ the external importer/handoff has its own compatibility tests.
 
 ## Delivery order and release gates
 
-The useful first slice is UI-1 → UI-2 → UI-3 on the existing two-level
-model, with no new physics solver. UI-4 and UI-5 then prove the linked
-parameter → sweep → state workflow. UI-6 and UI-7 make results comparable
-and reproducible; UI-8 connects only supported results to existing scenes.
-After each slice, broaden model coverage by explicit adapters, preserving
+The two-level UI-1–3 pilots and the UI-4 sweep gate are delivered to the
+extent stated above. UI-5 is the next implementation slice: finish the
+verified run → selected eigenvector → Bloch/state interaction. Then close
+the remaining UI-1–3 adapter gaps, proceed to UI-6 and UI-7 comparison and
+reproducibility, and finally UI-8 for compatible scenes. After each slice,
+broaden model coverage by explicit adapters, preserving
 the current direct lab entry points until equivalent paths pass acceptance.
 
 Every milestone requires TypeScript/React tests, keyboard/accessibility and
