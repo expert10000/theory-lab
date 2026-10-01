@@ -222,7 +222,21 @@ export interface PulsedOscillatorResult {
   integration:{method:"qutip-vern9"|"scipy-dop853";rtol:1e-10;atol:1e-12;evaluations:number};
   provenance:SpectrumResult["provenance"];
 }
-export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob;
+export interface DampedOscillatorJob {
+  schema:"quantum-job/v1";jobId:string;operation:"oscillator_damped";engine:EngineName;
+  model:{type:"damped_harmonic_oscillator";parameters:{omega:number;cutoff:number;loss:number;thermalOccupation:number}};
+  initialState:OscillatorInitialState;
+  solver:{type:"master";tStart:number;tStop:number;samples:number};
+}
+export interface DampedOscillatorResult {
+  schema:"quantum-result/v1";jobId:string;runId:string;status:"completed";operation:"oscillator_damped";
+  model:DampedOscillatorJob["model"];initialState:OscillatorInitialState;solver:DampedOscillatorJob["solver"];
+  engine:{name:EngineName;version:string};
+  data:{schema:"quantum-damped-oscillator-data/v1";format:"f64le";path:string;rows:number;columns:string[];bytes:number;sha256:string};
+  analysis:{projectionProbability:number;maxTraceError:number;minimumEigenvalue:number;maxBoundaryOccupation:number;maxNumberReferenceError:number};
+  provenance:SpectrumResult["provenance"];
+}
+export type QuantumJob = SpectrumJob | EvolutionJob | CavityJob | LindbladJob | SweepJob | ManyBodyJob | CircuitJob | TopologyJob | OrbitalJob | OscillatorJob | OscillatorEvolutionJob | DrivenOscillatorJob | PulsedOscillatorJob | DampedOscillatorJob;
 export type CircuitEngineName = "scqubits" | "native";
 export interface CircuitModel {
   type: "transmon";
@@ -427,7 +441,7 @@ export interface SweepResult {
   cache: { key: string; reusedPoints: number; computedPoints: number };
   provenance: SpectrumResult["provenance"];
 }
-export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult;
+export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -446,7 +460,7 @@ export interface WorkerCapabilities {
     quspin?: { available: boolean; version: string | null };
     scqubits?: { available: boolean; version: string | null };
   };
-  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse")[];
+  operations: ("diagonalize" | "evolve" | "cavity" | "lindblad" | "sweep" | "many_body" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillator_evolve" | "oscillator_drive" | "oscillator_pulse" | "oscillator_damped")[];
 }
 export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
@@ -478,6 +492,7 @@ export interface QuantumBridge {
   oscillatorEvolve(job: OscillatorEvolutionJob): Promise<OscillatorEvolutionResult>;
   oscillatorDrive(job: DrivenOscillatorJob): Promise<DrivenOscillatorResult>;
   oscillatorPulse(job: PulsedOscillatorJob): Promise<PulsedOscillatorResult>;
+  oscillatorDamped(job: DampedOscillatorJob): Promise<DampedOscillatorResult>;
   topology(job: TopologyJob): Promise<TopologyResult>;
   orbital(job: OrbitalJob): Promise<OrbitalResult>;
   openAtlasSource(id: string): Promise<void>;
@@ -539,5 +554,11 @@ export function assertJob(value: unknown): asserts value is QuantumJob {
        p.pulseCenter<0 || p.pulseCenter>dt || s.maxStep>p.pulseWidth/8 || dt/s.maxStep>20000 ||
        (i.type==="fock"&&i.index>=p.cutoff-1))
       throw new Error("Gaussian pulse requires bounded width/center, maxStep<=width/8 and <=20000 integration intervals");
+  }
+  if(value.operation==="oscillator_damped"){
+    const p=value.model.parameters,s=value.solver,i=value.initialState,dt=s.tStop-s.tStart;
+    if(dt<=0 || dt>20 || p.omega*dt>60 || p.loss*dt>12 ||
+       (i.type==="fock"?i.index>=p.cutoff-1:i.alphaRe**2+i.alphaIm**2>4))
+      throw new Error("Unsupported bounded damped oscillator");
   }
 }

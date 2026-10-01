@@ -39,6 +39,8 @@ const implementation = (
 
 /** Existing code inventory, not a new execution registry. Engine availability is runtime-reported. */
 export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
+  damped_harmonic_oscillator: implementation("packages/models/oscillator-damped.ts", ["oscillator_damped"], ["native", "qutip"], false, [], [],
+    "D1: bounded loss/thermal Lindblad oscillator in a finite Fock basis. No Atlas binding, web computation, scene adapter or Math3D coupling."),
   driven_harmonic_oscillator: implementation("packages/models/oscillator-drive.ts", ["oscillator_drive", "oscillator_pulse"], ["native", "qutip"], false, [], [],
     "D1: bounded monochromatic and declarative Gaussian complex forcing (packages/models/oscillator-pulse.ts), Fock/projected-coherent inputs, dimensionless q,p and hbar=1. Includes omega/2 Atlas energy offset; existing Atlas preset remains monochromatic. No arbitrary waveform, damping, parametric/anharmonic/ND or scene/Math3D adapter."),
   harmonic_oscillator: implementation("packages/models/oscillator.ts", ["oscillator", "oscillator_evolve"], ["native", "qutip"], false, [], [],

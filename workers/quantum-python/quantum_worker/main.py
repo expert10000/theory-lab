@@ -35,6 +35,7 @@ def capabilities():
         result["operations"].append("oscillator_evolve")
         result["operations"].append("oscillator_drive")
         result["operations"].append("oscillator_pulse")
+        result["operations"].append("oscillator_damped")
     validate("worker-capabilities", result)
     return result
 

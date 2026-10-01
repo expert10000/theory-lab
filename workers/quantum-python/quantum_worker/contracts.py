@@ -14,6 +14,12 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-job" and value["operation"] == "oscillator_damped":
+        p, s, i = value["model"]["parameters"], value["solver"], value["initialState"]
+        duration = s["tStop"]-s["tStart"]
+        if (duration <= 0 or duration > 20 or p["omega"]*duration > 60 or p["loss"]*duration > 12
+                or (i["index"] >= p["cutoff"]-1 if i["type"] == "fock" else i["alphaRe"]**2+i["alphaIm"]**2 > 4)):
+            raise ValueError("Unsupported bounded damped oscillator")
     if name == "quantum-job" and value["operation"] == "oscillator_pulse":
         p, s, i = value["model"]["parameters"], value["solver"], value["initialState"]
         duration = s["tStop"]-s["tStart"]
