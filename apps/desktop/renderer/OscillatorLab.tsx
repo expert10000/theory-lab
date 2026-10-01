@@ -3,6 +3,7 @@ import { OscillatorDynamics } from "./OscillatorDynamics";
 import { DrivenOscillator } from "./DrivenOscillator";
 import { DampedOscillator } from "./DampedOscillator";
 import { ParametricOscillator } from "./ParametricOscillator";
+import { AnharmonicOscillator } from "./AnharmonicOscillator";
 import type { DampedOscillatorDraft } from "../../../packages/models/oscillator-damped";
 import type { DrivenOscillatorDraft } from "../../../packages/models/oscillator-drive";
 import type { PulsedOscillatorDraft } from "../../../packages/models/oscillator-pulse";
@@ -109,6 +110,8 @@ export function OscillatorLab({
   onParametricSnapshot,
   atlasParametricDraft,
   atlasParametricEpoch,
+  restoredAnharmonic,
+  onAnharmonicSnapshot,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -119,8 +122,8 @@ export function OscillatorLab({
   onSnapshot?: (draft: OscillatorDraft) => void;
   restoredMotion?: OscillatorDynamicsDraft;
   onMotionSnapshot?: (draft: OscillatorDynamicsDraft) => void;
-  restoredMode?: "static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric";
-  onModeSnapshot?: (mode: "static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric") => void;
+  restoredMode?: "static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric" | "anharmonic";
+  onModeSnapshot?: (mode: "static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric" | "anharmonic") => void;
   restoredDriven?: DrivenOscillatorDraft;
   onDrivenSnapshot?: (draft: DrivenOscillatorDraft) => void;
   atlasDrivenDraft?: DrivenOscillatorDraft;
@@ -133,8 +136,10 @@ export function OscillatorLab({
   onParametricSnapshot?:(draft:import("../../../packages/models/oscillator-parametric").ParametricOscillatorDraft)=>void;
   atlasParametricDraft?:import("../../../packages/models/oscillator-parametric").ParametricOscillatorDraft;
   atlasParametricEpoch?:number;
+  restoredAnharmonic?:import("../../../packages/models/oscillator-anharmonic").AnharmonicDraft;
+  onAnharmonicSnapshot?:(draft:import("../../../packages/models/oscillator-anharmonic").AnharmonicDraft)=>void;
 }) {
-  const [view, setView] = useState<"static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric">("static");
+  const [view, setView] = useState<"static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric" | "anharmonic">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
   const [result, setResult] = useState<OscillatorResult | null>(null),
     [reference, setReference] = useState<OscillatorResult | null>(null);
@@ -264,6 +269,7 @@ export function OscillatorLab({
         </button>
         <button role="tab" aria-selected={view === "damped"} onClick={() => setView("damped")}>Damped / thermal</button>
         <button role="tab" aria-selected={view === "parametric"} onClick={() => setView("parametric")}>Parametric squeezing</button>
+        <button role="tab" aria-selected={view === "anharmonic"} onClick={() => setView("anharmonic")}>Quartic anharmonic</button>
       </div>
       <div hidden={view !== "static"}>
         <section className="hamiltonian-card">
@@ -493,6 +499,7 @@ export function OscillatorLab({
       </div>
       <div hidden={view !== "damped"}><DampedOscillator bridge={bridge} status={status} restored={restoredDamped} restoreEpoch={restoreEpoch} onSnapshot={onDampedSnapshot}/></div>
       <div hidden={view !== "parametric"}><ParametricOscillator bridge={bridge} status={status} restored={restoredParametric} restoreEpoch={restoreEpoch} onSnapshot={onParametricSnapshot} atlasDraft={atlasParametricDraft} atlasEpoch={atlasParametricEpoch}/></div>
+      <div hidden={view !== "anharmonic"}><AnharmonicOscillator bridge={bridge} status={status} restored={restoredAnharmonic} restoreEpoch={restoreEpoch} onSnapshot={onAnharmonicSnapshot}/></div>
     </div>
   );
 }
