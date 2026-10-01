@@ -19,7 +19,7 @@ test("D1-020 adds bounded append-only quartic contracts",()=>{
   const digest=(v:unknown)=>createHash("sha256").update(JSON.stringify(v)).digest("hex");
   assert.equal(digest({variants:jobSchema.oneOf.slice(0,-1),definitions:jobSchema.definitions}),
     "ca066575dde7eecbd516af42923df76b7fce1f86148be36524368bb92aa475d8");
-  assert.equal(digest({variants:resultSchema.oneOf.slice(0,-1),definitions:resultSchema.definitions}),
+  assert.equal(digest({variants:resultSchema.oneOf.slice(0,-2),definitions:resultSchema.definitions}),
     "468087cb74fe14bc3ab15f9f5095bab7761304c8a9596b8548050fb848b98059");
 });
 

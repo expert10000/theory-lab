@@ -136,7 +136,14 @@ try {
   await page.getByRole("button",{name:"Select upper energy E plus"}).click();
   assert.equal(await page.getByRole("button",{name:"Select upper energy E plus"}).getAttribute("aria-pressed"),"true");
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
-  assert.match(await page.getByTestId("scientific-selection").innerText(),/not eigenvectors/);
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/Verified \|ψ⟩/);
+  const inspectorTabs=page.getByRole("navigation",{name:"Model inspector views"});
+  await inspectorTabs.getByRole("button",{name:"Observables"}).click();
+  assert.match(await page.getByTestId("observable-inspector").innerText(),/Populations P₀ \/ P₁/);
+  assert.match(await page.getByTestId("observable-inspector").innerText(),/‖Hψ − Eψ‖/);
+  await inspectorTabs.getByRole("button",{name:"Provenance"}).click();
+  assert.match(await page.locator(".inspector").innerText(),/Δ \/ Ω · stored/);
+  await inspectorTabs.getByRole("button",{name:"Parameters"}).click();
   await page.screenshot({path:"artifacts/desktop-linked-energy.png",fullPage:true});
   await page.getByRole("tab",{name:"Analysis",exact:true}).click();
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
@@ -480,7 +487,7 @@ try {
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
   assert.match(await page.getByTestId("linked-workspace-status").innerText(),/navigation slice implemented/);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-1"||id==="QLAB-UI-2"?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"].includes(id)?/Partial/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);

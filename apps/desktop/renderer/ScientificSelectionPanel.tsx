@@ -7,10 +7,13 @@ export function ScientificSelectionPanel({selection,result,draft}:{selection:Sci
   if(selection.kind==="energy"){
     if(!result||result.runId!==selection.runId)return null;
     const label=selection.level===1?"E₊":"E₋";
+    const analysis=result.stateAnalysis;
     return <section className="panel scientific-selection" data-testid="scientific-selection">
       <p className="eyebrow">SELECTED VERIFIED LEVEL / {result.runId}</p>
       <h2>{label} = {format(result.spectrum.eigenvalues[selection.level])}</h2>
-      <p>This result contains eigenvalues, not eigenvectors. No eigenstate or Bloch state is inferred from energy alone.</p>
+      {!analysis?<p>This older result contains eigenvalues, not eigenvectors. No eigenstate or Bloch state is inferred from energy alone.</p>
+        :analysis.status==="degenerate"?<p>Degenerate or near-degenerate level: individual eigenvectors are basis-dependent and are intentionally not reported.</p>
+        :<p>Verified |ψ⟩ = {format(analysis.states[selection.level].amplitudes[0])}|0⟩ + {format(analysis.states[selection.level].amplitudes[1])}|1⟩ · ⟨σx⟩ = {format(analysis.states[selection.level].bloch.x)} · ⟨σz⟩ = {format(analysis.states[selection.level].bloch.z)}</p>}
     </section>;
   }
   if(selection.kind==="parameter"){

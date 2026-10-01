@@ -105,7 +105,16 @@ run store; only a selection naming that exact run survives reopening. A
 different or missing run cannot inherit it, and no selection is invented after
 an app restart. The `quantum-result/v1` spectrum has energies but no
 eigenvectors, so the UI explicitly declines to display an eigenstate. Wider
-model adapters remain future gates. UI-3–8 are **Planned**. Their numbers are UI-specific and
+model adapters remain future gates. UI-3 is **Partial**: new two-level runs
+carry real normalized eigenvectors, populations, Bloch expectations and
+eigenpair residuals from QuTiP or native diagonalization. An independent
+Electron check validates them before display, persistence and reopening;
+degenerate/near-degenerate results carry only gap and threshold, without an
+arbitrary eigenvector. The inspector has Parameters, Observables and Provenance
+views, and old energy-only saved results remain readable without invented
+state data. The formula's parameter/operator buttons remain keyboard usable.
+Wider model adapters and an optional bounded slider are still future work.
+UI-4–8 are **Planned**. Their numbers are UI-specific and
 do not relabel existing QLAB or QVIS commits. Implement them in order unless
 an explicit dependency is split out and tested independently.
 

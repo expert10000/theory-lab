@@ -4,6 +4,7 @@ import { basename, join } from "node:path";
 import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
+import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
 import { consistentOrbitalResult, checkOrbitalData } from "../../../packages/models/orbital";
 import { consistentOscillatorResult } from "../../../packages/models/oscillator";
 import { consistentOscillatorEvolutionResult, checkOscillatorEvolutionData } from "../../../packages/models/oscillator-dynamics";
@@ -43,6 +44,8 @@ export class RunStore {
       throw new Error("Cannot persist a mismatched quantum run");
     if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
       throw new Error("Cannot persist inconsistent topology data");
+    if (job.operation === "diagonalize" && (result.operation !== "diagonalize" || !consistentTwoLevelSpectrum(job, result)))
+      throw new Error("Cannot persist inconsistent two-level spectrum");
     if (job.operation === "orbital" && (result.operation !== "orbital" || !consistentOrbitalResult(job, result)))
       throw new Error("Cannot persist inconsistent orbital data");
     verifyId(result.runId);
@@ -144,6 +147,8 @@ export class RunStore {
       throw new Error("Stored run has invalid contracts");
     if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
       throw new Error("Stored topology data failed consistency check");
+    if (job.operation === "diagonalize" && (result.operation !== "diagonalize" || !consistentTwoLevelSpectrum(job, result)))
+      throw new Error("Stored two-level spectrum failed consistency check");
     if (job.operation === "orbital" && (result.operation !== "orbital" || !consistentOrbitalResult(job, result)))
       throw new Error("Stored orbital data failed consistency check");
     let data: Buffer | null = null;

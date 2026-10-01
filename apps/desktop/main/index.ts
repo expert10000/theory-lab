@@ -18,6 +18,7 @@ import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-sce
 import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
 import { consistentTopologyResult } from "../../../packages/models/topology";
+import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
 import { consistentOscillatorResult } from "../../../packages/models/oscillator";
 import { consistentAnharmonicResult } from "../../../packages/models/oscillator-anharmonic";
 import { atlasEntry, atlasUrl } from "../../../packages/atlas";
@@ -200,8 +201,8 @@ app.whenReady().then(() => {
         result.operation !== "diagonalize" ||
         result.jobId !== value.jobId ||
         result.engine.name !== value.engine ||
-        result.model.parameters.delta !== value.model.parameters.delta ||
-        result.model.parameters.omega !== value.model.parameters.omega
+        JSON.stringify(result.model) !== JSON.stringify(value.model) ||
+        !consistentTwoLevelSpectrum(value, result, true)
       )
         throw new Error("Worker returned an invalid or mismatched result");
       await runs.record(value, result);

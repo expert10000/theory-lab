@@ -10,6 +10,7 @@ from uuid import uuid4
 
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
+from quantum_worker.engines.two_level_states import analyze
 
 
 @lru_cache(maxsize=1)
@@ -40,12 +41,15 @@ def diagonalize(job):
     parameters = job["model"]["parameters"]
     delta, omega = parameters["delta"], parameters["omega"]
     hamiltonian = 0.5 * np.array([[delta, omega], [omega, -delta]], dtype=np.complex128)
-    energies = [float(value) for value in np.linalg.eigvalsh(hamiltonian)]
+    values, vectors = np.linalg.eigh(hamiltonian)
+    energies = [float(value) for value in values]
+    analysis = analyze(parameters, energies, [vectors[:, index] for index in range(2)])
     result = {
         "schema": "quantum-result/v1", "jobId": job["jobId"], "runId": f"run-{uuid4().hex}",
         "status": "completed", "operation": "diagonalize", "model": job["model"],
         "engine": {"name": "native", "version": scipy.__version__},
         "spectrum": {"eigenvalues": energies, "units": "normalized", "hbar": 1},
+        "stateAnalysis": analysis,
         "provenance": {"pythonVersion": platform.python_version(), "workerVersion": __version__,
                        "computedAt": datetime.now(timezone.utc).isoformat(),
                        "durationMs": (perf_counter() - started) * 1000},

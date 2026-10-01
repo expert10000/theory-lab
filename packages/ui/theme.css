@@ -1239,6 +1239,15 @@ h1 {
 .scientific-selection code { color: #c8ebdf; }
 .operator-matrix { display: grid; grid-template-columns: repeat(2,32px); gap: 6px 15px; width: max-content; padding: 6px 13px; border-left: 2px solid #79d9c1; border-right: 2px solid #79d9c1; margin: 8px 0; text-align: center; color: #d4e7e0; font: 16px Consolas,monospace; }
 .inspector input.selected-parameter { border-color: #79d9c1; box-shadow: 0 0 0 1px rgba(121,217,193,.35); }
+.inspector [hidden] { display: none !important; }
+.inspector-tabs { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 5px; margin: 14px 0 20px; }
+.inspector-tabs button,.inspector-levels button { min-width: 0; border: 1px solid #344b50; border-radius: 5px; background: #17252b; color: #b9d0ce; padding: 8px 5px; font-size: 10px; cursor: pointer; }
+.inspector-tabs button[aria-current="page"],.inspector-levels button[aria-pressed="true"] { background: #24413c; border-color: #79d9c1; color: #a5efdb; }
+.inspector-tabs button:focus-visible,.inspector-levels button:focus-visible { outline: 2px solid #8dd7c5; outline-offset: 2px; }
+.inspector-levels { display: grid; gap: 7px; margin: 18px 0; }
+.inspector-observables code { overflow-wrap: anywhere; }
+.inspector-observables .key-value { gap: 8px; }
+.inspector-observables .key-value strong { text-align: right; overflow-wrap: anywhere; }
 .analytic {
   font:
     24px Cambria,

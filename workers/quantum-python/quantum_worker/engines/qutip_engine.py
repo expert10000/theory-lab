@@ -8,6 +8,7 @@ from uuid import uuid4
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.models import build
+from quantum_worker.engines.two_level_states import analyze
 
 @lru_cache(maxsize=1)
 def engine():
@@ -30,12 +31,16 @@ def diagonalize(job):
     started = perf_counter()
     qt = engine()
     hamiltonian = build(qt, job["model"])
-    energies = [float(value) for value in hamiltonian.eigenenergies()]
+    values, vectors = hamiltonian.eigenstates()
+    energies = [float(value) for value in values]
+    analysis = analyze(job["model"]["parameters"], energies,
+                       [vector.full().ravel() for vector in vectors])
     result = {
         "schema": "quantum-result/v1", "jobId": job["jobId"], "runId": f"run-{uuid4().hex}",
         "status": "completed", "operation": "diagonalize", "model": job["model"],
         "engine": {"name": "qutip", "version": qt.__version__},
         "spectrum": {"eigenvalues": energies, "units": "normalized", "hbar": 1},
+        "stateAnalysis": analysis,
         "provenance": {"pythonVersion": platform.python_version(), "workerVersion": __version__,
                        "computedAt": datetime.now(timezone.utc).isoformat(), "durationMs": (perf_counter() - started) * 1000},
     }

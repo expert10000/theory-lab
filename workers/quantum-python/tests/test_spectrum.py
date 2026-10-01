@@ -20,6 +20,21 @@ class SpectrumTests(unittest.TestCase):
                 expected = math.hypot(delta, omega) / 2
                 for actual, reference in zip(result["spectrum"]["eigenvalues"], [-expected, expected]):
                     self.assertTrue(math.isclose(actual, reference, rel_tol=1e-12, abs_tol=1e-14))
+                analysis = result["stateAnalysis"]
+                if math.hypot(delta, omega) <= analysis["threshold"]:
+                    self.assertEqual(analysis["status"], "degenerate")
+                    self.assertNotIn("states", analysis)
+                else:
+                    self.assertEqual(analysis["status"], "resolved")
+                    for index, state in enumerate(analysis["states"]):
+                        a, b = state["amplitudes"]
+                        self.assertAlmostEqual(a*a+b*b, 1, places=12)
+                        self.assertAlmostEqual(state["populations"][0], a*a, places=12)
+                        self.assertAlmostEqual(state["bloch"]["x"], 2*a*b, places=12)
+                        self.assertAlmostEqual(state["bloch"]["z"], a*a-b*b, places=12)
+                        self.assertLess(state["residualNorm"], 1e-8*max(1, abs(delta), abs(omega)))
+                        sign = -1 if index == 0 else 1
+                        self.assertAlmostEqual(state["bloch"]["x"], sign*omega/math.hypot(delta, omega), places=9)
                 self.assertEqual(result["jobId"], self.job["jobId"])
 
     def test_invalid_contracts(self):

@@ -335,12 +335,23 @@ export interface SpectrumResult {
   model: TwoLevelModel;
   engine: { name: EngineName; version: string };
   spectrum: { eigenvalues: [number, number]; units: "normalized"; hbar: 1 };
+  /** Optional so spectra saved before UI-3 remain valid and energy-only. */
+  stateAnalysis?:
+    | { status: "degenerate"; gap: number; threshold: number }
+    | { status: "resolved"; gap: number; threshold: number; states: [TwoLevelEigenstate, TwoLevelEigenstate] };
   provenance: {
     pythonVersion: string;
     workerVersion: string;
     computedAt: string;
     durationMs: number;
   };
+}
+export interface TwoLevelEigenstate {
+  /** Real amplitudes in the computational |0>, |1> basis, with a fixed sign convention. */
+  amplitudes: [number, number];
+  populations: [number, number];
+  bloch: { x: number; y: number; z: number };
+  residualNorm: number;
 }
 export const EVOLUTION_COLUMNS = [
   "time",

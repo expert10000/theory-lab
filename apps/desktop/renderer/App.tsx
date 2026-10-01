@@ -106,6 +106,7 @@ export function App() {
   function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody && workspaceParts.current.circuit) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
   const [selection,setSelection]=useState<ScientificSelection|null>(null);
+  const [inspectorTab,setInspectorTab]=useState<"parameters"|"observables"|"provenance">("parameters");
   const runSelections=useRef(new Map<string,ScientificSelection>());
   function chooseSelection(next:ScientificSelection){
     if(result){
@@ -788,7 +789,12 @@ export function App() {
         </main>
         <aside className="inspector">
           <p className="eyebrow">MODEL INSPECTOR</p>
-          <h2>Parameters</h2>
+          <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
+          <nav className="inspector-tabs" aria-label="Model inspector views">
+            {(["parameters","observables","provenance"] as const).map(view=><button key={view} type="button"
+              aria-current={inspectorTab===view?"page":undefined} onClick={()=>setInspectorTab(view)}>{view[0].toUpperCase()+view.slice(1)}</button>)}
+          </nav>
+          <div hidden={inspectorTab!=="parameters"}>
           <p className="inspector-intro">
             Change the Hamiltonian.
             <br />
@@ -898,6 +904,32 @@ export function App() {
               Independent validation path
             </p>
           </div>
+          </div>
+          <div hidden={inspectorTab!=="observables"} className="inspector-observables" data-testid="observable-inspector">
+            {result? <>
+              <p className="inspector-intro">Verified run <code>{result.runId}</code></p>
+              <div className="key-value"><span>Δ · run input</span><strong>{format(result.model.parameters.delta)}</strong></div>
+              <div className="key-value"><span>Ω · run input</span><strong>{format(result.model.parameters.omega)}</strong></div>
+              <div className="key-value"><span>Gap · E₊ − E₋</span><strong>{format(result.spectrum.eigenvalues[1]-result.spectrum.eigenvalues[0])}</strong></div>
+              <div className="inspector-levels" aria-label="Select eigenstate">
+                {([0,1] as const).map(level=><button type="button" key={level}
+                  aria-pressed={currentSelection?.kind==="energy"&&currentSelection.level===level}
+                  onClick={()=>chooseSelection({kind:"energy",model:"two_level",runId:result.runId,level})}>
+                  {level===0?"E₋":"E₊"} · {format(result.spectrum.eigenvalues[level])}</button>)}
+              </div>
+              {!result.stateAnalysis?<p>Energy-only saved result: eigenstate diagnostics were not recorded.</p>
+                :result.stateAnalysis.status==="degenerate"?<p>Degenerate or near-degenerate: no unique eigenstate or Bloch vector is claimed. Threshold {result.stateAnalysis.threshold.toExponential(2)}.</p>
+                :(()=>{const state=result.stateAnalysis.states[currentSelection?.kind==="energy"?currentSelection.level:0];return <div className="inspector-section">
+                  <p className="eyebrow">{currentSelection?.kind==="energy"&&currentSelection.level===1?"UPPER":"LOWER"} EIGENSTATE · |0⟩, |1⟩ BASIS</p>
+                  <div className="key-value"><span>Amplitudes</span><strong>{format(state.amplitudes[0])}, {format(state.amplitudes[1])}</strong></div>
+                  <div className="key-value"><span>Populations P₀ / P₁</span><strong>{format(state.populations[0])} / {format(state.populations[1])}</strong></div>
+                  <div className="key-value"><span>⟨σx⟩ / ⟨σy⟩ / ⟨σz⟩</span><strong>{format(state.bloch.x)} / {format(state.bloch.y)} / {format(state.bloch.z)}</strong></div>
+                  <div className="key-value"><span>‖Hψ − Eψ‖</span><strong>{state.residualNorm.toExponential(2)}</strong></div>
+                  <small>Real amplitudes; first nonzero coefficient positive. Residual and observables are independently checked before saving.</small>
+                </div>;})()}
+            </>:<p>No verified spectrum run yet.</p>}
+          </div>
+          <div hidden={inspectorTab!=="provenance"}>
           <div className="inspector-section provenance">
             <p className="eyebrow">LATEST RUN</p>
             {result ? (
@@ -910,6 +942,8 @@ export function App() {
                   <span>Python</span>
                   <strong>{result.provenance.pythonVersion}</strong>
                 </div>
+                <div className="key-value"><span>Engine</span><strong>{result.engine.name} {result.engine.version}</strong></div>
+                <div className="key-value"><span>Δ / Ω · stored</span><strong>{result.model.parameters.delta} / {result.model.parameters.omega}</strong></div>
                 <code title={result.runId}>{result.runId.slice(0, 20)}…</code>
                 <small>
                   {new Date(result.provenance.computedAt).toLocaleTimeString()}{" "}
@@ -919,6 +953,7 @@ export function App() {
             ) : (
               <p>No completed run yet.</p>
             )}
+          </div>
           </div>
         </aside>
       </div>
