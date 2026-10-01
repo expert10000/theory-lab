@@ -171,6 +171,13 @@ probability for selected dynamics models; it must not be relabeled as an
 eigenenergy sweep. Add a bounded, versioned spectrum-sweep result path or
 compose verified bounded spectrum jobs with clear lineage and cancellation.
 
+Implementation choice: a separate `quantum-spectrum-study/v1` plan now composes
+3–31 existing verified `diagonalize` jobs, one durable run per sampled Δ.
+Each point records its exact coordinate and source run ID; cancellation is
+between points. This adds no new worker operation or change to the existing
+final-`P₁` sweep. The interactive Lab surface and linked-point workflow are
+the next UI-4 slice; the overall gate is not yet complete.
+
 Acceptance: sampled energies match direct two-level jobs and the analytic
 formula within declared tolerance; zero-gap degeneracy is handled; each
 point records exact parameters, engine and source; cancel/retry and maximum

@@ -1,0 +1,44 @@
+{
+  "oneOf": [
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "studyId", "engine", "fixed", "axis", "output"],
+      "properties": {
+        "schema": { "const": "quantum-spectrum-study/v1" },
+        "studyId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" },
+        "engine": { "enum": ["qutip", "native"] },
+        "fixed": { "type": "object", "additionalProperties": false,
+          "required": ["omega"], "properties": { "omega": { "type": "number", "minimum": -1000000, "maximum": 1000000 } } },
+        "axis": { "type": "object", "additionalProperties": false,
+          "required": ["parameter", "start", "stop", "points"],
+          "properties": {
+            "parameter": { "const": "delta" },
+            "start": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+            "stop": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+            "points": { "type": "integer", "minimum": 3, "maximum": 31 }
+          } },
+        "output": { "const": "eigenvalues" }
+      }
+    },
+    {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "studyId", "plan", "status", "points", "computedAt"],
+      "properties": {
+        "schema": { "const": "quantum-spectrum-study-result/v1" },
+        "studyId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" },
+        "plan": { "$ref": "#/oneOf/0" },
+        "status": { "enum": ["completed", "cancelled"] },
+        "points": { "type": "array", "maxItems": 31,
+          "items": { "type": "object", "additionalProperties": false,
+            "required": ["index", "delta", "eigenvalues", "runId"],
+            "properties": {
+              "index": { "type": "integer", "minimum": 0, "maximum": 30 },
+              "delta": { "type": "number", "minimum": -1000000, "maximum": 1000000 },
+              "eigenvalues": { "type": "array", "minItems": 2, "maxItems": 2, "items": { "type": "number" } },
+              "runId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,100}$" }
+            } } },
+        "computedAt": { "type": "string", "minLength": 20 }
+      }
+    }
+  ]
+}
