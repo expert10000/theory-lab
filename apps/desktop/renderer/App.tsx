@@ -9,6 +9,7 @@ import type {
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
 import {ScientificSelectionPanel} from "./ScientificSelectionPanel";
+import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
 import { CavityLab } from "./CavityLab";
@@ -840,6 +841,13 @@ export function App() {
                   }))
                 }
               />
+              {spectrumSliderValue(parameters[definition.key])!==null?
+                <input id={`${definition.key}-slider`} className="spectrum-parameter-slider"
+                  type="range" min={-10} max={10} step="any"
+                  aria-label={`${definition.label} coarse slider, minus ten to ten`}
+                  value={spectrumSliderValue(parameters[definition.key])!}
+                  onChange={event=>setParameters(current=>({...current,[definition.key]:event.target.value}))}/>
+                :<small className="slider-unavailable">Coarse slider available for exact values from −10 to 10; this draft is not clamped.</small>}
             </React.Fragment>
           ))}
           {!valid && (

@@ -113,7 +113,8 @@ degenerate/near-degenerate results carry only gap and threshold, without an
 arbitrary eigenvector. The inspector has Parameters, Observables and Provenance
 views, and old energy-only saved results remain readable without invented
 state data. The formula's parameter/operator buttons remain keyboard usable.
-Wider model adapters and an optional bounded slider are still future work.
+Bounded coarse Δ/Ω sliders now mirror the exact draft without clamping
+out-of-range numeric inputs. Wider model adapters are still future work.
 UI-4–8 are **Planned**. Their numbers are UI-specific and
 do not relabel existing QLAB or QVIS commits. Implement them in order unless
 an explicit dependency is split out and tested independently.

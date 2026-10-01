@@ -133,6 +133,13 @@ try {
   await page.waitForFunction(()=>window.location.hash==="#lab/two_level/spectrum"&&
     document.querySelector('button[aria-pressed="true"]')?.textContent?.includes("Two-level system"));
   await mkdir("artifacts",{recursive:true});
+  await page.locator("#delta-slider").focus();
+  await page.keyboard.press("ArrowRight");
+  assert.equal(await page.locator("#delta").inputValue(),await page.locator("#delta-slider").inputValue(),
+    "coarse slider and exact draft share one value");
+  await page.locator("#delta").fill("100");
+  assert.equal(await page.locator("#delta-slider").count(),0,"out-of-range exact input is not clamped");
+  await page.locator("#delta").fill("1");
   await page.getByRole("button",{name:"Select upper energy E plus"}).click();
   assert.equal(await page.getByRole("button",{name:"Select upper energy E plus"}).getAttribute("aria-pressed"),"true");
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
