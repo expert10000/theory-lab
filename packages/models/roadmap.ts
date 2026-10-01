@@ -119,9 +119,9 @@ export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
   {id:"D1-021",title:"Electron quartic spectrum inspection",state:"Implemented",detail:"Existing oscillator tab gains λ controls, harmonic-baseline level shifts, ⟨x²⟩/⟨x⁴⟩, engine comparison and N-to-N+8 cutoff sensitivity."},
   {id:"D1-022",title:"Durable quartic runs and acceptance",state:"Implemented",detail:"Reopen-time eigenpair verification, CSV/SVG/manifest exports, input-only workspace restoration and desktop/scientific acceptance. Eleven Atlas bindings, web/scene and Math3D boundaries unchanged."},
 ];
-/** Proposed linked-workspace work; none of these entries is shipped. */
+/** Linked-workspace roadmap: UI-1 navigation slice shipped; remaining gates are planned. */
 export const QLAB_UI_STEPS: RoadmapEntry[] = [
-  {id:"QLAB-UI-1",title:"Model workspace and navigation",state:"Planned",detail:"Separate model/domain navigator from Explore, Dynamics, Sweeps, Analysis, Scenes and Runs; preserve old routes and workspace snapshots."},
+  {id:"QLAB-UI-1",title:"Model workspace and navigation",state:"Partial",detail:"Six model-aware workspace modes and separate Library/System navigation are implemented; grouped model navigator, breadcrumb and history/keyboard gates remain."},
   {id:"QLAB-UI-2",title:"Linked scientific selection",state:"Planned",detail:"Typed run-scoped selection of parameters, Hamiltonian terms, eigenstates and sweep points across verified views."},
   {id:"QLAB-UI-3",title:"Observable inspector and interactive Hamiltonian",state:"Planned",detail:"Parameters/Observables/Provenance inspector; two-level expectations, populations, residuals and keyboard-selectable formula terms."},
   {id:"QLAB-UI-4",title:"Universal sweep workspace",state:"Planned",detail:"Bounded parameter-to-output studies, beginning with a separately verified two-level avoided-crossing energy sweep and linked point inspection."},

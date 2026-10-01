@@ -83,8 +83,9 @@ eleven Atlas load presets, web compute permissions, QVIS schema and Math3D
 remain unchanged. See
 [D1_ANHARMONIC_OSCILLATOR.md](D1_ANHARMONIC_OSCILLATOR.md).
 
-QLAB-UI-1–8 are now proposed as a separate, unimplemented Lab interaction
-track. They reorganize model/experiment navigation and then link verified
+QLAB-UI-1–8 are a separate Lab interaction track. UI-1 has a partial
+six-mode navigation implementation; its remaining gates and UI-2–8 are
+planned. They reorganize model/experiment navigation and then link verified
 selection, observables, a distinct energy sweep, state views, immutable-run
 comparison, provenance and compatible scene handoff. This is additive to
 the delivered physics and QVIS system, not a new worker or scene schema.

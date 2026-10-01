@@ -1,6 +1,6 @@
 # Quantum Lab linked workspace roadmap
 
-Status: proposed, not implemented. Updated 2026-10-01. This roadmap translates
+Status: QLAB-UI-1 navigation slice implemented; remaining gates planned. Updated 2026-10-01. This roadmap translates
 the supplied UI critique into an additive desktop plan after D1-020–022. It
 changes how existing physics is explored, not the worker architecture or the
 meaning of historical QLAB, QVIS and D1 milestones.
@@ -10,9 +10,9 @@ meaning of historical QLAB, QVIS and D1 milestones.
 The next Lab investment should connect models, experiments, results and views
 before adding another independent laboratory. The Electron app already has
 React model controls, a typed preload, supervised Python jobs, saved runs,
-Atlas definitions, presets and `quantum-scene/v1`. The desktop currently
-renders 17 top-level tabs and a sidebar that mixes models with Sweeps, Runs,
-Scenes, Presets and Atlas. A selected spectrum level is not a shared selection
+Atlas definitions, presets and `quantum-scene/v1`. The desktop now renders six
+model-aware workspace modes and separate Library/System entries; it previously
+rendered 17 top-level tabs. A selected spectrum level is not a shared selection
 across matrix, state and visualization views. These are UI and result-adapter
 gaps, not evidence that existing physics needs to be rebuilt.
 
@@ -93,7 +93,9 @@ These are proposed UI contracts, not a parallel quantum job registry.
 
 ## Planned milestones and acceptance gates
 
-All eight milestones below are **Planned**. Their numbers are UI-specific and
+QLAB-UI-1 is **Partial**: its six-mode navigation and utility relocation are
+implemented, while grouped model navigation, breadcrumbs, deep-link/history
+and keyboard acceptance remain. UI-2–8 are **Planned**. Their numbers are UI-specific and
 do not relabel existing QLAB or QVIS commits. Implement them in order unless
 an explicit dependency is split out and tested independently.
 

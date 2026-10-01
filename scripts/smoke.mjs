@@ -31,6 +31,11 @@ try {
     .waitFor();
   assert.equal(await page.getByTestId("energy-low").textContent(), "-0.640312");
   assert.equal(await page.getByTestId("energy-high").textContent(), "0.640312");
+  const workspaceModes=page.getByRole("tablist",{name:/Workspace modes for/});
+  assert.deepEqual(await workspaceModes.getByRole("tab").allTextContents(),
+    ["Explore","Dynamics","Sweeps","Analysis","Scenes","Runs"]);
+  assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isDisabled(),true);
+  assert.equal(await page.getByRole("button",{name:/Two-level system/}).getAttribute("aria-pressed"),"true");
   const isolation = await page.evaluate(() => ({
     require: typeof window.require,
     process: typeof window.process,
@@ -188,7 +193,7 @@ try {
   await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
   assert.equal(await page.getByLabel("Oscillator state",{exact:true}).inputValue(),"2");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
-  await page.getByRole("tab",{name:"Atlas",exact:true}).click();
+  await page.getByTestId("open-atlas").click();
   await page.getByLabel("Search Atlas").fill("driven_harmonic_oscillator");
   await page.getByRole("button",{name:/^Linearly driven harmonic oscillator driven_harmonic_oscillator/}).click();
   await page.getByTestId("open-atlas-binding").click();
@@ -343,7 +348,7 @@ try {
   assert.equal(await page.getByRole("tab",{name:"Quartic anharmonic",exact:true}).getAttribute("aria-selected"),"true");
   assert.equal(await page.getByTestId("anharmonic-result").count(),0,"restore must not fabricate eigenpairs");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
-  await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
+  await page.getByRole("button",{name:/Two-level system/}).click();
   await page.screenshot({
     path: "artifacts/desktop-spectrum.png",
     fullPage: true,
@@ -377,9 +382,9 @@ try {
       document.querySelector('[data-testid="energy-high"]').textContent ===
       "0.000000",
   );
-  await page.getByRole("tab", { name: "Hamiltonian", exact: true }).click();
+  await page.getByRole("tab", { name: "Analysis", exact: true }).click();
   assert.ok(await page.getByText("Every term, explicit.").isVisible());
-  await page.getByRole("tab", { name: "Roadmap", exact: true }).click();
+  await page.getByRole("button", { name: "Roadmap", exact: true }).click();
   assert.ok(
     await page
       .getByText("Foundation & first spectrum", { exact: true })
@@ -392,9 +397,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
-  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/proposals, not shipped UI/);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/navigation slice implemented/);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-1"?/Partial/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -402,7 +407,7 @@ try {
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   await page.getByTestId("post-roadmap").scrollIntoViewIfNeeded();
   await page.screenshot({path:"artifacts/desktop-post-roadmap.png", fullPage:true});
-  await page.getByRole("tab", { name: "Backend", exact: true }).click();
+  await page.getByRole("button", { name: "Backend", exact: true }).click();
   assert.ok(await page.getByTestId("backend-page").isVisible());
   assert.ok(
     await page.getByRole("heading", {name:"Native NumPy / SciPy", exact: true}).isVisible(),
@@ -460,7 +465,7 @@ try {
   await page.getByRole("spinbutton", { name: "QWZ mass" }).fill("0");
   await page.getByTestId("run-topology").click();
   await page.getByTestId("qwz-chern").filter({ hasText: "undefined" }).waitFor();
-  await page.getByRole("tab", { name: "Spectrum", exact: true }).click();
+  await page.getByRole("button",{name:/Two-level system/}).click();
   await page.getByRole("button", { name: "Restore smoke values" }).click();
   await page.getByRole("button", { name: "Run spectrum" }).click();
   await page.waitForFunction(
@@ -546,7 +551,9 @@ try {
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].setSize(1440, 900),
   );
-  await page.getByRole("tab", { name: "Dynamics", exact: true }).click();
+  await page.getByRole("button",{name:/Rabi dynamics/}).click();
+  assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isEnabled(),true);
+  assert.equal(await page.getByRole("button",{name:/Rabi dynamics/}).getAttribute("aria-pressed"),"true");
   await page.getByTestId("run-evolution").click();
   await page
     .getByTestId("evolution-state")
@@ -743,7 +750,8 @@ try {
   assert.ok(await page.getByTestId("steady-state").getByText("Steady state").isVisible());
   await page.getByTestId("lindblad-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-lindblad.png", fullPage: true });
-  await page.getByRole("button", { name: "Parameter sweeps" }).click();
+  await page.getByRole("button", { name: /Rabi dynamics/ }).click();
+  await page.getByRole("tab", { name: "Sweeps", exact: true }).click();
   await page.getByRole("combobox", { name: "Sweep engine" }).selectOption("native");
   await page.getByRole("spinbutton", { name: "X axis points" }).fill("5");
   await page.getByTestId("run-sweep").evaluate(element => element.scrollIntoView({ block: "center" }));
@@ -771,7 +779,13 @@ try {
     await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 90000 });
     assert.equal(await page.getByTestId("sweep-heatmap").locator(".sweep-heatmap button").count(), 20);
   }
-  await page.getByRole("tab", { name: "Many-body" }).click();
+  await page.getByRole("combobox",{name:"Sweep model"}).selectOption("landau_zener");
+  assert.equal(await page.getByRole("button",{name:/Landau–Zener/}).getAttribute("aria-pressed"),"true");
+  await page.getByRole("tab",{name:"Dynamics",exact:true}).click();
+  assert.match(await page.getByRole("tablist",{name:/Workspace modes for Landau–Zener/}).getAttribute("aria-label"),/Landau–Zener/);
+  assert.match(await page.locator(".breadcrumb").innerText(),/LANDAU–ZENER/);
+  assert.ok(await page.getByTestId("run-evolution").isVisible());
+  await page.getByRole("button", { name: /Ising chain/ }).click();
   await page.getByTestId("run-many-body").click();
   await page.getByTestId("many-body-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("many-body-result").waitFor();
@@ -791,7 +805,7 @@ try {
   await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("6");
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(() => document.querySelector('input[aria-label="Many-body sites"]')?.value === "5");
-  await page.getByRole("tab", { name: "Circuit" }).click();
+  await page.getByRole("button", { name: /Transmon circuit/ }).click();
   await page.getByTestId("run-circuit").click();
   await page.getByTestId("circuit-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("circuit-result").waitFor();
@@ -811,7 +825,7 @@ try {
   await page.getByRole("spinbutton", { name: "Circuit ncut" }).fill("14");
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(() => document.querySelector('input[aria-label="Circuit ncut"]')?.value === "13");
-  await page.getByRole("tab", { name: "Presets" }).click();
+  await page.getByRole("button", { name: "Volume VIII presets", exact: true }).click();
   await page.getByTestId("preset-page").waitFor();
   assert.equal(await page.locator(".preset-card").count(), 6);
   await page.screenshot({ path: "artifacts/desktop-presets.png", fullPage: true });
@@ -822,20 +836,20 @@ try {
   await page.getByTestId("run-evolution").click();
   await page.getByTestId("evolution-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   assert.match(await page.getByTestId("preset-check").textContent(), /ANALYTIC CHECK PASSED/);
-  await page.getByRole("tab", { name: "Presets" }).click();
+  await page.getByRole("button", { name: "Volume VIII presets", exact: true }).click();
   await page.getByRole("button", { name: "Open Landau–Zener crossing" }).click();
   await page.getByTestId("evolution-state").filter({ hasText: "PRESET LOADED" }).waitFor();
   await page.getByTestId("run-evolution").click();
   await page.getByTestId("evolution-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   assert.match(await page.getByTestId("preset-check").textContent(), /ASYMPTOTIC REFERENCE ONLY/);
-  await page.getByRole("tab", { name: "Presets" }).click();
+  await page.getByRole("button", { name: "Volume VIII presets", exact: true }).click();
   await page.getByRole("button", { name: "Open Jaynes–Cummings vacuum Rabi" }).click();
   await page.getByTestId("cavity-state").filter({ hasText: "PRESET LOADED" }).waitFor();
   await page.getByTestId("run-cavity").click();
   await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   assert.match(await page.getByTestId("preset-check").textContent(), /ANALYTIC CHECK PASSED/);
   for (const title of ["T₁ relaxation", "Pure dephasing", "Damped cavity occupation"]) {
-    await page.getByRole("tab", { name: "Presets" }).click();
+    await page.getByRole("button", { name: "Volume VIII presets", exact: true }).click();
     await page.getByRole("button", { name: `Open ${title}` }).click();
     await page.getByTestId("preset-loaded").getByText(new RegExp(title)).waitFor();
     await page.getByTestId("lindblad-state").filter({ hasText: "PRESET LOADED" }).waitFor();
@@ -848,7 +862,7 @@ try {
   await page.getByTestId("save-workspace").click();
   await page.getByTestId("workspace-message").filter({ hasText: "Workspace saved" }).waitFor();
   await page.getByLabel("Open initial photons").fill("1");
-  await page.getByRole("tab", { name: "Spectrum", exact: true }).click();
+  await page.getByRole("button",{name:/Two-level system/}).click();
   await page.getByTestId("restore-workspace").click();
   await page.getByLabel("Open initial photons").waitFor();
   await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
@@ -1183,7 +1197,7 @@ try {
   await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
   await page.waitForFunction(() => document.querySelector('input[aria-label="Oscillator state"]')?.value === "2");
   assert.ok(await page.getByTestId("preset-loaded").getByText(/Damped cavity occupation/).isVisible());
-  await page.getByRole("tab",{name:"Oscillator",exact:true}).click();
+  await page.getByTestId("open-oscillator").click();
   assert.equal(await page.getByRole("tab",{name:"Free dynamics",exact:true}).getAttribute("aria-selected"),"true");
   assert.equal(await page.getByLabel("Motion alphaRe",{exact:true}).inputValue(),"2");
   assert.equal(await page.getByLabel("Motion cutoff",{exact:true}).inputValue(),"64");
@@ -1201,7 +1215,7 @@ try {
   assert.equal(await page.getByLabel("Pulse engine",{exact:true}).inputValue(),"qutip");
   assert.equal(await page.getByTestId("oscillator-pulse-result").count(),0);
   assert.equal(await page.getByTestId("pulse-convergence").count(),0);
-  await page.getByRole("tab",{name:"Roadmap",exact:true}).click();
+  await page.getByRole("button",{name:"Roadmap",exact:true}).click();
   for(const id of Array.from({length:13},(_,i)=>`D1-${String(i+1).padStart(3,"0")}`)) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {

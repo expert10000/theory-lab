@@ -679,19 +679,40 @@ code {
 }
 .sidebar > .eyebrow span {
   color: #566777;
+  max-width: 105px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .lab-selected {
-  border: 1px solid #32534e;
-  background: #1b3432;
+  border: 1px solid #2a3942;
+  background: #17222b;
   border-radius: 6px;
   padding: 12px 10px;
   text-align: left;
-  color: #a8e8d7;
+  color: #a4bac4;
   display: flex;
   align-items: center;
   gap: 10px;
   font-size: 12px;
 }
+.lab-selected[aria-pressed="true"] {
+  border-color: #4b897b;
+  background: #24413c;
+  color: #c5f4e6;
+}
+.lab-selected[aria-pressed="false"] .live-dot { opacity: .5; }
+.sidebar-group-title { margin: 20px 0 7px !important; }
+.utility-link {
+  background: transparent;
+  border: 0;
+  border-left: 2px solid transparent;
+  color: #a5b6c3;
+  padding: 8px 10px;
+  text-align: left;
+  font-size: 11px;
+}
+.utility-link:hover,.utility-link:focus-visible { border-left-color: #79d9c1; color: #d8f0eb; }
 .lab-selected > .live-dot {
   margin-left: auto;
 }
@@ -824,6 +845,7 @@ h1 {
   color: #a4e2d3;
   border-bottom-color: #8ad9c4;
 }
+.workspace-modes button:disabled { color: #566574; cursor: not-allowed; }
 .hamiltonian-card {
   display: flex;
   align-items: center;

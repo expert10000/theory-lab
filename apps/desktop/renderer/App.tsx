@@ -34,6 +34,7 @@ import { TOPOLOGY_DEFAULTS } from "../../../packages/models/topology";
 import { OrbitalLab } from "./OrbitalLab";
 import { PostRoadmapPanel } from "./PostRoadmapPanel";
 import { DELIVERED_QVIS } from "../../../packages/models/roadmap";
+import {modeForTab,modelForSnapshot,modelLabel,tabForMode,WORKSPACE_MODES,type WorkspaceMode,type WorkspaceModel} from "./workspace-navigation";
 import { ORBITAL_DEFAULTS } from "../../../packages/models/orbital";
 import { ATLAS_ENTRIES, ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../../../packages/atlas";
 import { atlasBinding } from "../../../packages/atlas/bindings";
@@ -101,6 +102,13 @@ export function App() {
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<WorkspaceTab>("spectrum");
+  const [activeModel,setActiveModel]=useState<WorkspaceModel>("two_level");
+  const primaryMode=modeForTab(tab);
+  function selectMode(mode:WorkspaceMode){
+    const destination=tabForMode(activeModel,mode);
+    if(destination==="dynamics")setEvolutionModel(activeModel as EvolutionModelId);
+    if(destination)setTab(destination);
+  }
   const initialRun = useRef(false);
   const valid = parametersFor("two_level", parameters) !== null;
   const ready =
@@ -187,11 +195,14 @@ export function App() {
       setRestarting(false);
     }
   }
+  function selectModel(model:WorkspaceModel,destination:WorkspaceTab){
+    setSelectedPreset(null);setActiveModel(model);setTab(destination);
+  }
   function openPreset(preset: LaboratoryPreset) {
     setSelectedPreset(preset);
-    if (preset.kind === "evolution") { setEvolutionModel(preset.modelId); setTab("dynamics"); }
-    else if (preset.kind === "cavity") { setCavityModel(preset.modelId); setTab("cavity"); }
-    else setTab("open");
+    if (preset.kind === "evolution") { setEvolutionModel(preset.modelId);setActiveModel(preset.modelId); setTab("dynamics"); }
+    else if (preset.kind === "cavity") { setCavityModel(preset.modelId);setActiveModel(preset.modelId); setTab("cavity"); }
+    else {setActiveModel("lindblad");setTab("open");}
   }
   function openAtlasBinding(id: string) {
     const binding = atlasBinding(id);
@@ -201,6 +212,7 @@ export function App() {
       sourceModule: `data/hamiltonian_atlas/${entry.sourceFile}`, volume: "VIII", exampleId: `Atlas ${id}` };
     if (binding.kind === "spectrum") {
       setSelectedPreset(null);
+      setActiveModel("two_level");
       setParameters(Object.fromEntries(Object.entries(binding.parameters).map(([key, value]) => [key, String(value)])));
       setTab("spectrum");
     } else if (binding.kind === "dynamics") {
@@ -214,20 +226,24 @@ export function App() {
         modelId: binding.modelId, parameters: binding.parameters, initialState: { qubit: "excited", photons: 0 },
         solver: { tStart: 0, tStop: 25, samples: 401 } });
     } else if (binding.kind === "oscillator_drive") {
+      setActiveModel("oscillator");
       setAtlasDriven(current=>({epoch:(current?.epoch??0)+1,draft:{...DRIVEN_OSCILLATOR_DEFAULTS,
         ...Object.fromEntries(Object.entries(binding.parameters).map(([key,value])=>[key,String(value)]))}}));
       setTab("oscillator");
     } else if (binding.kind === "oscillator") {
+      setActiveModel("oscillator");
       setAtlasOscillator(current=>({epoch:(current?.epoch??0)+1,draft:{...OSCILLATOR_DEFAULTS,
         ...Object.fromEntries(Object.entries(binding.parameters).map(([key,value])=>[key,String(value)]))}}));
       setTab("oscillator");
     } else if (binding.kind === "many_body") {
+      setActiveModel("ising_chain");
       const p = binding.parameters;
       setAtlasManyBody(current => ({ epoch: (current?.epoch ?? 0) + 1,
         draft: { sites: String(p.sites), interaction: String(p.interaction), transverse: String(p.transverse),
           longitudinal: String(p.longitudinal), boundary: p.boundary, engine: "native" } }));
       setTab("many_body");
     } else {
+      setActiveModel("topology");
       const draft = binding.modelId === "ssh"
         ? { ...TOPOLOGY_DEFAULTS, modelId: "ssh" as const, t1: String(binding.parameters.t1),
             t2: String(binding.parameters.t2), cells: String(binding.parameters.cells), kPoints: String(binding.parameters.kPoints) }
@@ -262,7 +278,7 @@ export function App() {
       setParameters(snapshot.spectrum.parameters); setEngineMode(snapshot.spectrum.engine);
       setEvolutionModel(snapshot.dynamics.modelId); setCavityModel(snapshot.cavity.modelId);
       setSelectedPreset(PRESETS.find(item => item.id === snapshot.selectedPresetId) ?? null);
-      setTab(snapshot.tab); setRestored(current => ({ epoch: (current?.epoch ?? 0) + 1, snapshot }));
+      setActiveModel(modelForSnapshot(snapshot));setTab(snapshot.tab); setRestored(current => ({ epoch: (current?.epoch ?? 0) + 1, snapshot }));
       setWorkspaceMessage(`Workspace restored · ${new Date(snapshot.savedAt).toLocaleString()}`);
     } catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
   }
@@ -300,7 +316,7 @@ export function App() {
       <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
           <p className="eyebrow">
-            LABORATORIES <span>14 / 14</span>
+            MODELS <span>{modelLabel(activeModel)}</span>
           </p>
           {(
             [
@@ -314,28 +330,29 @@ export function App() {
             <button
               key={id}
               className="lab-selected"
+              aria-pressed={activeModel===id}
               onClick={() => {
-                setSelectedPreset(null);
                 if (id !== "two_level") setEvolutionModel(id);
-                setTab(id === "two_level" ? "spectrum" : "dynamics");
+                selectModel(id,id === "two_level" ? "spectrum" : "dynamics");
               }}
             >
               <span>{id === "two_level" ? "◈" : "∿"}</span>{" "}
               {MODEL_REGISTRY[id].label} <span className="live-dot" />
             </button>
           ))}
-          {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" onClick={() => { setSelectedPreset(null); setCavityModel(id); setTab("cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
-          <button className="lab-selected" onClick={() => { setSelectedPreset(null); setTab("open"); }}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
-          <button className="lab-selected" onClick={() => setTab("sweep")}><span>▦</span> Parameter sweeps <span className="live-dot" /></button>
-          <button className="lab-selected" onClick={() => setTab("many_body")}><span>⋈</span> Ising chain <span className="live-dot" /></button>
-          <button className="lab-selected" onClick={() => setTab("topology")}><span>◇</span> Topological bands <span className="live-dot" /></button>
-          <button className="lab-selected" data-testid="open-orbitals" onClick={() => setTab("orbital")}><span>◌</span> Atomic orbitals <span className="live-dot" /></button>
-          <button className="lab-selected" data-testid="open-oscillator" onClick={() => setTab("oscillator")}><span>∿</span> Harmonic oscillator <span className="live-dot" /></button>
-          <button className="lab-selected" onClick={() => setTab("circuit")}><span>◈</span> Transmon circuit <span className="live-dot" /></button>
-          <button className="lab-selected" onClick={() => setTab("presets")}><span>▣</span> Volume VIII presets <span className="live-dot" /></button>
-          <button className="lab-selected" onClick={() => setTab("runs")}><span>◷</span> Saved runs <span className="live-dot" /></button>
-          <button className="lab-selected" data-testid="open-scenes" onClick={() => setTab("scenes")}><span>◈</span> Portable scenes <span className="live-dot" /></button>
-          <button className="lab-selected" data-testid="open-atlas" onClick={() => setTab("atlas")}><span>◇</span> Hamiltonian Atlas <span className="live-dot" /></button>
+          {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" aria-pressed={activeModel===id} onClick={() => { setCavityModel(id);selectModel(id,"cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
+          <button className="lab-selected" aria-pressed={activeModel==="lindblad"} onClick={() => selectModel("lindblad","open")}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
+          <button className="lab-selected" aria-pressed={activeModel==="ising_chain"} onClick={() => selectModel("ising_chain","many_body")}><span>⋈</span> Ising chain <span className="live-dot" /></button>
+          <button className="lab-selected" aria-pressed={activeModel==="topology"} onClick={() => selectModel("topology","topology")}><span>◇</span> Topological bands <span className="live-dot" /></button>
+          <button className="lab-selected" aria-pressed={activeModel==="hydrogenic"} data-testid="open-orbitals" onClick={() => selectModel("hydrogenic","orbital")}><span>◌</span> Atomic orbitals <span className="live-dot" /></button>
+          <button className="lab-selected" aria-pressed={activeModel==="oscillator"} data-testid="open-oscillator" onClick={() => selectModel("oscillator","oscillator")}><span>∿</span> Harmonic oscillator <span className="live-dot" /></button>
+          <button className="lab-selected" aria-pressed={activeModel==="transmon"} onClick={() => selectModel("transmon","circuit")}><span>◈</span> Transmon circuit <span className="live-dot" /></button>
+          <p className="eyebrow sidebar-group-title">LIBRARY</p>
+          <button className="utility-link" onClick={() => setTab("presets")}>Volume VIII presets</button>
+          <button className="utility-link" data-testid="open-atlas" onClick={() => setTab("atlas")}>Hamiltonian Atlas</button>
+          <p className="eyebrow sidebar-group-title">SYSTEM</p>
+          <button className="utility-link" onClick={() => setTab("roadmap")}>Roadmap</button>
+          <button className="utility-link" onClick={() => setTab("backend")}>Backend</button>
           <p className="sidebar-note">
             From two levels to finite chains.
             <br />
@@ -352,9 +369,6 @@ export function App() {
               React → contract → Python
               <br />→ QuTiP / Native → result
             </p>
-            <button className="text-button" onClick={() => setTab("roadmap")}>
-              View desktop roadmap ↗
-            </button>
           </div>
         </aside>
         <main className="workspace">
@@ -456,54 +470,14 @@ export function App() {
             </div>
             <span className="pill">{tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
           </div>
-          <div className="tabs" role="tablist" aria-label="Workspace">
-            <button
-              role="tab"
-              aria-selected={tab === "spectrum"}
-              onClick={() => setTab("spectrum")}
-            >
-              Spectrum
-            </button>
-            <button
-              role="tab"
-              aria-selected={tab === "hamiltonian"}
-              onClick={() => setTab("hamiltonian")}
-            >
-              Hamiltonian
-            </button>
-            <button
-              role="tab"
-              aria-selected={tab === "dynamics"}
-              onClick={() => setTab("dynamics")}
-            >
-              Dynamics
-            </button>
-            <button role="tab" aria-selected={tab === "cavity"} onClick={() => setTab("cavity")}>Cavity QED</button>
-            <button role="tab" aria-selected={tab === "open"} onClick={() => setTab("open")}>Open system</button>
-            <button role="tab" aria-selected={tab === "sweep"} onClick={() => setTab("sweep")}>Sweeps</button>
-            <button role="tab" aria-selected={tab === "many_body"} onClick={() => setTab("many_body")}>Many-body</button>
-            <button role="tab" aria-selected={tab === "topology"} onClick={() => setTab("topology")}>Topology</button>
-            <button role="tab" aria-selected={tab === "orbital"} onClick={() => setTab("orbital")}>Orbitals</button>
-            <button role="tab" aria-selected={tab === "oscillator"} onClick={() => setTab("oscillator")}>Oscillator</button>
-            <button role="tab" aria-selected={tab === "circuit"} onClick={() => setTab("circuit")}>Circuit</button>
-            <button role="tab" aria-selected={tab === "presets"} onClick={() => setTab("presets")}>Presets</button>
-            <button role="tab" aria-selected={tab === "runs"} onClick={() => setTab("runs")}>Runs</button>
-            <button role="tab" aria-selected={tab === "scenes"} onClick={() => setTab("scenes")}>Scenes</button>
-            <button role="tab" aria-selected={tab === "atlas"} onClick={() => setTab("atlas")}>Atlas</button>
-            <button
-              role="tab"
-              aria-selected={tab === "roadmap"}
-              onClick={() => setTab("roadmap")}
-            >
-              Roadmap
-            </button>
-            <button
-              role="tab"
-              aria-selected={tab === "backend"}
-              onClick={() => setTab("backend")}
-            >
-              Backend
-            </button>
+          <div className="tabs workspace-modes" role="tablist" aria-label={`Workspace modes for ${modelLabel(activeModel)}`}>
+            {WORKSPACE_MODES.map(({id,label})=>{
+              const destination=tabForMode(activeModel,id);
+              return <button key={id} role="tab" data-testid={id==="scenes"?"open-scenes":undefined}
+                aria-selected={primaryMode===id} disabled={!destination}
+                title={destination?`${label} · ${modelLabel(activeModel)}`:`${label} is not available for ${modelLabel(activeModel)} in this Lab release`}
+                onClick={()=>selectMode(id)}>{label}</button>;
+            })}
           </div>
           <div hidden={tab !== "dynamics"}>
             <DynamicsLab
@@ -518,7 +492,9 @@ export function App() {
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} /></div>
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} /></div>
-          <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
+          <div hidden={tab !== "sweep"}><SweepLab bridge={window.quantum} status={status}
+            selectedModel={tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
+            onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} /></div>
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
