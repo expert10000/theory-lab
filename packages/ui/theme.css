@@ -886,6 +886,10 @@ h1 {
   gap: 10px;
   letter-spacing: 1px;
 }
+.formula-target { font: inherit; letter-spacing: inherit; color: inherit; background: transparent; border: 1px solid transparent; border-radius: 4px; padding: 0 3px; cursor: pointer; }
+.formula-target:hover,.formula-target[aria-pressed="true"] { color: #8dd7c5; background: #24413c; border-color: #4b897b; }
+.formula-target:focus-visible,.spectrum-level:focus-visible { outline: 2px solid #8dd7c5; outline-offset: 3px; }
+.formula .formula-target sub { margin-left: 0; }
 .formula sub {
   margin-left: -10px;
   font-size: 15px;
@@ -964,6 +968,8 @@ h1 {
   font-family: Consolas, monospace;
   font-size: 15px;
 }
+.spectrum-level { cursor: pointer; }
+.spectrum-level[aria-pressed="true"] { filter: drop-shadow(0 0 5px rgba(141,215,197,.65)); }
 .axis-label {
   fill: #8193a5;
   font-size: 10px;
@@ -998,6 +1004,7 @@ h1 {
   background: #151e28;
   padding: 17px 15px;
 }
+.metrics section.selected-energy { border-color: #79d9c1; box-shadow: 0 0 0 1px rgba(121,217,193,.25); }
 .metrics .eyebrow {
   font-size: 8px;
   letter-spacing: 1px;
@@ -1224,6 +1231,14 @@ h1 {
     18px Consolas,
     monospace;
 }
+.matrix-selected { color: #8dd7c5; background: rgba(121,217,193,.13); border-radius: 3px; }
+.scientific-selection { padding: 14px 20px; margin: 0 0 19px; border-color: #3d6b60; }
+.scientific-selection .eyebrow { margin: 0 0 8px; color: #8dd7c5; overflow-wrap: anywhere; }
+.scientific-selection h2 { margin: 0 0 8px; font-size: 16px; }
+.scientific-selection p:not(.eyebrow) { margin: 0; color: #a9bac4; font-size: 11px; line-height: 1.6; }
+.scientific-selection code { color: #c8ebdf; }
+.operator-matrix { display: grid; grid-template-columns: repeat(2,32px); gap: 6px 15px; width: max-content; padding: 6px 13px; border-left: 2px solid #79d9c1; border-right: 2px solid #79d9c1; margin: 8px 0; text-align: center; color: #d4e7e0; font: 16px Consolas,monospace; }
+.inspector input.selected-parameter { border-color: #79d9c1; box-shadow: 0 0 0 1px rgba(121,217,193,.35); }
 .analytic {
   font:
     24px Cambria,

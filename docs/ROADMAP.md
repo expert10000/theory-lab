@@ -13,8 +13,8 @@ bundle import and QVIS-007 is orbital convergence; they must not be confused
 with the newly supplied plan's broader reciprocal-space/band milestones.
 Historical IDs are retained; no new QLAB numbers are planned.
 The `QLAB-UI-1–8` labels are a separate interaction track, not renumbered
-QLAB delivery commits. UI-1 has a partial navigation implementation; UI-2–8
-remain planned. See the
+QLAB delivery commits. UI-1 navigation and UI-2 two-level linked selection
+are partial; UI-3–8 remain planned. See the
 [linked workspace roadmap](QLAB_LINKED_WORKSPACE_ROADMAP.md) for navigation,
 shared selection, observable inspection, energy sweeps, state views, run
 comparison, provenance and the conditional scene bridge.

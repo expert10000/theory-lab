@@ -4,7 +4,7 @@ export const format = (value: number) =>
   Math.abs(value) < 1e-5 && value !== 0
     ? value.toExponential(6)
     : value.toFixed(6);
-export function Spectrum({ result }: { result: SpectrumResult }) {
+export function Spectrum({ result,selectedLevel,onSelectLevel }: { result: SpectrumResult;selectedLevel?:0|1|null;onSelectLevel?:(level:0|1)=>void }) {
   const [low, high] = result.spectrum.eigenvalues;
   const bound = Math.max(Math.abs(low), Math.abs(high), 0.1) * 1.55;
   const y = (energy: number) => 150 - (energy / bound) * 112;
@@ -41,44 +41,24 @@ export function Spectrum({ result }: { result: SpectrumResult }) {
       <text x="50" y="155" className="axis-label">
         0
       </text>
-      <line
-        x1="175"
-        y1={y(high)}
-        x2="455"
-        y2={y(high)}
-        stroke="#f2b36f"
-        strokeWidth="3"
-      />
-      <circle cx="175" cy={y(high)} r="4" fill="#f2b36f" />
-      <text x="478" y={y(high) - (high === low ? 16 : 9)} fill="#f2b36f">
-        E₊
-      </text>
-      <text
-        x="478"
-        y={y(high) + (high === low ? -1 : 28)}
-        className="energy-label"
-      >
-        {format(high)}
-      </text>
-      <line
-        x1="175"
-        y1={y(low)}
-        x2="455"
-        y2={y(low)}
-        stroke="#79d9c1"
-        strokeWidth="3"
-      />
-      <circle cx="175" cy={y(low)} r="4" fill="#79d9c1" />
-      <text x="478" y={y(low) + (high === low ? 25 : 9)} fill="#79d9c1">
-        E₋
-      </text>
-      <text
-        x="478"
-        y={y(low) + (high === low ? 44 : 28)}
-        className="energy-label"
-      >
-        {format(low)}
-      </text>
+      <g className="spectrum-level" role="button" tabIndex={0} aria-label="Select upper energy E plus"
+        aria-pressed={selectedLevel===1} onClick={()=>onSelectLevel?.(1)}
+        onKeyDown={event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();onSelectLevel?.(1);}}}>
+        <line x1="175" y1={y(high)} x2="455" y2={y(high)} stroke="transparent" strokeWidth="18" />
+        <line x1="175" y1={y(high)} x2="455" y2={y(high)} stroke="#f2b36f" strokeWidth={selectedLevel===1?"5":"3"}/>
+        <circle cx="175" cy={y(high)} r="4" fill="#f2b36f" />
+        <text x="478" y={y(high) - (high === low ? 16 : 9)} fill="#f2b36f">E₊</text>
+        <text x="478" y={y(high) + (high === low ? -1 : 28)} className="energy-label">{format(high)}</text>
+      </g>
+      <g className="spectrum-level" role="button" tabIndex={0} aria-label="Select lower energy E minus"
+        aria-pressed={selectedLevel===0} onClick={()=>onSelectLevel?.(0)}
+        onKeyDown={event=>{if(event.key==="Enter"||event.key===" "){event.preventDefault();onSelectLevel?.(0);}}}>
+        <line x1="175" y1={y(low)} x2="455" y2={y(low)} stroke="transparent" strokeWidth="18" />
+        <line x1="175" y1={y(low)} x2="455" y2={y(low)} stroke="#79d9c1" strokeWidth={selectedLevel===0?"5":"3"}/>
+        <circle cx="175" cy={y(low)} r="4" fill="#79d9c1" />
+        <text x="478" y={y(low) + (high === low ? 25 : 9)} fill="#79d9c1">E₋</text>
+        <text x="478" y={y(low) + (high === low ? 44 : 28)} className="energy-label">{format(low)}</text>
+      </g>
       {high !== low && (
         <>
           <line

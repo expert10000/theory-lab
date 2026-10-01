@@ -1,6 +1,6 @@
 # Quantum Lab linked workspace roadmap
 
-Status: QLAB-UI-1 navigation implemented for existing labs; cross-lab run context remains. Updated 2026-10-01. This roadmap translates
+Status: QLAB-UI-1 and UI-2 partially implemented; remaining gates planned. Updated 2026-10-01. This roadmap translates
 the supplied UI critique into an additive desktop plan after D1-020–022. It
 changes how existing physics is explored, not the worker architecture or the
 meaning of historical QLAB, QVIS and D1 milestones.
@@ -97,7 +97,12 @@ QLAB-UI-1 is **Partial**: six-mode navigation, grouped native-keyboard model
 disclosures, separate Library/System links, safe fragment routes, back/forward,
 legacy snapshot mapping and the two-level persisted-run breadcrumb are tested.
 Other labs still need run-context breadcrumb adapters; no result is inferred from
-their inputs. UI-2–8 are **Planned**. Their numbers are UI-specific and
+their inputs. QLAB-UI-2 is **Partial**: the two-level pilot now has typed
+run-scoped energy references, draft parameter/operator references, keyboard
+selection, linked highlights and invalidation on a new run or model. The
+`quantum-result/v1` spectrum has energies but no eigenvectors, so the UI
+explicitly declines to display an eigenstate. Saved-run reopening and broader
+model adapters remain future gates. UI-3–8 are **Planned**. Their numbers are UI-specific and
 do not relabel existing QLAB or QVIS commits. Implement them in order unless
 an explicit dependency is split out and tested independently.
 

@@ -130,6 +130,38 @@ try {
   await page.evaluate(()=>window.history.back());
   await page.waitForFunction(()=>window.location.hash==="#lab/two_level/spectrum"&&
     document.querySelector('button[aria-pressed="true"]')?.textContent?.includes("Two-level system"));
+  await mkdir("artifacts",{recursive:true});
+  await page.getByRole("button",{name:"Select upper energy E plus"}).click();
+  assert.equal(await page.getByRole("button",{name:"Select upper energy E plus"}).getAttribute("aria-pressed"),"true");
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/not eigenvectors/);
+  await page.screenshot({path:"artifacts/desktop-linked-energy.png",fullPage:true});
+  await page.getByRole("tab",{name:"Analysis",exact:true}).click();
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
+  await page.getByRole("button",{name:"Select sigma x operator"}).click();
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/σx · Pauli matrix/);
+  assert.equal(await page.getByLabel("Sigma x matrix").locator("span").count(),4);
+  assert.equal(await page.locator(".matrix-selected").count(),2);
+  await page.screenshot({path:"artifacts/desktop-linked-operator.png",fullPage:true});
+  await page.getByRole("button",{name:"Select transverse coupling Omega"}).click();
+  assert.equal(await page.locator("#omega").evaluate(element=>document.activeElement===element),true);
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/Draft value:/);
+  await page.getByRole("tab",{name:"Explore",exact:true}).click();
+  await page.getByRole("button",{name:"Select lower energy E minus"}).focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await page.getByRole("button",{name:"Select lower energy E minus"}).getAttribute("aria-pressed"),"true");
+  const selectedRunId=await page.getByTestId("workspace-run-id").innerText();
+  await page.locator("#omega").fill("0.9");
+  await page.getByTestId("result-state").filter({hasText:"OUT OF DATE"}).waitFor();
+  assert.match(await page.getByTestId("scientific-selection").innerText(),/E₋ = -0\.640312/);
+  await page.getByRole("button",{name:"Restore smoke values"}).click();
+  await page.getByRole("button",{name:/Run spectrum/}).click();
+  await page.waitForFunction(oldRunId=>document.querySelector('[data-testid="workspace-run-id"]')?.textContent!==oldRunId,selectedRunId);
+  assert.equal(await page.getByTestId("scientific-selection").count(),0,"new verified run clears old run-scoped selection");
+  await page.getByRole("button",{name:"Select upper energy E plus"}).click();
+  await page.getByRole("button",{name:/Rabi dynamics/}).click();
+  await page.getByRole("button",{name:/Two-level system/}).click();
+  assert.equal(await page.getByTestId("scientific-selection").count(),0,"model change invalidates selection");
   const circuit = await page.evaluate(() => window.quantum.circuit({
     schema: "quantum-job/v1", jobId: `circuit-${crypto.randomUUID()}`, operation: "circuit", engine: "native",
     model: { type: "transmon", parameters: { EJ: 20, EC: 0.25, ng: 0.2, ncut: 12, levels: 5 } },
@@ -145,7 +177,6 @@ try {
     }
   });
   assert.ok(rejected, "IPC must validate renderer input");
-  await mkdir("artifacts", { recursive: true });
   await expandGroup(page,"atomic-continuous");
   await page.getByTestId("open-oscillator").click();
   await page.getByTestId("open-atlas").click();
@@ -431,7 +462,7 @@ try {
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
   assert.match(await page.getByTestId("linked-workspace-status").innerText(),/navigation slice implemented/);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-1"?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-1"||id==="QLAB-UI-2"?/Partial/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);

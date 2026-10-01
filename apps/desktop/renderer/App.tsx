@@ -8,6 +8,8 @@ import type {
   WorkspaceTab,
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
+import {ScientificSelectionPanel} from "./ScientificSelectionPanel";
+import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
 import { CavityLab } from "./CavityLab";
 import { OpenSystemLab } from "./OpenSystemLab";
@@ -103,6 +105,7 @@ export function App() {
   const collectOscillatorAnharmonic = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorAnharmonic"]>) => { workspaceParts.current.oscillatorAnharmonic = value; }, []);
   function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody && workspaceParts.current.circuit) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
+  const [selection,setSelection]=useState<ScientificSelection|null>(null);
   const [engineMode, setEngineMode] = useState<EngineMode>("qutip");
   const [resultMode, setResultMode] = useState<EngineMode | null>(null);
   const [comparison, setComparison] = useState<SpectrumComparison | null>(null);
@@ -156,6 +159,10 @@ export function App() {
       Number(omega) !== result.model.parameters.omega ||
       !valid ||
       engineMode !== resultMode);
+  const currentSelection=validatedSelection(selection,activeModel,result);
+  useEffect(()=>{
+    if(selection&&!validatedSelection(selection,activeModel,result))setSelection(null);
+  },[selection,activeModel,result]);
   const analytic = result
     ? Math.hypot(result.model.parameters.delta, result.model.parameters.omega) /
       2
@@ -203,6 +210,7 @@ export function App() {
         setComparison(compareSpectrum(first, native));
       } else setComparison(null);
       setResult(first);
+      setSelection(null);
       setResultMode(engineMode);
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
@@ -228,7 +236,7 @@ export function App() {
     }
   }
   function selectModel(model:WorkspaceModel,destination:WorkspaceTab){
-    setSelectedPreset(null);setActiveModel(model);setTab(destination);
+    setSelectedPreset(null);setSelection(null);setActiveModel(model);setTab(destination);
   }
   function openPreset(preset: LaboratoryPreset) {
     setSelectedPreset(preset);
@@ -584,16 +592,24 @@ export function App() {
                   </p>
                   <div className="formula">
                     H ={" "}
-                    <span className="fraction">
+                    <button type="button" className="formula-target fraction" aria-label="Select detuning Delta"
+                      aria-pressed={currentSelection?.kind==="parameter"&&currentSelection.key==="delta"}
+                      onClick={()=>{setSelection({kind:"parameter",model:"two_level",key:"delta"});document.getElementById("delta")?.focus();}}>
                       <span>Δ</span>
                       <span>2</span>
-                    </span>{" "}
-                    σ<sub>z</sub> +{" "}
-                    <span className="fraction">
+                    </button>{" "}
+                    <button type="button" className="formula-target" aria-label="Select sigma z operator"
+                      aria-pressed={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_z"}
+                      onClick={()=>setSelection({kind:"operator",model:"two_level",key:"sigma_z"})}>σ<sub>z</sub></button> +{" "}
+                    <button type="button" className="formula-target fraction" aria-label="Select transverse coupling Omega"
+                      aria-pressed={currentSelection?.kind==="parameter"&&currentSelection.key==="omega"}
+                      onClick={()=>{setSelection({kind:"parameter",model:"two_level",key:"omega"});document.getElementById("omega")?.focus();}}>
                       <span>Ω</span>
                       <span>2</span>
-                    </span>{" "}
-                    σ<sub>x</sub>
+                    </button>{" "}
+                    <button type="button" className="formula-target" aria-label="Select sigma x operator"
+                      aria-pressed={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_x"}
+                      onClick={()=>setSelection({kind:"operator",model:"two_level",key:"sigma_x"})}>σ<sub>x</sub></button>
                   </div>
                 </div>
                 <div className="model-convention">
@@ -602,6 +618,7 @@ export function App() {
                   <small>Ω is a static transverse coupling</small>
                 </div>
               </section>
+              {currentSelection&&<ScientificSelectionPanel selection={currentSelection} result={result} draft={parameters}/>}
               {tab === "hamiltonian" ? (
                 <section className="panel matrix-panel">
                   <p className="eyebrow">
@@ -609,10 +626,10 @@ export function App() {
                   </p>
                   <h2>Every term, explicit.</h2>
                   <div className="matrix">
-                    <span>{valid ? format(Number(delta) / 2) : "—"}</span>
-                    <span>{valid ? format(Number(omega) / 2) : "—"}</span>
-                    <span>{valid ? format(Number(omega) / 2) : "—"}</span>
-                    <span>{valid ? format(-Number(delta) / 2) : "—"}</span>
+                    <span className={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_z"?"matrix-selected":""}>{valid ? format(Number(delta) / 2) : "—"}</span>
+                    <span className={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_x"?"matrix-selected":""}>{valid ? format(Number(omega) / 2) : "—"}</span>
+                    <span className={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_x"?"matrix-selected":""}>{valid ? format(Number(omega) / 2) : "—"}</span>
+                    <span className={currentSelection?.kind==="operator"&&currentSelection.key==="sigma_z"?"matrix-selected":""}>{valid ? format(-Number(delta) / 2) : "—"}</span>
                   </div>
                   <p>
                     Diagonal terms set the detuning. Off-diagonal terms couple
@@ -646,7 +663,9 @@ export function App() {
                       </span>
                     </div>
                     {result ? (
-                      <Spectrum result={result} />
+                      <Spectrum result={result}
+                        selectedLevel={currentSelection?.kind==="energy"?currentSelection.level:null}
+                        onSelectLevel={level=>setSelection({kind:"energy",model:"two_level",runId:result.runId,level})}/>
                     ) : (
                       <div className="empty-spectrum">
                         <span>±</span>
@@ -667,14 +686,14 @@ export function App() {
                     </div>
                   </section>
                   <div className="metrics">
-                    <section>
+                    <section className={currentSelection?.kind==="energy"&&currentSelection.level===0?"selected-energy":""}>
                       <p className="eyebrow">LOWER ENERGY / E₋</p>
                       <strong className="mint" data-testid="energy-low">
                         {result ? format(result.spectrum.eigenvalues[0]) : "—"}
                       </strong>
                       <small>normalized energy</small>
                     </section>
-                    <section>
+                    <section className={currentSelection?.kind==="energy"&&currentSelection.level===1?"selected-energy":""}>
                       <p className="eyebrow">UPPER ENERGY / E₊</p>
                       <strong className="peach" data-testid="energy-high">
                         {result ? format(result.spectrum.eigenvalues[1]) : "—"}
@@ -781,6 +800,7 @@ export function App() {
               </label>
               <input
                 id={definition.key}
+                className={currentSelection?.kind==="parameter"&&currentSelection.key===definition.key?"selected-parameter":""}
                 type="number"
                 step={definition.step}
                 min={definition.minimum}
