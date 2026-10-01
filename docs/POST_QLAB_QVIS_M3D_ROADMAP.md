@@ -83,6 +83,15 @@ eleven Atlas load presets, web compute permissions, QVIS schema and Math3D
 remain unchanged. See
 [D1_ANHARMONIC_OSCILLATOR.md](D1_ANHARMONIC_OSCILLATOR.md).
 
+QLAB-UI-1–8 are now proposed as a separate, unimplemented Lab interaction
+track. They reorganize model/experiment navigation and then link verified
+selection, observables, a distinct energy sweep, state views, immutable-run
+comparison, provenance and compatible scene handoff. This is additive to
+the delivered physics and QVIS system, not a new worker or scene schema.
+Math3D import/handoff remains separately gated. See
+[QLAB_LINKED_WORKSPACE_ROADMAP.md](QLAB_LINKED_WORKSPACE_ROADMAP.md) for
+milestones and acceptance; the supplied plan below is preserved.
+
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |
 | QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |

@@ -392,6 +392,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/proposals, not shipped UI/);
+  for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);

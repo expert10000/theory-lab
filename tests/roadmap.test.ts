@@ -7,6 +7,7 @@ import {
   SOURCE_PLAN_COVERAGE,
   ATLAS_RECONCILIATION_STEPS,
   D1_OSCILLATOR_STEPS,
+  QLAB_UI_STEPS,
 } from "../packages/models/roadmap";
 
 test("roadmap preserves delivered IDs and labels future work as planned", () => {
@@ -19,6 +20,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
   );
   assert.ok(DELIVERED_QVIS.every((r) => r.state === "Implemented"));
   assert.deepEqual(D1_OSCILLATOR_STEPS.map(r=>[r.id,r.state]),Array.from({length:22},(_,i)=>[`D1-${String(i+1).padStart(3,"0")}`,"Implemented"]));
+  assert.deepEqual(QLAB_UI_STEPS.map(r=>[r.id,r.state]),Array.from({length:8},(_,i)=>[`QLAB-UI-${i+1}`,"Planned"]));
   assert.match(DELIVERED_QVIS[5].title, /bundle import/);
   assert.match(DELIVERED_QVIS[6].title, /convergence/);
   assert.deepEqual(
