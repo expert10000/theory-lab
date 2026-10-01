@@ -62,6 +62,7 @@ try {
       "openAtlasSource",
       "orbital",
       "oscillator",
+      "oscillatorDamped",
       "oscillatorDrive",
       "oscillatorEvolve",
       "oscillatorPulse",
@@ -277,6 +278,28 @@ try {
   assert.equal(await page.getByLabel("Pulse maxStep",{exact:true}).inputValue(),".01");
   assert.equal(await page.getByTestId("oscillator-pulse-result").count(),0,"pulse restore does not fabricate a plot or convergence study");
   assert.equal(await page.getByTestId("pulse-convergence").count(),0);
+  await page.getByRole("tab",{name:"Damped / thermal",exact:true}).click();
+  const initialDampedRuns=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_damped").length));
+  await page.getByTestId("run-damped").click();
+  await page.getByTestId("damped-result").waitFor();
+  assert.ok(await page.getByRole("img",{name:"Damped oscillator number and purity curves",exact:true}).isVisible());
+  await page.getByTestId("damped-cutoff").click();
+  await page.getByTestId("damped-comparison").waitFor();
+  assert.match(await page.getByTestId("damped-comparison").innerText(),/N 8 → 12/);
+  await page.getByLabel("Damped initial state",{exact:true}).selectOption("coherent");
+  await page.getByLabel("Damped alphaRe",{exact:true}).fill(".7");
+  await page.getByLabel("Damped engine",{exact:true}).selectOption("compare");
+  await page.getByTestId("run-damped").click();
+  await page.getByTestId("damped-comparison").filter({hasText:"QuTiP ↔ native"}).waitFor();
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_damped").length)),initialDampedRuns+5);
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
+  await page.getByLabel("Damped loss",{exact:true}).fill(".5");
+  await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Damped loss"]')?.value==="0.25");
+  assert.equal(await page.getByRole("tab",{name:"Damped / thermal",exact:true}).getAttribute("aria-selected"),"true");
+  assert.equal(await page.getByTestId("damped-result").count(),0,"restore must not fabricate computed density matrices");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({

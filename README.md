@@ -66,6 +66,12 @@ The Roadmap tab marks QVIS-001–013 implemented; no Math3D files are changed.
 
 ## First experiment
 
+The desktop Oscillator lab also includes **Damped / thermal** (D1-014–016):
+a bounded finite-Fock Lindblad model with independent QuTiP/native evolution,
+density-matrix diagnostics, cutoff inspection and verified saved runs. See
+[the delivered scope](docs/D1_DAMPED_OSCILLATOR.md). It does not add web
+oscillator computation, an Atlas preset or a Math3D connection.
+
 The startup example automatically computes the static Hamiltonian **H = (Δ σz + Ω σx)/2**, in normalized energy units with **ħ = 1**. Δ = 1 and Ω = 0.8 give **E± = ±0.640312423743…**. QuTiP builds the operator and computes its eigenenergies. The renderer compares them with the exact formula ±√(Δ² + Ω²)/2.
 
 Edit Δ or Ω, then select **Run spectrum**. Existing results are marked **OUT OF DATE** until recalculated. Select QuTiP, Native, or Compare in the inspector; Compare runs both engines for the same Hamiltonian and reports the maximum eigenvalue difference and each runtime. The Hamiltonian tab shows the draft matrix; the spectrum always identifies the parameters actually used. Roadmap shows milestones, while Backend explains the methods and formats. **Restart worker** recovers a failed Python process.

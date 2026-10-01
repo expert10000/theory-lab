@@ -59,6 +59,13 @@ choice. Delivery commits: `cae4615` (D1-011), `90d17bc` (D1-012), `e9bdede`
 and Electron/web/scene regression gates. See
 [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md).
 
+D1-014–016 add a separate bounded thermal Lindblad oscillator in the existing
+Electron lab, with independent QuTiP/native density-matrix evolution, host
+propagation and positivity checks, controls/comparisons, verified durability
+and input-only restoration. The eleven Atlas presets, QVIS schema, web compute
+permissions and Math3D remain unchanged. See
+[D1_DAMPED_OSCILLATOR.md](D1_DAMPED_OSCILLATOR.md).
+
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |
 | QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |
@@ -117,7 +124,7 @@ R5 is implemented: strict additive atlas-lab-reconciliation/v1 metadata with
 coverage/digests and compatibility gates. Existing Lab features and scientific
 protocols are retained; no unbound solver is claimed implemented.
 B/C scaffolding is not imported as a parallel architecture;
-D1 physics was not started by reconciliation itself; D1-001–013 were delivered
+D1 physics was not started by reconciliation itself; D1-001–016 were delivered
 subsequently as recorded above. Math3D integration remains a separate track.
 
 ### Gaussian pulse Lab sequence (implemented)
@@ -131,8 +138,20 @@ subsequently as recorded above. Math3D integration remains a separate track.
 See [D1_PULSED_OSCILLATOR_PLAN.md](D1_PULSED_OSCILLATOR_PLAN.md). This delivery
 extends existing architecture and retains all delivered modes and eleven
 bindings. Gaussian pulses do not complete the general Atlas envelope family;
-arbitrary waveforms, damping and the other G02 requirements remain planned.
+arbitrary waveforms and combined driven+dissipative scope remain planned.
 No web compute permission, scene vocabulary or Math3D changes are included.
+
+### Damped thermal oscillator Lab sequence (implemented)
+
+| ID | Delivered scope | Status |
+| --- | --- | --- |
+| D1-014 | Bounded thermal Lindblad oscillator, strict append-only contracts, independent QuTiP/native density-matrix engines | Implemented |
+| D1-015 | Electron controls, trace/purity/positivity/coherence inspection, engine and cutoff comparison | Implemented |
+| D1-016 | Physics-verified durability/exports, input-only workspace restoration and acceptance | Implemented |
+
+See [D1_DAMPED_OSCILLATOR.md](D1_DAMPED_OSCILLATOR.md). This separate
+loss/thermal-bath mode is not an arbitrary open oscillator and does not alter
+any Atlas binding, portable scene or Math3D behavior.
 
 1. **QVIS-008 — generic lattice scenes (implemented, bounded open examples)**
    `feat(qvis): add bounded lattice cells and supercell scene fixtures`

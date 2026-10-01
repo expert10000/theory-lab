@@ -73,6 +73,7 @@ export function PostRoadmapPanel() {
       ))}
       <h3>D1 · standalone harmonic oscillator</h3>
       <p>D1-001–013 deliver static/free 1D motion, bounded monochromatic forcing and Gaussian pulses, verified saved amplitudes, q/p/occupation/energy/power and cutoff/solver-step diagnostics. All eleven Atlas load presets remain unchanged; Gaussian is an explicit additional Lab choice. Dimensionless q, ℏ=1; no arbitrary waveform, damping, parametric/anharmonic/ND, oscillator scene or Math3D connection. See docs/D1_PULSED_OSCILLATOR_PLAN.md for delivery and limits.</p>
+      <p>D1-001–016 deliver static/free motion, bounded monochromatic/Gaussian forcing and a separate bounded damped thermal mode. QuTiP/native density-matrix samples, trace/purity/positivity and finite-cutoff diagnostics are verified and saved. All eleven Atlas load presets remain unchanged. No arbitrary waveform, general open oscillator, parametric/anharmonic/ND scope, oscillator scene, web compute or Math3D connection. See docs/D1_DAMPED_OSCILLATOR.md for limits.</p>
       {D1_OSCILLATOR_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`oscillator-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
       <details data-testid="source-plan-coverage">
         <summary>

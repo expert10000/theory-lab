@@ -109,6 +109,9 @@ export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
   {id:"D1-011",title:"Bounded Gaussian oscillator pulse worker",state:"Implemented",detail:"Append-only pulse contracts; independent QuTiP/DOP853 evolution, scalar displacement quadrature, finite RK4 host verification, bounded integration and endpoint/work diagnostics."},
   {id:"D1-012",title:"Electron pulse controls and convergence inspection",state:"Implemented",detail:"Separate Gaussian mode in the shared oscillator lab; declared-drive plot, synchronized sample cursor, independent comparison and bounded cutoff/maxStep studies with explicit initial-projection differences."},
   {id:"D1-013",title:"Durable pulse runs and acceptance",state:"Implemented",detail:"Verified coefficients/envelope/provenance, CSV/q-p SVG/manifest, optional input/mode restoration and restart/regression; all eleven Atlas load presets unchanged. Gaussian preset is an explicit Lab choice, not arbitrary waveforms, web compute or Math3D integration."},
+  {id:"D1-014",title:"Bounded thermal Lindblad oscillator engines",state:"Implemented",detail:"Append-only master-equation contracts; independent QuTiP and SciPy density-matrix evolution with loss/thermal excitation, full verified matrix samples and strict numerical bounds."},
+  {id:"D1-015",title:"Electron damped oscillator inspection",state:"Implemented",detail:"Existing Oscillator lab gains damping/bath controls, occupation, purity, trace, positivity, coherence, engine comparison and same-engine cutoff sensitivity."},
+  {id:"D1-016",title:"Durable open-oscillator runs and acceptance",state:"Implemented",detail:"Independent host propagation check, scientific/hash-verified density matrices and exports, optional input-only workspace restoration and regression acceptance. No Atlas preset, web compute, scene or Math3D change."},
 ];
 export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {

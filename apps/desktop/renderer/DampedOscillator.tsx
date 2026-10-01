@@ -9,7 +9,7 @@ export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot
 }) {
   const [draft,setDraft]=useState<DampedOscillatorDraft>(DAMPED_OSCILLATOR_DEFAULTS);
   const [computed,setComputed]=useState<Computed|null>(null);
-  const [comparison,setComparison]=useState<{kind:string;maxNumber:number;maxPurity:number}|null>(null);
+  const [comparison,setComparison]=useState<{kind:string;maxNumber:number;maxPurity:number;projectionDifference:number}|null>(null);
   const [error,setError]=useState(""),[running,setRunning]=useState(false),[progress,setProgress]=useState<EvolutionProgress|null>(null);
   const active=useRef<string|null>(null),generation=useRef(0);
   useEffect(()=>bridge.onProgress(p=>{if(p.jobId===active.current)setProgress(p);}),[bridge]);
@@ -39,7 +39,7 @@ export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot
       const engine=draft.engine==="compare"?"qutip":draft.engine;
       const first=await calculate(dampedOscillatorJob(`job-${crypto.randomUUID()}`,draft,engine));
       if(epoch!==generation.current)return;
-      let nextComparison:null|{kind:string;maxNumber:number;maxPurity:number}=null;
+      let nextComparison:null|{kind:string;maxNumber:number;maxPurity:number;projectionDifference:number}=null;
       if(kind==="cutoff"||draft.engine==="compare") {
         const other=kind==="cutoff"?
           dampedOscillatorJob(`job-${crypto.randomUUID()}`,{...draft,cutoff:String(Number(draft.cutoff)+4)},engine):
@@ -52,7 +52,8 @@ export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot
           maxNumber=Math.max(maxNumber,Math.abs(a[row*as+1]-b[row*bs+1]));
           maxPurity=Math.max(maxPurity,Math.abs(a[row*as+2]-b[row*bs+2]));
         }
-        nextComparison={kind:kind==="cutoff"?`N ${draft.cutoff} → ${Number(draft.cutoff)+4} (${engine})`:"QuTiP ↔ native",maxNumber,maxPurity};
+        nextComparison={kind:kind==="cutoff"?`N ${draft.cutoff} → ${Number(draft.cutoff)+4} (${engine})`:"QuTiP ↔ native",maxNumber,maxPurity,
+          projectionDifference:Math.abs(first.result.analysis.projectionProbability-second.result.analysis.projectionProbability)};
       }
       setComputed(first);setComparison(nextComparison);
     }catch(e){if(epoch===generation.current)setError(e instanceof Error?e.message:String(e));}
@@ -109,7 +110,7 @@ export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot
         <svg viewBox="0 0 800 260" role="img" aria-label="Damped oscillator number and purity curves"><path d="M50 35 V220 H730" stroke="#506575" fill="none"/>
           {series(1,"#79d9c1")}{series(2,"#edae8f")}</svg><p>Green: mean occupation · orange: purity. Horizontal axis: time.</p></div>
       <p>Finite-cutoff reference error: {computed.result.analysis.maxNumberReferenceError.toExponential(2)}. Full density matrix and provenance are saved with the run.</p>
-      {comparison&&<p data-testid="damped-comparison">{comparison.kind}: max Δ⟨N⟩ {comparison.maxNumber.toExponential(2)}, max Δpurity {comparison.maxPurity.toExponential(2)}. A cutoff check is evidence of sensitivity, not proof of infinite-basis convergence.</p>}
+      {comparison&&<p data-testid="damped-comparison">{comparison.kind}: max Δ⟨N⟩ {comparison.maxNumber.toExponential(2)}, max Δpurity {comparison.maxPurity.toExponential(2)}, initial projection difference {comparison.projectionDifference.toExponential(2)}. A cutoff check is evidence of sensitivity, not proof of infinite-basis convergence.</p>}
     </section>}
   </div>;
 }

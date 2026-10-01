@@ -25,7 +25,7 @@ export function dampedOscillatorJob(jobId:string,d:DampedOscillatorDraft,engine:
   const dt=s.tStop-s.tStart;
   if(p.omega<.1||p.omega>5||!Number.isInteger(p.cutoff)||p.cutoff<8||p.cutoff>16||
     p.loss<0||p.loss>2||p.thermalOccupation<0||p.thermalOccupation>2||
-    !Number.isInteger(s.samples)||s.samples<3||s.samples>201||s.tStart< -100||s.tStop>100||
+    !Number.isInteger(s.samples)||s.samples<3||s.samples>201||s.tStart< -100||s.tStart>100||s.tStop< -100||s.tStop>100||
     dt<=0||dt>20||p.omega*dt>60||p.loss*dt>12||
     (i.type==="fock"?(!Number.isInteger(i.index)||i.index<0||i.index>10||i.index>=p.cutoff-1):
       Math.abs(i.alphaRe)>2||Math.abs(i.alphaIm)>2||i.alphaRe**2+i.alphaIm**2>4))
@@ -49,17 +49,48 @@ export function checkDampedOscillatorData(r:DampedOscillatorResult,bytes:Uint8Ar
     throw new Error("Damped oscillator metadata does not match data");
   const n=r.model.parameters.cutoff,stride=6+2*n*n,view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
   const value=(row:number,col:number)=>view.getFloat64((row*stride+col)*8,true);
+  const initial=initialOscillatorCoefficients(n,r.initialState);
+  let predicted=new Float64Array(2*n*n);
+  for(let a=0;a<n;a++)for(let b=0;b<n;b++) {
+    const offset=2*(a*n+b);
+    predicted[offset]=initial.re[a]*initial.re[b]+initial.im[a]*initial.im[b];
+    predicted[offset+1]=initial.im[a]*initial.re[b]-initial.re[a]*initial.im[b];
+  }
+  const p=r.model.parameters;
+  const derivative=(rho:Float64Array)=>{
+    const out=new Float64Array(rho.length),down=p.loss*(p.thermalOccupation+1),up=p.loss*p.thermalOccupation;
+    for(let a=0;a<n;a++)for(let b=0;b<n;b++) {
+      const x=2*(a*n+b),frequency=p.omega*(a-b);
+      const decay=.5*(down*(a+b)+up*((a+1<n?a+1:0)+(b+1<n?b+1:0)));
+      out[x]=frequency*rho[x+1]-decay*rho[x];out[x+1]=-frequency*rho[x]-decay*rho[x+1];
+      if(a+1<n&&b+1<n){const y=2*((a+1)*n+b+1),factor=down*Math.sqrt((a+1)*(b+1));out[x]+=factor*rho[y];out[x+1]+=factor*rho[y+1];}
+      if(a>0&&b>0){const y=2*((a-1)*n+b-1),factor=up*Math.sqrt(a*b);out[x]+=factor*rho[y];out[x+1]+=factor*rho[y+1];}
+    }
+    return out;
+  };
+  const rk4=(rho:Float64Array,h:number)=>{
+    const add=(a:Float64Array,b:Float64Array,factor:number)=>Float64Array.from(a,(v,k)=>v+factor*b[k]);
+    const k1=derivative(rho),k2=derivative(add(rho,k1,h/2)),k3=derivative(add(rho,k2,h/2)),k4=derivative(add(rho,k3,h));
+    return Float64Array.from(rho,(v,k)=>v+h*(k1[k]+2*k2[k]+2*k3[k]+k4[k])/6);
+  };
   let maxTrace=0,minDiag=1,maxBoundary=0,maxReference=0;
   let initialNumber=0;
   for(let k=0;k<n;k++)initialNumber+=k*value(0,6+2*(k*n+k));
-  const p=r.model.parameters;
   for(let row=0;row<r.data.rows;row++) {
     const time=r.solver.tStart+(r.solver.tStop-r.solver.tStart)*row/(r.data.rows-1);
     if(Math.abs(value(row,0)-time)>1e-9)throw new Error("Damped oscillator time grid differs");
+    if(row>0){const interval=(r.solver.tStop-r.solver.tStart)/(r.data.rows-1),
+      rate=p.omega*n+p.loss*(2*p.thermalOccupation+1)*n,
+      steps=Math.ceil(interval/Math.min(.04,.8/Math.max(1,rate))),h=interval/steps;
+      for(let step=0;step<steps;step++)predicted=rk4(predicted,h);
+    }
     let trace=0,number=0,purity=0,coherence=0;
     for(let a=0;a<n;a++)for(let b=0;b<n;b++) {
       const re=value(row,6+2*(a*n+b)),im=value(row,7+2*(a*n+b));
       if(!Number.isFinite(re)||!Number.isFinite(im))throw new Error("Nonfinite density matrix");
+      const expected=2*(a*n+b);
+      if(Math.abs(re-predicted[expected])>8e-6||Math.abs(im-predicted[expected+1])>8e-6)
+        throw new Error("Density matrix disagrees with independent Lindblad propagation");
       const otherRe=value(row,6+2*(b*n+a)),otherIm=value(row,7+2*(b*n+a));
       if(Math.abs(re-otherRe)>2e-7||Math.abs(im+otherIm)>2e-7)
         throw new Error("Density matrix is not Hermitian");

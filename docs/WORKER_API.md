@@ -37,6 +37,18 @@ endpoint, gateway operation or Math3D connection is introduced. See
 
 `worker-resources/v1` has `platform.system/machine`, `cpu.logicalCores`, `memory.totalBytes` (nullable), and `job.activeId` (nullable). The shared draft-07 schema validates it in Python and TypeScript.
 
+### Damped oscillator operation (D1-014–016, Electron only)
+
+`quantum.start` also accepts the bounded `oscillator_damped` master-equation
+job. The trusted preload exposes `oscillatorDamped(job)` through the same
+supervised start/progress/cancel and verified-artifact path. QuTiP MESolver
+and native SciPy DOP853 independently evolve a finite Fock density matrix
+with thermal loss/excitation. `quantum-damped-oscillator-data/v1` stores six
+readouts and the full complex matrix at each sample (at most 832,944 bytes).
+The host independently propagates and validates the matrix before saving or
+exporting. There is no gateway operation, new HTTP route, scene adapter or
+Math3D connection. See [D1_DAMPED_OSCILLATOR.md](D1_DAMPED_OSCILLATOR.md).
+
 ## Gateway routes
 
 The separate Node gateway requires `Authorization: Bearer <token>` on every `/api/*` route. It uses HTTP only on loopback; non-loopback binding requires TLS and an explicit origin. Jobs are checked against `quantum-job/v1` and return `quantum-result/v1`. The browser-facing job route currently supports `diagonalize`, `evolve`, `circuit` and bounded native `topology`; other worker operations remain desktop-only. SSH and QWZ topology responses are checked against the submitted model before persistence and again in the browser before plotting.

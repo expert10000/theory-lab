@@ -80,6 +80,17 @@ load presets remain unchanged; Gaussian is a separate explicit Lab choice.
 Arbitrary waveforms and all broader G02 goals remain planned. No Math3D, new
 scene vocabulary or web oscillator compute permission is introduced.
 
+### Damped thermal oscillator continuation (implemented)
+
+D1-014–016 add a separate bounded thermal Lindblad mode to the existing
+oscillator lab: independent QuTiP/native density-matrix solvers, desktop
+occupation/purity/trace/coherence inspection and cutoff sensitivity, then
+science-verified storage, exports and input-only restoration. See
+[D1_DAMPED_OSCILLATOR.md](D1_DAMPED_OSCILLATOR.md) for equations, bounds and
+acceptance. All previous modes, eleven Atlas presets, web permissions,
+`quantum-scene/v1` and the Math3D boundary are preserved. General dissipative
+drives and the broader G02 oscillator family remain planned.
+
 ## 1. Technology decision
 
 ### V1
@@ -1502,24 +1513,25 @@ QVIS-008   bounded open lattice cells/supercells, square/honeycomb/cubic fixture
 M3D-Q01    future: importer in the separate Math3D repository (not implemented)
 ```
 
-Future Lab-only sequence (planned; detailed acceptance and source-plan mappings
-are in [POST_QLAB_QVIS_M3D_ROADMAP.md](POST_QLAB_QVIS_M3D_ROADMAP.md)):
+Historical Lab-only visualization sequence (now implemented at bounded scope;
+detailed source-plan mappings are in
+[POST_QLAB_QVIS_M3D_ROADMAP.md](POST_QLAB_QVIS_M3D_ROADMAP.md)):
 
 ```text
-QVIS-009   reciprocal basis, high-symmetry points/paths and Brillouin-zone guides
-QVIS-010   portable supplied band paths/surfaces and synchronized inspection
-QVIS-011   supplied Berry/vector/topology scene extensions
-QVIS-012   chunked data, lazy verification, cancellation, cache and LOD
-QVIS-013   evidence-based portable visualization v0.1 release gate
+QVIS-009   reciprocal basis, high-symmetry points/paths and Brillouin-zone guides (implemented)
+QVIS-010   portable supplied band paths/surfaces and synchronized inspection (implemented)
+QVIS-011   supplied Berry/vector/topology scene extensions (implemented)
+QVIS-012   chunked data, lazy verification, cancellation, cache and LOD (implemented)
+QVIS-013   evidence-based portable visualization v0.1 release gate (implemented)
 Track A    progressively unify Atlas/model metadata (partial catalog/bindings today)
 M3D-Q01–10 separate Math3D integration track (external status not assessed here)
 ```
 
-Bounded open lattice fixtures are implemented; arbitrary crystals and periodic
-bond wrapping are not. Reciprocal-space and portable-band workflows remain
-planned. QWZ curvature guides are partial topology coverage, not
-a general crystal/BZ/band framework. The independent browser renderer is tested,
-but product web Scenes navigation is still a release-gate gap.
+Bounded open lattice, reciprocal guides and supplied SSH/QWZ band workflows
+are implemented; arbitrary crystals, periodic bond wrapping and a general
+crystal/BZ/band engine are not. QWZ curvature guides are partial topology
+coverage. Product web Scenes navigation passed the QVIS-013 bounded release
+gate; it does not imply a Math3D importer.
 
 See [QUANTUM_SCENE.md](QUANTUM_SCENE.md) for the implemented subset, usage,
 artifact conventions and acceptance. No Math3D source changes or direct worker

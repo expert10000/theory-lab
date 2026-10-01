@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { OscillatorDynamics } from "./OscillatorDynamics";
 import { DrivenOscillator } from "./DrivenOscillator";
 import { DampedOscillator } from "./DampedOscillator";
+import type { DampedOscillatorDraft } from "../../../packages/models/oscillator-damped";
 import type { DrivenOscillatorDraft } from "../../../packages/models/oscillator-drive";
 import type { PulsedOscillatorDraft } from "../../../packages/models/oscillator-pulse";
 import type { OscillatorDynamicsDraft } from "../../../packages/models/oscillator-dynamics";
@@ -101,6 +102,8 @@ export function OscillatorLab({
   atlasDrivenEpoch,
   restoredPulse,
   onPulseSnapshot,
+  restoredDamped,
+  onDampedSnapshot,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -119,6 +122,8 @@ export function OscillatorLab({
   atlasDrivenEpoch?: number;
   restoredPulse?:PulsedOscillatorDraft;
   onPulseSnapshot?:(draft:PulsedOscillatorDraft)=>void;
+  restoredDamped?:DampedOscillatorDraft;
+  onDampedSnapshot?:(draft:DampedOscillatorDraft)=>void;
 }) {
   const [view, setView] = useState<"static" | "dynamics" | "driven" | "pulse" | "damped">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
@@ -476,7 +481,7 @@ export function OscillatorLab({
       <div hidden={view !== "pulse"}>
         <DrivenOscillator bridge={bridge} status={status} forcing="gaussian" restoredPulse={restoredPulse} restoreEpoch={restoreEpoch} onPulseSnapshot={onPulseSnapshot}/>
       </div>
-      <div hidden={view !== "damped"}><DampedOscillator bridge={bridge} status={status}/></div>
+      <div hidden={view !== "damped"}><DampedOscillator bridge={bridge} status={status} restored={restoredDamped} restoreEpoch={restoreEpoch} onSnapshot={onDampedSnapshot}/></div>
     </div>
   );
 }
