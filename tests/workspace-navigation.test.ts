@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {modeForTab,modelForSnapshot,tabForMode,WORKSPACE_MODES} from "../apps/desktop/renderer/workspace-navigation";
+import {locationFromHash,modeForTab,modelForSnapshot,MODEL_GROUPS,tabForMode,workspaceHash,WORKSPACE_MODES} from "../apps/desktop/renderer/workspace-navigation";
 import type {WorkspaceSnapshot,WorkspaceTab} from "../packages/contracts";
 
 test("QLAB-UI-1 exposes six modes without turning utilities into experiments",()=>{
@@ -32,4 +32,20 @@ test("QLAB-UI-1 maps legacy saved tabs to the same model and experiment",()=>{
   assert.equal(modelForSnapshot({...snapshot,tab:"cavity"}),"quantum_rabi");
   assert.equal(modelForSnapshot({...snapshot,tab:"oscillator"}),"oscillator");
   assert.equal(modelForSnapshot({...snapshot,tab:"atlas"}),"two_level");
+});
+
+test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
+  const models=MODEL_GROUPS.flatMap(group=>group.models);
+  assert.equal(new Set(models).size,models.length);
+  assert.equal(models.length,13);
+  for(const location of [
+    {model:"two_level",tab:"spectrum"},{model:"landau_zener",tab:"dynamics"},
+    {model:"oscillator",tab:"oscillator"},{model:"quantum_rabi",tab:"runs"},
+    {model:"topology",tab:"atlas"},
+  ] as const)assert.deepEqual(locationFromHash(workspaceHash(location)),location);
+  assert.deepEqual(locationFromHash("#sweep"),{model:"driven_two_level",tab:"sweep"});
+  assert.deepEqual(locationFromHash("#tab/circuit"),{model:"transmon",tab:"circuit"});
+  assert.equal(locationFromHash("#lab/two_level/sweep"),null);
+  assert.equal(locationFromHash("#lab/unknown/spectrum"),null);
+  assert.equal(locationFromHash("#view/backend/../../spectrum"),null);
 });

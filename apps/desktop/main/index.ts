@@ -27,9 +27,11 @@ import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
 const worker = new WorkerSupervisor(join(__dirname, ".."));
 const sceneStreams=new Map<string,Awaited<ReturnType<typeof openStreamBundle>>>();
 function trusted(event: IpcMainInvokeEvent) {
+  // Renderer history changes only the fragment; the bundled file itself must remain exact.
+  const documentUrl=event.senderFrame?.url.split("#",1)[0];
   if (
     event.senderFrame !== event.sender.mainFrame ||
-    event.senderFrame?.url !== pathToFileURL(join(__dirname, "index.html")).href
+    documentUrl !== pathToFileURL(join(__dirname, "index.html")).href
   )
     throw new Error("Untrusted IPC sender");
 }

@@ -121,7 +121,7 @@ export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
 ];
 /** Linked-workspace roadmap: UI-1 navigation slice shipped; remaining gates are planned. */
 export const QLAB_UI_STEPS: RoadmapEntry[] = [
-  {id:"QLAB-UI-1",title:"Model workspace and navigation",state:"Partial",detail:"Six model-aware workspace modes and separate Library/System navigation are implemented; grouped model navigator, breadcrumb and history/keyboard gates remain."},
+  {id:"QLAB-UI-1",title:"Model workspace and navigation",state:"Partial",detail:"Six modes, grouped keyboard-accessible model navigation, Library/System links, legacy hash routes, back/forward and a verified two-level run breadcrumb are implemented; per-lab run-context adapters remain."},
   {id:"QLAB-UI-2",title:"Linked scientific selection",state:"Planned",detail:"Typed run-scoped selection of parameters, Hamiltonian terms, eigenstates and sweep points across verified views."},
   {id:"QLAB-UI-3",title:"Observable inspector and interactive Hamiltonian",state:"Planned",detail:"Parameters/Observables/Provenance inspector; two-level expectations, populations, residuals and keyboard-selectable formula terms."},
   {id:"QLAB-UI-4",title:"Universal sweep workspace",state:"Planned",detail:"Bounded parameter-to-output studies, beginning with a separately verified two-level avoided-crossing energy sweep and linked point inspection."},

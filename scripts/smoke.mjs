@@ -4,6 +4,10 @@ import { mkdir, mkdtemp } from "node:fs/promises";
 import { readFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
+async function expandGroup(page,id){
+  const group=page.locator(`[data-model-group="${id}"]`);
+  if(!(await group.evaluate(element=>element.open)))await group.locator("summary").click();
+}
 const env = { ...process.env };
 env.QLAB_TEST_PROFILE=await mkdtemp(join(tmpdir(),"qlab-desktop-acceptance-"));
 delete env.ELECTRON_RUN_AS_NODE;
@@ -36,6 +40,16 @@ try {
     ["Explore","Dynamics","Sweeps","Analysis","Scenes","Runs"]);
   assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isDisabled(),true);
   assert.equal(await page.getByRole("button",{name:/Two-level system/}).getAttribute("aria-pressed"),"true");
+  assert.equal(await page.getByRole("navigation",{name:"Model families"}).locator("details").count(),7);
+  const lightMatter=page.locator('[data-model-group="light-matter"]');
+  await lightMatter.locator("summary").focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await lightMatter.evaluate(element=>element.open),true,"model groups expand from keyboard");
+  await page.keyboard.press("Enter");
+  assert.equal(await lightMatter.evaluate(element=>element.open),false,"model groups collapse from keyboard");
+  assert.equal(await page.locator(".breadcrumb").innerText().then(text=>text.includes("SPECTRUM")),true);
+  assert.equal(await page.getByTestId("workspace-run-id").innerText(),
+    (await page.evaluate(()=>window.quantum.listRuns())).find(run=>run.operation==="diagonalize")?.runId);
   const isolation = await page.evaluate(() => ({
     require: typeof window.require,
     process: typeof window.process,
@@ -99,6 +113,23 @@ try {
     nodeIntegration: false,
     webSecurity: true,
   });
+  assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/spectrum");
+  await page.getByRole("button",{name:/Rabi dynamics/}).click();
+  await page.waitForFunction(()=>window.location.hash==="#lab/driven_two_level/dynamics");
+  await page.evaluate(()=>window.history.back());
+  await page.waitForFunction(()=>window.location.hash==="#lab/two_level/spectrum"&&
+    document.querySelector('button[aria-pressed="true"]')?.textContent?.includes("Two-level system"));
+  await page.evaluate(()=>window.history.forward());
+  await page.waitForFunction(()=>window.location.hash==="#lab/driven_two_level/dynamics"&&
+    document.querySelector('button[aria-pressed="true"]')?.textContent?.includes("Rabi dynamics"));
+  await page.evaluate(()=>window.history.back());
+  await page.waitForFunction(()=>window.location.hash==="#lab/two_level/spectrum");
+  await page.evaluate(()=>{window.location.hash="#tab/circuit";});
+  await page.waitForFunction(()=>window.location.hash==="#tab/circuit"&&
+    document.querySelector('button[aria-pressed="true"]')?.textContent?.includes("Transmon circuit"));
+  await page.evaluate(()=>window.history.back());
+  await page.waitForFunction(()=>window.location.hash==="#lab/two_level/spectrum"&&
+    document.querySelector('button[aria-pressed="true"]')?.textContent?.includes("Two-level system"));
   const circuit = await page.evaluate(() => window.quantum.circuit({
     schema: "quantum-job/v1", jobId: `circuit-${crypto.randomUUID()}`, operation: "circuit", engine: "native",
     model: { type: "transmon", parameters: { EJ: 20, EC: 0.25, ng: 0.2, ncut: 12, levels: 5 } },
@@ -115,6 +146,7 @@ try {
   });
   assert.ok(rejected, "IPC must validate renderer input");
   await mkdir("artifacts", { recursive: true });
+  await expandGroup(page,"atomic-continuous");
   await page.getByTestId("open-oscillator").click();
   await page.getByTestId("open-atlas").click();
   await page.getByLabel("Search Atlas").fill("harmonic_oscillator");
@@ -723,6 +755,7 @@ try {
   assert.equal(await page.getByTestId("floquet-map").locator(".floquet-map-grid > div").count(), 117);
   await page.getByTestId("floquet-analysis").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-floquet.png", fullPage: true });
+  await expandGroup(page,"light-matter");
   await page.getByRole("button", { name: "Jaynes–Cummings" }).click();
   await page.getByTestId("run-cavity").click();
   await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
@@ -741,6 +774,7 @@ try {
   assert.ok(Number(await page.getByTestId("cavity-boundary").textContent()) < 0.02);
   await page.getByTestId("cavity-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-quantum-rabi.png", fullPage: true });
+  await expandGroup(page,"open-systems");
   await page.getByRole("button", { name: "Lindblad dynamics" }).click();
   await page.getByTestId("run-lindblad").click();
   await page.getByTestId("lindblad-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
@@ -785,6 +819,7 @@ try {
   assert.match(await page.getByRole("tablist",{name:/Workspace modes for Landau–Zener/}).getAttribute("aria-label"),/Landau–Zener/);
   assert.match(await page.locator(".breadcrumb").innerText(),/LANDAU–ZENER/);
   assert.ok(await page.getByTestId("run-evolution").isVisible());
+  await expandGroup(page,"many-body");
   await page.getByRole("button", { name: /Ising chain/ }).click();
   await page.getByTestId("run-many-body").click();
   await page.getByTestId("many-body-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
@@ -805,6 +840,7 @@ try {
   await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("6");
   await page.getByTestId("restore-workspace").click();
   await page.waitForFunction(() => document.querySelector('input[aria-label="Many-body sites"]')?.value === "5");
+  await expandGroup(page,"circuits");
   await page.getByRole("button", { name: /Transmon circuit/ }).click();
   await page.getByTestId("run-circuit").click();
   await page.getByTestId("circuit-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
@@ -1197,6 +1233,7 @@ try {
   await page.waitForFunction(() => document.querySelector('input[aria-label="Open initial photons"]')?.value === "2");
   await page.waitForFunction(() => document.querySelector('input[aria-label="Oscillator state"]')?.value === "2");
   assert.ok(await page.getByTestId("preset-loaded").getByText(/Damped cavity occupation/).isVisible());
+  await expandGroup(page,"atomic-continuous");
   await page.getByTestId("open-oscillator").click();
   assert.equal(await page.getByRole("tab",{name:"Free dynamics",exact:true}).getAttribute("aria-selected"),"true");
   assert.equal(await page.getByLabel("Motion alphaRe",{exact:true}).inputValue(),"2");

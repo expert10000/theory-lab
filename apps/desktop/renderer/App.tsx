@@ -33,8 +33,9 @@ import { TopologyLab } from "./TopologyLab";
 import { TOPOLOGY_DEFAULTS } from "../../../packages/models/topology";
 import { OrbitalLab } from "./OrbitalLab";
 import { PostRoadmapPanel } from "./PostRoadmapPanel";
+import { ModelNavigator } from "./ModelNavigator";
 import { DELIVERED_QVIS } from "../../../packages/models/roadmap";
-import {modeForTab,modelForSnapshot,modelLabel,tabForMode,WORKSPACE_MODES,type WorkspaceMode,type WorkspaceModel} from "./workspace-navigation";
+import {locationFromHash,modeForTab,modelForSnapshot,modelLabel,tabForMode,workspaceHash,WORKSPACE_MODES,type WorkspaceMode,type WorkspaceModel} from "./workspace-navigation";
 import { ORBITAL_DEFAULTS } from "../../../packages/models/orbital";
 import { ATLAS_ENTRIES, ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../../../packages/atlas";
 import { atlasBinding } from "../../../packages/atlas/bindings";
@@ -57,6 +58,7 @@ declare global {
 type EngineMode = EngineName | "compare";
 
 export function App() {
+  const initialLocation=useRef(locationFromHash(window.location.hash));
   const [status, setStatus] = useState<WorkerStatus>({
     state: "STARTING",
     detail: "Starting Python worker",
@@ -66,8 +68,14 @@ export function App() {
   const delta = parameters.delta;
   const omega = parameters.omega;
   const [evolutionModel, setEvolutionModel] =
-    useState<EvolutionModelId>("driven_two_level");
-  const [cavityModel, setCavityModel] = useState<CavityModelId>("jaynes_cummings");
+    useState<EvolutionModelId>(()=>{
+      const model=initialLocation.current?.model;
+      return model&&["driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(model)?model as EvolutionModelId:"driven_two_level";
+    });
+  const [cavityModel, setCavityModel] = useState<CavityModelId>(()=>{
+    const model=initialLocation.current?.model;
+    return model==="quantum_rabi"?"quantum_rabi":"jaynes_cummings";
+  });
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
   const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse" | "oscillatorDamped" | "oscillatorParametric" | "oscillatorAnharmonic">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
@@ -101,8 +109,32 @@ export function App() {
   const [busy, setBusy] = useState(false);
   const [restarting, setRestarting] = useState(false);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<WorkspaceTab>("spectrum");
-  const [activeModel,setActiveModel]=useState<WorkspaceModel>("two_level");
+  const [tab, setTab] = useState<WorkspaceTab>(()=>initialLocation.current?.tab??"spectrum");
+  const [activeModel,setActiveModel]=useState<WorkspaceModel>(()=>initialLocation.current?.model??"two_level");
+  const currentLocation=useRef({tab,model:activeModel});
+  currentLocation.current={tab,model:activeModel};
+  const firstLocation=useRef(true);
+  const restoringHistory=useRef(false);
+  useEffect(()=>{
+    const onHistory=()=>{
+      const next=locationFromHash(window.location.hash);
+      if(!next||next.tab===currentLocation.current.tab&&next.model===currentLocation.current.model)return;
+      restoringHistory.current=true;
+      setSelectedPreset(null);
+      setTab(next.tab);setActiveModel(next.model);
+      if(["driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(next.model))setEvolutionModel(next.model as EvolutionModelId);
+      if(next.model==="jaynes_cummings"||next.model==="quantum_rabi")setCavityModel(next.model);
+    };
+    window.addEventListener("popstate",onHistory);
+    window.addEventListener("hashchange",onHistory);
+    return ()=>{window.removeEventListener("popstate",onHistory);window.removeEventListener("hashchange",onHistory);};
+  },[]);
+  useEffect(()=>{
+    const hash=workspaceHash({model:activeModel,tab});
+    if(firstLocation.current){firstLocation.current=false;window.history.replaceState(null,"",hash);return;}
+    if(restoringHistory.current){restoringHistory.current=false;return;}
+    if(window.location.hash!==hash)window.history.pushState(null,"",hash);
+  },[tab,activeModel]);
   const primaryMode=modeForTab(tab);
   function selectMode(mode:WorkspaceMode){
     const destination=tabForMode(activeModel,mode);
@@ -282,6 +314,15 @@ export function App() {
       setWorkspaceMessage(`Workspace restored · ${new Date(snapshot.savedAt).toLocaleString()}`);
     } catch (error) { setWorkspaceMessage(error instanceof Error ? error.message : String(error)); }
   }
+  const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
+    presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
+    roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
+  };
+  const utility=utilityLocation[tab];
+  const experiment=tab==="spectrum"?"SPECTRUM":tab==="hamiltonian"?"HAMILTONIAN":
+    tab==="sweep"?"FINAL-POPULATION SWEEP":tab==="scenes"?"PORTABLE SCENES":
+    tab==="runs"?"SAVED RUNS":null;
+  const visibleRunId=activeModel==="two_level"&&(tab==="spectrum"||tab==="hamiltonian")?result?.runId:null;
   return (
     <div className="app">
       <header className="topbar">
@@ -315,44 +356,29 @@ export function App() {
       </header>
       <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""}`}>
         <aside className="sidebar">
+          <div className="sidebar-utilities" aria-label="Library and system">
+            <div><p className="eyebrow">LIBRARY</p>
+              <button className="utility-link" onClick={() => setTab("presets")}>Volume VIII presets</button>
+              <button className="utility-link" data-testid="open-atlas" onClick={() => setTab("atlas")}>Hamiltonian Atlas</button>
+            </div>
+            <div><p className="eyebrow">SYSTEM</p>
+              <button className="utility-link" onClick={() => setTab("roadmap")}>Roadmap</button>
+              <button className="utility-link" onClick={() => setTab("backend")}>Backend</button>
+            </div>
+          </div>
           <p className="eyebrow">
             MODELS <span>{modelLabel(activeModel)}</span>
           </p>
-          {(
-            [
-              "two_level",
-              "driven_two_level",
-              "landau_zener",
-              "stuckelberg",
-              "strong_drive",
-            ] as const
-          ).map((id) => (
-            <button
-              key={id}
-              className="lab-selected"
-              aria-pressed={activeModel===id}
-              onClick={() => {
-                if (id !== "two_level") setEvolutionModel(id);
-                selectModel(id,id === "two_level" ? "spectrum" : "dynamics");
-              }}
-            >
-              <span>{id === "two_level" ? "◈" : "∿"}</span>{" "}
-              {MODEL_REGISTRY[id].label} <span className="live-dot" />
-            </button>
-          ))}
-          {(["jaynes_cummings", "quantum_rabi"] as const).map(id => <button key={id} className="lab-selected" aria-pressed={activeModel===id} onClick={() => { setCavityModel(id);selectModel(id,"cavity"); }}><span>◉</span> {CAVITY_REGISTRY[id].label} <span className="live-dot" /></button>)}
-          <button className="lab-selected" aria-pressed={activeModel==="lindblad"} onClick={() => selectModel("lindblad","open")}><span>◌</span> Lindblad dynamics <span className="live-dot" /></button>
-          <button className="lab-selected" aria-pressed={activeModel==="ising_chain"} onClick={() => selectModel("ising_chain","many_body")}><span>⋈</span> Ising chain <span className="live-dot" /></button>
-          <button className="lab-selected" aria-pressed={activeModel==="topology"} onClick={() => selectModel("topology","topology")}><span>◇</span> Topological bands <span className="live-dot" /></button>
-          <button className="lab-selected" aria-pressed={activeModel==="hydrogenic"} data-testid="open-orbitals" onClick={() => selectModel("hydrogenic","orbital")}><span>◌</span> Atomic orbitals <span className="live-dot" /></button>
-          <button className="lab-selected" aria-pressed={activeModel==="oscillator"} data-testid="open-oscillator" onClick={() => selectModel("oscillator","oscillator")}><span>∿</span> Harmonic oscillator <span className="live-dot" /></button>
-          <button className="lab-selected" aria-pressed={activeModel==="transmon"} onClick={() => selectModel("transmon","circuit")}><span>◈</span> Transmon circuit <span className="live-dot" /></button>
-          <p className="eyebrow sidebar-group-title">LIBRARY</p>
-          <button className="utility-link" onClick={() => setTab("presets")}>Volume VIII presets</button>
-          <button className="utility-link" data-testid="open-atlas" onClick={() => setTab("atlas")}>Hamiltonian Atlas</button>
-          <p className="eyebrow sidebar-group-title">SYSTEM</p>
-          <button className="utility-link" onClick={() => setTab("roadmap")}>Roadmap</button>
-          <button className="utility-link" onClick={() => setTab("backend")}>Backend</button>
+          <ModelNavigator activeModel={activeModel} onSelect={model=>{
+            if(["driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(model)){
+              setEvolutionModel(model as EvolutionModelId);selectModel(model,"dynamics");
+            }else if(model==="jaynes_cummings"||model==="quantum_rabi"){
+              setCavityModel(model);selectModel(model,"cavity");
+            }else{
+              const destination=tabForMode(model,model==="lindblad"?"dynamics":"explore");
+              if(destination)selectModel(model,destination);
+            }
+          }}/>
           <p className="sidebar-note">
             From two levels to finite chains.
             <br />
@@ -372,30 +398,14 @@ export function App() {
           </div>
         </aside>
         <main className="workspace">
-          <div className="breadcrumb">
-            {tab === "scenes" ? "VISUALIZATION" : tab === "backend" ? "SYSTEM" : tab === "atlas" ? "REFERENCE" : "MODELS"} <span>/</span>{" "}
-            {tab === "oscillator" ? "HARMONIC OSCILLATOR" : tab === "orbital" ? "HYDROGENIC ORBITALS" : tab === "scenes" ? "PORTABLE QUANTUM SCENES" : tab === "backend"
-              ? "BACKEND METHODS & FORMATS"
-              : tab === "atlas" ? "HAMILTONIAN ATLAS"
-              : tab === "dynamics"
-                ? MODEL_REGISTRY[evolutionModel].label.toUpperCase()
-                : tab === "cavity"
-                  ? CAVITY_REGISTRY[cavityModel].label.toUpperCase()
-                  : tab === "open"
-                    ? "LINDBLAD DYNAMICS"
-                    : tab === "sweep"
-                      ? "PARAMETER SWEEPS"
-                    : tab === "many_body"
-                      ? "ISING SPIN CHAIN"
-                    : tab === "topology" ? "TOPOLOGICAL BANDS"
-                    : tab === "circuit"
-                      ? "TRANSMON CIRCUIT"
-                    : tab === "presets"
-                      ? "VOLUME VIII PRESETS"
-                    : tab === "runs"
-                      ? "SAVED RUNS"
-                : "TWO-LEVEL SYSTEM"}
-          </div>
+          <nav className="breadcrumb" aria-label="Workspace location">
+            {utility?<>{utility[0]}<span>/</span>{utility[1]}</>:
+              <>MODELS<span>/</span>{modelLabel(activeModel).toUpperCase()}
+                {primaryMode&&<><span>/</span>{WORKSPACE_MODES.find(mode=>mode.id===primaryMode)?.label.toUpperCase()}</>}
+                {experiment&&<><span>/</span>{experiment}</>}
+                {visibleRunId&&<><span>/</span><code data-testid="workspace-run-id" title={visibleRunId}>{visibleRunId}</code></>}
+              </>}
+          </nav>
           <div className="workspace-title">
             <div>
               <p className="eyebrow accent">
