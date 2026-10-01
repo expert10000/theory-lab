@@ -91,6 +91,21 @@ acceptance. All previous modes, eleven Atlas presets, web permissions,
 `quantum-scene/v1` and the Math3D boundary are preserved. General dissipative
 drives and the broader G02 oscillator family remain planned.
 
+### Stable parametric oscillator continuation (implemented)
+
+D1-017–019 extend the same Electron oscillator lab with a bounded,
+vacuum-initialized quadratic coupling. Independent QuTiP and native SciPy
+finite-Fock paths produce full complex amplitudes and quadrature moments;
+the host verifies propagation before saving or exporting. The UI provides
+complex-coupling controls, engine comparison, analytic stable-branch reference
+and an N-to-N+8 cutoff check. Runs export CSV, variance SVG and manifest;
+workspaces restore inputs only. See
+[D1_PARAMETRIC_OSCILLATOR.md](D1_PARAMETRIC_OSCILLATOR.md) for equations,
+bounds and acceptance. The existing eleven Atlas load presets are retained;
+the generic Atlas parametric entry is not silently enabled as a preset.
+Web oscillator compute, scenes, Math3D, unstable pumping, arbitrary initial
+states and broader G02 goals remain future work.
+
 ## 1. Technology decision
 
 ### V1

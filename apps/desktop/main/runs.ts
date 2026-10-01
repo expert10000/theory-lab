@@ -10,6 +10,7 @@ import { consistentOscillatorEvolutionResult, checkOscillatorEvolutionData } fro
 import { consistentDrivenOscillatorResult, checkDrivenOscillatorData } from "../../../packages/models/oscillator-drive";
 import { consistentPulsedOscillatorResult, checkPulsedOscillatorData } from "../../../packages/models/oscillator-pulse";
 import { consistentDampedOscillatorResult, checkDampedOscillatorData } from "../../../packages/models/oscillator-damped";
+import { consistentParametricResult, checkParametricData } from "../../../packages/models/oscillator-parametric";
 import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
 import { bandSceneFromResult } from "../../../packages/quantum-scene/bands";
 import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -54,17 +55,20 @@ export class RunStore {
       throw new Error("Cannot persist inconsistent pulsed oscillator data");
     if (job.operation === "oscillator_damped" && (result.operation !== "oscillator_damped" || !consistentDampedOscillatorResult(job, result)))
       throw new Error("Cannot persist inconsistent damped oscillator data");
+    if (job.operation === "oscillator_parametric" && (result.operation !== "oscillator_parametric" || !consistentParametricResult(job, result)))
+      throw new Error("Cannot persist inconsistent parametric oscillator data");
     // Verify the new binary path before creating a durable run, and persist the
     // exact checked bytes rather than reopening a mutable source artifact.
     let motionData: Buffer | null = null;
-    if (result.operation === "oscillator_evolve" || result.operation === "oscillator_drive" || result.operation === "oscillator_pulse" || result.operation === "oscillator_damped") {
+    if (result.operation === "oscillator_evolve" || result.operation === "oscillator_drive" || result.operation === "oscillator_pulse" || result.operation === "oscillator_damped" || result.operation === "oscillator_parametric") {
       motionData = await readFile(join(this.artifactDir, result.data.path));
       if (motionData.byteLength !== result.data.bytes || sha(motionData) !== result.data.sha256)
         throw new Error("Run artifact failed integrity check");
       if(result.operation === "oscillator_evolve") checkOscillatorEvolutionData(result, motionData);
       else if(result.operation === "oscillator_drive") checkDrivenOscillatorData(result, motionData);
       else if(result.operation === "oscillator_pulse") checkPulsedOscillatorData(result, motionData);
-      else checkDampedOscillatorData(result, motionData);
+      else if(result.operation === "oscillator_damped") checkDampedOscillatorData(result, motionData);
+      else checkParametricData(result, motionData);
     }
     const dir = join(this.root, result.runId);
     await this.ensureRoot();
@@ -84,6 +88,7 @@ export class RunStore {
       if (result.operation === "oscillator_drive") checkDrivenOscillatorData(result, data);
       if (result.operation === "oscillator_pulse") checkPulsedOscillatorData(result, data);
       if (result.operation === "oscillator_damped") checkDampedOscillatorData(result, data);
+      if (result.operation === "oscillator_parametric") checkParametricData(result, data);
       if (motionData) await writeFile(join(dir, "data.f64"), motionData, { flag: "wx" });
       else await copyFile(join(this.artifactDir, name), join(dir, "data.f64"));
     }
@@ -107,7 +112,7 @@ export class RunStore {
             typeof value.durationMs === "number" && Number.isFinite(value.durationMs) &&
             (value.artifactSha256 === null || (typeof value.artifactSha256 === "string" && /^[a-f0-9]{64}$/.test(value.artifactSha256))) &&
             ["qutip", "native", "dynamiqs", "quspin", "scqubits"].includes(value.engine) &&
-            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital", "oscillator", "oscillator_evolve", "oscillator_drive", "oscillator_pulse", "oscillator_damped"].includes(value.operation))
+            ["diagonalize", "evolve", "cavity", "lindblad", "sweep", "many_body", "circuit", "topology", "orbital", "oscillator", "oscillator_evolve", "oscillator_drive", "oscillator_pulse", "oscillator_damped", "oscillator_parametric"].includes(value.operation))
           runs.push({ schema: value.schema, runId: value.runId, jobId: value.jobId,
             operation: value.operation, model: value.model, engine: value.engine,
             engineVersion: value.engineVersion, computedAt: value.computedAt,
@@ -149,6 +154,8 @@ export class RunStore {
       throw new Error("Stored pulsed oscillator failed consistency check");
     if (job.operation === "oscillator_damped" && (result.operation !== "oscillator_damped" || !consistentDampedOscillatorResult(job, result)))
       throw new Error("Stored damped oscillator failed consistency check");
+    if (job.operation === "oscillator_parametric" && (result.operation !== "oscillator_parametric" || !consistentParametricResult(job, result)))
+      throw new Error("Stored parametric oscillator failed consistency check");
     if ("data" in result) {
       if (manifest.files.data !== "data.f64") throw new Error("Missing run data file");
       data = await readFile(join(dir, "data.f64"));
@@ -160,6 +167,7 @@ export class RunStore {
       if (result.operation === "oscillator_drive") checkDrivenOscillatorData(result, data);
       if (result.operation === "oscillator_pulse") checkPulsedOscillatorData(result, data);
       if (result.operation === "oscillator_damped") checkDampedOscillatorData(result, data);
+      if (result.operation === "oscillator_parametric") checkParametricData(result, data);
     }
     return { manifest, job, result, data };
   }
@@ -295,7 +303,7 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
     }).join("");
     return head + cells + `<text x="450" y="485" text-anchor="middle" fill="#b8c8cf" font-family="sans-serif">${result.sweep.x.parameter}</text><text x="30" y="275" fill="#b8c8cf" font-family="sans-serif">${result.sweep.y?.parameter ?? ""}</text></svg>\n`;
   }
-  const cols = result.operation === "sweep" ? [0] : result.operation === "evolve" || result.operation === "oscillator_evolve" || result.operation === "oscillator_drive" || result.operation === "oscillator_pulse" || result.operation === "oscillator_damped" ? [1, 2] : result.operation === "cavity" ? [1, 2] : [1, 3];
+  const cols = result.operation === "sweep" ? [0] : result.operation === "oscillator_parametric" ? [3, 4] : result.operation === "evolve" || result.operation === "oscillator_evolve" || result.operation === "oscillator_drive" || result.operation === "oscillator_pulse" || result.operation === "oscillator_damped" ? [1, 2] : result.operation === "cavity" ? [1, 2] : [1, 3];
   let ymin = 0, ymax = 1;
   for (const row of rows) for (const col of cols) { ymin = Math.min(ymin, row[col]); ymax = Math.max(ymax, row[col]); }
   const lines = cols.map((col, i) => `<polyline points="${lineSeries(rows, col, ymin, ymax)}" fill="none" stroke="${i ? "#f2b36f" : "#79d9c1"}" stroke-width="2.5"/>`).join("");

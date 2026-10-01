@@ -65,6 +65,7 @@ try {
       "oscillatorDamped",
       "oscillatorDrive",
       "oscillatorEvolve",
+      "oscillatorParametric",
       "oscillatorPulse",
       "readData",
       "readSceneChunk",
@@ -300,6 +301,26 @@ try {
   await page.waitForFunction(()=>document.querySelector('input[aria-label="Damped loss"]')?.value==="0.25");
   assert.equal(await page.getByRole("tab",{name:"Damped / thermal",exact:true}).getAttribute("aria-selected"),"true");
   assert.equal(await page.getByTestId("damped-result").count(),0,"restore must not fabricate computed density matrices");
+  await page.getByRole("tab",{name:"Parametric squeezing",exact:true}).click();
+  const initialParametricRuns=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_parametric").length));
+  await page.getByLabel("Parametric engine",{exact:true}).selectOption("native");
+  await page.getByTestId("run-parametric").click();
+  await page.getByTestId("parametric-result").waitFor();
+  assert.ok(await page.getByRole("img",{name:"Parametric oscillator squeezing curves",exact:true}).isVisible());
+  await page.getByTestId("parametric-cutoff").click();
+  await page.getByTestId("parametric-comparison").filter({hasText:"N 16 → 24"}).waitFor();
+  await page.getByLabel("Parametric engine",{exact:true}).selectOption("compare");
+  await page.getByTestId("run-parametric").click();
+  await page.getByTestId("parametric-comparison").filter({hasText:"QuTiP ↔ native"}).waitFor();
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_parametric").length)),initialParametricRuns+5);
+  await page.getByTestId("save-workspace").click();
+  await page.getByTestId("workspace-message").filter({hasText:"Workspace saved"}).waitFor();
+  await page.getByLabel("Parametric lambdaRe",{exact:true}).fill(".2");
+  await page.getByRole("tab",{name:"Stationary spectrum",exact:true}).click();
+  await page.getByTestId("restore-workspace").click();
+  await page.waitForFunction(()=>document.querySelector('input[aria-label="Parametric lambdaRe"]')?.value===".1");
+  assert.equal(await page.getByRole("tab",{name:"Parametric squeezing",exact:true}).getAttribute("aria-selected"),"true");
+  assert.equal(await page.getByTestId("parametric-result").count(),0,"restore must not fabricate squeezing data");
   await page.getByRole("tab",{name:"Free dynamics",exact:true}).click();
   await page.getByRole("tab",{name:"Spectrum",exact:true}).click();
   await page.screenshot({

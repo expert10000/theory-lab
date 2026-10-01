@@ -49,6 +49,19 @@ The host independently propagates and validates the matrix before saving or
 exporting. There is no gateway operation, new HTTP route, scene adapter or
 Math3D connection. See [D1_DAMPED_OSCILLATOR.md](D1_DAMPED_OSCILLATOR.md).
 
+### Parametric oscillator operation (D1-017–019, Electron only)
+
+`quantum.start` accepts bounded `oscillator_parametric` vacuum jobs. The
+trusted preload exposes `oscillatorParametric(job)` through the same
+supervised progress/cancel and verified-artifact path. QuTiP integrates the
+finite-Fock state and native SciPy uses Hermitian spectral phases. The
+`quantum-parametric-oscillator-data/v1` artifact stores nine readouts plus
+all complex Fock coefficients at each sample. The host independently checks
+propagation, moments, parity and finite-cutoff diagnostics before durable
+storage and CSV/variance-SVG/manifest export. No gateway route, scene
+adapter or Math3D call is added. See
+[D1_PARAMETRIC_OSCILLATOR.md](D1_PARAMETRIC_OSCILLATOR.md).
+
 ## Gateway routes
 
 The separate Node gateway requires `Authorization: Bearer <token>` on every `/api/*` route. It uses HTTP only on loopback; non-loopback binding requires TLS and an explicit origin. Jobs are checked against `quantum-job/v1` and return `quantum-result/v1`. The browser-facing job route currently supports `diagonalize`, `evolve`, `circuit` and bounded native `topology`; other worker operations remain desktop-only. SSH and QWZ topology responses are checked against the submitted model before persistence and again in the browser before plotting.

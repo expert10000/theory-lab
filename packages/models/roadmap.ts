@@ -112,6 +112,9 @@ export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
   {id:"D1-014",title:"Bounded thermal Lindblad oscillator engines",state:"Implemented",detail:"Append-only master-equation contracts; independent QuTiP and SciPy density-matrix evolution with loss/thermal excitation, full verified matrix samples and strict numerical bounds."},
   {id:"D1-015",title:"Electron damped oscillator inspection",state:"Implemented",detail:"Existing Oscillator lab gains damping/bath controls, occupation, purity, trace, positivity, coherence, engine comparison and same-engine cutoff sensitivity."},
   {id:"D1-016",title:"Durable open-oscillator runs and acceptance",state:"Implemented",detail:"Independent host propagation check, scientific/hash-verified density matrices and exports, optional input-only workspace restoration and regression acceptance. No Atlas preset, web compute, scene or Math3D change."},
+  {id:"D1-017",title:"Bounded parametric oscillator engines",state:"Implemented",detail:"Append-only vacuum quadratic-coupling job, independent QuTiP and native SciPy finite-Fock solvers, full complex amplitudes and independent propagation/readout validation."},
+  {id:"D1-018",title:"Desktop squeezing and cutoff inspection",state:"Implemented",detail:"Existing Oscillator lab gains complex-coupling controls, quadrature-variance curves, stable Bogoliubov reference, engine comparison and N-to-N+8 sensitivity."},
+  {id:"D1-019",title:"Durable parametric runs and acceptance",state:"Implemented",detail:"Scientifically verified saved amplitudes, CSV/variance SVG/manifest exports, optional input-only workspace restoration and regression acceptance. The eleven reviewed Atlas bindings, web permissions, scene vocabulary and Math3D boundary remain unchanged."},
 ];
 export const ATLAS_RECONCILIATION_STEPS: RoadmapEntry[] = [
   {

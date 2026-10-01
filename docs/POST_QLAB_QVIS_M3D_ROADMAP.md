@@ -66,6 +66,15 @@ and input-only restoration. The eleven Atlas presets, QVIS schema, web compute
 permissions and Math3D remain unchanged. See
 [D1_DAMPED_OSCILLATOR.md](D1_DAMPED_OSCILLATOR.md).
 
+D1-017–019 add stable vacuum parametric squeezing to the same Electron
+oscillator lab: independent QuTiP/native finite-Fock evolution, host-verified
+complex amplitudes, quadrature diagnostics, engine/cutoff comparison,
+durable CSV/SVG/manifest runs and input-only workspace restoration. The
+eleven reviewed Atlas presets remain intact; the parametric Atlas entry is
+not automatically a load preset. Web compute permissions, `quantum-scene/v1`
+and Math3D are unchanged. See
+[D1_PARAMETRIC_OSCILLATOR.md](D1_PARAMETRIC_OSCILLATOR.md).
+
 | Historical ID | Delivered scope | Status / evidence |
 | --- | --- | --- |
 | QLAB-000–017 | Secure Electron/React, supervised worker, physics labs, comparisons, presets, persistence | Implemented; release record in RELEASE_V0.1.md |

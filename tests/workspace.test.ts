@@ -86,7 +86,7 @@ test("free oscillator draft and mode extend workspace v1 without invalidating le
   const value = {...workspace, tab: "oscillator", oscillatorDynamics: OSCILLATOR_DYNAMICS_DEFAULTS, oscillatorMode: "dynamics"};
   assert.ok(isWorkspaceSnapshot(value));
   assert.ok(isWorkspaceSnapshot({...value, oscillator: OSCILLATOR_DEFAULTS}));
-  assert.equal(isWorkspaceSnapshot({...value, oscillatorMode: "parametric"}), false);
+  assert.equal(isWorkspaceSnapshot({...value, oscillatorMode: "arbitrary"}), false);
   assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, initial: "arbitrary"}}), false);
   assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, engine: "dynamiqs"}}), false);
   assert.equal(isWorkspaceSnapshot({...value, oscillatorDynamics: {...OSCILLATOR_DYNAMICS_DEFAULTS, alphaRe: "x".repeat(101)}}), false);
