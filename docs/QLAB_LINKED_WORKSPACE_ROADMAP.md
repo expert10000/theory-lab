@@ -11,10 +11,10 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | --- | --- | --- |
 | Done | QLAB-UI-4 | The model-selected Sweeps workspace has a bounded two-level eigenenergy study, verified point runs, durable study checkpoints, reopen and resume. Existing dynamics sweeps still mean final `P₁`. This gate is complete for declared adapters, not a claim that every model supports every output. |
 | Done | QLAB-UI-5 | The verified two-level eigenvectors drive a linked Bloch x-z great circle and state readout. Spectrum, inspector and Analysis share exact-run selection; legacy and degenerate results show why a unique state is unavailable. This is not a Bloch claim for larger Hilbert spaces. |
-| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, four two-state evolution models, and both cavity models have saved-run breadcrumbs. Other labs still need adapters. |
-| Partially done | QLAB-UI-2 | Exact-run spectrum selection and time-sample cursors link recorded views for the four evolution and two cavity models; these saved runs reopen. Other model adapters remain. |
-| Partially done | QLAB-UI-3 | Verified two-level eigenstate diagnostics and run-backed evolution/cavity inspectors work; wider model-specific observable/inspector adapters remain. |
-| Next | Lindblad adapter | Add run context, scoped time selection and recorded-density/observable inspector for Lindblad, without inferring an unrecorded state vector. Then assess the remaining UI-1–3 gates. |
+| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, four two-state evolution, both cavity and Lindblad labs have saved-run breadcrumbs. Other labs still need assessment. |
+| Partially done | QLAB-UI-2 | Exact-run spectrum selection and time-sample cursors link recorded views for evolution, cavity and Lindblad models; these saved runs reopen. Other model adapters remain. |
+| Partially done | QLAB-UI-3 | Verified two-level eigenstate diagnostics and run-backed evolution, cavity and Lindblad inspectors work; wider model-specific observable/inspector adapters remain. |
+| Next | Audit remaining UI-1–3 gaps | Assess existing sweeps, many-body, topology, orbital, circuit and oscillator labs against exact-run selection and inspector gates before declaring UI-1–3 complete. Do not infer unrecorded states. |
 | Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
 UI-5 is complete for the verified two-level adapter. UI-1–3 become complete
@@ -42,8 +42,14 @@ cutoff and drift diagnostics from saved rows, and shows the vacuum-Rabi
 reference only for an applicable Jaynes–Cummings `|e,0⟩` run. Both models
 reopen from hash-verified artifacts after restart. Six-column cavity data do
 not contain a full state vector or Bloch vector, and the UI makes no such claim.
-Lindblad is the next distinct adapter; UI-1–3 remain Partial beyond these
-declared models.
+The Lindblad UI-1–3 slice now adds a saved-run breadcrumb, hash-verified
+reopening and a run-scoped time cursor over all seven recorded columns. Its
+inspector separates immutable inputs from the edited draft, reports selected
+population, photon, purity, coherence, boundary and trace values, and shows
+recorded-row diagnostics, optional steady-state readout and provenance. The
+artifact does not retain a density matrix, state vector or amplitudes; neither
+the plot nor inspector claims one. UI-1–3 remain Partial until the other lab
+families are assessed against their own acceptance gates.
 
 ## Decision and current baseline
 
@@ -138,7 +144,7 @@ job registry.
 
 QLAB-UI-1 is **Partial**: six-mode navigation, grouped native-keyboard model
 disclosures, separate Library/System links, safe fragment routes, back/forward,
-legacy snapshot mapping and the two-level, four evolution and two cavity persisted-run breadcrumbs are tested.
+legacy snapshot mapping and the two-level, four evolution, two cavity and Lindblad persisted-run breadcrumbs are tested.
 Other labs still need run-context breadcrumb adapters; no result is inferred from
 their inputs. QLAB-UI-2 is **Partial**: the two-level pilot now has typed
 run-scoped energy references, draft parameter/operator references, keyboard
@@ -153,7 +159,9 @@ adapters remain future gates. All four two-state evolution models add typed
 exact-run time-sample selection, synchronized numerical/state views and
 saved-run reopening without inventing a retained selection. The two cavity
 models similarly link only recorded six-column observables to an exact run and
-time index; no state amplitude or Bloch selection is implied. UI-3 is **Partial**: new two-level runs
+time index; no state amplitude or Bloch selection is implied. Lindblad links
+only its seven recorded time-series values and optional separate steady-state
+readout, not a retained density matrix. UI-3 is **Partial**: new two-level runs
 carry real normalized eigenvectors, populations, Bloch expectations and
 eigenpair residuals from QuTiP or native diagonalization. An independent
 Electron check validates them before display, persistence and reopening;
@@ -170,6 +178,9 @@ only when present, without claiming an independent interference phase.
 Both cavity inspectors show stored cutoff, selected observables, maximum
 boundary/norm/parity diagnostics and provenance; only applicable
 Jaynes–Cummings runs show their existing vacuum-Rabi reference.
+The Lindblad inspector shows trace, purity and boundary diagnostics, stored
+input/provenance and steady-state availability without claiming a stored
+density matrix or state vector.
 Wider model adapters are still future work.
 UI-4 is **Implemented for declared adapters**: the two-level Sweeps view plots
 E₋/E₊ against Δ at fixed Ω from separately verified, saved spectrum runs.

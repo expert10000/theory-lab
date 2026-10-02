@@ -84,7 +84,7 @@ test("linked-workspace roadmap names delivered, partial and next UI gates",async
   assert.match(doc,/\| Done \| QLAB-UI-5 \|/);
   for(const id of ["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"])
     assert.match(doc,new RegExp(`\\| Partially done \\| ${id} \\|`));
-  assert.match(doc,/\| Next \| Lindblad adapter \|/);
+  assert.match(doc,/\| Next \| Audit remaining UI-1–3 gaps \|/);
   assert.match(doc,/\| Later \| QLAB-UI-6–8 \|/);
   for(const path of ["docs/ROADMAP.md","docs/POST_QLAB_QVIS_M3D_ROADMAP.md"]){
     const overview=await readFile(path,"utf8");

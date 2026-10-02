@@ -17,6 +17,7 @@ let preservedSpectrumRunId = null;
 let preservedRabiRunId = null;
 const preservedPassageRunIds = {};
 const preservedCavityRunIds = {};
+let preservedLindbladRunId = null;
 let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
@@ -74,6 +75,7 @@ try {
       "getCapabilities",
       "getCavityRun",
       "getEvolutionRun",
+      "getLindbladRun",
       "getRabiRun",
       "getResources",
       "getScene",
@@ -1015,11 +1017,33 @@ try {
   await page.getByTestId("run-lindblad").click();
   await page.getByTestId("lindblad-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("lindblad-result").waitFor();
-  assert.ok(Number(await page.getByTestId("minimum-purity").textContent()) < 1);
+  preservedLindbladRunId=await page.getByTestId("workspace-run-id").innerText();
+  assert.equal(await page.getByTestId("lindblad-inspector-inputs").locator("code").getAttribute("title"),preservedLindbladRunId);
+  assert.equal(await page.getByTestId("lindblad-inspector-time").innerText(),"0.0000");
+  assert.equal(await page.getByTestId("lindblad-inspector-excited").innerText(),await page.getByTestId("open-excited").innerText());
+  assert.equal(await page.getByTestId("lindblad-inspector-min-purity").innerText(),await page.getByTestId("minimum-purity").innerText());
+  assert.ok(await page.getByTestId("lindblad-inspector-steady").isVisible());
   assert.ok(Number(await page.getByTestId("open-excited").textContent()) > .99);
+  const lindbladCursorBefore=await page.getByTestId("lindblad-chart-cursor").getAttribute("x1");
+  await page.getByRole("slider",{name:"Open-system time cursor"}).focus();
+  await page.getByRole("slider",{name:"Open-system time cursor"}).press("End");
+  await page.getByTestId("lindblad-inspector-time").filter({hasText:"20.0000"}).waitFor();
+  assert.notEqual(await page.getByTestId("lindblad-chart-cursor").getAttribute("x1"),lindbladCursorBefore);
+  for(const [inspector,local] of [["excited","open-excited"],["photons","open-photons"],["purity","open-purity"],["coherence","open-coherence"],["boundary","open-boundary"],["trace","open-trace"]])
+    assert.equal(await page.getByTestId(`lindblad-inspector-${inspector}`).innerText(),await page.getByTestId(local).innerText());
+  assert.ok(Number(await page.getByTestId("minimum-purity").textContent()) < 1);
   assert.ok(await page.getByTestId("steady-state").getByText("Steady state").isVisible());
   await page.getByTestId("lindblad-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-lindblad.png", fullPage: true });
+  const lindbladStoredInputs=await page.getByTestId("lindblad-inspector-inputs").innerText();
+  await page.getByLabel("Relaxation γ₁",{exact:true}).fill("0.4");
+  await page.getByTestId("lindblad-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("lindblad-inspector-inputs").innerText(),lindbladStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Lindblad dynamics ${preservedLindbladRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedLindbladRunId}).waitFor();
+  await page.getByTestId("lindblad-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("lindblad-inspector-time").innerText(),"0.0000");
   await page.getByRole("button", { name: /Rabi dynamics/ }).click();
   await page.getByRole("tab", { name: "Sweeps", exact: true }).click();
   await page.getByRole("combobox", { name: "Sweep engine" }).selectOption("native");
@@ -1454,6 +1478,7 @@ try {
   assert.ok(runIds.includes(preservedRabiRunId),"saved Rabi evolution survives full restart");
   for(const runId of Object.values(preservedPassageRunIds))assert.ok(runIds.includes(runId),`saved evolution ${runId} survives full restart`);
   for(const runId of Object.values(preservedCavityRunIds))assert.ok(runIds.includes(runId),`saved cavity ${runId} survives full restart`);
+  assert.ok(runIds.includes(preservedLindbladRunId),"saved Lindblad run survives full restart");
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1486,6 +1511,11 @@ try {
     assert.equal(await page.getByTestId("cavity-inspector-time").innerText(),"0.0000");
     await page.getByRole("tab",{name:"Runs",exact:true}).click();
   }
+  await page.getByRole("button",{name:`Open Lindblad dynamics ${preservedLindbladRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedLindbladRunId}).waitFor();
+  await page.getByTestId("lindblad-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("lindblad-inspector-time").innerText(),"0.0000");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);
   await page.getByRole("button",{name:`Export CSV ${preservedPulseRunId}`}).click();

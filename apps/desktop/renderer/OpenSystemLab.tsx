@@ -3,6 +3,7 @@ import type { EngineName, EvolutionProgress, LindbladJob, LindbladResult, Quantu
 import { LINDBLAD_FIELDS, lindbladDefaults, lindbladJob } from "../../../packages/models/lindblad";
 import type { OpenPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
+import { selectedLindbladSample, type LindbladRunContext } from "./lindblad-selection";
 
 function decode(bytes: Uint8Array, rows: number): Float64Array {
   if (bytes.byteLength !== rows * 56) throw new Error("Invalid Lindblad artifact shape");
@@ -28,12 +29,12 @@ function OpenChart({ data, rows, cutoff, selected, onSelect }: { data: Float64Ar
       onClick={event => { const rect = event.currentTarget.getBoundingClientRect(); onSelect(Math.max(0, Math.min(rows - 1, Math.round(((event.clientX - rect.left) / rect.width * w - left) / (w - left - 10) * (rows - 1))))); }}>
       {[0, .5, 1].map(value => <g key={value}><line x1={left} x2={w - 10} y1={y(value)} y2={y(value)} stroke="#344350" strokeDasharray="3 4"/><text x="4" y={y(value) + 4} fill="#9bb0bc" fontSize="11">{value.toFixed(1)}</text></g>)}
       {lines.map(line => <polyline key={line.offset} fill="none" stroke={line.color} strokeWidth="2" points={Array.from({ length: rows }, (_, i) => `${x(i)},${y(data[i * 7 + line.offset] / line.scale)}`).join(" ")} />)}
-      <line x1={x(selected)} x2={x(selected)} y1={top} y2={h - bottom} stroke="#e6edf3" strokeDasharray="4 4" />
+      <line x1={x(selected)} x2={x(selected)} y1={top} y2={h - bottom} stroke="#e6edf3" strokeDasharray="4 4" data-testid="lindblad-chart-cursor" />
     </svg>
   </div>;
 }
 
-export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, onSnapshot }: { bridge: QuantumBridge; status: WorkerStatus; preset?: OpenPreset | null; restored?: WorkspaceSnapshot["open"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["open"]) => void }) {
+export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, onSnapshot, onLindbladContext, reopenedLindblad }: { bridge: QuantumBridge; status: WorkerStatus; preset?: OpenPreset | null; restored?: WorkspaceSnapshot["open"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["open"]) => void; onLindbladContext?:(context:LindbladRunContext|null)=>void; reopenedLindblad?:{epoch:number;result:LindbladResult;data:Uint8Array}|null }) {
   const [parameters, setParameters] = useState(lindbladDefaults);
   const [qubit, setQubit] = useState<LindbladJob["initialState"]["qubit"]>("excited");
   const [photons, setPhotons] = useState("0");
@@ -49,6 +50,7 @@ export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, 
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
   const active = useRef<string | null>(null);
+  const appliedReopenEpoch=useRef<number|null>(null);
   useEffect(() => {
     if (!preset) return;
     if (active.current) void bridge.cancel(active.current);
@@ -56,13 +58,27 @@ export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, 
     setQubit(preset.initialState.qubit); setPhotons(String(preset.initialState.photons));
     setStart(String(preset.solver.tStart)); setStop(String(preset.solver.tStop)); setSamples(String(preset.solver.samples));
     setEngine("qutip"); setResult(null); setData(null); setSelected(0); setOutcome("PRESET LOADED");
-  }, [preset]);
+    onLindbladContext?.(null);
+  }, [preset,onLindbladContext]);
   useEffect(() => {
     if (!restored || !restoreEpoch) return;
     setParameters(restored.parameters); setQubit(restored.qubit); setPhotons(restored.photons);
     setStart(restored.start); setStop(restored.stop); setSamples(restored.samples); setEngine(restored.engine);
     setResult(null); setData(null); setSelected(0); setOutcome("WORKSPACE RESTORED");
-  }, [restoreEpoch]);
+    onLindbladContext?.(null);
+  }, [restoreEpoch,onLindbladContext]);
+  useEffect(()=>{
+    if(!reopenedLindblad||appliedReopenEpoch.current===reopenedLindblad.epoch)return;
+    const {result:stored,data:bytes}=reopenedLindblad;
+    if(bytes.byteLength!==stored.data.rows*7*8)return;
+    if(active.current){void bridge.cancel(active.current);active.current=null;setRunning(false);}
+    appliedReopenEpoch.current=reopenedLindblad.epoch;
+    setParameters(Object.fromEntries(Object.entries(stored.model.parameters).map(([key,value])=>[key,String(value)])));
+    setQubit(stored.initialState.qubit);setPhotons(String(stored.initialState.photons));
+    setStart(String(stored.solver.tStart));setStop(String(stored.solver.tStop));setSamples(String(stored.solver.samples));
+    setEngine(stored.engine.name);setResult(stored);setData(decode(bytes,stored.data.rows));setSelected(0);
+    setError("");setOutcome("SAVED RUN OPENED");
+  },[reopenedLindblad?.epoch,bridge]);
   useEffect(() => onSnapshot?.({ parameters, qubit, photons, start, stop, samples, engine }),
     [parameters, qubit, photons, start, stop, samples, engine, onSnapshot]);
   useEffect(() => bridge.onProgress(value => { if (value.jobId === active.current) setProgress(value); }), [bridge]);
@@ -75,7 +91,8 @@ export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, 
     Object.entries(result.model.parameters).some(([key, value]) => Number(parameters[key]) !== value) ||
     result.initialState.qubit !== qubit || result.initialState.photons !== Number(photons) ||
     result.solver.tStart !== solver.tStart || result.solver.tStop !== solver.tStop || result.solver.samples !== solver.samples);
-  const row = data ? Array.from(data.slice(selected * 7, selected * 7 + 7)) : null;
+  const selectedSample=useMemo(()=>result&&data?selectedLindbladSample({kind:"time_sample",model:"open_jaynes_cummings",runId:result.runId,index:selected},result,data):null,[result,data,selected]);
+  const row=selectedSample?[selectedSample.time,selectedSample.pExcited,selectedSample.meanPhoton,selectedSample.purity,selectedSample.coherence,selectedSample.boundaryProbability,selectedSample.trace]:null;
   const diagnostics = useMemo(() => {
     if (!data || !result) return null;
     let maxBoundary = 0, maxTraceDrift = 0, minPurity = 1;
@@ -86,21 +103,29 @@ export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, 
     }
     return { maxBoundary, maxTraceDrift, minPurity };
   }, [data, result]);
+  useEffect(()=>{
+    if(!result||!selectedSample||!diagnostics){onLindbladContext?.(null);return;}
+    onLindbladContext?.({result,selection:{kind:"time_sample",model:"open_jaynes_cummings",runId:result.runId,index:selected},sample:selectedSample,diagnostics,stale:!!stale});
+  },[result,selectedSample,diagnostics,stale,selected,onLindbladContext]);
   async function run() {
     if (!valid || !ready || running) return;
     setRunning(true); setError(""); setOutcome("RUNNING"); setResult(null); setData(null); setSelected(0); setProgress(null);
+    onLindbladContext?.(null);
     const jobId = `job-${crypto.randomUUID()}`; active.current = jobId;
     try {
       const job = lindbladJob(jobId, parameters, { qubit, photons: Number(photons) }, solver, engine, preset?.source);
       const completed = await bridge.lindblad(job);
+      if(active.current!==jobId)return;
       const bytes = await bridge.readData(jobId);
+      if(active.current!==jobId)return;
       if (bytes.byteLength !== completed.data.bytes) throw new Error("Lindblad artifact size mismatch");
       setData(decode(bytes, completed.data.rows)); setResult(completed); setOutcome("COMPLETE");
     } catch (exception) {
+      if(active.current!==jobId)return;
       const message = exception instanceof Error ? exception.message : String(exception);
       setOutcome(message.toLowerCase().includes("cancelled") ? "CANCELLED" : "FAILED");
       if (!message.toLowerCase().includes("cancelled")) setError(message);
-    } finally { active.current = null; setRunning(false); }
+    } finally { if(active.current===jobId){active.current = null; setRunning(false);} }
   }
   return <div className="cavity-lab">
     {preset && <div className="preset-loaded" data-testid="preset-loaded">VOLUME VIII PRESET · {preset.title}<small>{preset.reference}</small></div>}
@@ -124,12 +149,12 @@ export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, 
     {error && <div className="error-message" role="alert">{error}</div>}
     <PresetCheck preset={preset} result={result} data={data} />
     {result && data && diagnostics && <section className="panel cavity-result" data-testid="lindblad-result">
-      <div className="panel-heading"><div><p className="eyebrow">QUANTUM-LINDBLAD-DATA / V1</p><h2>Density-matrix dynamics</h2></div><span className={`result-badge ${stale ? "stale" : ""}`}>{stale ? "OUT OF DATE" : `${result.data.rows} SAMPLES`}</span></div>
+      <div className="panel-heading"><div><p className="eyebrow">QUANTUM-LINDBLAD-DATA / V1</p><h2>Open-system observables</h2></div><span className={`result-badge ${stale ? "stale" : ""}`}>{stale ? "OUT OF DATE" : `${result.data.rows} SAMPLES`}</span></div>
       <div className="cavity-metrics"><div><span>MINIMUM PURITY</span><strong data-testid="minimum-purity">{diagnostics.minPurity.toFixed(6)}</strong></div><div><span>TRACE DRIFT / MAX</span><strong>{diagnostics.maxTraceDrift.toExponential(2)}</strong></div><div><span>FOCK BOUNDARY / MAX</span><strong>{diagnostics.maxBoundary.toExponential(2)}</strong><small>{diagnostics.maxBoundary > .02 ? "Increase cutoff" : "Cutoff appears adequate"}</small></div></div>
       <OpenChart data={data} rows={result.data.rows} cutoff={result.model.parameters.cutoff} selected={selected} onSelect={setSelected}/>
       <div className="dynamics-timeline"><div className="timeline-heading"><span className="eyebrow">SYNCHRONIZED TIME CURSOR</span><strong>t = {row?.[0].toFixed(4)}</strong></div><input aria-label="Open-system time cursor" type="range" min="0" max={result.data.rows - 1} value={selected} onChange={event => setSelected(Number(event.target.value))}/></div>
-      <div className="cavity-readouts"><span>P(e)<strong data-testid="open-excited">{row?.[1].toFixed(5)}</strong></span><span>⟨n⟩<strong data-testid="open-photons">{row?.[2].toFixed(5)}</strong></span><span>Purity<strong>{row?.[3].toFixed(5)}</strong></span><span>|ρge|<strong>{row?.[4].toFixed(5)}</strong></span></div>
-      <div className="steady-card" data-testid="steady-state"><p className="eyebrow">STATIONARY DENSITY MATRIX</p><h3>Steady state</h3>{result.steadyState ? <div className="cavity-readouts"><span>P(e)<strong>{result.steadyState.pExcited.toFixed(5)}</strong></span><span>⟨n⟩<strong>{result.steadyState.meanPhoton.toFixed(5)}</strong></span><span>Purity<strong>{result.steadyState.purity.toFixed(5)}</strong></span><span>|ρge|<strong>{result.steadyState.coherence.toFixed(5)}</strong></span></div> : <p>Not reported: both atom relaxation and cavity loss must be positive to use the unique-steady-state check.</p>}</div>
+      <div className="cavity-readouts"><span>P(e)<strong data-testid="open-excited">{row?.[1].toFixed(5)}</strong></span><span>⟨n⟩<strong data-testid="open-photons">{row?.[2].toFixed(5)}</strong></span><span>Purity<strong data-testid="open-purity">{row?.[3].toFixed(5)}</strong></span><span>|ρge|<strong data-testid="open-coherence">{row?.[4].toFixed(5)}</strong></span><span>Boundary<strong data-testid="open-boundary">{row?.[5].toExponential(2)}</strong></span><span>Trace<strong data-testid="open-trace">{row?.[6].toFixed(5)}</strong></span></div>
+      <div className="steady-card" data-testid="steady-state"><p className="eyebrow">STATIONARY OBSERVABLES</p><h3>Steady state</h3>{result.steadyState ? <div className="cavity-readouts"><span>P(e)<strong>{result.steadyState.pExcited.toFixed(5)}</strong></span><span>⟨n⟩<strong>{result.steadyState.meanPhoton.toFixed(5)}</strong></span><span>Purity<strong>{result.steadyState.purity.toFixed(5)}</strong></span><span>|ρge|<strong>{result.steadyState.coherence.toFixed(5)}</strong></span></div> : <p>Not reported: both atom relaxation and cavity loss must be positive to use the unique-steady-state check.</p>}</div>
       <div className="plot-caption"><span>{result.engine.name} {result.engine.version} · {result.provenance.durationMs.toFixed(1)} ms</span><span>Rotating frame · SHA-256 verified</span></div>
     </section>}
   </div>;

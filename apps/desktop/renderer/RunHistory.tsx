@@ -8,7 +8,7 @@ function evolutionLabel(model:string){return evolutionModels.includes(model as E
 const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
 function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void> }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void> }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
@@ -26,8 +26,8 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
       setMessage(path ? `Exported ${format.toUpperCase()}: ${path}` : "Export cancelled");
     } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
   }
-  async function openOne(runId:string,kind:"spectrum"|"rabi"|"evolution"|"cavity"){
-    const open=kind==="spectrum"?onOpenSpectrum:kind==="rabi"?onOpenRabi:kind==="cavity"?onOpenCavity:onOpenEvolution;
+  async function openOne(runId:string,kind:"spectrum"|"rabi"|"evolution"|"cavity"|"lindblad"){
+    const open=kind==="spectrum"?onOpenSpectrum:kind==="rabi"?onOpenRabi:kind==="cavity"?onOpenCavity:kind==="lindblad"?onOpenLindblad:onOpenEvolution;
     if(!open||opening)return;
     setOpening(runId);setMessage("");
     try{await open(runId);}
@@ -36,7 +36,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   }
   return <section className="runs-page" data-testid="runs-page">
     <div className="panel runs-intro"><div><p className="eyebrow">DURABLE RUNS / QLAB-016</p><h2>Every completed calculation, accounted for.</h2>
-      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen a verified two-level spectrum, evolution or cavity run, or export data, figures and manifests.</p></div>
+      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen a verified two-level spectrum, evolution, cavity or Lindblad run, or export data, figures and manifests.</p></div>
       <button type="button" className="text-button" onClick={() => void refresh()} disabled={busy}>Refresh runs ↻</button></div>
     {message && <p className="runs-message" role="status">{message}</p>}
     {runs.length === 0 ? <div className="panel runs-empty">{busy ? "Loading saved runs…" : "No saved runs yet. Run any laboratory to create one."}</div> :
@@ -53,6 +53,9 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
           {run.operation==="cavity"&&cavityLabel(run.model)&&onOpenCavity&&
           <button type="button" className="run-open" aria-label={`Open ${cavityLabel(run.model)} cavity ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,"cavity")}>{opening===run.runId?"Opening…":`Open ${cavityLabel(run.model)} cavity`}</button>}
+          {run.operation==="lindblad"&&run.model==="open_jaynes_cummings"&&onOpenLindblad&&
+          <button type="button" className="run-open" aria-label={`Open Lindblad dynamics ${run.runId}`} disabled={!!opening}
+            onClick={()=>void openOne(run.runId,"lindblad")}>{opening===run.runId?"Opening…":"Open Lindblad dynamics"}</button>}
           {(["csv", "svg", "manifest"] as const).map(format =>
           <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}</div>
       </article>)}</div>}

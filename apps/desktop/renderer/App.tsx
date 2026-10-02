@@ -3,6 +3,7 @@ import type {
   EngineName,
   CavityResult,
   EvolutionResult,
+  LindbladResult,
   QuantumBridge,
   SpectrumResult,
   WorkerStatus,
@@ -22,6 +23,8 @@ import { CavityLab } from "./CavityLab";
 import { CavityRunInspector } from "./CavityRunInspector";
 import type { CavityRunContext } from "./cavity-selection";
 import { OpenSystemLab } from "./OpenSystemLab";
+import { LindbladRunInspector } from "./LindbladRunInspector";
+import type { LindbladRunContext } from "./lindblad-selection";
 import { SweepLab } from "./SweepLab";
 import { ManyBodyLab } from "./ManyBodyLab";
 import { CircuitLab } from "./CircuitLab";
@@ -121,6 +124,9 @@ export function App() {
   const [cavityContext,setCavityContext]=useState<CavityRunContext|null>(null);
   const collectCavityContext=useCallback((context:CavityRunContext|null)=>setCavityContext(context),[]);
   const [reopenedCavity,setReopenedCavity]=useState<{epoch:number;result:CavityResult;data:Uint8Array}|null>(null);
+  const [lindbladContext,setLindbladContext]=useState<LindbladRunContext|null>(null);
+  const collectLindbladContext=useCallback((context:LindbladRunContext|null)=>setLindbladContext(context),[]);
+  const [reopenedLindblad,setReopenedLindblad]=useState<{epoch:number;result:LindbladResult;data:Uint8Array}|null>(null);
   const [selection,setSelection]=useState<ScientificSelection|null>(null);
   const [inspectorTab,setInspectorTab]=useState<"parameters"|"observables"|"provenance">("parameters");
   const runSelections=useRef(new Map<string,ScientificSelection>());
@@ -378,6 +384,13 @@ export function App() {
     setActiveModel(model);setTab("cavity");
     setWorkspaceMessage(`Verified ${CAVITY_REGISTRY[model].label} cavity run reopened · ${saved.result.runId}`);
   }
+  async function openSavedLindblad(runId:string){
+    const saved=await window.quantum.getLindbladRun(runId);
+    setLindbladContext(null);
+    setReopenedLindblad(current=>({epoch:(current?.epoch??0)+1,...saved}));
+    setSelectedPreset(null);setActiveModel("lindblad");setTab("open");
+    setWorkspaceMessage(`Verified Lindblad dynamics reopened · ${saved.result.runId}`);
+  }
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
     presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
@@ -388,7 +401,8 @@ export function App() {
     tab==="runs"?"SAVED RUNS":null;
   const visibleRunId=activeModel==="two_level"&&(tab==="spectrum"||tab==="hamiltonian")?result?.runId:
     tab==="dynamics"&&evolutionContext?.result.model.type===activeModel?evolutionContext.result.runId:
-    tab==="cavity"&&cavityContext?.result.model.type===activeModel?cavityContext.result.runId:null;
+    tab==="cavity"&&cavityContext?.result.model.type===activeModel?cavityContext.result.runId:
+    tab==="open"&&activeModel==="lindblad"?lindbladContext?.result.runId:null;
   return (
     <div className="app">
       <header className="topbar">
@@ -420,7 +434,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"?"evolution-layout":""}`}>
+      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"?"evolution-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
@@ -569,7 +583,7 @@ export function App() {
             />
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} onCavityContext={collectCavityContext} reopenedCavity={reopenedCavity} /></div>
-          <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} /></div>
+          <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} onLindbladContext={collectLindbladContext} reopenedLindblad={reopenedLindblad} /></div>
           <div hidden={tab !== "sweep"||activeModel==="two_level"}><SweepLab bridge={window.quantum} status={status}
             selectedModel={activeModel!=="two_level"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
             onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
@@ -583,7 +597,7 @@ export function App() {
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic}/></div>
-          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} /> : tab === "backend" ? (
+          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -835,7 +849,7 @@ export function App() {
             )}
         </main>
         <aside className="inspector">
-          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:<>
+          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
           <nav className="inspector-tabs" aria-label="Model inspector views">

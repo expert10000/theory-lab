@@ -5,10 +5,11 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { EVOLUTION_COLUMNS, CAVITY_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot, type CavityResult } from "../packages/contracts";
+import { EVOLUTION_COLUMNS, CAVITY_COLUMNS, LINDBLAD_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot, type CavityResult, type LindbladResult } from "../packages/contracts";
 import { RunStore } from "../apps/desktop/main/runs";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
 import { cavityDefaults, cavityJob } from "../packages/models/cavity";
+import { lindbladDefaults, lindbladJob } from "../packages/models/lindblad";
 import type { CircuitJob, CircuitResult, ManyBodyJob, ManyBodyResult } from "../packages/contracts";
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 import { CIRCUIT_DEFAULTS, circuitJob } from "../packages/models/circuit";
@@ -187,6 +188,33 @@ test("both cavity models reopen only their hash-verified six-column saved runs",
       await assert.rejects(store.cavity(result.runId),/integrity check/);
     }
     await assert.rejects(store.cavity("../bad"),/Invalid run ID/);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+test("Lindblad saved run reopens only a hash-verified seven-column artifact",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-lindblad-run-"));
+  const artifacts=join(root,"artifacts");await mkdir(artifacts);
+  try{
+    const store=new RunStore(join(root,"runs"),artifacts);
+    const job=lindbladJob("job-open",lindbladDefaults(),{qubit:"excited",photons:0},
+      {type:"master",tStart:0,tStop:1,samples:2},"native");
+    const binary=Buffer.alloc(2*7*8),view=new DataView(binary.buffer,binary.byteOffset,binary.byteLength);
+    for(let row=0;row<2;row++)for(const [column,value] of [row,row?0:1,row,1,0,0,1].entries())
+      view.setFloat64((row*7+column)*8,value,true);
+    await writeFile(join(artifacts,`${job.jobId}.f64`),binary);
+    const result:LindbladResult={schema:"quantum-result/v1",jobId:job.jobId,runId:"run-open",
+      status:"completed",operation:"lindblad",model:job.model,initialState:job.initialState,solver:job.solver,
+      engine:{name:"native",version:"1.18"},steadyState:null,
+      data:{schema:"quantum-lindblad-data/v1",format:"f64le",path:`${job.jobId}.f64`,rows:2,
+        columns:LINDBLAD_COLUMNS,bytes:binary.byteLength,sha256:createHash("sha256").update(binary).digest("hex")},
+      provenance:{pythonVersion:"3.12",workerVersion:"0.1",computedAt:"2026-10-03T00:00:00Z",durationMs:1}};
+    await store.record(job,result);
+    const reopened=await new RunStore(join(root,"runs"),artifacts).lindblad(result.runId);
+    assert.deepEqual(reopened.result,result);
+    assert.deepEqual(Buffer.from(reopened.data),binary);
+    await assert.rejects(store.cavity(result.runId),/not a verified cavity evolution/);
+    await writeFile(join(root,"runs",result.runId,"data.f64"),Buffer.alloc(binary.byteLength));
+    await assert.rejects(store.lindblad(result.runId),/integrity check/);
+    await assert.rejects(store.lindblad("../bad"),/Invalid run ID/);
   }finally{await rm(root,{recursive:true,force:true});}
 });
 test("driven workspace settings are optional, bounded strings and reject executable or unsupported fields",()=>{

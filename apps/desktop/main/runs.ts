@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
@@ -221,6 +221,16 @@ export class RunStore {
       manifest.files.data!=="data.f64"||!data||
       result.data.columns.length!==6||result.data.rows<2||data.byteLength!==result.data.rows*6*8)
       throw new Error("Saved run is not a verified cavity evolution");
+    return {result,data:Uint8Array.from(data)};
+  }
+  async lindblad(runId:string):Promise<{result:LindbladResult;data:Uint8Array}>{
+    const {manifest,job,result,data}=await this.load(runId);
+    if(job.operation!=="lindblad"||result.operation!=="lindblad"||
+      result.model.type!=="open_jaynes_cummings"||manifest.operation!=="lindblad"||
+      manifest.model!==result.model.type||manifest.jobId!==result.jobId||
+      manifest.engine!==result.engine.name||manifest.files.data!=="data.f64"||!data||
+      result.data.columns.length!==7||result.data.rows<2||data.byteLength!==result.data.rows*7*8)
+      throw new Error("Saved run is not a verified Lindblad evolution");
     return {result,data:Uint8Array.from(data)};
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
