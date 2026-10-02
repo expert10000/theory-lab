@@ -9,6 +9,7 @@ import type {
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
 import {ScientificSelectionPanel} from "./ScientificSelectionPanel";
+import {TwoLevelStateView} from "./TwoLevelStateView";
 import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
@@ -665,7 +666,8 @@ export function App() {
                   </div>
                   <p>
                     Diagonal terms set the detuning. Off-diagonal terms couple
-                    |0⟩ and |1⟩.
+                    |0⟩ and |1⟩. This matrix follows the editable draft; the
+                    linked state panel below shows the immutable run matrix.
                   </p>
                   <div className="analytic">E± = ± ½ √(Δ² + Ω²)</div>
                   <p>
@@ -776,6 +778,9 @@ export function App() {
                   )}
                 </>
               )}
+              <TwoLevelStateView result={result} stale={!!stale}
+                selectedLevel={currentSelection?.kind==="energy"?currentSelection.level:null}
+                onSelectLevel={level=>{if(result)chooseSelection({kind:"energy",model:"two_level",runId:result.runId,level});}}/>
             </>
           )}
           {error && (

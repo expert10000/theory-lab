@@ -148,6 +148,18 @@ try {
   assert.equal(await page.getByRole("button",{name:"Select upper energy E plus"}).getAttribute("aria-pressed"),"true");
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
   assert.match(await page.getByTestId("scientific-selection").innerText(),/Verified \|ψ⟩/);
+  const stateView=page.getByTestId("two-level-state-view");
+  assert.ok(await stateView.isVisible());
+  assert.match(await page.getByTestId("state-view-run-matrix").innerText(),/0\.400000/);
+  assert.match(await page.getByTestId("state-view-details").innerText(),/P0 · \|0⟩/);
+  assert.equal(await page.getByTestId("bloch-select-1").getAttribute("aria-pressed"),"true");
+  const xLow=Number(await page.getByTestId("bloch-select-0").getAttribute("data-bloch-x"));
+  const xHigh=Number(await page.getByTestId("bloch-select-1").getAttribute("data-bloch-x"));
+  assert.ok(Math.abs(xLow+xHigh)<1e-9,"verified eigenstates are antipodal");
+  await page.getByTestId("bloch-select-0").focus();
+  await page.keyboard.press("Enter");
+  assert.equal(await page.getByRole("button",{name:"Select lower energy E minus"}).getAttribute("aria-pressed"),"true");
+  await page.getByTestId("bloch-select-1").click();
   const inspectorTabs=page.getByRole("navigation",{name:"Model inspector views"});
   await inspectorTabs.getByRole("button",{name:"Observables"}).click();
   assert.match(await page.getByTestId("observable-inspector").innerText(),/Populations P₀ \/ P₁/);
@@ -158,6 +170,7 @@ try {
   await page.screenshot({path:"artifacts/desktop-linked-energy.png",fullPage:true});
   await page.getByRole("tab",{name:"Analysis",exact:true}).click();
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
+  assert.match(await page.getByTestId("state-view-details").innerText(),/E₊ · VERIFIED RUN STATE/);
   await page.getByRole("button",{name:"Select sigma x operator"}).click();
   assert.match(await page.getByTestId("scientific-selection").innerText(),/σx · Pauli matrix/);
   assert.equal(await page.getByLabel("Sigma x matrix").locator("span").count(),4);
@@ -174,10 +187,13 @@ try {
   await page.locator("#omega").fill("0.9");
   await page.getByTestId("result-state").filter({hasText:"OUT OF DATE"}).waitFor();
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₋ = -0\.640312/);
+  assert.match(await stateView.innerText(),/SAVED RUN · DRAFT CHANGED/);
+  assert.match(await page.getByTestId("state-view-run-matrix").innerText(),/0\.400000/,"stored-run matrix is unaffected by the edited draft");
   await page.getByRole("button",{name:"Restore smoke values"}).click();
   await page.getByRole("button",{name:/Run spectrum/}).click();
   await page.waitForFunction(oldRunId=>document.querySelector('[data-testid="workspace-run-id"]')?.textContent!==oldRunId,selectedRunId);
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"new verified run clears old run-scoped selection");
+  assert.equal(await page.getByTestId("state-view-prompt").count(),1,"new run starts with no selected state");
   preservedSpectrumRunId=await page.getByTestId("workspace-run-id").innerText();
   await page.getByRole("button",{name:"Select upper energy E plus"}).click();
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
@@ -187,6 +203,7 @@ try {
   await page.getByTestId("workspace-run-id").filter({hasText:preservedSpectrumRunId}).waitFor();
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/,
     "a verified selection survives reopening its exact source run");
+  assert.match(await page.getByTestId("state-view-details").innerText(),/E₊ · VERIFIED RUN STATE/);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   await page.getByRole("button",{name:`Open spectrum ${selectedRunId}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:selectedRunId}).waitFor();
@@ -194,6 +211,7 @@ try {
     "reopening the older run restores its own level, not the newer run's selection");
   await page.getByRole("button",{name:"Select upper energy E plus"}).click();
   await page.getByRole("button",{name:/Rabi dynamics/}).click();
+  assert.equal(await page.getByTestId("two-level-state-view").count(),0,"a two-level Bloch view is not fabricated for dynamics models");
   await page.getByRole("button",{name:/Two-level system/}).click();
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"model change invalidates selection");
   await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
@@ -534,9 +552,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
-  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-4.*Partially done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3.*Next: QLAB-UI-5/s);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-4, QLAB-UI-5.*Partially done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3.*Next: close QLAB-UI-1, QLAB-UI-2, QLAB-UI-3 adapter gaps/s);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-4"?/Implemented/:["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"].includes(id)?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-4","QLAB-UI-5"].includes(id)?/Implemented/:["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"].includes(id)?/Partial/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -1326,6 +1344,8 @@ try {
   await page.getByRole("button",{name:`Open spectrum ${preservedSpectrumRunId}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:preservedSpectrumRunId}).waitFor();
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"reopening after restart invents no selection");
+  assert.equal(await page.getByTestId("two-level-state-view").count(),1,"verified saved state view reopens after restart");
+  assert.equal(await page.getByTestId("state-view-prompt").count(),1,"restart does not invent a selected eigenstate");
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);

@@ -13,9 +13,9 @@ bundle import and QVIS-007 is orbital convergence; they must not be confused
 with the newly supplied plan's broader reciprocal-space/band milestones.
 Historical IDs are retained; no new QLAB numbers are planned.
 The `QLAB-UI-1–8` labels are a separate interaction track, not renumbered
-QLAB delivery commits. UI-4 is implemented for declared sweep adapters;
-UI-1–3 are partial and UI-5–8 are planned. UI-5's verified two-level
-Bloch/state view is next. See the
+QLAB delivery commits. UI-4–5 are implemented for their declared two-level
+adapters; UI-1–3 are partial and UI-6–8 are planned. Closing the wider
+UI-1–3 run-context and view-adapter gaps is next. See the
 [linked workspace roadmap](QLAB_LINKED_WORKSPACE_ROADMAP.md) for navigation,
 shared selection, observable inspection, energy sweeps, state views, run
 comparison, provenance and the conditional scene bridge.
@@ -132,10 +132,13 @@ The QLAB-UI-1–3 two-level pilots partially connect model, run, spectrum,
 Hamiltonian and inspector selection; wider run-context, linked-state and
 model-specific observable adapters remain. UI-4 is complete at its declared
 scope: verified avoided-crossing E± studies coexist with final-P₁ dynamics
-sweeps, with durable checkpoint/reopen/resume. The current six-mode navigation
+sweeps, with durable checkpoint/reopen/resume. UI-5 adds a two-level Bloch
+great-circle/state readout tied to verified eigenvectors and run-scoped
+selection; it withholds unique states for legacy or degenerate spectra.
+The current six-mode navigation
 is Explore, Dynamics, Sweeps, Analysis, Scenes and Runs; Atlas/Presets live in
-Library and Roadmap/Backend in System. Next is UI-5, a verified two-level
-Bloch/state view, followed by closing remaining UI-1–3 adapter gaps and then
+Library and Roadmap/Backend in System. Next are the remaining UI-1–3 wider
+adapter gaps, followed by
 UI-6–8 comparison, provenance/rerun and compatible scene handoff. Existing
 lab entry points and saved workspaces remain compatible. See
 [QLAB_LINKED_WORKSPACE_ROADMAP.md](QLAB_LINKED_WORKSPACE_ROADMAP.md) for

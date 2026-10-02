@@ -1,6 +1,6 @@
 # Post-QLAB roadmap — integration and implementation status
 
-Updated 2026-10-01. This file incorporates the supplied
+Updated 2026-10-02. This file incorporates the supplied
 `MATH3D-2026/POST_QLAB_QVIS_M3D_ROADMAP.md` as a planning reference.
 The source document is preserved below; this status overlay and
 [ROADMAP.md](ROADMAP.md) describe the actual Lab delivery sequence.
@@ -83,10 +83,10 @@ eleven Atlas load presets, web compute permissions, QVIS schema and Math3D
 remain unchanged. See
 [D1_ANHARMONIC_OSCILLATOR.md](D1_ANHARMONIC_OSCILLATOR.md).
 
-QLAB-UI-1–8 are a separate Lab interaction track. UI-4 is implemented for
-declared sweep adapters, including durable verified eigenenergy studies;
-UI-1–3 are partial and UI-5–8 are planned. UI-5's linked two-level Bloch/state
-view is next, followed by closing wider UI-1–3 adapter gaps, immutable-run
+QLAB-UI-1–8 are a separate Lab interaction track. UI-4–5 are implemented for
+declared two-level sweep/state adapters, including durable eigenenergy studies
+and a verified linked Bloch/state view. UI-1–3 are partial and UI-6–8 are
+planned. Closing wider UI-1–3 adapter gaps is next, followed by immutable-run
 comparison, provenance and compatible scene handoff. This is additive to
 the delivered physics and QVIS system, not a new worker or scene schema.
 Math3D import/handoff remains separately gated. See
