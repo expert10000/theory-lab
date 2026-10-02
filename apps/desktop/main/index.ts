@@ -355,6 +355,11 @@ app.whenReady().then(() => {
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid spectrum run ID");
     return runs.spectrum(runId);
   });
+  ipcMain.handle("quantum:rabi-run", (event, runId:unknown) => {
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid Rabi run ID");
+    return runs.rabi(runId);
+  });
   ipcMain.handle("quantum:save-spectrum-study", (event, result:unknown) => {
     trusted(event);
     return spectrumStudies.save(result);

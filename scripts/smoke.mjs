@@ -14,6 +14,7 @@ delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
 let preservedSpectrumRunId = null;
+let preservedRabiRunId = null;
 let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
@@ -69,6 +70,7 @@ try {
       "exportScene",
       "exportSceneExample",
       "getCapabilities",
+      "getRabiRun",
       "getResources",
       "getScene",
       "getSceneExample",
@@ -714,6 +716,11 @@ try {
     .getByTestId("evolution-state")
     .filter({ hasText: "COMPLETE" })
     .waitFor({ timeout: 30000 });
+  const rabiRunId=await page.getByTestId("workspace-run-id").innerText();
+  preservedRabiRunId=rabiRunId;
+  assert.match(rabiRunId,/^run-/);
+  assert.equal(await page.getByTestId("rabi-inspector-inputs").locator("code").getAttribute("title"),rabiRunId);
+  assert.equal(await page.getByTestId("rabi-inspector-time").innerText(),"0.0000");
   assert.ok(
     await page
       .getByRole("img", { name: /QuTiP population and Pauli/ })
@@ -742,6 +749,8 @@ try {
     await page.getByTestId("selected-time").textContent(),
     "t = 20.0000",
   );
+  await page.getByTestId("rabi-inspector-time").filter({hasText:"20.0000"}).waitFor();
+  assert.equal((await page.getByTestId("rabi-inspector-populations").innerText()).split(" / ")[0],await page.getByTestId("population-0").innerText());
   assert.equal(
     await page.getByTestId("chart-time-cursor").getAttribute("x1"),
     "750",
@@ -764,10 +773,21 @@ try {
     await page.getByTestId("selected-time").textContent(),
     "t = 10.0000",
   );
+  await page.getByTestId("rabi-inspector-time").filter({hasText:"10.0000"}).waitFor();
+  const storedFrequency=await page.getByTestId("rabi-inspector-inputs").innerText();
+  await page.getByLabel("Drive frequency ω", { exact: true }).fill("1.1");
+  await page.getByTestId("rabi-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("rabi-inspector-inputs").innerText(),storedFrequency);
+  assert.equal(await page.getByTestId("workspace-run-id").innerText(),rabiRunId);
   await page.screenshot({
     path: "artifacts/desktop-dynamics.png",
     fullPage: true,
   });
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Rabi evolution ${rabiRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:rabiRunId}).waitFor();
+  await page.getByTestId("rabi-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("rabi-inspector-time").innerText(),"0.0000");
   const gpu = await page.evaluate(() => window.quantum.getCapabilities());
   if (gpu.engines.dynamiqs?.available) {
     await page.getByRole("combobox", { name: "Dynamics engine" }).selectOption("dynamiqs");
@@ -1338,6 +1358,7 @@ try {
   assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
   assert.ok(runIds.includes(preservedPulseRunId),"saved pulse envelope and coefficients survive full restart");
   assert.ok(runIds.includes(preservedSpectrumRunId),"saved spectrum survives full restart");
+  assert.ok(runIds.includes(preservedRabiRunId),"saved Rabi evolution survives full restart");
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1346,6 +1367,11 @@ try {
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"reopening after restart invents no selection");
   assert.equal(await page.getByTestId("two-level-state-view").count(),1,"verified saved state view reopens after restart");
   assert.equal(await page.getByTestId("state-view-prompt").count(),1,"restart does not invent a selected eigenstate");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Rabi evolution ${preservedRabiRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedRabiRunId}).waitFor();
+  await page.getByTestId("rabi-inspector-time").filter({hasText:"0.0000"}).waitFor();
+  assert.equal(await page.getByTestId("rabi-inspector-state").innerText(),"Run inputs match the draft");
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);

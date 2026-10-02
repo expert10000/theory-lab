@@ -11,9 +11,9 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | --- | --- | --- |
 | Done | QLAB-UI-4 | The model-selected Sweeps workspace has a bounded two-level eigenenergy study, verified point runs, durable study checkpoints, reopen and resume. Existing dynamics sweeps still mean final `P₁`. This gate is complete for declared adapters, not a claim that every model supports every output. |
 | Done | QLAB-UI-5 | The verified two-level eigenvectors drive a linked Bloch x-z great circle and state readout. Spectrum, inspector and Analysis share exact-run selection; legacy and degenerate results show why a unique state is unavailable. This is not a Bloch claim for larger Hilbert spaces. |
-| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; run-context breadcrumbs still need per-lab adapters beyond the two-level pilot. |
-| Partially done | QLAB-UI-2 | Run-scoped two-level spectrum/parameter/operator/state selection and exact saved-run reopening work; broader model adapters remain. |
-| Partially done | QLAB-UI-3 | Verified two-level eigenstate diagnostics, inspector and interactive Hamiltonian work; wider model-specific observable/inspector adapters remain. |
+| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level and Rabi run breadcrumbs work, while other labs still need adapters. |
+| Partially done | QLAB-UI-2 | Exact-run spectrum selection and a Rabi time-sample cursor link plot, state and observables; both saved run types reopen. Broader model adapters remain. |
+| Partially done | QLAB-UI-3 | Verified two-level eigenstate diagnostics and a Rabi run-backed inspector work; wider model-specific observable/inspector adapters remain. |
 | Next | Close QLAB-UI-1–3 gaps | Add per-lab run-context breadcrumbs and explicit scientific-selection/inspector adapters for supported non-two-level models. Verify each adapter against immutable saved runs; keep unsupported views unavailable. |
 | Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
@@ -22,6 +22,15 @@ only after their wider adapter/interaction gaps pass the individual acceptance
 gates below. Add other sweep-capable
 models through declared parameter/observable adapters, without reopening the
 completed UI-4 gate or implying universal physics support.
+
+The first non-static UI-1–3 slice is now delivered for driven two-level Rabi
+dynamics: its breadcrumb names the completed saved run, an exact-run sample
+selection synchronizes the chart, Bloch state, density and observable readouts,
+and the inspector reads immutable result inputs and the selected binary row.
+Draft edits mark the displayed result out of date without replacing stored
+values. The Runs page reopens SHA-256-checked Rabi results and data after an
+app restart, starting at the first recorded sample. This pilot does not make
+other dynamics models' inspector adapters complete.
 
 ## Decision and current baseline
 
@@ -116,7 +125,7 @@ job registry.
 
 QLAB-UI-1 is **Partial**: six-mode navigation, grouped native-keyboard model
 disclosures, separate Library/System links, safe fragment routes, back/forward,
-legacy snapshot mapping and the two-level persisted-run breadcrumb are tested.
+legacy snapshot mapping and the two-level and Rabi persisted-run breadcrumbs are tested.
 Other labs still need run-context breadcrumb adapters; no result is inferred from
 their inputs. QLAB-UI-2 is **Partial**: the two-level pilot now has typed
 run-scoped energy references, draft parameter/operator references, keyboard
@@ -127,7 +136,9 @@ different or missing run cannot inherit it, and no selection is invented after
 an app restart. Legacy energy-only `quantum-result/v1` spectra do not acquire
 invented eigenvectors; new two-level results have independently checked state
 diagnostics. The linked Bloch/state view is delivered in UI-5; wider model
-adapters remain future gates. UI-3 is **Partial**: new two-level runs
+adapters remain future gates. Rabi evolution adds a typed exact-run time-sample
+selection, synchronized numerical/state views and saved-run reopening without
+inventing a retained selection. UI-3 is **Partial**: new two-level runs
 carry real normalized eigenvectors, populations, Bloch expectations and
 eigenpair residuals from QuTiP or native diagonalization. An independent
 Electron check validates them before display, persistence and reopening;
@@ -136,7 +147,9 @@ arbitrary eigenvector. The inspector has Parameters, Observables and Provenance
 views, and old energy-only saved results remain readable without invented
 state data. The formula's parameter/operator buttons remain keyboard usable.
 Bounded coarse Δ/Ω sliders now mirror the exact draft without clamping
-out-of-range numeric inputs. Wider model adapters are still future work.
+out-of-range numeric inputs. The Rabi inspector exposes stored solver/engine
+inputs and a selected saved-data sample, with a distinct stale-draft notice.
+Wider model adapters are still future work.
 UI-4 is **Implemented for declared adapters**: the two-level Sweeps view plots
 E₋/E₊ against Δ at fixed Ω from separately verified, saved spectrum runs.
 Keyboard-selectable points open their exact saved run or populate an

@@ -34,6 +34,7 @@ const bridge: QuantumBridge = {
   loadWorkspace: () => ipcRenderer.invoke("quantum:load-workspace"),
   listRuns: () => ipcRenderer.invoke("quantum:list-runs"),
   getSpectrumRun: (runId) => ipcRenderer.invoke("quantum:spectrum-run", runId),
+  getRabiRun: (runId) => ipcRenderer.invoke("quantum:rabi-run", runId),
   saveSpectrumStudy: (result) => ipcRenderer.invoke("quantum:save-spectrum-study", result),
   getSpectrumStudy: (studyId) => ipcRenderer.invoke("quantum:get-spectrum-study", studyId),
   listSpectrumStudies: () => ipcRenderer.invoke("quantum:list-spectrum-studies"),

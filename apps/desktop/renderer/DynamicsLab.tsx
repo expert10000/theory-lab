@@ -25,6 +25,7 @@ import {
 } from "../../../packages/quantum-3d/comparison";
 import type { EvolutionPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
+import { selectedRabiSample, type RabiRunContext, type RabiTimeSelection } from "./rabi-selection";
 
 type EngineMode = EvolutionEngineName | "compare";
 
@@ -159,6 +160,8 @@ export function DynamicsLab({
   restored,
   restoreEpoch,
   onSnapshot,
+  onRabiContext,
+  reopenedRabi,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -167,6 +170,8 @@ export function DynamicsLab({
   restored?: WorkspaceSnapshot["dynamics"] | null;
   restoreEpoch?: number;
   onSnapshot?: (value: WorkspaceSnapshot["dynamics"]) => void;
+  onRabiContext?: (context: RabiRunContext | null) => void;
+  reopenedRabi?: {epoch:number;result:EvolutionResult;data:Uint8Array}|null;
 }) {
   const definition = MODEL_REGISTRY[modelId];
   const [parameters, setParameters] = useState(() => defaultsFor(modelId));
@@ -192,6 +197,7 @@ export function DynamicsLab({
   const [resultMode, setResultMode] = useState<EngineMode | null>(null);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const activeJob = useRef<string | null>(null);
+  const appliedReopenEpoch = useRef<number | null>(null);
   useEffect(() => {
     if (activeJob.current) void bridge.cancel(activeJob.current);
     setParameters(defaultsFor(modelId));
@@ -220,6 +226,21 @@ export function DynamicsLab({
     setSamples(restored.samples); setBasis(restored.basis); setEngineMode(restored.engine);
     setResult(null); setData(null); setComparison(null); setSelectedIndex(0); setOutcome("WORKSPACE RESTORED");
   }, [restoreEpoch]);
+  useEffect(() => {
+    if (!reopenedRabi || modelId !== "driven_two_level" || appliedReopenEpoch.current===reopenedRabi.epoch) return;
+    const {result:stored, data:bytes}=reopenedRabi;
+    if(stored.model.type!=="driven_two_level"||bytes.byteLength!==stored.data.rows*10*8)return;
+    appliedReopenEpoch.current=reopenedRabi.epoch;
+    const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+    const numbers=new Float64Array(stored.data.rows*10);
+    for(let i=0;i<numbers.length;i++)numbers[i]=view.getFloat64(i*8,true);
+    setParameters(Object.fromEntries(Object.entries(stored.model.parameters).map(([key,value])=>[key,String(value)])));
+    setStartTime(String(stored.solver.tStart));setDuration(String(stored.solver.tStop));
+    setSamples(String(stored.solver.samples));setBasis(stored.initialState.index);
+    setEngineMode(stored.engine.name);setResultMode(stored.engine.name);
+    setResult(stored);setData(numbers);setComparison(null);setSelectedIndex(0);
+    setError("");setOutcome("SAVED RUN OPENED");
+  },[reopenedRabi?.epoch,modelId]);
   useEffect(() => onSnapshot?.({ modelId, parameters, start: startTime, stop: duration,
     samples, basis, engine: engineMode }),
     [modelId, parameters, startTime, duration, samples, basis, engineMode, onSnapshot]);
@@ -266,9 +287,19 @@ export function DynamicsLab({
       basis !== result.initialState.index ||
       engineMode !== resultMode);
   const selected = useMemo(
-    () => (result && data ? sampleAt(data, selectedIndex) : null),
-    [result, data, selectedIndex],
+    () => {
+      if (!result || !data) return null;
+      if (modelId !== "driven_two_level") return sampleAt(data, selectedIndex);
+      const selection: RabiTimeSelection = { kind: "time_sample", model: "driven_two_level", runId: result.runId, index: selectedIndex };
+      return selectedRabiSample(selection, result, data);
+    },
+    [result, data, selectedIndex, modelId],
   );
+  useEffect(() => {
+    if (modelId !== "driven_two_level" || !result || !selected) { onRabiContext?.(null); return; }
+    onRabiContext?.({ result, sample: selected, stale: !!stale,
+      selection: { kind: "time_sample", model: "driven_two_level", runId: result.runId, index: selectedIndex } });
+  }, [modelId, result, selected, stale, selectedIndex, onRabiContext]);
   async function runOne(engine: EvolutionEngineName) {
     const jobId = `job-${crypto.randomUUID()}`;
     activeJob.current = jobId;

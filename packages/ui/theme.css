@@ -131,6 +131,9 @@ code {
 .dynamics-layout .inspector {
   display: none;
 }
+.dynamics-layout.rabi-layout { grid-template-columns: 215px minmax(0, 1fr) 250px; }
+.dynamics-layout.rabi-layout .inspector { display: block; }
+.dynamics-layout.rabi-layout .workspace { max-width: none; }
 .dynamics-layout .workspace {
   max-width: 1500px;
   width: 100%;
@@ -634,6 +637,7 @@ code {
   .dynamics-layout {
     grid-template-columns: 185px minmax(0, 1fr);
   }
+  .dynamics-layout.rabi-layout { grid-template-columns: 185px minmax(0, 1fr) 220px; }
   .dynamics-fields {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -1298,6 +1302,9 @@ h1 {
 .inspector-observables code { overflow-wrap: anywhere; }
 .inspector-observables .key-value { gap: 8px; }
 .inspector-observables .key-value strong { text-align: right; overflow-wrap: anywhere; }
+.rabi-inspector .key-value { gap: 8px; align-items: baseline; }
+.rabi-inspector .key-value strong,.rabi-inspector .key-value code { min-width: 0; text-align: right; overflow-wrap: anywhere; }
+.rabi-inspector .provenance small { overflow-wrap: anywhere; }
 .analytic {
   font:
     24px Cambria,

@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
@@ -189,6 +189,17 @@ export class RunStore {
       manifest.files.data!==null||manifest.artifactSha256!==null)
       throw new Error("Saved run is not a verified two-level spectrum");
     return result;
+  }
+  async rabi(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>{
+    const {manifest,job,result,data}=await this.load(runId);
+    if(job.operation!=="evolve"||result.operation!=="evolve"||
+      job.model.type!=="driven_two_level"||result.model.type!=="driven_two_level"||
+      manifest.operation!=="evolve"||manifest.model!=="driven_two_level"||
+      manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
+      manifest.files.data!=="data.f64"||!data||
+      result.data.columns.length!==10||result.data.rows<2||data.byteLength!==result.data.rows*10*8)
+      throw new Error("Saved run is not a verified Rabi evolution");
+    return {result,data:Uint8Array.from(data)};
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
     const { manifest, job, result, data } = await this.load(runId);
