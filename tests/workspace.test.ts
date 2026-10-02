@@ -135,8 +135,11 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
     const reopened=await new RunStore(join(root,"runs"),artifacts).rabi(result.runId);
     assert.deepEqual(reopened.result,result);
     assert.deepEqual(Buffer.from(reopened.data),binary);
+    assert.deepEqual((await store.evolution(result.runId)).result,result);
+    await assert.rejects(store.evolution(spectrum.runId),/not a verified two-level evolution/);
     await assert.rejects(store.rabi(spectrum.runId),/not a verified Rabi evolution/);
     await assert.rejects(store.rabi("../bad"),/Invalid run ID/);
+    await assert.rejects(store.evolution("../bad"),/Invalid run ID/);
     assert.deepEqual((await store.list()).map(item => item.runId), ["run-data-test", "run-spectrum-test"]);
     const csv = join(root, "data.csv"), svg = join(root, "figure.svg"), manifest = join(root, "manifest.json");
     await store.export(result.runId, "csv", csv);
@@ -150,6 +153,7 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
     assert.match(await readFile(join(root, "spectrum.csv"), "utf8"), /E\+,0.64/);
     await writeFile(join(root, "runs", result.runId, "data.f64"), Buffer.alloc(binary.byteLength));
     await assert.rejects(store.rabi(result.runId),/integrity check/);
+    await assert.rejects(store.evolution(result.runId),/integrity check/);
     await assert.rejects(store.export(result.runId, "csv", join(root, "bad.csv")), /integrity check/);
     await writeFile(join(root,"runs",spectrum.runId,"result.json"),"{}\n");
     await assert.rejects(store.spectrum(spectrum.runId),/integrity check/);

@@ -15,6 +15,7 @@ const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
 let preservedSpectrumRunId = null;
 let preservedRabiRunId = null;
+const preservedPassageRunIds = {};
 let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
@@ -70,6 +71,7 @@ try {
       "exportScene",
       "exportSceneExample",
       "getCapabilities",
+      "getEvolutionRun",
       "getRabiRun",
       "getResources",
       "getScene",
@@ -825,12 +827,28 @@ try {
     await page.getByTestId("selected-time").textContent(),
     "t = -10.0000",
   );
+  const landauRunId=await page.getByTestId("workspace-run-id").innerText();
+  preservedPassageRunIds.landau=landauRunId;
+  assert.equal(await page.getByTestId("evolution-inspector-inputs").locator("code").getAttribute("title"),landauRunId);
+  assert.equal(await page.getByTestId("evolution-inspector-time").innerText(),"-10.0000");
+  assert.ok(Math.abs(Number(await page.getByTestId("inspector-lz-reference").innerText())-Number(await page.getByTestId("landau-zener-reference").innerText()))<1e-4);
   await page.getByRole("slider", { name: "Time cursor" }).focus();
   await page.getByRole("slider", { name: "Time cursor" }).press("End");
   assert.equal(
     await page.getByTestId("selected-time").textContent(),
     "t = 10.0000",
   );
+  await page.getByTestId("evolution-inspector-time").filter({hasText:"10.0000"}).waitFor();
+  assert.equal((await page.getByTestId("evolution-inspector-populations").innerText()).split(" / ")[0],await page.getByTestId("population-0").innerText());
+  const landauStoredInputs=await page.getByTestId("evolution-inspector-inputs").innerText();
+  await page.getByLabel("Bias ε₀",{exact:true}).fill("0.2");
+  await page.getByTestId("evolution-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("evolution-inspector-inputs").innerText(),landauStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Landau–Zener evolution ${landauRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:landauRunId}).waitFor();
+  await page.getByTestId("evolution-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("evolution-inspector-time").innerText(),"-10.0000");
   await page.screenshot({
     path: "artifacts/desktop-landau-zener.png",
     fullPage: true,
@@ -885,6 +903,20 @@ try {
     await page.getByTestId("stuckelberg-crossings").textContent(),
     "±4.000",
   );
+  const stuckelbergRunId=await page.getByTestId("workspace-run-id").innerText();
+  preservedPassageRunIds.stuckelberg=stuckelbergRunId;
+  assert.equal(await page.getByTestId("inspector-stuckelberg-crossings").innerText(),"±4.000");
+  await page.getByRole("slider",{name:"Time cursor"}).focus();
+  await page.getByRole("slider",{name:"Time cursor"}).press("End");
+  await page.getByTestId("evolution-inspector-time").filter({hasText:"12.0000"}).waitFor();
+  const stuckelbergStoredInputs=await page.getByTestId("evolution-inspector-inputs").innerText();
+  await page.getByLabel("Crossing time τ",{exact:true}).fill("5");
+  await page.getByTestId("evolution-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("evolution-inspector-inputs").innerText(),stuckelbergStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Stückelberg evolution ${stuckelbergRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:stuckelbergRunId}).waitFor();
+  await page.getByTestId("evolution-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   assert.ok(Number(await page.getByTestId("final-p0").textContent()) >= 0);
   await page.screenshot({
     path: "artifacts/desktop-stuckelberg.png",
@@ -894,6 +926,23 @@ try {
   await page.getByTestId("run-evolution").click();
   await page.getByTestId("evolution-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("floquet-analysis").waitFor();
+  const floquetRunId=await page.getByTestId("workspace-run-id").innerText();
+  preservedPassageRunIds.floquet=floquetRunId;
+  const inspectorQuasienergies=(await page.getByTestId("inspector-quasienergies").innerText()).split(" / ").map(Number);
+  assert.ok(Math.abs(inspectorQuasienergies[0]-Number(await page.getByTestId("quasienergy-0").innerText()))<1e-4);
+  assert.ok(Math.abs(inspectorQuasienergies[1]-Number(await page.getByTestId("quasienergy-1").innerText()))<1e-4);
+  await page.getByRole("slider",{name:"Time cursor"}).focus();
+  await page.getByRole("slider",{name:"Time cursor"}).press("End");
+  await page.getByTestId("evolution-inspector-time").filter({hasText:"30.0000"}).waitFor();
+  const floquetStoredInputs=await page.getByTestId("evolution-inspector-inputs").innerText();
+  await page.getByLabel("Drive phase φ",{exact:true}).fill("0.2");
+  await page.getByTestId("evolution-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("evolution-inspector-inputs").innerText(),floquetStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Floquet / strong drive evolution ${floquetRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:floquetRunId}).waitFor();
+  await page.getByTestId("evolution-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("evolution-inspector-time").innerText(),"0.0000");
   assert.ok(Number(await page.getByTestId("quasienergy-0").textContent()) <= Number(await page.getByTestId("quasienergy-1").textContent()));
   assert.equal(await page.getByTestId("floquet-map").locator(".floquet-map-grid > div").count(), 117);
   await page.getByTestId("floquet-analysis").scrollIntoViewIfNeeded();
@@ -1359,6 +1408,7 @@ try {
   assert.ok(runIds.includes(preservedPulseRunId),"saved pulse envelope and coefficients survive full restart");
   assert.ok(runIds.includes(preservedSpectrumRunId),"saved spectrum survives full restart");
   assert.ok(runIds.includes(preservedRabiRunId),"saved Rabi evolution survives full restart");
+  for(const runId of Object.values(preservedPassageRunIds))assert.ok(runIds.includes(runId),`saved evolution ${runId} survives full restart`);
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1373,6 +1423,17 @@ try {
   await page.getByTestId("rabi-inspector-time").filter({hasText:"0.0000"}).waitFor();
   assert.equal(await page.getByTestId("rabi-inspector-state").innerText(),"Run inputs match the draft");
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  for(const [label,runId,diagnostic] of [
+    ["Landau–Zener",preservedPassageRunIds.landau,"inspector-lz-reference"],
+    ["Stückelberg",preservedPassageRunIds.stuckelberg,"inspector-stuckelberg-crossings"],
+    ["Floquet / strong drive",preservedPassageRunIds.floquet,"inspector-quasienergies"],
+  ]){
+    await page.getByRole("button",{name:`Open ${label} evolution ${runId}`}).click();
+    await page.getByTestId("workspace-run-id").filter({hasText:runId}).waitFor();
+    await page.getByTestId("evolution-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+    assert.ok(await page.getByTestId(diagnostic).isVisible());
+    await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  }
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);
   await page.getByRole("button",{name:`Export CSV ${preservedPulseRunId}`}).click();

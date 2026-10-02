@@ -190,16 +190,27 @@ export class RunStore {
       throw new Error("Saved run is not a verified two-level spectrum");
     return result;
   }
-  async rabi(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>{
+  async evolution(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="evolve"||result.operation!=="evolve"||
-      job.model.type!=="driven_two_level"||result.model.type!=="driven_two_level"||
-      manifest.operation!=="evolve"||manifest.model!=="driven_two_level"||
+      !["driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(job.model.type)||
+      manifest.operation!=="evolve"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!=="data.f64"||!data||
       result.data.columns.length!==10||result.data.rows<2||data.byteLength!==result.data.rows*10*8)
-      throw new Error("Saved run is not a verified Rabi evolution");
+      throw new Error("Saved run is not a verified two-level evolution");
     return {result,data:Uint8Array.from(data)};
+  }
+  async rabi(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>{
+    let saved:{result:EvolutionResult;data:Uint8Array};
+    try { saved=await this.evolution(runId); }
+    catch(error) {
+      if(error instanceof Error&&error.message==="Saved run is not a verified two-level evolution")
+        throw new Error("Saved run is not a verified Rabi evolution");
+      throw error;
+    }
+    if(saved.result.model.type!=="driven_two_level")throw new Error("Saved run is not a verified Rabi evolution");
+    return saved;
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
     const { manifest, job, result, data } = await this.load(runId);

@@ -542,6 +542,7 @@ export interface QuantumBridge {
   listRuns(): Promise<import("./workspace").RunSummary[]>;
   getSpectrumRun(runId:string):Promise<SpectrumResult>;
   getRabiRun(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>;
+  getEvolutionRun(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>;
   saveSpectrumStudy(result:import("./spectrum-study").SpectrumStudyResult):Promise<import("./spectrum-study").SpectrumStudyResult>;
   getSpectrumStudy(studyId:string):Promise<import("./spectrum-study").SpectrumStudyResult>;
   listSpectrumStudies():Promise<import("./spectrum-study").SpectrumStudySummary[]>;

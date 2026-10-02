@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import type {
   EngineName,
+  EvolutionResult,
   QuantumBridge,
   SpectrumResult,
   WorkerStatus,
@@ -14,8 +15,8 @@ import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
-import { RabiRunInspector } from "./RabiRunInspector";
-import type { RabiRunContext } from "./rabi-selection";
+import { EvolutionRunInspector } from "./EvolutionRunInspector";
+import type { EvolutionRunContext } from "./evolution-selection";
 import { CavityLab } from "./CavityLab";
 import { OpenSystemLab } from "./OpenSystemLab";
 import { SweepLab } from "./SweepLab";
@@ -111,9 +112,9 @@ export function App() {
   const collectOscillatorAnharmonic = useCallback((value: NonNullable<WorkspaceSnapshot["oscillatorAnharmonic"]>) => { workspaceParts.current.oscillatorAnharmonic = value; }, []);
   function checkParts() { if (workspaceParts.current.dynamics && workspaceParts.current.cavity && workspaceParts.current.open && workspaceParts.current.sweep && workspaceParts.current.manyBody && workspaceParts.current.circuit) setWorkspaceReady(true); }
   const [result, setResult] = useState<SpectrumResult | null>(null);
-  const [rabiContext,setRabiContext]=useState<RabiRunContext|null>(null);
-  const collectRabiContext=useCallback((context:RabiRunContext|null)=>setRabiContext(context),[]);
-  const [reopenedRabi,setReopenedRabi]=useState<{epoch:number;result:import("../../../packages/contracts").EvolutionResult;data:Uint8Array}|null>(null);
+  const [evolutionContext,setEvolutionContext]=useState<EvolutionRunContext|null>(null);
+  const collectEvolutionContext=useCallback((context:EvolutionRunContext|null)=>setEvolutionContext(context),[]);
+  const [reopenedEvolution,setReopenedEvolution]=useState<{epoch:number;result:EvolutionResult;data:Uint8Array}|null>(null);
   const [selection,setSelection]=useState<ScientificSelection|null>(null);
   const [inspectorTab,setInspectorTab]=useState<"parameters"|"observables"|"provenance">("parameters");
   const runSelections=useRef(new Map<string,ScientificSelection>());
@@ -355,12 +356,13 @@ export function App() {
     setActiveModel("two_level");setTab("spectrum");
     setWorkspaceMessage(`Verified spectrum reopened · ${saved.runId}`);
   }
-  async function openSavedRabi(runId:string){
-    const saved=await window.quantum.getRabiRun(runId);
-    setReopenedRabi(current=>({epoch:(current?.epoch??0)+1,...saved}));
-    setSelectedPreset(null);setEvolutionModel("driven_two_level");
-    setActiveModel("driven_two_level");setTab("dynamics");
-    setWorkspaceMessage(`Verified Rabi evolution reopened · ${saved.result.runId}`);
+  async function openSavedEvolution(runId:string){
+    const saved=await window.quantum.getEvolutionRun(runId);
+    const model=saved.result.model.type;
+    setReopenedEvolution(current=>({epoch:(current?.epoch??0)+1,...saved}));
+    setSelectedPreset(null);setEvolutionModel(model);
+    setActiveModel(model);setTab("dynamics");
+    setWorkspaceMessage(`Verified ${MODEL_REGISTRY[model].label} evolution reopened · ${saved.result.runId}`);
   }
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
     presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
@@ -371,7 +373,7 @@ export function App() {
     tab==="sweep"?(activeModel==="two_level"?"EIGENENERGY STUDY":"FINAL-POPULATION SWEEP"):tab==="scenes"?"PORTABLE SCENES":
     tab==="runs"?"SAVED RUNS":null;
   const visibleRunId=activeModel==="two_level"&&(tab==="spectrum"||tab==="hamiltonian")?result?.runId:
-    tab==="dynamics"&&activeModel==="driven_two_level"&&rabiContext?.result.model.type==="driven_two_level"?rabiContext.result.runId:null;
+    tab==="dynamics"&&evolutionContext?.result.model.type===activeModel?evolutionContext.result.runId:null;
   return (
     <div className="app">
       <header className="topbar">
@@ -403,7 +405,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"&&activeModel==="driven_two_level"?"rabi-layout":""}`}>
+      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"?"evolution-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
@@ -547,8 +549,8 @@ export function App() {
               restored={restored?.snapshot.dynamics}
               restoreEpoch={restored?.epoch}
               onSnapshot={collectDynamics}
-              onRabiContext={collectRabiContext}
-              reopenedRabi={reopenedRabi}
+              onEvolutionContext={collectEvolutionContext}
+              reopenedEvolution={reopenedEvolution}
             />
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} /></div>
@@ -566,7 +568,7 @@ export function App() {
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic}/></div>
-          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenRabi={openSavedRabi} /> : tab === "backend" ? (
+          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -818,7 +820,7 @@ export function App() {
             )}
         </main>
         <aside className="inspector">
-          {tab==="dynamics"&&activeModel==="driven_two_level"?<RabiRunInspector context={rabiContext}/>:<>
+          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
           <nav className="inspector-tabs" aria-label="Model inspector views">
