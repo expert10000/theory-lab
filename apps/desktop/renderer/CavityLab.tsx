@@ -3,6 +3,7 @@ import type { CavityResult, EngineName, EvolutionProgress, QuantumBridge, Worker
 import { CAVITY_REGISTRY, cavityDefaults, cavityJob, type CavityModelId } from "../../../packages/models/cavity";
 import type { CavityPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
+import { selectedCavitySample, type CavityRunContext } from "./cavity-selection";
 
 function readF64(bytes: Uint8Array): Float64Array {
   if (bytes.byteLength % 8) throw new Error("Invalid cavity artifact length");
@@ -30,12 +31,12 @@ function CavityPlot({ data, rows, selected, onSelect }: { data: Float64Array; ro
       }}>
       {[0, .5, 1].map(value => <g key={value}><line x1={left} x2={width - 10} y1={y(value)} y2={y(value)} stroke="#344350" strokeDasharray="3 4"/><text x="4" y={y(value) + 4} fill="#9bb0bc" fontSize="11">{value.toFixed(1)}</text></g>)}
       {lines.map(line => <polyline key={line.offset} fill="none" stroke={line.color} strokeWidth="2.2" points={Array.from({ length: rows }, (_, i) => `${x(i)},${y(data[i * 6 + line.offset] / line.scale)}`).join(" ")} />)}
-      <line x1={x(selected)} x2={x(selected)} y1={top} y2={height - bottom} stroke="#e6edf3" strokeDasharray="4 4" />
+      <line x1={x(selected)} x2={x(selected)} y1={top} y2={height - bottom} stroke="#e6edf3" strokeDasharray="4 4" data-testid="cavity-chart-cursor" />
     </svg>
   </div>;
 }
 
-export function CavityLab({ bridge, status, modelId, preset, restored, restoreEpoch, onSnapshot }: { bridge: QuantumBridge; status: WorkerStatus; modelId: CavityModelId; preset?: CavityPreset | null; restored?: WorkspaceSnapshot["cavity"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["cavity"]) => void }) {
+export function CavityLab({ bridge, status, modelId, preset, restored, restoreEpoch, onSnapshot, onCavityContext, reopenedCavity }: { bridge: QuantumBridge; status: WorkerStatus; modelId: CavityModelId; preset?: CavityPreset | null; restored?: WorkspaceSnapshot["cavity"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["cavity"]) => void; onCavityContext?: (context:CavityRunContext|null)=>void; reopenedCavity?:{epoch:number;result:CavityResult;data:Uint8Array}|null }) {
   const definition = CAVITY_REGISTRY[modelId];
   const [parameters, setParameters] = useState(() => cavityDefaults(modelId));
   const [qubit, setQubit] = useState<"ground" | "excited">("excited");
@@ -52,10 +53,13 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
   const activeJob = useRef<string | null>(null);
+  const appliedReopenEpoch=useRef<number|null>(null);
   useEffect(() => {
+    if(activeJob.current)void bridge.cancel(activeJob.current);
     setParameters(cavityDefaults(modelId)); setResult(null); setData(null); setSelected(0);
     setOutcome("READY TO RUN"); setError("");
-  }, [modelId]);
+    onCavityContext?.(null);
+  }, [modelId,onCavityContext]);
   useEffect(() => {
     if (!preset || preset.modelId !== modelId) return;
     if (activeJob.current) void bridge.cancel(activeJob.current);
@@ -63,13 +67,27 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
     setQubit(preset.initialState.qubit); setPhotons(String(preset.initialState.photons));
     setStart(String(preset.solver.tStart)); setStop(String(preset.solver.tStop)); setSamples(String(preset.solver.samples));
     setEngine("qutip"); setResult(null); setData(null); setSelected(0); setOutcome("PRESET LOADED");
-  }, [preset, modelId]);
+    onCavityContext?.(null);
+  }, [preset, modelId,onCavityContext]);
   useEffect(() => {
     if (!restored || !restoreEpoch) return;
     setParameters(restored.parameters); setQubit(restored.qubit); setPhotons(restored.photons);
     setStart(restored.start); setStop(restored.stop); setSamples(restored.samples); setEngine(restored.engine);
     setResult(null); setData(null); setSelected(0); setOutcome("WORKSPACE RESTORED");
-  }, [restoreEpoch]);
+    onCavityContext?.(null);
+  }, [restoreEpoch,onCavityContext]);
+  useEffect(()=>{
+    if(!reopenedCavity||modelId!==reopenedCavity.result.model.type||appliedReopenEpoch.current===reopenedCavity.epoch)return;
+    const {result:stored,data:bytes}=reopenedCavity;
+    if(bytes.byteLength!==stored.data.rows*6*8)return;
+    const values=readF64(bytes);
+    appliedReopenEpoch.current=reopenedCavity.epoch;
+    setParameters(Object.fromEntries(Object.entries(stored.model.parameters).map(([key,value])=>[key,String(value)])));
+    setQubit(stored.initialState.qubit);setPhotons(String(stored.initialState.photons));
+    setStart(String(stored.solver.tStart));setStop(String(stored.solver.tStop));setSamples(String(stored.solver.samples));
+    setEngine(stored.engine.name);setResult(stored);setData(values);setSelected(0);
+    setError("");setOutcome("SAVED RUN OPENED");
+  },[reopenedCavity?.epoch,modelId]);
   useEffect(() => onSnapshot?.({ modelId, parameters, qubit, photons, start, stop, samples, engine }),
     [modelId, parameters, qubit, photons, start, stop, samples, engine, onSnapshot]);
   useEffect(() => bridge.onProgress(update => { if (update.jobId === activeJob.current) setProgress(update); }), [bridge]);
@@ -82,7 +100,8 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
     Object.entries(result.model.parameters).some(([key, value]) => Number(parameters[key]) !== value) ||
     result.initialState.qubit !== qubit || result.initialState.photons !== Number(photons) ||
     result.solver.tStart !== solver.tStart || result.solver.tStop !== solver.tStop || result.solver.samples !== solver.samples || !valid);
-  const row = data ? Array.from(data.slice(selected * 6, selected * 6 + 6)) : null;
+  const selectedSample=useMemo(()=>result&&data?selectedCavitySample({kind:"time_sample",model:modelId,runId:result.runId,index:selected},result,data):null,[modelId,result,data,selected]);
+  const row = selectedSample ? [selectedSample.time,selectedSample.pExcited,selectedSample.meanPhoton,selectedSample.boundaryProbability,selectedSample.norm,selectedSample.parity] : null;
   const diagnostics = useMemo(() => {
     if (!data || !result) return null;
     let maxBoundary = 0, maxNormDrift = 0, maxParityDrift = 0, maxReferenceError = 0;
@@ -100,9 +119,14 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
     return { maxBoundary, maxNormDrift, maxParityDrift, maxReferenceError,
       dressedSplitting: generalized };
   }, [data, result]);
+  useEffect(()=>{
+    if(!result||!selectedSample||!diagnostics){onCavityContext?.(null);return;}
+    onCavityContext?.({result,selection:{kind:"time_sample",model:modelId,runId:result.runId,index:selected},sample:selectedSample,diagnostics,stale:!!stale});
+  },[result,selectedSample,diagnostics,stale,modelId,selected,onCavityContext]);
   async function run() {
     if (!valid || !ready || running) return;
     setRunning(true); setError(""); setOutcome("RUNNING"); setResult(null); setData(null); setSelected(0); setProgress(null);
+    onCavityContext?.(null);
     const jobId = `job-${crypto.randomUUID()}`; activeJob.current = jobId;
     try {
       const job = cavityJob(modelId, jobId, parameters, { qubit, photons: Number(photons) }, solver, engine, preset?.source);
@@ -124,7 +148,7 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
     <section className="panel dynamics-settings">
       <div><p className="eyebrow">CLOSED-SYSTEM LABORATORY</p><h2>{definition.label}</h2><p>{definition.description}. Set the Fock cutoff high enough that the boundary population remains small.</p></div>
       <div className="dynamics-fields">
-        {([ ["qubitFrequency", "Qubit frequency ωq"], ["cavityFrequency", "Cavity frequency ωc"], ["coupling", "Coupling g"], ["cutoff", "Fock cutoff N"] ] as const).map(([key, label]) => <label key={key}>{label}<input aria-label={label} type="number" min="0" max={key === "cutoff" ? "20" : "1000"} step={key === "cutoff" ? "1" : "0.05"} value={parameters[key]} disabled={running} onChange={event => setParameters(current => ({ ...current, [key]: event.target.value }))}/></label>)}
+        {([ ["qubitFrequency", "Qubit frequency ωq"], ["cavityFrequency", "Cavity frequency ωc"], ["coupling", "Coupling g"], ["cutoff", "Fock cutoff N"] ] as const).map(([key, label]) => <label key={key}>{label}<input aria-label={label} data-testid={key === "cutoff" ? "cavity-cutoff" : undefined} type="number" min="0" max={key === "cutoff" ? "20" : "1000"} step={key === "cutoff" ? "1" : "0.05"} value={parameters[key]} disabled={running} onChange={event => setParameters(current => ({ ...current, [key]: event.target.value }))}/></label>)}
         <label>Initial qubit<select aria-label="Initial qubit" value={qubit} disabled={running} onChange={event => setQubit(event.target.value as "ground" | "excited")}><option value="excited">|e⟩</option><option value="ground">|g⟩</option></select></label>
         <label>Initial photons<input aria-label="Initial photons" type="number" min="0" step="1" value={photons} disabled={running} onChange={event => setPhotons(event.target.value)}/></label>
         <label>Start time<input aria-label="Cavity start time" type="number" value={start} disabled={running} onChange={event => setStart(event.target.value)}/></label>
@@ -145,7 +169,7 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
       <div className="cavity-spectrum" data-testid="dressed-spectrum"><p className="eyebrow">SORTED DRESSED ENERGIES / {result.dressedSpectrum.length} LEVELS</p><div>{result.dressedSpectrum.map((energy, i) => <span key={i} title={`E${i} = ${energy.toFixed(8)}`}>{energy.toFixed(3)}</span>)}</div></div>
       <CavityPlot data={data} rows={result.data.rows} selected={selected} onSelect={setSelected}/>
       <div className="dynamics-timeline"><div className="timeline-heading"><span className="eyebrow">SYNCHRONIZED TIME CURSOR</span><strong>t = {row?.[0].toFixed(4)}</strong></div><input aria-label="Cavity time cursor" type="range" min="0" max={result.data.rows - 1} value={selected} onChange={event => setSelected(Number(event.target.value))}/></div>
-      <div className="cavity-readouts"><span>P(e) <strong data-testid="cavity-excited">{row?.[1].toFixed(5)}</strong></span><span>⟨n⟩ <strong data-testid="cavity-photons">{row?.[2].toFixed(5)}</strong></span><span>Boundary <strong>{row?.[3].toExponential(2)}</strong></span><span>Parity <strong>{row?.[5].toFixed(5)}</strong></span></div>
+      <div className="cavity-readouts"><span>P(e) <strong data-testid="cavity-excited">{row?.[1].toFixed(5)}</strong></span><span>⟨n⟩ <strong data-testid="cavity-photons">{row?.[2].toFixed(5)}</strong></span><span>Boundary <strong data-testid="cavity-selected-boundary">{row?.[3].toExponential(2)}</strong></span><span>Norm <strong data-testid="cavity-selected-norm">{row?.[4].toFixed(5)}</strong></span><span>Parity <strong data-testid="cavity-selected-parity">{row?.[5].toFixed(5)}</strong></span></div>
       <div className="plot-caption"><span>{result.engine.name} {result.engine.version} · {result.provenance.durationMs.toFixed(1)} ms</span><span>atom × Fock · SHA-256 verified · {result.model.type === "jaynes_cummings" ? "theory Commit 691 reference" : "full Rabi Hamiltonian"}</span></div>
     </section>}
   </div>;

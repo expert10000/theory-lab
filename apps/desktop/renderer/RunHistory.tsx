@@ -1,11 +1,14 @@
 import React, { useEffect, useState } from "react";
 import type { QuantumBridge, RunExportFormat, RunSummary } from "../../../packages/contracts";
 import { MODEL_REGISTRY, type EvolutionModelId } from "../../../packages/models";
+import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 
 const evolutionModels:readonly EvolutionModelId[]=["driven_two_level","landau_zener","stuckelberg","strong_drive"];
 function evolutionLabel(model:string){return evolutionModels.includes(model as EvolutionModelId)?MODEL_REGISTRY[model as EvolutionModelId].label:null;}
+const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
+function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void> }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void> }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
@@ -23,8 +26,8 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution }:
       setMessage(path ? `Exported ${format.toUpperCase()}: ${path}` : "Export cancelled");
     } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
   }
-  async function openOne(runId:string,kind:"spectrum"|"rabi"|"evolution"){
-    const open=kind==="spectrum"?onOpenSpectrum:kind==="rabi"?onOpenRabi:onOpenEvolution;
+  async function openOne(runId:string,kind:"spectrum"|"rabi"|"evolution"|"cavity"){
+    const open=kind==="spectrum"?onOpenSpectrum:kind==="rabi"?onOpenRabi:kind==="cavity"?onOpenCavity:onOpenEvolution;
     if(!open||opening)return;
     setOpening(runId);setMessage("");
     try{await open(runId);}
@@ -33,7 +36,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution }:
   }
   return <section className="runs-page" data-testid="runs-page">
     <div className="panel runs-intro"><div><p className="eyebrow">DURABLE RUNS / QLAB-016</p><h2>Every completed calculation, accounted for.</h2>
-      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen a verified two-level spectrum or evolution run, or export a run as data, a figure, or a provenance manifest.</p></div>
+      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen a verified two-level spectrum, evolution or cavity run, or export data, figures and manifests.</p></div>
       <button type="button" className="text-button" onClick={() => void refresh()} disabled={busy}>Refresh runs ↻</button></div>
     {message && <p className="runs-message" role="status">{message}</p>}
     {runs.length === 0 ? <div className="panel runs-empty">{busy ? "Loading saved runs…" : "No saved runs yet. Run any laboratory to create one."}</div> :
@@ -47,6 +50,9 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution }:
           {run.operation==="evolve"&&evolutionLabel(run.model)&&(onOpenEvolution||(run.model==="driven_two_level"&&onOpenRabi))&&
           <button type="button" className="run-open" aria-label={`Open ${run.model==="driven_two_level"?"Rabi":evolutionLabel(run.model)} evolution ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,onOpenEvolution?"evolution":"rabi")}>{opening===run.runId?"Opening…":`Open ${run.model==="driven_two_level"?"Rabi":evolutionLabel(run.model)} evolution`}</button>}
+          {run.operation==="cavity"&&cavityLabel(run.model)&&onOpenCavity&&
+          <button type="button" className="run-open" aria-label={`Open ${cavityLabel(run.model)} cavity ${run.runId}`} disabled={!!opening}
+            onClick={()=>void openOne(run.runId,"cavity")}>{opening===run.runId?"Opening…":`Open ${cavityLabel(run.model)} cavity`}</button>}
           {(["csv", "svg", "manifest"] as const).map(format =>
           <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}</div>
       </article>)}</div>}

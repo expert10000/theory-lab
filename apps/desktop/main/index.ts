@@ -365,6 +365,11 @@ app.whenReady().then(() => {
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid evolution run ID");
     return runs.evolution(runId);
   });
+  ipcMain.handle("quantum:cavity-run", (event, runId:unknown) => {
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid cavity run ID");
+    return runs.cavity(runId);
+  });
   ipcMain.handle("quantum:save-spectrum-study", (event, result:unknown) => {
     trusted(event);
     return spectrumStudies.save(result);

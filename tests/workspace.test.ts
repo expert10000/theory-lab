@@ -5,9 +5,10 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { EVOLUTION_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot } from "../packages/contracts";
+import { EVOLUTION_COLUMNS, CAVITY_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot, type CavityResult } from "../packages/contracts";
 import { RunStore } from "../apps/desktop/main/runs";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
+import { cavityDefaults, cavityJob } from "../packages/models/cavity";
 import type { CircuitJob, CircuitResult, ManyBodyJob, ManyBodyResult } from "../packages/contracts";
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 import { CIRCUIT_DEFAULTS, circuitJob } from "../packages/models/circuit";
@@ -158,6 +159,35 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
     await writeFile(join(root,"runs",spectrum.runId,"result.json"),"{}\n");
     await assert.rejects(store.spectrum(spectrum.runId),/integrity check/);
   } finally { await rm(root, { recursive: true, force: true }); }
+});
+test("both cavity models reopen only their hash-verified six-column saved runs",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-cavity-run-"));
+  const artifacts=join(root,"artifacts");await mkdir(artifacts);
+  try{
+    const store=new RunStore(join(root,"runs"),artifacts);
+    for(const model of ["jaynes_cummings","quantum_rabi"] as const){
+      const job=cavityJob(model,`job-${model}`,cavityDefaults(model),{qubit:"excited",photons:0},
+        {type:"schrodinger",tStart:0,tStop:1,samples:2},"native");
+      const binary=Buffer.alloc(2*6*8),view=new DataView(binary.buffer,binary.byteOffset,binary.byteLength);
+      for(let row=0;row<2;row++)for(const [column,value] of [row,row?0:1,row,0,1,1].entries())
+        view.setFloat64((row*6+column)*8,value,true);
+      await writeFile(join(artifacts,`${job.jobId}.f64`),binary);
+      const result:CavityResult={schema:"quantum-result/v1",jobId:job.jobId,runId:`run-${model}`,
+        status:"completed",operation:"cavity",model:job.model,initialState:job.initialState,solver:job.solver,
+        engine:{name:"native",version:"1.18"},dressedSpectrum:Array.from({length:2*job.model.parameters.cutoff},(_,i)=>i),
+        data:{schema:"quantum-cavity-data/v1",format:"f64le",path:`${job.jobId}.f64`,rows:2,
+          columns:CAVITY_COLUMNS,bytes:binary.byteLength,sha256:createHash("sha256").update(binary).digest("hex")},
+        provenance:{pythonVersion:"3.12",workerVersion:"0.1",computedAt:"2026-10-03T00:00:00Z",durationMs:1}};
+      await store.record(job,result);
+      const reopened=await new RunStore(join(root,"runs"),artifacts).cavity(result.runId);
+      assert.deepEqual(reopened.result,result);
+      assert.deepEqual(Buffer.from(reopened.data),binary);
+      await assert.rejects(store.evolution(result.runId),/not a verified two-level evolution/);
+      await writeFile(join(root,"runs",result.runId,"data.f64"),Buffer.alloc(binary.byteLength));
+      await assert.rejects(store.cavity(result.runId),/integrity check/);
+    }
+    await assert.rejects(store.cavity("../bad"),/Invalid run ID/);
+  }finally{await rm(root,{recursive:true,force:true});}
 });
 test("driven workspace settings are optional, bounded strings and reject executable or unsupported fields",()=>{
   assert.ok(isWorkspaceSnapshot(workspace));

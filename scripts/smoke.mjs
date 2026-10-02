@@ -16,6 +16,7 @@ let preservedRunId = null;
 let preservedSpectrumRunId = null;
 let preservedRabiRunId = null;
 const preservedPassageRunIds = {};
+const preservedCavityRunIds = {};
 let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
@@ -71,6 +72,7 @@ try {
       "exportScene",
       "exportSceneExample",
       "getCapabilities",
+      "getCavityRun",
       "getEvolutionRun",
       "getRabiRun",
       "getResources",
@@ -839,6 +841,7 @@ try {
     "t = 10.0000",
   );
   await page.getByTestId("evolution-inspector-time").filter({hasText:"10.0000"}).waitFor();
+  await page.getByTestId("evolution-inspector-populations").filter({hasText:await page.getByTestId("population-0").innerText()}).waitFor();
   assert.equal((await page.getByTestId("evolution-inspector-populations").innerText()).split(" / ")[0],await page.getByTestId("population-0").innerText());
   const landauStoredInputs=await page.getByTestId("evolution-inspector-inputs").innerText();
   await page.getByLabel("Bias ε₀",{exact:true}).fill("0.2");
@@ -952,17 +955,58 @@ try {
   await page.getByTestId("run-cavity").click();
   await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("cavity-result").waitFor();
+  const jaynesRunId=await page.getByTestId("workspace-run-id").innerText();
+  preservedCavityRunIds.jaynes=jaynesRunId;
+  assert.equal(await page.getByTestId("cavity-inspector-inputs").locator("code").getAttribute("title"),jaynesRunId);
+  assert.equal(await page.getByTestId("cavity-inspector-time").innerText(),"0.0000");
+  assert.equal(await page.getByTestId("cavity-inspector-excited").innerText(),await page.getByTestId("cavity-excited").innerText());
+  assert.equal(await page.getByTestId("cavity-inspector-max-boundary").innerText(),await page.getByTestId("cavity-boundary").innerText());
+  assert.ok(await page.getByTestId("cavity-inspector-jc-reference").isVisible());
+  assert.equal(await page.getByTestId("cavity-inspector-jc-error").innerText(),await page.getByTestId("jc-reference").innerText());
+  const cavityCursorBefore=await page.getByTestId("cavity-chart-cursor").getAttribute("x1");
+  await page.getByRole("slider",{name:"Cavity time cursor"}).focus();
+  await page.getByRole("slider",{name:"Cavity time cursor"}).press("End");
+  await page.getByTestId("cavity-inspector-time").filter({hasText:"25.0000"}).waitFor();
+  assert.notEqual(await page.getByTestId("cavity-chart-cursor").getAttribute("x1"),cavityCursorBefore);
+  assert.equal(await page.getByTestId("cavity-inspector-photons").innerText(),await page.getByTestId("cavity-photons").innerText());
+  assert.equal(await page.getByTestId("cavity-inspector-boundary").innerText(),await page.getByTestId("cavity-selected-boundary").innerText());
+  assert.equal((await page.getByTestId("cavity-inspector-norm-parity").innerText()).split(" / ")[1],await page.getByTestId("cavity-selected-parity").innerText());
   assert.ok(Number(await page.getByTestId("jc-reference").textContent()) < 1e-4);
   assert.ok(Number(await page.getByTestId("cavity-boundary").textContent()) < 1e-5);
   assert.equal(await page.getByTestId("dressed-spectrum").locator("span").count(), 12);
   await page.getByTestId("cavity-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-jaynes-cummings.png", fullPage: true });
+  const jaynesStoredInputs=await page.getByTestId("cavity-inspector-inputs").innerText();
   await page.getByLabel("Coupling g", { exact: true }).fill("0.4");
   await page.getByTestId("cavity-result-state").filter({ hasText: "OUT OF DATE" }).waitFor();
+  await page.getByTestId("cavity-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("cavity-inspector-inputs").innerText(),jaynesStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Jaynes–Cummings cavity ${jaynesRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:jaynesRunId}).waitFor();
+  await page.getByTestId("cavity-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("cavity-inspector-time").innerText(),"0.0000");
   await page.getByRole("button", { name: "Quantum Rabi" }).click();
   await page.getByRole("combobox", { name: "Cavity engine" }).selectOption("native");
   await page.getByTestId("run-cavity").click();
   await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  const quantumRabiRunId=await page.getByTestId("workspace-run-id").innerText();
+  preservedCavityRunIds.quantumRabi=quantumRabiRunId;
+  assert.equal(await page.getByTestId("cavity-inspector-inputs").locator("code").getAttribute("title"),quantumRabiRunId);
+  assert.equal(await page.getByTestId("cavity-inspector-jc-reference").count(),0);
+  await page.getByRole("slider",{name:"Cavity time cursor"}).focus();
+  await page.getByRole("slider",{name:"Cavity time cursor"}).press("End");
+  await page.getByTestId("cavity-inspector-time").filter({hasText:"25.0000"}).waitFor();
+  const quantumRabiStoredInputs=await page.getByTestId("cavity-inspector-inputs").innerText();
+  await page.getByTestId("cavity-cutoff").fill("9");
+  await page.getByTestId("cavity-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("cavity-inspector-inputs").innerText(),quantumRabiStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Quantum Rabi cavity ${quantumRabiRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:quantumRabiRunId}).waitFor();
+  await page.getByTestId("cavity-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("cavity-inspector-time").innerText(),"0.0000");
+  assert.equal(await page.getByTestId("cavity-inspector-jc-reference").count(),0);
   assert.ok(Number(await page.getByTestId("cavity-boundary").textContent()) < 0.02);
   await page.getByTestId("cavity-result").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-quantum-rabi.png", fullPage: true });
@@ -1409,6 +1453,7 @@ try {
   assert.ok(runIds.includes(preservedSpectrumRunId),"saved spectrum survives full restart");
   assert.ok(runIds.includes(preservedRabiRunId),"saved Rabi evolution survives full restart");
   for(const runId of Object.values(preservedPassageRunIds))assert.ok(runIds.includes(runId),`saved evolution ${runId} survives full restart`);
+  for(const runId of Object.values(preservedCavityRunIds))assert.ok(runIds.includes(runId),`saved cavity ${runId} survives full restart`);
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1432,6 +1477,13 @@ try {
     await page.getByTestId("workspace-run-id").filter({hasText:runId}).waitFor();
     await page.getByTestId("evolution-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
     assert.ok(await page.getByTestId(diagnostic).isVisible());
+    await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  }
+  for(const [label,runId] of [["Jaynes–Cummings",preservedCavityRunIds.jaynes],["Quantum Rabi",preservedCavityRunIds.quantumRabi]]){
+    await page.getByRole("button",{name:`Open ${label} cavity ${runId}`}).click();
+    await page.getByTestId("workspace-run-id").filter({hasText:runId}).waitFor();
+    await page.getByTestId("cavity-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+    assert.equal(await page.getByTestId("cavity-inspector-time").innerText(),"0.0000");
     await page.getByRole("tab",{name:"Runs",exact:true}).click();
   }
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
