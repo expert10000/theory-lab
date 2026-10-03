@@ -481,6 +481,15 @@ export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | Li
 /** Desktop-only verified saved-run readout; no new worker protocol or result schema. */
 export interface VerifiedSavedRun {job:QuantumJob;result:QuantumResult;data:Uint8Array|null}
 export interface RunComparisonPins {a:string|null;b:string|null}
+export interface SavedRunInspection {
+  summary: import("./workspace").RunSummary;
+  job: QuantumJob;
+  engine: QuantumResult["engine"];
+  provenance: QuantumResult["provenance"];
+  hashes: {job:string;result:string;artifact:string|null};
+  lineage: {parentRunId:string;parentJobSha256:string;parentResultSha256:string}|null;
+  preflight: {ready:boolean;reason:string|null;differences:string[];fingerprint:string|null};
+}
 export type OscillatorFamilyResult=OscillatorResult|OscillatorEvolutionResult|DrivenOscillatorResult|PulsedOscillatorResult|DampedOscillatorResult|ParametricOscillatorResult|AnharmonicOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
@@ -545,6 +554,8 @@ export interface QuantumBridge {
   loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
   listRuns(): Promise<import("./workspace").RunSummary[]>;
   getVerifiedRun(runId:string):Promise<VerifiedSavedRun>;
+  inspectSavedRun(runId:string):Promise<SavedRunInspection>;
+  rerunSaved(runId:string,fingerprint:string):Promise<import("./workspace").RunSummary>;
   getRunComparisonPins():Promise<RunComparisonPins>;
   setRunComparisonPins(pins:RunComparisonPins):Promise<RunComparisonPins>;
   getSpectrumRun(runId:string):Promise<SpectrumResult>;

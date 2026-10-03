@@ -37,7 +37,7 @@ function summary(result: QuantumResult): RunSummary {
 }
 export class RunStore {
   constructor(private readonly root: string, private readonly artifactDir: string) {}
-  async record(job: QuantumJob, result: QuantumResult): Promise<RunSummary> {
+  async record(job: QuantumJob, result: QuantumResult, parentRunId?: string): Promise<RunSummary> {
     assertJob(job);
     if (!isQuantumResult(result) || job.jobId !== result.jobId || job.operation !== result.operation ||
         job.engine !== result.engine.name || JSON.stringify(job.model) !== JSON.stringify(result.model))
@@ -76,6 +76,14 @@ export class RunStore {
       else if(result.operation === "oscillator_damped") checkDampedOscillatorData(result, motionData);
       else checkParametricData(result, motionData);
     }
+    let lineage: {parentRunId:string;parentJobSha256:string;parentResultSha256:string}|null=null;
+    if(parentRunId){
+      if(parentRunId===result.runId)throw new Error("A run cannot be its own parent");
+      const parent=await this.load(parentRunId);
+      if(JSON.stringify({...parent.job,jobId:job.jobId})!==JSON.stringify(job))
+        throw new Error("Rerun inputs differ from the verified parent job");
+      lineage={parentRunId,parentJobSha256:parent.manifest.hashes.job,parentResultSha256:parent.manifest.hashes.result};
+    }
     const dir = join(this.root, result.runId);
     await this.ensureRoot();
     await mkdir(dir, { recursive: false });
@@ -98,10 +106,10 @@ export class RunStore {
       if (motionData) await writeFile(join(dir, "data.f64"), motionData, { flag: "wx" });
       else await copyFile(join(this.artifactDir, name), join(dir, "data.f64"));
     }
-    const manifest = { ...summary(result), files: { job: "job.json", result: "result.json", data: name ? "data.f64" : null },
+    const manifest = { ...summary(result), ...(lineage?{lineage,parentRunId}:{}), files: { job: "job.json", result: "result.json", data: name ? "data.f64" : null },
       hashes: { job: sha(jobText), result: sha(resultText) } };
     await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", { flag: "wx" });
-    return summary(result);
+    return {...summary(result),...(lineage?{parentRunId}:{})};
   }
   async ensureRoot() { await mkdir(this.root, { recursive: true }); }
   async list(): Promise<RunSummary[]> {
@@ -122,7 +130,8 @@ export class RunStore {
           runs.push({ schema: value.schema, runId: value.runId, jobId: value.jobId,
             operation: value.operation, model: value.model, engine: value.engine,
             engineVersion: value.engineVersion, computedAt: value.computedAt,
-            durationMs: value.durationMs, artifactSha256: value.artifactSha256 });
+            durationMs: value.durationMs, artifactSha256: value.artifactSha256,
+            ...(typeof value.parentRunId==="string"&&identifier.test(value.parentRunId)?{parentRunId:value.parentRunId}:{}) });
       } catch { /* Incomplete or corrupt directories are never listed as saved runs. */ }
     }
     return runs.sort((a, b) => b.computedAt.localeCompare(a.computedAt));
@@ -135,6 +144,14 @@ export class RunStore {
         manifest.files?.job !== "job.json" || manifest.files?.result !== "result.json" ||
         !/^[a-f0-9]{64}$/.test(manifest.hashes?.job) || !/^[a-f0-9]{64}$/.test(manifest.hashes?.result))
       throw new Error("Invalid run manifest");
+    if((manifest.lineage===undefined&&manifest.parentRunId!==undefined)||
+        (manifest.lineage!==undefined&&(!manifest.lineage||
+        !identifier.test(manifest.lineage.parentRunId)||
+        manifest.lineage.parentRunId===runId||
+        !/^[a-f0-9]{64}$/.test(manifest.lineage.parentJobSha256)||
+        !/^[a-f0-9]{64}$/.test(manifest.lineage.parentResultSha256)||
+        manifest.parentRunId!==manifest.lineage.parentRunId)))
+      throw new Error("Invalid run lineage");
     const jobText = await readFile(join(dir, "job.json"), "utf8");
     const resultText = await readFile(join(dir, "result.json"), "utf8");
     if (sha(jobText) !== manifest.hashes.job || sha(resultText) !== manifest.hashes.result)
@@ -145,6 +162,13 @@ export class RunStore {
     if (!isQuantumResult(result) || result.runId !== runId || result.jobId !== job.jobId ||
         result.operation !== job.operation || result.engine.name !== job.engine || JSON.stringify(result.model) !== JSON.stringify(job.model))
       throw new Error("Stored run has invalid contracts");
+    if(manifest.jobId!==job.jobId||manifest.operation!==result.operation||
+        manifest.model!==result.model.type||manifest.engine!==result.engine.name||
+        manifest.engineVersion!==result.engine.version||
+        manifest.computedAt!==result.provenance.computedAt||
+        manifest.durationMs!==result.provenance.durationMs||
+        manifest.artifactSha256!==('data' in result?result.data.sha256:null))
+      throw new Error("Run manifest does not match the stored result");
     if (job.operation === "topology" && (result.operation !== "topology" || !consistentTopologyResult(job, result)))
       throw new Error("Stored topology data failed consistency check");
     if (job.operation === "diagonalize" && (result.operation !== "diagonalize" || !consistentTwoLevelSpectrum(job, result)))
@@ -184,6 +208,14 @@ export class RunStore {
   async verified(runId:string):Promise<VerifiedSavedRun>{
     const {job,result,data}=await this.load(runId);
     return {job,result,data:data?Uint8Array.from(data):null};
+  }
+  async inspect(runId:string){
+    const {manifest,job,result}=await this.load(runId);
+    const lineage=manifest.lineage??null;
+    return {summary:{...summary(result),...(lineage?{parentRunId:lineage.parentRunId}:{})},job,engine:result.engine,
+      provenance:result.provenance,
+      hashes:{job:manifest.hashes.job as string,result:manifest.hashes.result as string,
+        artifact:"data" in result?result.data.sha256:null},lineage} as const;
   }
   async comparisonPins():Promise<RunComparisonPins>{
     await this.ensureRoot();

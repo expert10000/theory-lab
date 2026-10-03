@@ -22,6 +22,7 @@ import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
 import { consistentOscillatorResult } from "../../../packages/models/oscillator";
 import { consistentAnharmonicResult } from "../../../packages/models/oscillator-anharmonic";
+import { cloneSavedJob, savedRerunPreflight } from "../../../packages/models/saved-rerun";
 import { atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
   type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
@@ -354,6 +355,56 @@ app.whenReady().then(() => {
     trusted(event);
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid saved run ID");
     return runs.verified(runId);
+  });
+  async function inspectSaved(runId:unknown){
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid saved run ID");
+    const stored=await runs.inspect(runId);
+    const preflight=savedRerunPreflight(stored.job,stored,worker.status);
+    const fingerprint=preflight.ready?createHash("sha256").update(JSON.stringify({
+      runId,hashes:stored.hashes,capabilities:worker.status.capabilities,
+      transport:worker.status.transport,connection:worker.status.connection,
+    })).digest("hex"):null;
+    return {...stored,preflight:{...preflight,fingerprint}};
+  }
+  ipcMain.handle("quantum:inspect-saved-run",(event,runId:unknown)=>{
+    trusted(event);
+    return inspectSaved(runId);
+  });
+  ipcMain.handle("quantum:rerun-saved",async(event,runId:unknown,fingerprint:unknown)=>{
+    trusted(event);
+    if(typeof fingerprint!=="string"||!/^[a-f0-9]{64}$/.test(fingerprint))throw new Error("Inspect the saved run before rerunning");
+    if(running||evolution.isRunning)throw new Error("A calculation is already running");
+    running=true;
+    try{
+      const inspection=await inspectSaved(runId);
+      if(!inspection.preflight.ready)throw new Error(inspection.preflight.reason??"Saved job cannot run");
+      if(inspection.preflight.fingerprint!==fingerprint)
+        throw new Error("Saved run or worker environment changed; inspect provenance again before rerunning");
+      const job=cloneSavedJob(inspection.job,randomUUID());
+      assertJob(job);
+      let output:unknown;
+      switch(job.operation){
+        case "evolve": output=await evolution.run(job);break;
+        case "cavity": output=await evolution.run(job);break;
+        case "lindblad": output=await evolution.run(job);break;
+        case "sweep": output=await evolution.run(job);break;
+        case "orbital": output=await evolution.run(job);break;
+        case "oscillator_evolve": output=await evolution.run(job);break;
+        case "oscillator_drive": output=await evolution.run(job);break;
+        case "oscillator_pulse": output=await evolution.run(job);break;
+        case "oscillator_damped": output=await evolution.run(job);break;
+        case "oscillator_parametric": output=await evolution.run(job);break;
+        default: output=await worker.request("quantum.run",job,
+          ["many_body","circuit","topology","oscillator_anharmonic"].includes(job.operation)?60000:undefined);
+      }
+      if(!isQuantumResult(output)||output.operation!==job.operation||output.jobId!==job.jobId||
+          output.engine.name!==job.engine||JSON.stringify(output.model)!==JSON.stringify(job.model))
+        throw new Error("Worker returned an invalid or mismatched rerun result");
+      if(job.operation==="diagonalize"&&
+          (output.operation!=="diagonalize"||!consistentTwoLevelSpectrum(job,output,true)))
+        throw new Error("Worker returned an inconsistent two-level rerun spectrum");
+      return await runs.record(job,output,inspection.summary.runId);
+    }finally{running=false;}
   });
   ipcMain.handle("quantum:comparison-pins", (event) => {
     trusted(event);

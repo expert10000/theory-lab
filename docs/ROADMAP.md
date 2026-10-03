@@ -15,8 +15,8 @@ Historical IDs are retained; no new QLAB numbers are planned.
 The `QLAB-UI-1–8` labels are a separate interaction track, not renumbered
 QLAB delivery commits. UI-4–5 are implemented for their declared two-level
 adapters; UI-1–3 cover currently reachable desktop labs, and UI-6 covers
-all current saved-result operations. UI-7–8 are planned; reproducible rerun
-is next. See the
+all current saved-result operations. UI-7 is partial: verified provenance and
+new-run rerun exist, with broader acceptance still pending. UI-8 is planned. See the
 [linked workspace roadmap](QLAB_LINKED_WORKSPACE_ROADMAP.md) for navigation,
 shared selection, observable inspection, energy sweeps, state views, run
 comparison, provenance and the conditional scene bridge.

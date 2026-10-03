@@ -14,6 +14,7 @@ delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
 let preservedSpectrumRunId = null;
+let preservedRerunId = null;
 let preservedRabiRunId = null;
 const preservedPassageRunIds = {};
 const preservedCavityRunIds = {};
@@ -100,6 +101,7 @@ try {
       "getVerifiedRun",
       "importScene",
       "importSceneStream",
+      "inspectSavedRun",
       "lindblad",
       "listRuns",
       "listSpectrumStudies",
@@ -118,6 +120,7 @@ try {
       "readData",
       "readSceneChunk",
       "releaseSceneStream",
+      "rerunSaved",
       "restart",
       "run",
       "saveSpectrumStudy",
@@ -221,6 +224,23 @@ try {
   preservedSpectrumRunId=await page.getByTestId("workspace-run-id").innerText();
   await page.getByRole("button",{name:"Select upper energy E plus"}).click();
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Inspect provenance ${preservedSpectrumRunId}`}).click();
+  await page.getByTestId("run-provenance").waitFor();
+  const sourceInspection=await page.evaluate(id=>window.quantum.inspectSavedRun(id),preservedSpectrumRunId);
+  assert.equal(sourceInspection.preflight.ready,true);
+  assert.match(await page.getByTestId("run-provenance").innerText(),/Job SHA-256/);
+  const beforeRerun=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length));
+  assert.ok(await page.evaluate(async id=>{try{await window.quantum.rerunSaved(id,"0".repeat(64));return false;}catch{return true;}},preservedSpectrumRunId),
+    "unreviewed or stale environment fingerprints cannot dispatch a rerun");
+  assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length)),beforeRerun);
+  await page.getByTestId("rerun-saved").click();
+  await page.getByRole("status").filter({hasText:"New saved run"}).waitFor();
+  const rerunSummary=await page.evaluate(parent=>window.quantum.listRuns().then(r=>r.find(v=>v.parentRunId===parent)),preservedSpectrumRunId);
+  assert.ok(rerunSummary&&rerunSummary.runId!==preservedSpectrumRunId);
+  preservedRerunId=rerunSummary.runId;
+  const rerunPair=await page.evaluate(async ids=>Promise.all(ids.map(id=>window.quantum.getVerifiedRun(id))),[preservedSpectrumRunId,preservedRerunId]);
+  assert.deepEqual({...rerunPair[1].job,jobId:rerunPair[0].job.jobId},rerunPair[0].job,
+    "rerun reconstructs exact stored inputs apart from new job identity");
   await page.getByRole("button",{name:`Pin A ${preservedSpectrumRunId}`}).focus();
   await page.keyboard.press("Enter");
   await page.getByRole("button",{name:`Pin B ${selectedRunId}`}).click();
@@ -608,9 +628,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
-  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6.*Partially done: none.*Next: QLAB-UI-7 Provenance and reproducible rerun/s);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6.*Partially done: QLAB-UI-7.*Next: close QLAB-UI-7 adapter gaps/s);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4","QLAB-UI-5","QLAB-UI-6"].includes(id)?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4","QLAB-UI-5","QLAB-UI-6"].includes(id)?/Implemented/:id==="QLAB-UI-7"?/Partial/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -1652,6 +1672,9 @@ try {
   assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
   assert.ok(runIds.includes(preservedPulseRunId),"saved pulse envelope and coefficients survive full restart");
   assert.ok(runIds.includes(preservedSpectrumRunId),"saved spectrum survives full restart");
+  assert.ok(runIds.includes(preservedRerunId),"linked rerun survives full restart");
+  const persistedLineage=await page.evaluate(id=>window.quantum.inspectSavedRun(id),preservedRerunId);
+  assert.equal(persistedLineage.lineage.parentRunId,preservedSpectrumRunId);
   assert.ok(runIds.includes(preservedRabiRunId),"saved Rabi evolution survives full restart");
   for(const runId of Object.values(preservedPassageRunIds))assert.ok(runIds.includes(runId),`saved evolution ${runId} survives full restart`);
   for(const runId of Object.values(preservedCavityRunIds))assert.ok(runIds.includes(runId),`saved cavity ${runId} survives full restart`);

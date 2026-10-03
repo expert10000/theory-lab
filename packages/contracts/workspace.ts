@@ -54,6 +54,8 @@ export interface RunSummary {
   computedAt: string;
   durationMs: number;
   artifactSha256: string | null;
+  /** Present only on a new run made from a verified saved parent. */
+  parentRunId?: string;
 }
 export type RunExportFormat = "csv" | "svg" | "manifest";
 
