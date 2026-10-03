@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { OscillatorDynamics } from "./OscillatorDynamics";
 import { DrivenOscillator } from "./DrivenOscillator";
 import { DampedOscillator } from "./DampedOscillator";
@@ -10,9 +10,11 @@ import type { PulsedOscillatorDraft } from "../../../packages/models/oscillator-
 import type { OscillatorDynamicsDraft } from "../../../packages/models/oscillator-dynamics";
 import type {
   OscillatorResult,
+  OscillatorFamilyResult,
   QuantumBridge,
   WorkerStatus,
 } from "../../../packages/contracts";
+import {selectedOscillatorItem,type OscillatorSelection,type OscillatorRunContext} from "./oscillator-selection";
 import {
   OSCILLATOR_DEFAULTS,
   oscillatorJob,
@@ -112,6 +114,8 @@ export function OscillatorLab({
   atlasParametricEpoch,
   restoredAnharmonic,
   onAnharmonicSnapshot,
+  onOscillatorContext,
+  reopenedRun,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -138,6 +142,8 @@ export function OscillatorLab({
   atlasParametricEpoch?:number;
   restoredAnharmonic?:import("../../../packages/models/oscillator-anharmonic").AnharmonicDraft;
   onAnharmonicSnapshot?:(draft:import("../../../packages/models/oscillator-anharmonic").AnharmonicDraft)=>void;
+  onOscillatorContext?:(context:OscillatorRunContext|null)=>void;
+  reopenedRun?:{epoch:number;result:OscillatorFamilyResult;data:Uint8Array|null}|null;
 }) {
   const [view, setView] = useState<"static" | "dynamics" | "driven" | "pulse" | "damped" | "parametric" | "anharmonic">("static");
   const [draft, setDraft] = useState<OscillatorDraft>(OSCILLATOR_DEFAULTS);
@@ -147,11 +153,24 @@ export function OscillatorLab({
     [running, setRunning] = useState(false);
   const [outcome, setOutcome] = useState("READY TO CALCULATE"),
     [error, setError] = useState("");
+  const [selection,setSelection]=useState<OscillatorSelection|null>(null);
+  const appliedReopen=useRef<number|null>(null),runEpoch=useRef(0);
+  const emit=useCallback((mode:typeof view,context:OscillatorRunContext|null)=>{
+    if(mode===view)onOscillatorContext?.(context);
+  },[view,onOscillatorContext]);
+  const motionContext=useCallback((context:OscillatorRunContext|null)=>emit("dynamics",context),[emit]);
+  const drivenContext=useCallback((context:OscillatorRunContext|null)=>emit("driven",context),[emit]);
+  const pulseContext=useCallback((context:OscillatorRunContext|null)=>emit("pulse",context),[emit]);
+  const dampedContext=useCallback((context:OscillatorRunContext|null)=>emit("damped",context),[emit]);
+  const parametricContext=useCallback((context:OscillatorRunContext|null)=>emit("parametric",context),[emit]);
+  const anharmonicContext=useCallback((context:OscillatorRunContext|null)=>emit("anharmonic",context),[emit]);
+  function switchView(next:typeof view){onOscillatorContext?.(null);setView(next);}
   function reset(value: OscillatorDraft) {
     setView("static");
     setDraft(value);
     setResult(null);
     setReference(null);
+    setSelection(null);
     setError("");
     setOutcome("READY TO CALCULATE");
   }
@@ -167,6 +186,20 @@ export function OscillatorLab({
   useEffect(() => {
     if (atlasDrivenEpoch && atlasDrivenDraft) setView("driven");
   }, [atlasDrivenEpoch]);
+  useEffect(()=>{
+    if(!reopenedRun||appliedReopen.current===reopenedRun.epoch)return;
+    appliedReopen.current=reopenedRun.epoch;runEpoch.current++;setRunning(false);
+    const saved=reopenedRun.result;
+    const nextView=saved.operation==="oscillator"?"static":saved.operation==="oscillator_evolve"?"dynamics":
+      saved.operation==="oscillator_drive"?"driven":saved.operation==="oscillator_pulse"?"pulse":
+      saved.operation==="oscillator_damped"?"damped":saved.operation==="oscillator_parametric"?"parametric":"anharmonic";
+    setView(nextView);
+    if(saved.operation==="oscillator"){
+      const p=saved.model.parameters;
+      setDraft({omega:String(p.omega),cutoff:String(p.cutoff),levels:String(p.levels),state:String(p.state),extent:String(p.extent),points:String(p.points),engine:saved.engine.name});
+      setResult(saved);setReference(null);setMode(saved.engine.name);setSelection(null);setError("");setOutcome("SAVED RUN OPENED");
+    }
+  },[reopenedRun?.epoch]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
   useEffect(() => onModeSnapshot?.(view), [view, onModeSnapshot]);
   let preview: ReturnType<typeof oscillatorJob> | null = null;
@@ -191,11 +224,17 @@ export function OscillatorLab({
     (!preview ||
       mode !== draft.engine ||
       JSON.stringify(result.model) !== JSON.stringify(preview.model));
+  const item=selectedOscillatorItem(selection,result,null);
+  useEffect(()=>{
+    if(view==="static")onOscillatorContext?.(result?{result,selection:item?selection:null,item,stale:!!stale}:null);
+  },[view,result,selection,stale,onOscillatorContext]);
   async function run() {
     if (!preview || !ready || running) return;
+    const epoch=++runEpoch.current;
     setRunning(true);
     setError("");
     setOutcome("RUNNING");
+    setResult(null);setSelection(null);onOscillatorContext?.(null);
     try {
       const first = await bridge.oscillator({
         ...preview,
@@ -207,15 +246,17 @@ export function OscillatorLab({
               oscillatorJob(`job-${crypto.randomUUID()}`, draft, "native"),
             )
           : null;
+      if(epoch!==runEpoch.current)return;
       setResult(first);
       setReference(second);
       setMode(draft.engine);
       setOutcome("COMPLETE");
     } catch (e) {
+      if(epoch!==runEpoch.current)return;
       setOutcome("FAILED");
       setError(e instanceof Error ? e.message : String(e));
     } finally {
-      setRunning(false);
+      if(epoch===runEpoch.current)setRunning(false);
     }
   }
   const comparison =
@@ -246,30 +287,30 @@ export function OscillatorLab({
         <button
           role="tab"
           aria-selected={view === "static"}
-          onClick={() => setView("static")}
+          onClick={() => switchView("static")}
         >
           Stationary spectrum
         </button>
         <button
           role="tab"
           aria-selected={view === "dynamics"}
-          onClick={() => setView("dynamics")}
+          onClick={() => switchView("dynamics")}
         >
           Free dynamics
         </button>
         <button
           role="tab"
           aria-selected={view === "driven"}
-          onClick={() => setView("driven")}
+          onClick={() => switchView("driven")}
         >
           Driven dynamics
         </button>
-        <button role="tab" aria-selected={view === "pulse"} onClick={() => setView("pulse")}>
+        <button role="tab" aria-selected={view === "pulse"} onClick={() => switchView("pulse")}>
           Gaussian pulse
         </button>
-        <button role="tab" aria-selected={view === "damped"} onClick={() => setView("damped")}>Damped / thermal</button>
-        <button role="tab" aria-selected={view === "parametric"} onClick={() => setView("parametric")}>Parametric squeezing</button>
-        <button role="tab" aria-selected={view === "anharmonic"} onClick={() => setView("anharmonic")}>Quartic anharmonic</button>
+        <button role="tab" aria-selected={view === "damped"} onClick={() => switchView("damped")}>Damped / thermal</button>
+        <button role="tab" aria-selected={view === "parametric"} onClick={() => switchView("parametric")}>Parametric squeezing</button>
+        <button role="tab" aria-selected={view === "anharmonic"} onClick={() => switchView("anharmonic")}>Quartic anharmonic</button>
       </div>
       <div hidden={view !== "static"}>
         <section className="hamiltonian-card">
@@ -442,8 +483,10 @@ export function OscillatorLab({
                   );
                 })}
               </svg>
+              <div className="state-view-levels" aria-label="Stored oscillator energy levels">{result.spectrum.energies.map((energy,index)=><button type="button" key={index} aria-label={`Select oscillator E${index}`} aria-pressed={selection?.kind==="energy"&&selection.runId===result.runId&&selection.index===index} onClick={()=>setSelection({kind:"energy",runId:result.runId,index})}>E{index} · {energy.toFixed(4)}</button>)}</div>
             </div>
             <StationaryFigure result={result} />
+            <label>Stored q sample <input aria-label="Oscillator q sample" type="range" min="0" max={result.state.q.length-1} value={selection?.kind==="position"&&selection.runId===result.runId?selection.index:0} onChange={event=>setSelection({kind:"position",runId:result.runId,index:Number(event.target.value)})}/></label>
             <p>
               Cutoff +4 drift: {result.analysis.cutoffDrift.toExponential(3)}.
               Exact low Fock energies are cutoff-independent here; this is not a
@@ -481,6 +524,8 @@ export function OscillatorLab({
           restored={restoredMotion}
           restoreEpoch={restoreEpoch}
           onSnapshot={onMotionSnapshot}
+          onRunContext={motionContext}
+          reopenedRun={reopenedRun?.result.operation==="oscillator_evolve"&&reopenedRun.data?{epoch:reopenedRun.epoch,result:reopenedRun.result,data:reopenedRun.data}:null}
         />
       </div>
       <div hidden={view !== "driven"}>
@@ -492,14 +537,16 @@ export function OscillatorLab({
           onSnapshot={onDrivenSnapshot}
           atlasDraft={atlasDrivenDraft}
           atlasEpoch={atlasDrivenEpoch}
+          onRunContext={drivenContext}
+          reopenedRun={reopenedRun?.result.operation==="oscillator_drive"&&reopenedRun.data?{epoch:reopenedRun.epoch,result:reopenedRun.result,data:reopenedRun.data}:null}
         />
       </div>
       <div hidden={view !== "pulse"}>
-        <DrivenOscillator bridge={bridge} status={status} forcing="gaussian" restoredPulse={restoredPulse} restoreEpoch={restoreEpoch} onPulseSnapshot={onPulseSnapshot}/>
+        <DrivenOscillator bridge={bridge} status={status} forcing="gaussian" restoredPulse={restoredPulse} restoreEpoch={restoreEpoch} onPulseSnapshot={onPulseSnapshot} onRunContext={pulseContext} reopenedRun={reopenedRun?.result.operation==="oscillator_pulse"&&reopenedRun.data?{epoch:reopenedRun.epoch,result:reopenedRun.result,data:reopenedRun.data}:null}/>
       </div>
-      <div hidden={view !== "damped"}><DampedOscillator bridge={bridge} status={status} restored={restoredDamped} restoreEpoch={restoreEpoch} onSnapshot={onDampedSnapshot}/></div>
-      <div hidden={view !== "parametric"}><ParametricOscillator bridge={bridge} status={status} restored={restoredParametric} restoreEpoch={restoreEpoch} onSnapshot={onParametricSnapshot} atlasDraft={atlasParametricDraft} atlasEpoch={atlasParametricEpoch}/></div>
-      <div hidden={view !== "anharmonic"}><AnharmonicOscillator bridge={bridge} status={status} restored={restoredAnharmonic} restoreEpoch={restoreEpoch} onSnapshot={onAnharmonicSnapshot}/></div>
+      <div hidden={view !== "damped"}><DampedOscillator bridge={bridge} status={status} restored={restoredDamped} restoreEpoch={restoreEpoch} onSnapshot={onDampedSnapshot} onRunContext={dampedContext} reopenedRun={reopenedRun?.result.operation==="oscillator_damped"&&reopenedRun.data?{epoch:reopenedRun.epoch,result:reopenedRun.result,data:reopenedRun.data}:null}/></div>
+      <div hidden={view !== "parametric"}><ParametricOscillator bridge={bridge} status={status} restored={restoredParametric} restoreEpoch={restoreEpoch} onSnapshot={onParametricSnapshot} atlasDraft={atlasParametricDraft} atlasEpoch={atlasParametricEpoch} onRunContext={parametricContext} reopenedRun={reopenedRun?.result.operation==="oscillator_parametric"&&reopenedRun.data?{epoch:reopenedRun.epoch,result:reopenedRun.result,data:reopenedRun.data}:null}/></div>
+      <div hidden={view !== "anharmonic"}><AnharmonicOscillator bridge={bridge} status={status} restored={restoredAnharmonic} restoreEpoch={restoreEpoch} onSnapshot={onAnharmonicSnapshot} onRunContext={anharmonicContext} reopenedRun={reopenedRun?.result.operation==="oscillator_anharmonic"?{epoch:reopenedRun.epoch,result:reopenedRun.result}:null}/></div>
     </div>
   );
 }

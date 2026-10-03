@@ -1,8 +1,8 @@
 # QLAB-UI-1–3 remaining-lab audit
 
-Status (2026-10-03): this records the baseline gaps before the Transmon, Ising,
-final-population sweep and SSH/QWZ topology adapters, then tracks their delivery below. It does not change physics,
-imply a new worker operation, or declare UI-1–3 complete. Sources of truth are `packages/contracts/index.ts`,
+Status (2026-10-03): this preserves the baseline gaps before the Transmon, Ising,
+final-population sweep, SSH/QWZ topology, orbital and oscillator adapters, then tracks their delivery below. It does not change physics
+or imply a new worker operation. UI-1–3 are now implemented for the currently reachable labs. Sources of truth are `packages/contracts/index.ts`,
 `apps/desktop/main/runs.ts`, and the corresponding renderer labs.
 
 | Lab | Saved result | Audit-baseline linked-view gap | Safe adapter boundary |
@@ -34,11 +34,22 @@ SSH/QWZ topology now reopens verified inline results, selects exact-run
 periodic-band samples, finite-chain edge sites or QWZ curvature mesh cells,
 and inspects stored diagnostics and provenance. It withholds a QWZ cell and
 invariant at gap closure and labels unresolved meshes; optional band energies
-appear only if recorded. The two remaining rows—orbitals and oscillators—still
-require model-specific design and acceptance work; orbitals are next.
+appear only if recorded. The orbital row now has hash-verified reopening,
+run-scoped complex-grid voxel and saved radial selections, and an inspector
+that retains stored geometry, basis, normalization and provenance. The
+oscillator row now covers all seven saved operations. Static harmonic energy
+selection does not imply a spatial state for an uncomputed level; the quartic
+adapter reports stored Fock coefficients without claiming a spatial
+wavefunction. Free, driven, pulse, damped and parametric time cursors address
+only their own binary columns. Damped density-matrix columns are genuinely
+stored; no other mode inherits them. Each operation reopens from Runs, names
+its saved run in the breadcrumb and distinguishes immutable inputs from drafts.
 
 Acceptance for each adapter is the same: a breadcrumb naming the exact saved
 run, a selection that rejects another run or missing item, immutable stored
 inputs distinguished from the draft, explicit unavailable-state language,
-and restart/tamper coverage. UI-1–3 remain **Partial** until the other rows
-receive their own designs and acceptance evidence.
+and restart/tamper coverage. The remaining rows now have those model-specific
+designs and acceptance evidence, including full Electron restart and forged
+inline/binary oscillator rejection. UI-1–3 are **Implemented for the currently
+reachable desktop labs**. New physics will need explicit adapters rather than
+assuming a universal state or result shape.

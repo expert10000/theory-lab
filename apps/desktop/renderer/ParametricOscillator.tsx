@@ -1,22 +1,35 @@
 import React,{useEffect,useRef,useState} from "react";
 import type {EvolutionProgress,ParametricOscillatorResult,QuantumBridge,WorkerStatus} from "../../../packages/contracts";
 import {checkParametricData,PARAMETRIC_DEFAULTS,parametricOscillatorJob,parametricReference,type ParametricOscillatorDraft} from "../../../packages/models/oscillator-parametric";
+import {selectedOscillatorItem,type OscillatorRunContext} from "./oscillator-selection";
 
 type Computed={result:ParametricOscillatorResult;data:Float64Array};
-export function ParametricOscillator({bridge,status,restored,restoreEpoch,onSnapshot,atlasDraft,atlasEpoch}:{
+export function ParametricOscillator({bridge,status,restored,restoreEpoch,onSnapshot,atlasDraft,atlasEpoch,onRunContext,reopenedRun}:{
   bridge:QuantumBridge;status:WorkerStatus;restored?:ParametricOscillatorDraft;restoreEpoch?:number;
   onSnapshot?:(draft:ParametricOscillatorDraft)=>void;atlasDraft?:ParametricOscillatorDraft;atlasEpoch?:number;
+  onRunContext?:(context:OscillatorRunContext|null)=>void;
+  reopenedRun?:{epoch:number;result:ParametricOscillatorResult;data:Uint8Array}|null;
 }){
   const [draft,setDraft]=useState<ParametricOscillatorDraft>(PARAMETRIC_DEFAULTS),[computed,setComputed]=useState<Computed|null>(null);
   const [comparison,setComparison]=useState<{kind:string;occupation:number;qVariance:number;pVariance:number}|null>(null);
   const [running,setRunning]=useState(false),[error,setError]=useState(""),[progress,setProgress]=useState<EvolutionProgress|null>(null);
-  const active=useRef<string|null>(null),generation=useRef(0);
+  const [selected,setSelected]=useState(0);
+  const active=useRef<string|null>(null),generation=useRef(0),appliedReopen=useRef<number|null>(null);
   useEffect(()=>bridge.onProgress(p=>{if(active.current===p.jobId)setProgress(p);}),[bridge]);
   useEffect(()=>()=>{generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});},[bridge]);
   useEffect(()=>{if(restoreEpoch){generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});
-    setDraft(restored??PARAMETRIC_DEFAULTS);setComputed(null);setComparison(null);setError("");}},[restoreEpoch]);
+    setDraft(restored??PARAMETRIC_DEFAULTS);setComputed(null);setSelected(0);setComparison(null);setError("");}},[restoreEpoch]);
   useEffect(()=>{if(atlasEpoch&&atlasDraft){generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});
-    setDraft(atlasDraft);setComputed(null);setComparison(null);setError("");}},[atlasEpoch]);
+    setDraft(atlasDraft);setComputed(null);setSelected(0);setComparison(null);setError("");}},[atlasEpoch]);
+  useEffect(()=>{
+    if(!reopenedRun||appliedReopen.current===reopenedRun.epoch)return;
+    const saved=reopenedRun.result,p=saved.model.parameters,s=saved.solver;
+    generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});
+    appliedReopen.current=reopenedRun.epoch;setRunning(false);
+    setDraft({omega:String(p.omega),lambdaRe:String(p.lambdaRe),lambdaIm:String(p.lambdaIm),cutoff:String(p.cutoff),
+      start:String(s.tStart),stop:String(s.tStop),samples:String(s.samples),engine:saved.engine.name});
+    setComputed({result:saved,data:checkParametricData(saved,reopenedRun.data)});setSelected(0);setComparison(null);setError("");
+  },[reopenedRun?.epoch,bridge]);
   useEffect(()=>onSnapshot?.(draft),[draft,onSnapshot]);
   let preview:ReturnType<typeof parametricOscillatorJob>|null=null;
   try{preview=parametricOscillatorJob("preview",draft,draft.engine==="compare"?"qutip":draft.engine);}catch{/* bounded form feedback below */}
@@ -24,6 +37,10 @@ export function ParametricOscillator({bridge,status,restored,restoreEpoch,onSnap
     (draft.engine==="compare"?!!c.engines.qutip.available&&!!c.engines.native.available:!!c.engines[draft.engine].available);
   const stale=!!computed&&(!preview||computed.result.engine.name!==(draft.engine==="compare"?"qutip":draft.engine)||
     JSON.stringify(computed.result.model)!==JSON.stringify(preview.model)||JSON.stringify(computed.result.solver)!==JSON.stringify(preview.solver));
+  const selection=computed?{kind:"time" as const,runId:computed.result.runId,index:selected}:null;
+  const item=selectedOscillatorItem(selection,computed?.result??null,computed?.data??null);
+  useEffect(()=>onRunContext?.(computed?{result:computed.result,selection:item?selection:null,item,stale}:null),
+    [computed,selected,stale,onRunContext]);
   async function calculate(job:ReturnType<typeof parametricOscillatorJob>):Promise<Computed>{
     active.current=job.jobId;
     const result=await bridge.oscillatorParametric(job);
@@ -52,7 +69,7 @@ export function ParametricOscillator({bridge,status,restored,restoreEpoch,onSnap
         }
         next={kind:study?`N ${draft.cutoff} → ${Number(draft.cutoff)+8} (${engine})`:"QuTiP ↔ native",occupation,qVariance,pVariance};
       }
-      setComputed(first);setComparison(next);
+      setComputed(first);setSelected(0);setComparison(next);
     }catch(e){if(epoch===generation.current)setError(e instanceof Error?e.message:String(e));}
     finally{if(epoch===generation.current){active.current=null;setRunning(false);setProgress(null);}}
   }
@@ -102,6 +119,8 @@ export function ParametricOscillator({bridge,status,restored,restoreEpoch,onSnap
       <div className="sweep-visual"><p className="eyebrow">QUADRATURE VARIANCES / EACH CURVE SCALED SEPARATELY</p>
         <svg viewBox="0 0 800 260" role="img" aria-label="Parametric oscillator squeezing curves"><path d="M50 35 V220 H730" stroke="#506575" fill="none"/>
           {line(3,"#79d9c1")}{line(4,"#edae8f")}</svg><p>Green: Δq² · orange: Δp² · horizontal axis: time.</p></div>
+      <label>Recorded time row <input aria-label="Parametric time cursor" type="range" min="0" max={rows-1} value={selected} onChange={event=>setSelected(Number(event.target.value))}/></label>
+      {item?.kind==="time"&&<p data-testid="parametric-selected-row">t = {item.values.time.toFixed(4)} · Δq² = {item.values.q_variance.toFixed(6)} · Δp² = {item.values.p_variance.toFixed(6)}</p>}
       <p>Infinite-space reference at the final time: occupation {last!.number.toFixed(6)}, Δq² {last!.qVariance.toFixed(6)}, Δp² {last!.pVariance.toFixed(6)}. Finite-cutoff differences are reported, not hidden.</p>
       {comparison&&<p data-testid="parametric-comparison">{comparison.kind}: max Δoccupation {comparison.occupation.toExponential(2)}, Δq² {comparison.qVariance.toExponential(2)}, Δp² {comparison.pVariance.toExponential(2)}. Cutoff sensitivity is not proof of infinite-basis convergence.</p>}
     </section>}

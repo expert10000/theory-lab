@@ -46,6 +46,7 @@ test("D1-014–016 independently verify and persist thermal density matrices",as
       assert.ok(result.analysis.maxTraceError<1e-7);
       assert.ok(result.analysis.maxNumberReferenceError<1e-6);
       await store.record(job,result);
+      assert.deepEqual((await store.oscillatorFamily(result.runId)).result,result);
       const corrupt=Buffer.from(bytes);
       corrupt.writeDoubleLE(corrupt.readDoubleLE(8)+.1,8);
       assert.throws(()=>checkDampedOscillatorData(result,corrupt),/density matrix|readout/i);

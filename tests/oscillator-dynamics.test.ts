@@ -232,6 +232,7 @@ test("supervised dynamics provides scientifically verified binary amplitudes, mo
       /inconsistent oscillator motion/,
     );
     await store.record(input, saved);
+    assert.deepEqual((await store.oscillatorFamily(saved.runId)).result,saved);
     assert.deepEqual(
       (await store.list()).map((v) => v.operation),
       ["oscillator_evolve"],

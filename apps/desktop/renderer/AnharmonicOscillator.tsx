@@ -1,16 +1,28 @@
-import React,{useEffect,useState} from "react";
+import React,{useEffect,useRef,useState} from "react";
 import type {AnharmonicOscillatorResult,QuantumBridge,WorkerStatus} from "../../../packages/contracts";
 import {ANHARMONIC_DEFAULTS,anharmonicJob,consistentAnharmonicResult,type AnharmonicDraft} from "../../../packages/models/oscillator-anharmonic";
+import {selectedOscillatorItem,type OscillatorRunContext} from "./oscillator-selection";
 
-export function AnharmonicOscillator({bridge,status,restored,restoreEpoch,onSnapshot}:{
+export function AnharmonicOscillator({bridge,status,restored,restoreEpoch,onSnapshot,onRunContext,reopenedRun}:{
   bridge:QuantumBridge;status:WorkerStatus;restored?:AnharmonicDraft;restoreEpoch?:number;
   onSnapshot?:(draft:AnharmonicDraft)=>void;
+  onRunContext?:(context:OscillatorRunContext|null)=>void;
+  reopenedRun?:{epoch:number;result:AnharmonicOscillatorResult}|null;
 }){
   const [draft,setDraft]=useState<AnharmonicDraft>(ANHARMONIC_DEFAULTS);
   const [result,setResult]=useState<AnharmonicOscillatorResult|null>(null);
   const [comparison,setComparison]=useState<{label:string;energy:number;spacing:number}|null>(null);
   const [running,setRunning]=useState(false),[error,setError]=useState("");
-  useEffect(()=>{if(restoreEpoch){setDraft(restored??ANHARMONIC_DEFAULTS);setResult(null);setComparison(null);setError("");}},[restoreEpoch]);
+  const [selected,setSelected]=useState<number|null>(null);
+  const generation=useRef(0),appliedReopen=useRef<number|null>(null);
+  useEffect(()=>{if(restoreEpoch){generation.current++;setRunning(false);setDraft(restored??ANHARMONIC_DEFAULTS);setResult(null);setSelected(null);setComparison(null);setError("");}},[restoreEpoch]);
+  useEffect(()=>{
+    if(!reopenedRun||appliedReopen.current===reopenedRun.epoch)return;
+    generation.current++;appliedReopen.current=reopenedRun.epoch;setRunning(false);
+    const saved=reopenedRun.result,p=saved.model.parameters;
+    setDraft({omega:String(p.omega),lambda:String(p.lambda),cutoff:String(p.cutoff),levels:String(p.levels),engine:saved.engine.name});
+    setResult(saved);setSelected(null);setComparison(null);setError("");
+  },[reopenedRun?.epoch]);
   useEffect(()=>onSnapshot?.(draft),[draft,onSnapshot]);
   let preview:ReturnType<typeof anharmonicJob>|null=null;
   try{preview=anharmonicJob("preview",draft,draft.engine==="compare"?"qutip":draft.engine);}catch{/* bounded form guidance below */}
@@ -20,6 +32,10 @@ export function AnharmonicOscillator({bridge,status,restored,restoreEpoch,onSnap
       !!capabilities.engines[draft.engine].available);
   const stale=!!result&&(!preview||JSON.stringify(result.model)!==JSON.stringify(preview.model)||
     result.engine.name!==(draft.engine==="compare"?"qutip":draft.engine));
+  const selection=result&&selected!==null?{kind:"energy" as const,runId:result.runId,index:selected}:null;
+  const item=selectedOscillatorItem(selection,result,null);
+  useEffect(()=>onRunContext?.(result?{result,selection:item?selection:null,item,stale}:null),
+    [result,selected,stale,onRunContext]);
   async function calculate(engine:"qutip"|"native",next:AnharmonicDraft){
     const job=anharmonicJob(`job-${crypto.randomUUID()}`,next,engine);
     const value=await bridge.oscillatorAnharmonic(job);
@@ -28,6 +44,7 @@ export function AnharmonicOscillator({bridge,status,restored,restoreEpoch,onSnap
   }
   async function run(study:boolean){
     if(!preview||!ready||running||(study&&Number(draft.cutoff)>24))return;
+    const epoch=++generation.current;
     setRunning(true);setError("");
     try{
       const engine=draft.engine==="compare"?"qutip":draft.engine;
@@ -40,9 +57,10 @@ export function AnharmonicOscillator({bridge,status,restored,restoreEpoch,onSnap
           energy:Math.max(...energies.map((v,i)=>Math.abs(v-other[i]))),
           spacing:Math.max(...energies.slice(1).map((v,i)=>Math.abs((v-energies[i])-(other[i+1]-other[i]))))};
       }
-      setResult(first);setComparison(report);
-    }catch(cause){setError(cause instanceof Error?cause.message:String(cause));}
-    finally{setRunning(false);}
+      if(epoch!==generation.current)return;
+      setResult(first);setSelected(null);setComparison(report);
+    }catch(cause){if(epoch===generation.current)setError(cause instanceof Error?cause.message:String(cause));}
+    finally{if(epoch===generation.current)setRunning(false);}
   }
   const fields=[["omega","Frequency ω",.5,3,.05],["lambda","Quartic coupling λ",0,.2,.005],
     ["cutoff","Fock cutoff",8,32,1],["levels","Reported levels",3,6,1]] as const;
@@ -84,6 +102,7 @@ export function AnharmonicOscillator({bridge,status,restored,restoreEpoch,onSnap
             return <g key={index}><path d={`M${x-23} ${baseline}h46`} stroke="#edae8f" strokeDasharray="4 3" strokeWidth="2"/>
               <path d={`M${x-23} ${y}h46`} stroke="#79d9c1" strokeWidth="3"/><text x={x} y="232" fill="#acc1ca" fontSize="12" textAnchor="middle">n={index}</text></g>;})}</svg>
         <p>Green: quartic · dashed orange: harmonic at the same ω. Separate cutoff checks are required for convergence claims.</p></div>
+      <div className="state-view-levels" aria-label="Stored quartic energy levels">{result.spectrum.energies.map((energy,index)=><button type="button" key={index} aria-label={`Select quartic E${index}`} aria-pressed={selected===index} onClick={()=>setSelected(index)}>E{index} · {energy.toFixed(4)}</button>)}</div>
       <p>Lowest spacing E₁−E₀: {(result.spectrum.energies[1]-result.spectrum.energies[0]).toFixed(6)} · ground parity {result.analysis.groundParity.toFixed(8)}.</p>
       {comparison&&<p data-testid="anharmonic-comparison">{comparison.label}: max |ΔE| {comparison.energy.toExponential(3)} · max spacing drift {comparison.spacing.toExponential(3)}.</p>}
     </section>}

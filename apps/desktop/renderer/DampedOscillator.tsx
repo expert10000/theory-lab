@@ -1,20 +1,34 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { DampedOscillatorResult, EvolutionProgress, QuantumBridge, WorkerStatus } from "../../../packages/contracts";
 import { checkDampedOscillatorData, dampedOscillatorJob, DAMPED_OSCILLATOR_DEFAULTS, type DampedOscillatorDraft } from "../../../packages/models/oscillator-damped";
+import {selectedOscillatorItem,type OscillatorRunContext} from "./oscillator-selection";
 
 type Computed={result:DampedOscillatorResult;data:Float64Array};
-export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot}:{
+export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot,onRunContext,reopenedRun}:{
   bridge:QuantumBridge;status:WorkerStatus;restored?:DampedOscillatorDraft;restoreEpoch?:number;
   onSnapshot?:(value:DampedOscillatorDraft)=>void;
+  onRunContext?:(context:OscillatorRunContext|null)=>void;
+  reopenedRun?:{epoch:number;result:DampedOscillatorResult;data:Uint8Array}|null;
 }) {
   const [draft,setDraft]=useState<DampedOscillatorDraft>(DAMPED_OSCILLATOR_DEFAULTS);
   const [computed,setComputed]=useState<Computed|null>(null);
   const [comparison,setComparison]=useState<{kind:string;maxNumber:number;maxPurity:number;projectionDifference:number}|null>(null);
   const [error,setError]=useState(""),[running,setRunning]=useState(false),[progress,setProgress]=useState<EvolutionProgress|null>(null);
-  const active=useRef<string|null>(null),generation=useRef(0);
+  const [selected,setSelected]=useState(0);
+  const active=useRef<string|null>(null),generation=useRef(0),appliedReopen=useRef<number|null>(null);
   useEffect(()=>bridge.onProgress(p=>{if(p.jobId===active.current)setProgress(p);}),[bridge]);
   useEffect(()=>()=>{generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});},[bridge]);
-  useEffect(()=>{if(restoreEpoch){generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});setDraft(restored??DAMPED_OSCILLATOR_DEFAULTS);setComputed(null);setComparison(null);setError("");}},[restoreEpoch]);
+  useEffect(()=>{if(restoreEpoch){generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});setDraft(restored??DAMPED_OSCILLATOR_DEFAULTS);setComputed(null);setSelected(0);setComparison(null);setError("");}},[restoreEpoch]);
+  useEffect(()=>{
+    if(!reopenedRun||appliedReopen.current===reopenedRun.epoch)return;
+    const saved=reopenedRun.result,p=saved.model.parameters,i=saved.initialState,s=saved.solver;
+    generation.current++;if(active.current)void bridge.cancel(active.current).catch(()=>{});
+    appliedReopen.current=reopenedRun.epoch;setRunning(false);
+    setDraft({omega:String(p.omega),cutoff:String(p.cutoff),loss:String(p.loss),thermalOccupation:String(p.thermalOccupation),
+      initial:i.type,index:i.type==="fock"?String(i.index):"0",alphaRe:i.type==="coherent"?String(i.alphaRe):"0",alphaIm:i.type==="coherent"?String(i.alphaIm):"0",
+      start:String(s.tStart),stop:String(s.tStop),samples:String(s.samples),engine:saved.engine.name});
+    setComputed({result:saved,data:checkDampedOscillatorData(saved,reopenedRun.data)});setSelected(0);setComparison(null);setError("");
+  },[reopenedRun?.epoch,bridge]);
   useEffect(()=>onSnapshot?.(draft),[draft,onSnapshot]);
   let preview:ReturnType<typeof dampedOscillatorJob>|null=null;
   try {preview=dampedOscillatorJob("preview",draft,draft.engine==="compare"?"qutip":draft.engine);}catch{/* input help below */}
@@ -25,6 +39,10 @@ export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot
     JSON.stringify(computed.result.model)!==JSON.stringify(preview.model)||
     JSON.stringify(computed.result.initialState)!==JSON.stringify(preview.initialState)||
     JSON.stringify(computed.result.solver)!==JSON.stringify(preview.solver));
+  const selection=computed?{kind:"time" as const,runId:computed.result.runId,index:selected}:null;
+  const item=selectedOscillatorItem(selection,computed?.result??null,computed?.data??null);
+  useEffect(()=>onRunContext?.(computed?{result:computed.result,selection:item?selection:null,item,stale}:null),
+    [computed,selected,stale,onRunContext]);
   async function calculate(job:ReturnType<typeof dampedOscillatorJob>):Promise<Computed>{
     active.current=job.jobId;
     const result=await bridge.oscillatorDamped(job);
@@ -55,7 +73,7 @@ export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot
         nextComparison={kind:kind==="cutoff"?`N ${draft.cutoff} → ${Number(draft.cutoff)+4} (${engine})`:"QuTiP ↔ native",maxNumber,maxPurity,
           projectionDifference:Math.abs(first.result.analysis.projectionProbability-second.result.analysis.projectionProbability)};
       }
-      setComputed(first);setComparison(nextComparison);
+      setComputed(first);setSelected(0);setComparison(nextComparison);
     }catch(e){if(epoch===generation.current)setError(e instanceof Error?e.message:String(e));}
     finally{if(epoch===generation.current){active.current=null;setRunning(false);setProgress(null);}}
   }
@@ -109,6 +127,8 @@ export function DampedOscillator({bridge,status,restored,restoreEpoch,onSnapshot
       </div><div className="sweep-visual"><p className="eyebrow">OCCUPATION / PURITY · EACH CURVE SCALED SEPARATELY</p>
         <svg viewBox="0 0 800 260" role="img" aria-label="Damped oscillator number and purity curves"><path d="M50 35 V220 H730" stroke="#506575" fill="none"/>
           {series(1,"#79d9c1")}{series(2,"#edae8f")}</svg><p>Green: mean occupation · orange: purity. Horizontal axis: time.</p></div>
+      <label>Recorded time row <input aria-label="Damped time cursor" type="range" min="0" max={rows-1} value={selected} onChange={event=>setSelected(Number(event.target.value))}/></label>
+      {item?.kind==="time"&&<p data-testid="damped-selected-row">t = {item.values.time.toFixed(4)} · ⟨N⟩ = {item.values.mean_number.toFixed(6)} · purity = {item.values.purity.toFixed(6)}</p>}
       <p>Finite-cutoff reference error: {computed.result.analysis.maxNumberReferenceError.toExponential(2)}. Full density matrix and provenance are saved with the run.</p>
       {comparison&&<p data-testid="damped-comparison">{comparison.kind}: max Δ⟨N⟩ {comparison.maxNumber.toExponential(2)}, max Δpurity {comparison.maxPurity.toExponential(2)}, initial projection difference {comparison.projectionDifference.toExponential(2)}. A cutoff check is evidence of sensitivity, not proof of infinite-basis convergence.</p>}
     </section>}

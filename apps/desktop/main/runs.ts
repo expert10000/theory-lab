@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult, type OrbitalResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult, type OrbitalResult, type OscillatorFamilyResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
@@ -288,6 +288,17 @@ export class RunStore {
       data.byteLength!==result.data.rows*16||!consistentOrbitalResult(job,result))
       throw new Error("Saved run is not a verified orbital grid");
     return {result,data:Uint8Array.from(data)};
+  }
+  async oscillatorFamily(runId:string):Promise<{result:OscillatorFamilyResult;data:Uint8Array|null}>{
+    const {manifest,job,result,data}=await this.load(runId);
+    const operations=["oscillator","oscillator_evolve","oscillator_drive","oscillator_pulse","oscillator_damped","oscillator_parametric","oscillator_anharmonic"];
+    if(!operations.includes(job.operation)||!operations.includes(result.operation)||
+      manifest.operation!==result.operation||manifest.model!==result.model.type||
+      manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
+      ("data" in result?(manifest.files.data!=="data.f64"||!data||data.byteLength!==result.data.bytes):
+        (data!==null||manifest.files.data!==null||manifest.artifactSha256!==null)))
+      throw new Error("Saved run is not a verified oscillator result");
+    return {result:result as OscillatorFamilyResult,data:data?Uint8Array.from(data):null};
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
     const { manifest, job, result, data } = await this.load(runId);

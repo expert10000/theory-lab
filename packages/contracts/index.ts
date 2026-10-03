@@ -478,6 +478,7 @@ export interface SweepResult {
   provenance: SpectrumResult["provenance"];
 }
 export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult | AnharmonicOscillatorResult;
+export type OscillatorFamilyResult=OscillatorResult|OscillatorEvolutionResult|DrivenOscillatorResult|PulsedOscillatorResult|DampedOscillatorResult|ParametricOscillatorResult|AnharmonicOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
   completed: number;
@@ -550,6 +551,7 @@ export interface QuantumBridge {
   getSweepRun(runId:string):Promise<{result:SweepResult;data:Uint8Array}>;
   getTopologyRun(runId:string):Promise<TopologyResult>;
   getOrbitalRun(runId:string):Promise<{result:OrbitalResult;data:Uint8Array}>;
+  getOscillatorRun(runId:string):Promise<{result:OscillatorFamilyResult;data:Uint8Array|null}>;
   saveSpectrumStudy(result:import("./spectrum-study").SpectrumStudyResult):Promise<import("./spectrum-study").SpectrumStudyResult>;
   getSpectrumStudy(studyId:string):Promise<import("./spectrum-study").SpectrumStudyResult>;
   listSpectrumStudies():Promise<import("./spectrum-study").SpectrumStudySummary[]>;

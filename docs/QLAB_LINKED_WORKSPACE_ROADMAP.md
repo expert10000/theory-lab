@@ -1,6 +1,6 @@
 # Quantum Lab linked workspace roadmap
 
-Status (2026-10-03): QLAB-UI-4–5 implemented for declared adapters; UI-1–3 partial; UI-6–8 planned. This roadmap translates
+Status (2026-10-03): QLAB-UI-1–5 implemented for declared adapters; UI-6–8 planned. This roadmap translates
 the supplied UI critique into an additive desktop plan after D1-020–022. It
 changes how existing physics is explored, not the worker architecture or the
 meaning of historical QLAB, QVIS and D1 milestones.
@@ -11,15 +11,16 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | --- | --- | --- |
 | Done | QLAB-UI-4 | The model-selected Sweeps workspace has a bounded two-level eigenenergy study, verified point runs, durable study checkpoints, reopen and resume. Existing dynamics sweeps still mean final `P₁`. This gate is complete for declared adapters, not a claim that every model supports every output. |
 | Done | QLAB-UI-5 | The verified two-level eigenvectors drive a linked Bloch x-z great circle and state readout. Spectrum, inspector and Analysis share exact-run selection; legacy and degenerate results show why a unique state is unavailable. This is not a Bloch claim for larger Hilbert spaces. |
-| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, evolution, cavity, Lindblad, Transmon, Ising, final-population sweep and SSH/QWZ topology runs have saved-run breadcrumbs. Other labs need adapters. |
-| Partially done | QLAB-UI-2 | Exact-run spectrum, time, Transmon-level, Ising-level/site, final-population grid and SSH/QWZ sample selections link only stored values; these supported runs reopen. Other model adapters remain. |
-| Partially done | QLAB-UI-3 | Run-backed two-level, evolution, cavity, Lindblad, Transmon, Ising, final-population sweep and SSH/QWZ topology inspectors distinguish stored inputs from drafts. Other model-specific inspectors remain. |
-| Next | Orbital adapter design | The [remaining-lab audit](QLAB_UI_1_3_REMAINING_LABS_AUDIT.md) leaves hydrogenic orbitals and multi-mode oscillators for separate designs and acceptance gates. Do not infer unrecorded states. |
+| Done | QLAB-UI-1 | Six-mode navigation, grouped model access, history, legacy restore and exact saved-run breadcrumbs/reopening now cover every current lab, including orbitals and all seven oscillator operations. |
+| Done | QLAB-UI-2 | Exact-run spectrum, time, level/site, sweep, topology, orbital voxel/radial and oscillator energy/position/time selections link only values saved by that operation. |
+| Done | QLAB-UI-3 | Run-backed model-specific inspectors distinguish stored inputs from drafts and expose recorded diagnostics and provenance across current labs; unavailable states remain explicitly unavailable. |
+| Next | QLAB-UI-6 | Pin compatible immutable A/B runs and compare recorded observables with explicit units and alignment. |
 | Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
-UI-5 is complete for the verified two-level adapter. UI-1–3 become complete
-only after their wider adapter/interaction gaps pass the individual acceptance
-gates below. Add other sweep-capable
+UI-1–3 are complete for currently reachable desktop labs after the orbital and
+seven-mode oscillator adapters passed individual acceptance and restart gates.
+This is not a claim that every model supports every experiment or that missing
+state vectors can be reconstructed. Add other sweep-capable
 models through declared parameter/observable adapters, without reopening the
 completed UI-4 gate or implying universal physics support.
 
@@ -32,7 +33,7 @@ replacing stored values. The Runs page reopens SHA-256-checked evolution
 results and data after restart, starting at the first recorded sample. The
 passage inspectors distinguish finite-run final population from asymptotic or
 crossing references; strong drive displays only recorded Floquet analysis and
-labels its weak-drive estimate. Other lab families still need adapters.
+labels its weak-drive estimate. The later lab-family adapters are recorded below.
 
 The completed cavity UI-1–3 slice covers Jaynes–Cummings and quantum Rabi cavity QED.
 Their saved-run breadcrumbs and exact-run cursors link the plot to recorded
@@ -48,8 +49,8 @@ inspector separates immutable inputs from the edited draft, reports selected
 population, photon, purity, coherence, boundary and trace values, and shows
 recorded-row diagnostics, optional steady-state readout and provenance. The
 artifact does not retain a density matrix, state vector or amplitudes; neither
-the plot nor inspector claims one. UI-1–3 remain Partial until the other lab
-families are assessed against their own acceptance gates.
+the plot nor inspector claims one. Later adapters completed the remaining
+current-lab UI-1–3 gates.
 
 The bounded inline-result slice now covers Transmon and Ising chain. Both
 reopen after restart with job/result hash verification and manifest checks, clearing
@@ -61,7 +62,7 @@ inspector shows finite-size gap, ground energy, half-chain entropy and
 provenance, but no full ground-state vector or excited-state observables.
 An optional comparison computation is a separate saved run and is not
 silently reattached when a single result is reopened. Orbital and oscillator
-families remain outside these adapters.
+families have their own distinct adapters below.
 
 The final-population sweep slice now reopens its hash-verified, row-major
 binary grid from Runs. One exact-run cursor selects a recorded 1D point or
@@ -79,8 +80,22 @@ when those arrays are present. Inspectors keep immutable inputs separate from
 drafts, preserve the SSH gap-closure winding boundary and the QWZ undefined
 Chern/curvature state at gap closure, and report unresolved-mesh caveats and
 provenance. Reopening clears selection. No generic eigenvectors or quantum
-state are implied. UI-1–3 remain Partial while orbital and multi-mode
-oscillator adapters await their own designs.
+state are implied.
+
+The orbital adapter reopens the verified complex-grid artifact, preserving its
+saved geometry and radial arrays. A run-scoped voxel or radial cursor links the
+field/radial view to the inspector; the inspector reports the exact saved
+sample, immutable inputs, normalization/energy diagnostics, basis conventions
+and provenance. Reopening clears selection; no unsaved analytic samples are
+inferred. The seven oscillator operations have separate inline or binary
+reopening paths under one workspace. Static harmonic selection uses saved
+energy levels and the sampled spatial state only for the declared state;
+quartic selection uses saved levels and finite-Fock coefficients, not a spatial
+wavefunction. Free, driven, pulse, damped and parametric time cursors project
+only their named saved columns; damped artifacts contain density-matrix
+elements, whereas the other modes retain their distinct schemas. Each
+inspector keeps immutable run inputs, diagnostics and provenance separate from
+draft edits. Comparison/cutoff runs are never silently reattached.
 
 ## Decision and current baseline
 
@@ -173,12 +188,12 @@ job registry.
 
 ## Milestone detail and acceptance gates
 
-QLAB-UI-1 is **Partial**: six-mode navigation, grouped native-keyboard model
+QLAB-UI-1 is **Implemented for current labs**: six-mode navigation, grouped native-keyboard model
 disclosures, separate Library/System links, safe fragment routes, back/forward,
 legacy snapshot mapping and the two-level, four evolution, two cavity and Lindblad persisted-run breadcrumbs are tested.
-Transmon and Ising persisted-run breadcrumbs are also tested.
-Other labs still need run-context breadcrumb adapters; no result is inferred from
-their inputs. QLAB-UI-2 is **Partial**: the two-level pilot now has typed
+Transmon, Ising, sweeps, topology, orbitals and seven oscillator operations have
+tested persisted-run breadcrumbs as well; no result is inferred from inputs.
+QLAB-UI-2 is **Implemented for current labs**: the two-level pilot has typed
 run-scoped energy references, draft parameter/operator references, keyboard
 selection, linked highlights and invalidation on a new run or model. The Runs
 view now reopens a hash-verified saved two-level spectrum from the existing
@@ -187,7 +202,7 @@ different or missing run cannot inherit it, and no selection is invented after
 an app restart. Legacy energy-only `quantum-result/v1` spectra do not acquire
 invented eigenvectors; new two-level results have independently checked state
 diagnostics. The linked Bloch/state view is delivered in UI-5; wider model
-adapters remain future gates. All four two-state evolution models add typed
+adapters for newly added physics remain future gates. All four two-state evolution models add typed
 exact-run time-sample selection, synchronized numerical/state views and
 saved-run reopening without inventing a retained selection. The two cavity
 models similarly link only recorded six-column observables to an exact run and
@@ -195,7 +210,9 @@ time index; no state amplitude or Bloch selection is implied. Lindblad links
 only its seven recorded time-series values and optional separate steady-state
 readout, not a retained density matrix. Transmon levels and Ising levels/sites
 add exact-run selections without claiming saved eigenvectors or a full
-spin-chain wavefunction. UI-3 is **Partial**: new two-level runs carry real
+spin-chain wavefunction. Sweep points/cells, topology k/site/mesh samples,
+orbital voxel/radial samples and all seven oscillator-mode selections are
+scoped to exact saved runs. UI-3 is **Implemented for current labs**: new two-level runs carry real
 normalized eigenvectors, populations, Bloch expectations and
 eigenpair residuals from QuTiP or native diagonalization. An independent
 Electron check validates them before display, persistence and reopening;
@@ -384,9 +401,8 @@ the external importer/handoff has its own compatibility tests.
 
 ## Delivery order and release gates
 
-The two-level UI-1–3 pilots and the UI-4–5 sweep/state gates are delivered to
-the extent stated above. Next close the remaining UI-1–3 adapter gaps with
-verified cross-lab run context and view projections. Then proceed to UI-6 and UI-7 comparison and
+The UI-1–5 gates are delivered for the declared adapters, including all current
+desktop labs in UI-1–3. Proceed to UI-6 and UI-7 comparison and
 reproducibility, and finally UI-8 for compatible scenes. After each slice,
 broaden model coverage by explicit adapters, preserving
 the current direct lab entry points until equivalent paths pass acceptance.

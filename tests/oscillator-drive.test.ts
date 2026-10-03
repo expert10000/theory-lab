@@ -174,6 +174,7 @@ test("real supervised drive verifies phases, displacement, density, energy/power
         /inconsistent driven/,
       );
       await store.record(input, output.result);
+      assert.deepEqual((await store.oscillatorFamily(output.result.runId)).result,output.result);
     }
     const restarted = new RunStore(
         join(root, "runs"),

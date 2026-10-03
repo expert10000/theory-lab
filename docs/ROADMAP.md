@@ -14,8 +14,8 @@ with the newly supplied plan's broader reciprocal-space/band milestones.
 Historical IDs are retained; no new QLAB numbers are planned.
 The `QLAB-UI-1–8` labels are a separate interaction track, not renumbered
 QLAB delivery commits. UI-4–5 are implemented for their declared two-level
-adapters; UI-1–3 are partial and UI-6–8 are planned. Closing the wider
-UI-1–3 run-context and view-adapter gaps is next. See the
+adapters; UI-1–3 are implemented for currently reachable desktop labs and
+UI-6–8 are planned. UI-6 immutable A/B run comparison is next. See the
 [linked workspace roadmap](QLAB_LINKED_WORKSPACE_ROADMAP.md) for navigation,
 shared selection, observable inspection, energy sweeps, state views, run
 comparison, provenance and the conditional scene bridge.
@@ -128,9 +128,10 @@ Math3D remain planned.
 
 ### Linked scientific workspace continuation
 
-The QLAB-UI-1–3 two-level pilots partially connect model, run, spectrum,
-Hamiltonian and inspector selection; wider run-context, linked-state and
-model-specific observable adapters remain. UI-4 is complete at its declared
+The initial QLAB-UI-1–3 two-level pilots connected model, run, spectrum,
+Hamiltonian and inspector selection. The subsequent evolution, cavity, open,
+many-body, sweep, topology, orbital and oscillator adapters complete these
+gates for currently reachable desktop labs. UI-4 is complete at its declared
 scope: verified avoided-crossing E± studies coexist with final-P₁ dynamics
 sweeps, with durable checkpoint/reopen/resume. UI-5 adds a two-level Bloch
 great-circle/state readout tied to verified eigenvectors and run-scoped

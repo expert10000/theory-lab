@@ -32,6 +32,7 @@ test("D1-022 verified quartic runs reopen and export without a worker",async()=>
     assert.ok(isQuantumResult(candidate)&&candidate.operation==="oscillator_anharmonic");
     const result=candidate;
     await store.record(job,result);
+    assert.deepEqual(await store.oscillatorFamily(result.runId),{result,data:null});
     const reopened=new RunStore(join(root,"runs"),join(root,"missing-worker"));
     assert.equal((await reopened.list()).filter(entry=>entry.operation==="oscillator_anharmonic").length,1);
     for(const format of ["csv","svg","manifest"] as const)
@@ -43,6 +44,7 @@ test("D1-022 verified quartic runs reopen and export without a worker",async()=>
     const text=JSON.stringify(forged,null,2)+"\n",manifest=JSON.parse(await readFile(join(dir,"manifest.json"),"utf8"));
     manifest.hashes.result=createHash("sha256").update(text).digest("hex");
     await writeFile(join(dir,"result.json"),text);await writeFile(join(dir,"manifest.json"),JSON.stringify(manifest));
+    await assert.rejects(reopened.oscillatorFamily(result.runId),/consistency/);
     await assert.rejects(reopened.export(result.runId,"csv",join(root,"forged.csv")),/consistency/);
   }finally{await worker.stop();}
 });

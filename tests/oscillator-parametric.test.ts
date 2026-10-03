@@ -62,6 +62,7 @@ test("D1-019 saves, reloads and exports verified parametric runs",async()=>{
     await worker.start();
     const job=parametricOscillatorJob("parametric-save",PARAMETRIC_DEFAULTS,"native"),result=await coordinator.run(job);
     assert.equal((await store.record(job,result)).operation,"oscillator_parametric");
+    assert.deepEqual((await store.oscillatorFamily(result.runId)).result,result);
     const reopened=new RunStore(join(root,"runs"),join(root,"no-live-worker"));
     assert.equal((await reopened.list()).filter(row=>row.operation==="oscillator_parametric").length,1);
     for(const format of ["csv","svg","manifest"] as const)

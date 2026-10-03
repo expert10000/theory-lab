@@ -85,8 +85,8 @@ remain unchanged. See
 
 QLAB-UI-1–8 are a separate Lab interaction track. UI-4–5 are implemented for
 declared two-level sweep/state adapters, including durable eigenenergy studies
-and a verified linked Bloch/state view. UI-1–3 are partial and UI-6–8 are
-planned. Closing wider UI-1–3 adapter gaps is next, followed by immutable-run
+and a verified linked Bloch/state view. UI-1–3 are implemented for currently
+reachable desktop labs and UI-6–8 are planned: immutable-run
 comparison, provenance and compatible scene handoff. This is additive to
 the delivered physics and QVIS system, not a new worker or scene schema.
 Math3D import/handoff remains separately gated. See

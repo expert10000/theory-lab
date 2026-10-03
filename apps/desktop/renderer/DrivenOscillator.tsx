@@ -14,6 +14,7 @@ import {
 } from "../../../packages/models/oscillator-drive";
 import { compareOscillatorMotion } from "../../../packages/models/oscillator-dynamics";
 import { MotionFigures } from "./OscillatorDynamics";
+import {selectedOscillatorItem,type OscillatorRunContext} from "./oscillator-selection";
 import {
   PULSED_OSCILLATOR_DEFAULTS,
   pulsedOscillatorJob,
@@ -38,6 +39,8 @@ export function DrivenOscillator({
   forcing,
   restoredPulse,
   onPulseSnapshot,
+  onRunContext,
+  reopenedRun,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
@@ -49,6 +52,8 @@ export function DrivenOscillator({
   forcing?: "gaussian";
   restoredPulse?: PulsedOscillatorDraft;
   onPulseSnapshot?: (draft: PulsedOscillatorDraft) => void;
+  onRunContext?:(context:OscillatorRunContext|null)=>void;
+  reopenedRun?:{epoch:number;result:DrivenOscillatorResult|PulsedOscillatorResult;data:Uint8Array}|null;
 }) {
   const gaussian = forcing === "gaussian",
     prefix = gaussian ? "pulse" : "drive",
@@ -76,7 +81,7 @@ export function DrivenOscillator({
     [progress, setProgress] = useState<EvolutionProgress | null>(null);
   const active = useRef<string | null>(null),
     generation = useRef(0),
-    cancelled = useRef(false);
+    cancelled = useRef(false),appliedReopen=useRef<number|null>(null);
   useEffect(
     () =>
       bridge.onProgress((p) => {
@@ -119,6 +124,20 @@ export function DrivenOscillator({
   useEffect(() => {
     if (atlasEpoch && atlasDraft) reset(atlasDraft, "ATLAS PRESET LOADED");
   }, [atlasEpoch]);
+  useEffect(()=>{
+    if(!reopenedRun||appliedReopen.current===reopenedRun.epoch||
+      (gaussian?reopenedRun.result.operation!=="oscillator_pulse":reopenedRun.result.operation!=="oscillator_drive"))return;
+    const saved=reopenedRun.result,p=saved.model.parameters,i=saved.initialState,s=saved.solver;
+    generation.current++;cancelled.current=true;if(active.current)void bridge.cancel(active.current).catch(()=>{});
+    appliedReopen.current=reopenedRun.epoch;setRunning(false);
+    setDraft({...defaults,omega:String(p.omega),cutoff:String(p.cutoff),extent:String(p.extent),points:String(p.points),
+      epsilonRe:String(p.epsilonRe),epsilonIm:String(p.epsilonIm),driveFrequency:String(p.driveFrequency),
+      initial:i.type,index:i.type==="fock"?String(i.index):"0",alphaRe:i.type==="coherent"?String(i.alphaRe):"0",alphaIm:i.type==="coherent"?String(i.alphaIm):"0",
+      start:String(s.tStart),stop:String(s.tStop),samples:String(s.samples),engine:saved.engine.name,
+      ...(saved.operation==="oscillator_pulse"?{pulseWidth:String(saved.model.parameters.pulseWidth),pulseCenter:String(saved.model.parameters.pulseCenter),maxStep:String(saved.solver.maxStep)}:{})});
+    setComputed({result:saved,data:saved.operation==="oscillator_pulse"?checkPulsedOscillatorData(saved,reopenedRun.data):checkDrivenOscillatorData(saved,reopenedRun.data)});
+    setReference(null);setStudy(null);setMode(saved.engine.name);setSelected(0);setError("");setOutcome("SAVED RUN OPENED");
+  },[reopenedRun?.epoch,bridge]);
   useEffect(() => {
     if (gaussian) onPulseSnapshot?.(draft);
     else {
@@ -159,6 +178,10 @@ export function DrivenOscillator({
         computed.result.solver,
       ]) !==
         JSON.stringify([preview.model, preview.initialState, preview.solver]));
+  const selection=computed?{kind:"time" as const,runId:computed.result.runId,index:Math.min(selected,computed.result.data.rows-1)}:null;
+  const item=selectedOscillatorItem(selection,computed?.result??null,computed?.data??null);
+  useEffect(()=>onRunContext?.(computed?{result:computed.result,selection:item?selection:null,item,stale:!!stale}:null),
+    [computed,selected,stale,onRunContext]);
   const comparison =
     computed && reference
       ? compareOscillatorMotion(

@@ -177,6 +177,7 @@ test("real supervised oscillator engines agree and persist/export verified resul
       assert.ok(consistentOscillatorResult(job, result));
       results.push(result);
       await store.record(job, result);
+      assert.deepEqual(await store.oscillatorFamily(result.runId),{result,data:null});
       await store.export(result.runId, "csv", join(root, `${engine}.csv`));
       await store.export(result.runId, "svg", join(root, `${engine}.svg`));
       await store.export(

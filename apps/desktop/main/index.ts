@@ -400,6 +400,11 @@ app.whenReady().then(() => {
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid orbital run ID");
     return runs.orbital(runId);
   });
+  ipcMain.handle("quantum:oscillator-run", (event, runId:unknown) => {
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid oscillator run ID");
+    return runs.oscillatorFamily(runId);
+  });
   ipcMain.handle("quantum:save-spectrum-study", (event, result:unknown) => {
     trusted(event);
     return spectrumStudies.save(result);

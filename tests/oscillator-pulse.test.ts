@@ -265,6 +265,7 @@ test("pulse runs export after restart and reject corruption even with recomputed
       ),
       result = await coordinator.run(job);
     await store.record(job, result);
+    assert.deepEqual((await store.oscillatorFamily(result.runId)).result,result);
     await assert.rejects(
       store.record(
         { ...job, solver: { ...job.solver, maxStep: 0.005 } },
@@ -312,6 +313,7 @@ test("pulse runs export after restart and reject corruption even with recomputed
         corrupt.writeDoubleLE(-corrupt.readDoubleLE(offset), offset);
       }
     await writeFile(join(dir, "data.f64"), corrupt);
+    await assert.rejects(restarted.oscillatorFamily(result.runId),/integrity/);
     await assert.rejects(
       restarted.export(result.runId, "csv", join(root, "corrupt.csv")),
       /integrity/,
@@ -325,6 +327,7 @@ test("pulse runs export after restart and reject corruption even with recomputed
     manifest.hashes.result = sha(text);
     await writeFile(join(dir, "result.json"), text);
     await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest));
+    await assert.rejects(restarted.oscillatorFamily(result.runId),/amplitudes/);
     for (const format of ["csv", "svg", "manifest"] as const)
       await assert.rejects(
         restarted.export(result.runId, format, join(root, `forged.${format}`)),

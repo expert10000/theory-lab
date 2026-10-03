@@ -27,6 +27,7 @@ let preservedMotionRunId = null;
 let preservedDriveRunId = null;
 let preservedPulseRunId = null;
 let preservedOrbitalRunId = null;
+const preservedOscillatorRunIds = {};
 const errors = [];
 try {
   const page = await app.firstWindow();
@@ -84,6 +85,7 @@ try {
       "getLindbladRun",
       "getManyBodyRun",
       "getOrbitalRun",
+      "getOscillatorRun",
       "getRabiRun",
       "getResources",
       "getScene",
@@ -297,6 +299,10 @@ try {
   assert.equal(await page.getByLabel("Oscillator omega",{exact:true}).inputValue(),"1");
   await page.getByTestId("run-oscillator").click();
   await page.getByTestId("oscillator-state").filter({hasText:"COMPLETE"}).waitFor();
+  preservedOscillatorRunIds.oscillator=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByRole("button",{name:"Select oscillator E1"}).click();
+  await page.getByTestId("oscillator-inspector-value").waitFor();
+  assert.match(await page.getByTestId("oscillator-inspector-selection").innerText(),/No spatial state was stored/);
   assert.equal(await page.getByTestId("oscillator-e0").innerText(),"0.500000");
   assert.ok(await page.getByTestId("oscillator-compare").isVisible());
   assert.ok(await page.getByRole("img",{name:"Oscillator stationary density and real amplitude"}).isVisible());
@@ -323,10 +329,13 @@ try {
   await page.getByLabel("Motion points",{exact:true}).fill("201");
   await page.getByTestId("run-oscillator-motion").click();
   await page.getByTestId("oscillator-motion-state").filter({hasText:"COMPLETE"}).waitFor();
+  preservedOscillatorRunIds.oscillator_evolve=await page.getByTestId("workspace-run-id").innerText();
   assert.equal(await page.getByTestId("motion-q").innerText(),"1.414214");
   assert.ok(await page.getByTestId("oscillator-motion-compare").isVisible());
   assert.ok(Number(await page.getByTestId("motion-compare-q").innerText())<1e-7);
   await page.getByLabel("Oscillator motion time cursor",{exact:true}).fill("50");
+  await page.getByTestId("oscillator-inspector-q_mean").waitFor();
+  assert.equal(await page.getByTestId("oscillator-inspector-q_mean").innerText(),await page.getByTestId("motion-q").innerText());
   assert.ok(Math.abs(Number(await page.getByTestId("motion-q").innerText()))<1e-6);
   assert.equal(await page.getByTestId("motion-p").innerText(),"-1.414214");
   await page.getByRole("img",{name:"Moving oscillator density",exact:true}).scrollIntoViewIfNeeded();
@@ -382,9 +391,11 @@ try {
   await page.getByLabel("Drive epsilonIm",{exact:true}).fill("0");
   await page.getByTestId("run-oscillator-drive").click();
   await page.getByTestId("oscillator-drive-state").filter({hasText:"COMPLETE"}).waitFor();
+  preservedOscillatorRunIds.oscillator_drive=await page.getByTestId("workspace-run-id").innerText();
   assert.ok(await page.getByTestId("oscillator-drive-compare").isVisible());
   assert.ok(Number(await page.getByTestId("drive-compare-q").innerText())<1e-7);
   await page.getByRole("slider",{name:"Driven oscillator time cursor"}).fill("50");
+  await page.getByTestId("oscillator-inspector-time").waitFor();
   assert.equal(await page.getByTestId("drive-number").innerText(),"0.098696");
   assert.equal(await page.getByTestId("drive-energy").innerText(),"0.598696");
   await page.getByRole("img",{name:"Driven oscillator occupation",exact:true}).scrollIntoViewIfNeeded();
@@ -423,6 +434,7 @@ try {
   await page.getByLabel("Pulse pulseWidth",{exact:true}).fill("1");
   await page.getByTestId("run-oscillator-pulse").click();
   await page.getByTestId("oscillator-pulse-state").filter({hasText:"COMPLETE"}).waitFor();
+  preservedOscillatorRunIds.oscillator_pulse=await page.getByTestId("workspace-run-id").innerText();
   assert.ok(Number(await page.getByTestId("pulse-compare-q").innerText())<1e-7);
   await page.getByRole("slider",{name:"Pulsed oscillator time cursor"}).fill("100");
   assert.equal(await page.getByTestId("pulse-number").innerText(),"0.062832");
@@ -462,6 +474,10 @@ try {
   const initialDampedRuns=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_damped").length));
   await page.getByTestId("run-damped").click();
   await page.getByTestId("damped-result").waitFor();
+  preservedOscillatorRunIds.oscillator_damped=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByRole("slider",{name:"Damped time cursor"}).fill("5");
+  assert.match(await page.getByTestId("damped-selected-row").innerText(),/purity/);
+  await page.getByTestId("oscillator-inspector-purity").waitFor();
   assert.ok(await page.getByRole("img",{name:"Damped oscillator number and purity curves",exact:true}).isVisible());
   await page.getByTestId("damped-cutoff").click();
   await page.getByTestId("damped-comparison").waitFor();
@@ -485,6 +501,10 @@ try {
   await page.getByLabel("Parametric engine",{exact:true}).selectOption("native");
   await page.getByTestId("run-parametric").click();
   await page.getByTestId("parametric-result").waitFor();
+  preservedOscillatorRunIds.oscillator_parametric=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByRole("slider",{name:"Parametric time cursor"}).fill("5");
+  assert.match(await page.getByTestId("parametric-selected-row").innerText(),/Δq²/);
+  await page.getByTestId("oscillator-inspector-q_variance").waitFor();
   assert.ok(await page.getByRole("img",{name:"Parametric oscillator squeezing curves",exact:true}).isVisible());
   await page.getByTestId("parametric-cutoff").click();
   await page.getByTestId("parametric-comparison").filter({hasText:"N 16 → 24"}).waitFor();
@@ -505,6 +525,10 @@ try {
   await page.getByLabel("Anharmonic engine",{exact:true}).selectOption("native");
   await page.getByTestId("run-anharmonic").click();
   await page.getByTestId("anharmonic-result").waitFor();
+  preservedOscillatorRunIds.oscillator_anharmonic=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByRole("button",{name:"Select quartic E1"}).click();
+  await page.getByTestId("oscillator-inspector-value").waitFor();
+  assert.match(await page.getByTestId("oscillator-inspector-selection").innerText(),/not a stored spatial wavefunction/);
   assert.ok(await page.getByRole("img",{name:"Quartic and harmonic energy ladder",exact:true}).isVisible());
   await page.getByTestId("anharmonic-cutoff").click();
   await page.getByTestId("anharmonic-comparison").filter({hasText:"N 20 → 28"}).waitFor();
@@ -570,9 +594,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
-  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-4, QLAB-UI-5.*Partially done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3.*Next: close QLAB-UI-1, QLAB-UI-2, QLAB-UI-3 adapter gaps/s);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5.*Partially done: none.*Next: QLAB-UI-6 Run comparison/s);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-4","QLAB-UI-5"].includes(id)?/Implemented/:["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"].includes(id)?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4","QLAB-UI-5"].includes(id)?/Implemented/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -1598,6 +1622,7 @@ try {
   for(const runId of Object.values(preservedSweepRunIds))assert.ok(runIds.includes(runId),`saved sweep ${runId} survives full restart`);
   for(const runId of Object.values(preservedTopologyRunIds))assert.ok(runIds.includes(runId),`saved topology ${runId} survives full restart`);
   assert.ok(runIds.includes(preservedOrbitalRunId),"saved orbital grid survives full restart");
+  for(const runId of Object.values(preservedOscillatorRunIds))assert.ok(runIds.includes(runId),`saved oscillator ${runId} survives full restart`);
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1612,6 +1637,14 @@ try {
   await page.getByTestId("rabi-inspector-time").filter({hasText:"0.0000"}).waitFor();
   assert.equal(await page.getByTestId("rabi-inspector-state").innerText(),"Run inputs match the draft");
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  for(const [operation,runId] of Object.entries(preservedOscillatorRunIds)){
+    await page.getByRole("button",{name:`Open ${operation} ${runId}`}).click();
+    await page.getByTestId("workspace-run-id").filter({hasText:runId}).waitFor();
+    await page.getByTestId("oscillator-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+    assert.match(await page.getByTestId("oscillator-inspector-inputs").innerText(),new RegExp(operation));
+    if(operation==="oscillator"||operation==="oscillator_anharmonic")assert.equal(await page.getByTestId("oscillator-inspector-value").count(),0,"inline reopening does not invent an energy selection");
+    await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  }
   for(const [kind,dimension,view] of [["line","1d","sweep-line"],["heatmap","2d","sweep-heatmap"]]){
     const runId=preservedSweepRunIds[kind];
     await page.getByRole("button",{name:`Open Rabi dynamics final-population sweep ${runId}`}).click();
