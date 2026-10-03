@@ -7,6 +7,7 @@ import type {
   LindbladResult,
   ManyBodyResult,
   SweepResult,
+  TopologyResult,
   QuantumBridge,
   SpectrumResult,
   WorkerStatus,
@@ -145,6 +146,9 @@ export function App() {
   const [sweepContext,setSweepContext]=useState<SweepRunContext|null>(null);
   const collectSweepContext=useCallback((context:SweepRunContext|null)=>setSweepContext(context),[]);
   const [reopenedSweep,setReopenedSweep]=useState<{epoch:number;result:SweepResult;data:Uint8Array}|null>(null);
+  const [topologyResult,setTopologyResult]=useState<TopologyResult|null>(null);
+  const collectTopologyResult=useCallback((result:TopologyResult|null)=>setTopologyResult(result),[]);
+  const [reopenedTopology,setReopenedTopology]=useState<{epoch:number;result:TopologyResult}|null>(null);
   const [selection,setSelection]=useState<ScientificSelection|null>(null);
   const [inspectorTab,setInspectorTab]=useState<"parameters"|"observables"|"provenance">("parameters");
   const runSelections=useRef(new Map<string,ScientificSelection>());
@@ -431,6 +435,13 @@ export function App() {
     setSelectedPreset(null);setActiveModel(model);setTab("sweep");
     setWorkspaceMessage(`Verified ${MODEL_REGISTRY[model].label} final-population sweep reopened · ${saved.result.runId}`);
   }
+  async function openSavedTopology(runId:string){
+    const result=await window.quantum.getTopologyRun(runId);
+    setTopologyResult(null);
+    setReopenedTopology(current=>({epoch:(current?.epoch??0)+1,result}));
+    setSelectedPreset(null);setActiveModel("topology");setTab("topology");
+    setWorkspaceMessage(`Verified ${result.model.type.toUpperCase()} topology reopened · ${result.runId}`);
+  }
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
     presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
@@ -445,7 +456,8 @@ export function App() {
     tab==="open"&&activeModel==="lindblad"?lindbladContext?.result.runId:
     tab==="circuit"&&activeModel==="transmon"?circuitContext?.result.runId:
     tab==="many_body"&&activeModel==="ising_chain"?manyBodyContext?.result.runId:
-    tab==="sweep"&&activeModel!=="two_level"&&sweepContext?.result.model.type===activeModel?sweepContext.result.runId:null;
+    tab==="sweep"&&activeModel!=="two_level"&&sweepContext?.result.model.type===activeModel?sweepContext.result.runId:
+    tab==="topology"&&activeModel==="topology"?topologyResult?.runId:null;
   return (
     <div className="app">
       <header className="topbar">
@@ -636,11 +648,11 @@ export function App() {
             onDraftPoint={(delta,omega)=>{setParameters({delta:String(delta),omega:String(omega)});
               setResult(null);setResultMode(null);setComparison(null);setSelection(null);setTab("spectrum");}}/></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} onManyBodyContext={collectManyBodyContext} reopenedManyBody={reopenedManyBody} /></div>
-          <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
+          <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} onResult={collectTopologyResult} reopenedRun={reopenedTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} onCircuitContext={collectCircuitContext} reopenedCircuit={reopenedCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic}/></div>
-          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} /> : tab === "backend" ? (
+          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">

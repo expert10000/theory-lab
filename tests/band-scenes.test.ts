@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -49,6 +49,7 @@ test("real worker bands preserve energies, gap-closure data and offline bundle i
       assert.ok(isQuantumResult(result) && result.operation === "topology");
       assert.ok(isTopologyResponse(result, job));
       await store.record(job, result);
+      assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).topology(result.runId),result);
       const p = await store.scene(result.runId, "bands"),
         arrays = await verifyScenePayload(p, digest),
         b = p.scene.bands!;
@@ -72,6 +73,8 @@ test("real worker bands preserve energies, gap-closure data and offline bundle i
         offline = await readSceneBundle(dir);
       assert.deepEqual(offline.scene, p.scene);
       await verifyScenePayload(offline, digest);
+      await writeFile(join(root,"runs",result.runId,"result.json"),"{}\n");
+      await assert.rejects(store.topology(result.runId),/integrity check/);
       const python = spawnSync(
         process.execPath,
         [

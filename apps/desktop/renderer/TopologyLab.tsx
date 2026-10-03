@@ -34,18 +34,32 @@ function QWZFigure({ result }: { result: TopologyResult }) {
     </svg><p>Blue: negative curvature · red: positive curvature. Numerical quadrature should approach the integer lattice Chern value as the grid is refined away from a gap closure.</p></div>;
 }
 
-export function TopologyLab({ bridge, status, restored, restoreEpoch, atlasDraft, atlasEpoch, onSnapshot }: {
+export function TopologyLab({ bridge, status, restored, restoreEpoch, atlasDraft, atlasEpoch, onSnapshot, onResult, reopenedRun }: {
   bridge: QuantumBridge; status: WorkerStatus; restored?: TopologyDraft | null; restoreEpoch?: number;
   atlasDraft?: TopologyDraft | null; atlasEpoch?: number; onSnapshot?: (value: TopologyDraft) => void;
+  onResult?:(result:TopologyResult|null)=>void; reopenedRun?:{epoch:number;result:TopologyResult}|null;
 }) {
   const [draft, setDraft] = useState<TopologyDraft>(TOPOLOGY_DEFAULTS);
   const [result, setResult] = useState<TopologyResult | null>(null);
   const [running, setRunning] = useState(false);
   const [error, setError] = useState("");
+  const appliedReopen=React.useRef<number|null>(null);
   useEffect(() => { if (restoreEpoch) { setDraft(restored ?? TOPOLOGY_DEFAULTS); setResult(null); } }, [restoreEpoch]);
   useEffect(() => { if (atlasEpoch && atlasDraft) { setDraft(atlasDraft); setResult(null); } }, [atlasEpoch]);
+  useEffect(()=>{
+    if(!reopenedRun||appliedReopen.current===reopenedRun.epoch)return;
+    const saved=reopenedRun.result;
+    appliedReopen.current=reopenedRun.epoch;
+    setDraft(saved.model.type==="ssh"?{...TOPOLOGY_DEFAULTS,modelId:"ssh",t1:String(saved.model.parameters.t1),t2:String(saved.model.parameters.t2),cells:String(saved.model.parameters.cells),kPoints:String(saved.model.parameters.kPoints)}:
+      {...TOPOLOGY_DEFAULTS,modelId:"qwz",mass:String(saved.model.parameters.mass),grid:String(saved.model.parameters.grid)});
+    setResult(saved);setError("");
+  },[reopenedRun?.epoch]);
+  useEffect(()=>onResult?.(result),[result,onResult]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
-  const change = <K extends keyof TopologyDraft>(key: K, value: TopologyDraft[K]) => setDraft(old => ({ ...old, [key]: value }));
+  const change = <K extends keyof TopologyDraft>(key: K, value: TopologyDraft[K]) => {
+    if(key==="modelId")setResult(null);
+    setDraft(old => ({ ...old, [key]: value }));
+  };
   let preview: ReturnType<typeof topologyJob> | null = null;
   try { preview = topologyJob("preview", draft); } catch { /* Show validation message. */ }
   const ready = status.state === "READY" && !!status.capabilities?.operations.includes("topology") && !!status.capabilities.engines.native.available;

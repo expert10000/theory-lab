@@ -548,6 +548,7 @@ export interface QuantumBridge {
   getCircuitRun(runId:string):Promise<CircuitResult>;
   getManyBodyRun(runId:string):Promise<ManyBodyResult>;
   getSweepRun(runId:string):Promise<{result:SweepResult;data:Uint8Array}>;
+  getTopologyRun(runId:string):Promise<TopologyResult>;
   saveSpectrumStudy(result:import("./spectrum-study").SpectrumStudyResult):Promise<import("./spectrum-study").SpectrumStudyResult>;
   getSpectrumStudy(studyId:string):Promise<import("./spectrum-study").SpectrumStudyResult>;
   listSpectrumStudies():Promise<import("./spectrum-study").SpectrumStudySummary[]>;

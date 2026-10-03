@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
@@ -266,6 +266,17 @@ export class RunStore {
       data.byteLength!==result.data.shape.x*result.data.shape.y*8)
       throw new Error("Saved run is not a verified final-population sweep");
     return {result,data:Uint8Array.from(data)};
+  }
+  async topology(runId:string):Promise<TopologyResult>{
+    const {manifest,job,result,data}=await this.load(runId);
+    if(job.operation!=="topology"||result.operation!=="topology"||
+      !["ssh","qwz"].includes(result.model.type)||data!==null||
+      manifest.operation!=="topology"||manifest.model!==result.model.type||
+      manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
+      manifest.files.data!==null||manifest.artifactSha256!==null||
+      !consistentTopologyResult(job,result))
+      throw new Error("Saved run is not a verified topology result");
+    return result;
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
     const { manifest, job, result, data } = await this.load(runId);

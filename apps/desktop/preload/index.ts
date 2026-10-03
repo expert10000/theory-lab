@@ -41,6 +41,7 @@ const bridge: QuantumBridge = {
   getCircuitRun: (runId) => ipcRenderer.invoke("quantum:circuit-run", runId),
   getManyBodyRun: (runId) => ipcRenderer.invoke("quantum:many-body-run", runId),
   getSweepRun: (runId) => ipcRenderer.invoke("quantum:sweep-run", runId),
+  getTopologyRun: (runId) => ipcRenderer.invoke("quantum:topology-run", runId),
   saveSpectrumStudy: (result) => ipcRenderer.invoke("quantum:save-spectrum-study", result),
   getSpectrumStudy: (studyId) => ipcRenderer.invoke("quantum:get-spectrum-study", studyId),
   listSpectrumStudies: () => ipcRenderer.invoke("quantum:list-spectrum-studies"),

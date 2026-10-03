@@ -89,6 +89,7 @@ try {
       "getSpectrumStudy",
       "getStatus",
       "getSweepRun",
+      "getTopologyRun",
       "importScene",
       "importSceneStream",
       "lindblad",
