@@ -53,7 +53,7 @@ import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets
 import { RunHistory } from "./RunHistory";
 import {RunComparisonPanel} from "./RunComparisonPanel";
 import { SceneLab } from "./SceneLab";
-import {availableSceneViews,type SceneLaunch,type SceneView} from "./scene-bridge";
+import {availableSceneViews,type SceneLaunch,type SceneSample,type SceneView} from "./scene-bridge";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
@@ -188,8 +188,8 @@ export function App() {
   const [tab, setTab] = useState<WorkspaceTab>(()=>initialLocation.current?.tab??"spectrum");
   const [activeModel,setActiveModel]=useState<WorkspaceModel>(()=>initialLocation.current?.model??"two_level");
   const [sceneLaunch,setSceneLaunch]=useState<SceneLaunch|null>(null);
-  function viewSavedScene(runId:string,view:SceneView="standard"){
-    setSceneLaunch(current=>({nonce:(current?.nonce??0)+1,runId,view}));
+  function viewSavedScene(runId:string,view:SceneView="standard",sample?:SceneSample|null){
+    setSceneLaunch(current=>({nonce:(current?.nonce??0)+1,runId,view,sample}));
     setTab("scenes");
   }
   const currentLocation=useRef({tab,model:activeModel});
@@ -500,6 +500,18 @@ export function App() {
     tab==="many_body"&&activeModel==="ising_chain"?manyBodyContext?.result:
     tab==="orbital"&&activeModel==="hydrogenic"?orbitalContext?.result:null;
   const sceneViews=sceneResult?availableSceneViews(sceneResult):null;
+  const sceneSample:SceneSample|null=tab==="dynamics"&&evolutionContext?.sample&&evolutionContext.selection.runId===sceneResult?.runId?
+    {kind:"evolution_time",index:evolutionContext.selection.index}:
+    tab==="topology"&&topologyContext?.selection&&topologyContext.sample&&topologyContext.selection.runId===sceneResult?.runId?
+      topologyContext.selection.kind==="ssh_site"?{kind:"ssh_site",index:topologyContext.selection.index}:
+      topologyContext.selection.kind==="ssh_band"?{kind:"ssh_band",index:topologyContext.selection.index}:
+      {kind:"qwz_cell",x:topologyContext.selection.xIndex,y:topologyContext.selection.yIndex,grid:topologyContext.result.model.type==="qwz"?topologyContext.result.model.parameters.grid:0}:
+    tab==="many_body"&&manyBodyContext?.selection&&manyBodyContext.item&&manyBodyContext.selection.runId===sceneResult?.runId?
+      manyBodyContext.selection.kind==="site_magnetization"?{kind:"ising_site",index:manyBodyContext.selection.index}:
+      {kind:"unmapped",description:"Selected Ising energy level"}:
+    tab==="orbital"&&orbitalContext?.selection&&orbitalContext.sample&&orbitalContext.selection.runId===sceneResult?.runId?
+      orbitalContext.selection.kind==="voxel"?{kind:"orbital_voxel",x:orbitalContext.selection.x,y:orbitalContext.selection.y,z:orbitalContext.selection.z}:
+      {kind:"unmapped",description:"Selected radial bin"}:null;
   return (
     <div className="app">
       <header className="topbar">
@@ -656,8 +668,8 @@ export function App() {
               </p>
             </div>
             <div className="scene-context-actions">
-              {sceneResult&&sceneViews?.standard&&<button type="button" data-testid="view-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId)}>View in Scenes</button>}
-              {sceneResult&&sceneViews?.bands&&<button type="button" data-testid="view-bands-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"bands")}>View bands in Scenes</button>}
+              {sceneResult&&sceneViews?.standard&&<button type="button" data-testid="view-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,sceneSample?.kind==="ssh_band"&&sceneViews.bands?"bands":"standard",sceneSample)}>View in Scenes</button>}
+              {sceneResult&&sceneViews?.bands&&<button type="button" data-testid="view-bands-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"bands",sceneSample)}>View bands in Scenes</button>}
               <span className="pill">{tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
             </div>
           </div>

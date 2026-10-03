@@ -5,7 +5,7 @@ import { fieldValues, gridIndex, gridPosition, phaseColor, surfacePayload, type 
 import { scalarColor, scalarRange } from "./scalarColor";
 import "./scene.css";
 
-export function FieldViewer({ payload,onSelectGrid }: { payload: ScenePayload;onSelectGrid?:(x:number,y:number,z:number)=>void }) {
+export function FieldViewer({ payload,onSelectGrid,focusGrid }: { payload: ScenePayload;onSelectGrid?:(x:number,y:number,z:number)=>void;focusGrid?:[number,number,number]|null }) {
   const [verified,setVerified] = useState<{payload:ScenePayload;arrays:Map<string,Float64Array>} | null>(null);
   const ready=verified?.payload===payload?verified.arrays:null;
   const [quantity,setQuantity] = useState<FieldQuantity>("density");
@@ -24,6 +24,7 @@ export function FieldViewer({ payload,onSelectGrid }: { payload: ScenePayload;on
     return ()=>{alive=false;};
   },[payload]);
   useEffect(()=>{if(field){setSlice(Math.floor(field.grid.shape[axis]/2));setSample([0,0]);if(field.kind==="scalar-field")setQuantity("real");}},[field,axis]);
+  useEffect(()=>{if(focusGrid){setAxis(2);setSlice(focusGrid[2]);setSample([focusGrid[0],focusGrid[1]]);}},[payload,focusGrid?.[0],focusGrid?.[1],focusGrid?.[2]]);
   useEffect(()=>{
     if(!ready||!field||(field.kind==="scalar-field"&&quantity!=="real"))return;
     let alive=true;setBusy(true);setSurface(null);setError("");

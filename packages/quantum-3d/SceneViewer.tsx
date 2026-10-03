@@ -15,7 +15,7 @@ export async function browserSceneDigest(bytes: Uint8Array): Promise<string> {
 type View = { renderer: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.PerspectiveCamera;
   groups: Map<string, THREE.Object3D>; marker: THREE.Mesh; render: () => void; reset: () => void };
 
-export function SceneViewer({ payload }: { payload: ScenePayload }) {
+export function SceneViewer({ payload,focus }: { payload: ScenePayload;focus?:{objectId:string;index:number}|null }) {
   const [ready, setReady] = useState<{ payload: ScenePayload; arrays: Map<string, Float64Array> } | null>(null);
   const [error, setError] = useState("");
   const [fallback, setFallback] = useState(false);
@@ -28,12 +28,12 @@ export function SceneViewer({ payload }: { payload: ScenePayload }) {
   const view = useRef<View | null>(null);
   useEffect(() => {
     let alive = true; setReady(null); setError("");
-    setSelected(primaryId()); setIndex(0); setHidden(initialHidden());
+    setSelected(focus?.objectId??primaryId()); setIndex(focus?.index??0); setHidden(initialHidden());
     void verifyScenePayload(payload, browserSceneDigest).then(arrays => {
       if (alive) setReady({ payload, arrays });
     }).catch(reason => { if (alive) setError(reason instanceof Error ? reason.message : String(reason)); });
     return () => { alive = false; };
-  }, [payload]);
+  }, [payload,focus?.objectId,focus?.index]);
 
   useEffect(() => {
     const host = mount.current;

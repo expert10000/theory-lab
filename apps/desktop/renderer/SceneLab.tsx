@@ -10,7 +10,7 @@ import { SceneViewer,browserSceneDigest } from "../../../packages/quantum-3d/Sce
 import {SceneChunkLoader} from "../../../packages/quantum-scene/stream";
 import { FieldViewer } from "../../../packages/quantum-3d/FieldViewer";
 import {StreamViewer,type SceneStreamSource} from "../../../packages/quantum-3d/StreamViewer";
-import type {SceneLaunch} from "./scene-bridge";
+import {sceneFocusForLaunch,type SceneLaunch} from "./scene-bridge";
 import "../../../packages/quantum-3d/scene.css";
 
 export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:SceneLaunch|null }) {
@@ -28,6 +28,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     [repeats, setRepeats] = useState(["3", "3", "1"]);
   const [view,setView]=useState<"real"|"reciprocal">("real");
   const [savedView,setSavedView]=useState<"standard"|"bands">(launch?.view??"standard");
+  const [intent,setIntent]=useState<SceneLaunch|null>(launch??null);
   const payload =
     source === "stream"?null:source === "example"
       ? (example?.payload ?? null)
@@ -57,8 +58,9 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
   }, [bridge]);
   useEffect(()=>{
     if(!launch)return;
-    setRunId(launch.runId);setSavedView(launch.view);setSource("saved");
+    setRunId(launch.runId);setSavedView(launch.view);setSource("saved");setIntent(launch);
   },[launch?.nonce]);
+  const linked=source==="saved"&&payload?sceneFocusForLaunch(payload,intent):null;
   useEffect(() => {
     const request = ++sequence.current;
     if (source !== "saved") return;
@@ -92,7 +94,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
       const value = await bridge.importScene();
       if (value) {
         setImported(value);
-        setSource("bundle");
+        setSource("bundle");setIntent(null);
         setMessage("Opened verified scene bundle · read-only preview");
       } else setMessage("Scene import cancelled");
     } catch (error) {
@@ -133,7 +135,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
         throw new Error("Every repeat count is required");
       const value = await bridge.getSceneExample(request);
       setExample({ request, payload: value });
-      setSource("example");
+      setSource("example");setIntent(null);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
     } finally {
@@ -161,7 +163,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
         await next.loader.load(0, new AbortController().signal);
         if (stream) void bridge.releaseSceneStream(stream.id);
         setStream(next);
-        setSource("stream");
+        setSource("stream");setIntent(null);
         setMessage("Opened chunked scene · preview verified, remaining data checked on demand");
         opened = undefined;
       }
@@ -191,7 +193,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
               value={runId}
               onChange={(e) => {
                 setRunId(e.target.value);
-                setSource("saved");
+                setSource("saved");setIntent(null);
               }}
               disabled={busy}
             >
@@ -205,7 +207,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
               ))}
             </select>
           </label>
-          <label>Saved view<select aria-label="Saved scene view" value={savedView} disabled={busy} onChange={e=>{setSavedView(e.target.value as "standard"|"bands");setSource("saved");}}><option value="standard">Standard result scene</option><option value="bands">SSH / QWZ energy bands</option></select></label>
+          <label>Saved view<select aria-label="Saved scene view" value={savedView} disabled={busy} onChange={e=>{setSavedView(e.target.value as "standard"|"bands");setSource("saved");setIntent(null);}}><option value="standard">Standard result scene</option><option value="bands">SSH / QWZ energy bands</option></select></label>
           <button type="button" disabled={busy} onClick={() => void refresh()}>
             Refresh runs
           </button>
@@ -231,7 +233,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
             <button
               type="button"
               disabled={busy}
-              onClick={() => setSource("saved")}
+              onClick={() => {setSource("saved");setIntent(null);}}
             >
               Return to saved run
             </button>
@@ -318,11 +320,12 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
       {source==="stream"&&stream&&<div className="panel"><StreamViewer source={stream}/></div>}
       {payload && (
         <>
+          {source==="saved"&&<p className="scene-bridge-status" data-testid="scene-bridge-status">{linked?.message??"Full saved-run scene; no lab selection attached."}</p>}
           <div className="panel">
             {payload.scene.fields?.length ? (
-              <FieldViewer key={payload.scene.id} payload={payload} />
+              <FieldViewer key={payload.scene.id} payload={payload} focusGrid={linked?.focus?.kind==="voxel"?linked.focus.grid:null}/>
             ) : (
-              <SceneViewer key={payload.scene.id} payload={payload} />
+              <SceneViewer key={payload.scene.id} payload={payload} focus={linked?.focus?.kind==="object"?linked.focus:null}/>
             )}
           </div>
           <div className="panel scene-provenance">
