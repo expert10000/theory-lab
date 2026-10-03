@@ -1,7 +1,20 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import type { SweepEngineName, EvolutionProgress, QuantumBridge, SweepAxis, SweepResult, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
 import { MODEL_REGISTRY, defaultsFor, type EvolutionModelId } from "../../../packages/models";
 import { SWEEP_DEFAULTS, sweepJob } from "../../../packages/models/sweep";
+import { selectedSweepCell, type SweepCell, type SweepGridSelection, type SweepRunContext } from "./sweep-selection";
+
+function decodeSweep(bytes:Uint8Array,result:SweepResult):Float64Array{
+  if(bytes.byteLength!==result.data.bytes||bytes.byteLength!==result.data.shape.x*result.data.shape.y*8)
+    throw new Error("Sweep artifact shape mismatch");
+  const view=new DataView(bytes.buffer,bytes.byteOffset,bytes.byteLength);
+  const values=new Float64Array(bytes.byteLength/8);
+  for(let index=0;index<values.length;index++){
+    values[index]=view.getFloat64(index*8,true);
+    if(!Number.isFinite(values[index]))throw new Error("Sweep artifact contains a nonfinite final population");
+  }
+  return values;
+}
 
 function AxisEditor({ axis, setAxis, modelId, title, disabled }: { axis: SweepAxis; setAxis: (axis: SweepAxis) => void; modelId: EvolutionModelId; title: string; disabled: boolean }) {
   return <div className="sweep-axis"><p className="eyebrow">{title}</p><div className="dynamics-fields">
@@ -12,28 +25,27 @@ function AxisEditor({ axis, setAxis, modelId, title, disabled }: { axis: SweepAx
   </div></div>;
 }
 
-function SweepView({ result, values }: { result: SweepResult; values: Float64Array }) {
+function SweepView({ result, values, cell, onSelect }: { result: SweepResult; values: Float64Array; cell:SweepCell|null; onSelect:(xIndex:number,yIndex:number)=>void }) {
   const xCount = result.data.shape.x;
   const yCount = result.data.shape.y;
-  const [selected, setSelected] = useState<[number, number]>([0, 0]);
   const xValue = (i: number) => result.sweep.x.start + (result.sweep.x.stop - result.sweep.x.start) * i / (xCount - 1);
   const yValue = (i: number) => result.sweep.y ? result.sweep.y.start + (result.sweep.y.stop - result.sweep.y.start) * i / (yCount - 1) : 0;
   if (yCount === 1) {
     const w = 760, h = 250;
     const polyline = Array.from({ length: xCount }, (_, i) => `${35 + i * 700 / (xCount - 1)},${20 + (1 - values[i]) * 205}`).join(" ");
-    return <div className="sweep-visual" data-testid="sweep-line"><p className="eyebrow">FINAL P₁ / {result.sweep.x.parameter} →</p><svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="One-dimensional final population sweep"><line x1="35" x2="735" y1="225" y2="225" stroke="#536777"/><line x1="35" x2="35" y1="20" y2="225" stroke="#536777"/><polyline points={polyline} fill="none" stroke="#79d9c1" strokeWidth="3"/>{Array.from({ length: xCount }, (_, i) => <circle key={i} cx={35 + i * 700 / (xCount - 1)} cy={20 + (1 - values[i]) * 205} r="4" fill="#79d9c1"><title>{`${result.sweep.x.parameter}=${xValue(i).toFixed(4)}; P₁=${values[i].toFixed(5)}`}</title></circle>)}</svg><div className="plot-caption"><span>{xValue(0).toFixed(3)}</span><span>{xValue(xCount - 1).toFixed(3)}</span></div></div>;
+    return <div className="sweep-visual" data-testid="sweep-line"><p className="eyebrow">FINAL P₁ / {result.sweep.x.parameter} →</p><svg viewBox={`0 0 ${w} ${h}`} role="img" aria-label="One-dimensional final population sweep" onClick={event=>{const rect=event.currentTarget.getBoundingClientRect();onSelect(Math.max(0,Math.min(xCount-1,Math.round(((event.clientX-rect.left)/rect.width*w-35)/700*(xCount-1)))),0);}}><line x1="35" x2="735" y1="225" y2="225" stroke="#536777"/><line x1="35" x2="35" y1="20" y2="225" stroke="#536777"/><polyline points={polyline} fill="none" stroke="#79d9c1" strokeWidth="3"/>{Array.from({ length: xCount }, (_, i) => <circle key={i} data-testid={cell?.xIndex===i?"sweep-selected-point":undefined} cx={35 + i * 700 / (xCount - 1)} cy={20 + (1 - values[i]) * 205} r={cell?.xIndex===i?"7":"4"} fill={cell?.xIndex===i?"#f2b36f":"#79d9c1"}><title>{`${result.sweep.x.parameter}=${xValue(i).toFixed(4)}; P₁=${values[i].toFixed(5)}`}</title></circle>)}</svg><input aria-label="Sweep X point" type="range" min="0" max={xCount-1} value={cell?.xIndex??0} onChange={event=>onSelect(Number(event.target.value),0)}/>{cell?<div className="sweep-selection"><span>{cell.xParameter} = {cell.xValue.toFixed(4)}</span><strong data-testid="sweep-selected-value">Final P₁ = {cell.finalP1.toFixed(6)}</strong></div>:<p className="plot-caption">Select a point to inspect its recorded final P₁.</p>}<div className="plot-caption"><span>{xValue(0).toFixed(3)}</span><span>{xValue(xCount - 1).toFixed(3)}</span></div></div>;
   }
   return <div className="sweep-visual" data-testid="sweep-heatmap"><p className="eyebrow">FINAL P₁ / {result.sweep.y?.parameter} ↑ · {result.sweep.x.parameter} →</p><div className="sweep-heatmap" style={{ gridTemplateColumns: `repeat(${xCount},minmax(0,1fr))` }}>
     {Array.from({ length: xCount * yCount }, (_, displayIndex) => {
       const col = displayIndex % xCount;
       const row = yCount - 1 - Math.floor(displayIndex / xCount);
       const value = values[row * xCount + col];
-      return <button type="button" key={displayIndex} aria-label={`x ${col}, y ${row}, population ${value.toFixed(4)}`} className={selected[0] === col && selected[1] === row ? "selected" : ""} title={`${result.sweep.x.parameter}=${xValue(col).toFixed(4)}, ${result.sweep.y?.parameter}=${yValue(row).toFixed(4)}, P₁=${value.toFixed(5)}`} style={{ background: `rgba(121,217,193,${.08 + .92 * value})` }} onClick={() => setSelected([col, row])}/>;
+      return <button type="button" key={displayIndex} aria-label={`x ${col}, y ${row}, population ${value.toFixed(4)}`} aria-pressed={cell?.xIndex===col&&cell.yIndex===row} className={cell?.xIndex===col&&cell.yIndex===row ? "selected" : ""} title={`${result.sweep.x.parameter}=${xValue(col).toFixed(4)}, ${result.sweep.y?.parameter}=${yValue(row).toFixed(4)}, P₁=${value.toFixed(5)}`} style={{ background: `rgba(121,217,193,${.08 + .92 * value})` }} onClick={() => onSelect(col,row)}/>;
     })}
-  </div><div className="sweep-selection"><span>{result.sweep.x.parameter} = {xValue(selected[0]).toFixed(4)}</span><span>{result.sweep.y?.parameter} = {yValue(selected[1]).toFixed(4)}</span><strong data-testid="sweep-selected-value">P₁ = {values[selected[1] * xCount + selected[0]].toFixed(6)}</strong></div><div className="plot-caption"><span>{xCount} × {yCount} parameter grid</span><span>Click a cell for exact coordinates</span></div></div>;
+  </div>{cell?<div className="sweep-selection"><span>{cell.xParameter} = {cell.xValue.toFixed(4)}</span><span>{cell.yParameter} = {cell.yValue?.toFixed(4)}</span><strong data-testid="sweep-selected-value">Final P₁ = {cell.finalP1.toFixed(6)}</strong></div>:<p className="plot-caption">Select a cell to inspect its recorded final P₁.</p>}<div className="plot-caption"><span>{xCount} × {yCount} parameter grid</span><span>Click a cell for exact coordinates</span></div></div>;
 }
 
-export function SweepLab({ bridge, status, selectedModel, onModelChange, restored, restoreEpoch, onSnapshot }: { bridge: QuantumBridge; status: WorkerStatus; selectedModel?: EvolutionModelId; onModelChange?: (value: EvolutionModelId) => void; restored?: WorkspaceSnapshot["sweep"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["sweep"]) => void }) {
+export function SweepLab({ bridge, status, selectedModel, onModelChange, restored, restoreEpoch, onSnapshot, onSweepContext, reopenedSweep }: { bridge: QuantumBridge; status: WorkerStatus; selectedModel?: EvolutionModelId; onModelChange?: (value: EvolutionModelId) => void; restored?: WorkspaceSnapshot["sweep"] | null; restoreEpoch?: number; onSnapshot?: (value: WorkspaceSnapshot["sweep"]) => void; onSweepContext?:(context:SweepRunContext|null)=>void; reopenedSweep?:{epoch:number;result:SweepResult;data:Uint8Array}|null }) {
   const [modelId, setModelId] = useState<EvolutionModelId>("driven_two_level");
   const [parameters, setParameters] = useState(() => defaultsFor("driven_two_level"));
   const [x, setX] = useState<SweepAxis>(SWEEP_DEFAULTS.driven_two_level.x);
@@ -50,23 +62,39 @@ export function SweepLab({ bridge, status, selectedModel, onModelChange, restore
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
   const active = useRef<string | null>(null);
+  const appliedReopenEpoch=useRef<number|null>(null);
+  const [selection,setSelection]=useState<SweepGridSelection|null>(null);
   useEffect(() => bridge.onProgress(value => { if (value.jobId === active.current) setProgress(value); }), [bridge]);
   useEffect(() => {
     if (selectedModel && selectedModel !== modelId) changeModel(selectedModel);
   }, [selectedModel]);
   useEffect(() => {
     if (!restored || !restoreEpoch) return;
+    if(active.current){void bridge.cancel(active.current);active.current=null;setRunning(false);}
     setModelId(restored.modelId); setParameters(restored.parameters); setX(restored.x); setY(restored.y);
     setTwoD(restored.twoD); setStart(restored.start); setStop(restored.stop);
     setInitialIndex(restored.initialIndex); setEngine(restored.engine);
-    setResult(null); setValues(null); setOutcome("WORKSPACE RESTORED");
-  }, [restoreEpoch]);
+    setResult(null); setValues(null);setSelection(null);onSweepContext?.(null); setOutcome("WORKSPACE RESTORED");
+  }, [restoreEpoch,onSweepContext]);
+  useEffect(()=>{
+    if(!reopenedSweep||appliedReopenEpoch.current===reopenedSweep.epoch)return;
+    const stored=reopenedSweep.result;
+    const decoded=decodeSweep(reopenedSweep.data,stored);
+    if(active.current){void bridge.cancel(active.current);active.current=null;setRunning(false);}
+    appliedReopenEpoch.current=reopenedSweep.epoch;
+    setModelId(stored.model.type);setParameters(Object.fromEntries(Object.entries(stored.model.parameters).map(([key,value])=>[key,String(value)])));
+    setX(stored.sweep.x);setY(stored.sweep.y??SWEEP_DEFAULTS[stored.model.type].y);setTwoD(!!stored.sweep.y);
+    setStart(String(stored.sweep.tStart));setStop(String(stored.sweep.tStop));setInitialIndex(stored.sweep.initialIndex);
+    setEngine(stored.engine.name);setResult(stored);setValues(decoded);setSelection(null);
+    setError("");setOutcome("SAVED RUN OPENED");
+  },[reopenedSweep?.epoch,bridge]);
   useEffect(() => onSnapshot?.({ modelId, parameters, x, y, twoD, start, stop, initialIndex, engine }),
     [modelId, parameters, x, y, twoD, start, stop, initialIndex, engine, onSnapshot]);
   function changeModel(id: EvolutionModelId) {
+    if(active.current){void bridge.cancel(active.current);active.current=null;setRunning(false);}
     setModelId(id); setParameters(defaultsFor(id)); setX(SWEEP_DEFAULTS[id].x); setY(SWEEP_DEFAULTS[id].y);
     const solver = MODEL_REGISTRY[id].solverDefaults!; setStart(String(solver.tStart)); setStop(String(solver.tStop));
-    setResult(null); setValues(null); setOutcome("READY TO SWEEP");
+    setResult(null); setValues(null);setSelection(null);onSweepContext?.(null); setOutcome("READY TO SWEEP");
   }
   let preview: ReturnType<typeof sweepJob> | null = null;
   try {
@@ -74,25 +102,29 @@ export function SweepLab({ bridge, status, selectedModel, onModelChange, restore
   } catch { /* validation is shown below */ }
   const ready = status.state === "READY" && !!status.capabilities?.operations.includes("sweep") && !!status.capabilities.engines[engine]?.available;
   const stale = result && (!preview || result.engine.name !== engine || JSON.stringify(result.model) !== JSON.stringify(preview.model) || JSON.stringify(result.sweep) !== JSON.stringify(preview.sweep));
+  const cell=useMemo(()=>selectedSweepCell(selection,result,values),[selection,result,values]);
+  const range=useMemo(()=>values?{minimum:Math.min(...values),maximum:Math.max(...values)}:null,[values]);
+  useEffect(()=>{
+    onSweepContext?.(result&&range?{result,selection:cell?selection:null,cell,range,stale:!!stale}:null);
+  },[result,selection,cell,range,stale,onSweepContext]);
   async function run() {
     if (!preview || !ready || running) return;
-    setRunning(true); setError(""); setOutcome("RUNNING"); setResult(null); setValues(null); setProgress(null);
+    setRunning(true); setError(""); setOutcome("RUNNING"); setResult(null); setValues(null);setSelection(null);onSweepContext?.(null); setProgress(null);
     const jobId = `job-${crypto.randomUUID()}`; active.current = jobId;
     try {
       const job = { ...preview, jobId };
       const completed = await bridge.sweep(job);
+      if(active.current!==jobId)return;
       const bytes = await bridge.readData(jobId);
-      if (bytes.byteLength !== completed.data.bytes) throw new Error("Sweep artifact size mismatch");
-      const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
-      const decoded = new Float64Array(bytes.byteLength / 8);
-      for (let i = 0; i < decoded.length; i++) decoded[i] = view.getFloat64(8 * i, true);
-      if (decoded.length !== completed.data.shape.x * completed.data.shape.y) throw new Error("Sweep artifact shape mismatch");
+      if(active.current!==jobId)return;
+      const decoded=decodeSweep(bytes,completed);
       setResult(completed); setValues(decoded); setOutcome("COMPLETE");
     } catch (exception) {
+      if(active.current!==jobId)return;
       const message = exception instanceof Error ? exception.message : String(exception);
       setOutcome(message.toLowerCase().includes("cancelled") ? "CANCELLED · RUN AGAIN TO RESUME" : "FAILED");
       if (!message.toLowerCase().includes("cancelled")) setError(message);
-    } finally { active.current = null; setRunning(false); }
+    } finally { if(active.current===jobId){active.current = null; setRunning(false);} }
   }
   return <div className="cavity-lab">
     <section className="hamiltonian-card"><div><p className="eyebrow">CHECKPOINTED PARAMETER SWEEP / QLAB-014 + 019</p><div className="formula">Model → parameter grid → final P₁</div></div><div className="model-convention"><span>1D / 2D</span><p>QuTiP / native / GPU batch · ħ = 1</p></div></section>
@@ -113,8 +145,8 @@ export function SweepLab({ bridge, status, selectedModel, onModelChange, restore
     </section>
     {error && <div className="error-message" role="alert">{error}</div>}
     {result && values && <section className="panel cavity-result" data-testid="sweep-result"><div className="panel-heading"><div><p className="eyebrow">QUANTUM-SWEEP-DATA / V1</p><h2>{result.data.shape.y === 1 ? "Response curve" : "Response heatmap"}</h2></div><span className={`result-badge ${stale ? "stale" : ""}`}>{stale ? "OUT OF DATE" : `${values.length} CELLS`}</span></div>
-      <div className="cavity-metrics"><div><span>REUSED FROM CACHE</span><strong data-testid="sweep-reused">{result.cache.reusedPoints}</strong></div><div><span>NEWLY COMPUTED</span><strong>{result.cache.computedPoints}</strong></div><div><span>RESULT RANGE</span><strong>{Math.min(...values).toFixed(3)} – {Math.max(...values).toFixed(3)}</strong></div></div>
-      <SweepView key={result.jobId} result={result} values={values}/><div className="plot-caption"><span>{result.engine.name} {result.engine.version} · {result.provenance.durationMs.toFixed(1)} ms</span><span>SHA-256 verified · resume key {result.cache.key.slice(0, 12)}…</span></div>
+      <div className="cavity-metrics"><div><span>REUSED FROM CACHE</span><strong data-testid="sweep-reused">{result.cache.reusedPoints}</strong></div><div><span>NEWLY COMPUTED</span><strong>{result.cache.computedPoints}</strong></div><div><span>RESULT RANGE</span><strong>{range?.minimum.toFixed(3)} – {range?.maximum.toFixed(3)}</strong></div></div>
+      <SweepView result={result} values={values} cell={cell} onSelect={(xIndex,yIndex)=>setSelection({kind:"grid_cell",runId:result.runId,model:result.model.type,xIndex,yIndex})}/><div className="plot-caption"><span>{result.engine.name} {result.engine.version} · {result.provenance.durationMs.toFixed(1)} ms</span><span>SHA-256 verified · resume key {result.cache.key.slice(0, 12)}…</span></div>
     </section>}
   </div>;
 }

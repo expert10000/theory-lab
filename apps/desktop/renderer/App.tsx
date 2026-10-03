@@ -6,6 +6,7 @@ import type {
   EvolutionResult,
   LindbladResult,
   ManyBodyResult,
+  SweepResult,
   QuantumBridge,
   SpectrumResult,
   WorkerStatus,
@@ -28,6 +29,7 @@ import { OpenSystemLab } from "./OpenSystemLab";
 import { LindbladRunInspector } from "./LindbladRunInspector";
 import type { LindbladRunContext } from "./lindblad-selection";
 import { SweepLab } from "./SweepLab";
+import type { SweepRunContext } from "./sweep-selection";
 import { ManyBodyLab } from "./ManyBodyLab";
 import { ManyBodyRunInspector } from "./ManyBodyRunInspector";
 import type { ManyBodyRunContext } from "./many-body-selection";
@@ -139,6 +141,9 @@ export function App() {
   const [manyBodyContext,setManyBodyContext]=useState<ManyBodyRunContext|null>(null);
   const collectManyBodyContext=useCallback((context:ManyBodyRunContext|null)=>setManyBodyContext(context),[]);
   const [reopenedManyBody,setReopenedManyBody]=useState<{epoch:number;result:ManyBodyResult}|null>(null);
+  const [sweepContext,setSweepContext]=useState<SweepRunContext|null>(null);
+  const collectSweepContext=useCallback((context:SweepRunContext|null)=>setSweepContext(context),[]);
+  const [reopenedSweep,setReopenedSweep]=useState<{epoch:number;result:SweepResult;data:Uint8Array}|null>(null);
   const [selection,setSelection]=useState<ScientificSelection|null>(null);
   const [inspectorTab,setInspectorTab]=useState<"parameters"|"observables"|"provenance">("parameters");
   const runSelections=useRef(new Map<string,ScientificSelection>());
@@ -417,6 +422,14 @@ export function App() {
     setSelectedPreset(null);setActiveModel("ising_chain");setTab("many_body");
     setWorkspaceMessage(`Verified Ising-chain run reopened · ${saved.runId}`);
   }
+  async function openSavedSweep(runId:string){
+    const saved=await window.quantum.getSweepRun(runId);
+    const model=saved.result.model.type;
+    setSweepContext(null);
+    setReopenedSweep(current=>({epoch:(current?.epoch??0)+1,...saved}));
+    setSelectedPreset(null);setActiveModel(model);setTab("sweep");
+    setWorkspaceMessage(`Verified ${MODEL_REGISTRY[model].label} final-population sweep reopened · ${saved.result.runId}`);
+  }
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
     presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
@@ -430,7 +443,8 @@ export function App() {
     tab==="cavity"&&cavityContext?.result.model.type===activeModel?cavityContext.result.runId:
     tab==="open"&&activeModel==="lindblad"?lindbladContext?.result.runId:
     tab==="circuit"&&activeModel==="transmon"?circuitContext?.result.runId:
-    tab==="many_body"&&activeModel==="ising_chain"?manyBodyContext?.result.runId:null;
+    tab==="many_body"&&activeModel==="ising_chain"?manyBodyContext?.result.runId:
+    tab==="sweep"&&activeModel!=="two_level"&&sweepContext?.result.model.type===activeModel?sweepContext.result.runId:null;
   return (
     <div className="app">
       <header className="topbar">
@@ -614,7 +628,7 @@ export function App() {
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} onLindbladContext={collectLindbladContext} reopenedLindblad={reopenedLindblad} /></div>
           <div hidden={tab !== "sweep"||activeModel==="two_level"}><SweepLab bridge={window.quantum} status={status}
             selectedModel={activeModel!=="two_level"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
-            onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} /></div>
+            onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} onSweepContext={collectSweepContext} reopenedSweep={reopenedSweep} /></div>
           <div hidden={tab!=="sweep"||activeModel!=="two_level"}><SpectrumStudyLab bridge={window.quantum} status={status}
             restored={restored?.snapshot.spectrumStudy} restoreEpoch={restored?.epoch} onSnapshot={collectSpectrumStudy}
             onOpenPoint={openSavedSpectrum}
@@ -625,7 +639,7 @@ export function App() {
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} onCircuitContext={collectCircuitContext} reopenedCircuit={reopenedCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic}/></div>
-          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} /> : tab === "backend" ? (
+          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
