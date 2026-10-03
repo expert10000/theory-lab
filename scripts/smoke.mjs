@@ -18,6 +18,7 @@ let preservedRabiRunId = null;
 const preservedPassageRunIds = {};
 const preservedCavityRunIds = {};
 let preservedLindbladRunId = null;
+let preservedCircuitRunId = null;
 let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
@@ -74,6 +75,7 @@ try {
       "exportSceneExample",
       "getCapabilities",
       "getCavityRun",
+      "getCircuitRun",
       "getEvolutionRun",
       "getLindbladRun",
       "getRabiRun",
@@ -1105,10 +1107,27 @@ try {
   await page.getByTestId("run-circuit").click();
   await page.getByTestId("circuit-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("circuit-result").waitFor();
+  preservedCircuitRunId=await page.getByTestId("workspace-run-id").innerText();
+  assert.equal(await page.getByTestId("circuit-inspector-inputs").locator("code").getAttribute("title"),preservedCircuitRunId);
+  assert.equal(await page.getByTestId("circuit-inspector-energy").count(),0);
+  await page.getByRole("button",{name:"Select circuit E1"}).click();
+  await page.getByTestId("circuit-inspector-energy").waitFor();
+  assert.equal(await page.getByRole("button",{name:"Select circuit E1"}).getAttribute("aria-pressed"),"true");
+  assert.equal(await page.getByTestId("circuit-level-mark-1").locator("line").getAttribute("stroke"),"#f2b36f");
+  assert.match(await page.getByTestId("circuit-inspector-diagnostics").innerText(),/not a convergence proof/);
   assert.ok(Number(await page.getByTestId("circuit-e01").textContent()) > 0);
   assert.ok(Number(await page.getByTestId("circuit-cutoff").textContent()) >= 0);
+  const circuitStoredInputs=await page.getByTestId("circuit-inspector-inputs").innerText();
   await page.getByRole("spinbutton", { name: "Circuit ncut" }).fill("13");
   await page.getByTestId("circuit-result").getByText("OUT OF DATE").waitFor();
+  await page.getByTestId("circuit-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("circuit-inspector-inputs").innerText(),circuitStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Transmon circuit ${preservedCircuitRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedCircuitRunId}).waitFor();
+  await page.getByTestId("circuit-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("circuit-inspector-energy").count(),0,"reopening does not invent a level selection");
+  await page.getByRole("spinbutton",{name:"Circuit ncut"}).fill("13");
   if (gpu.engines.scqubits?.available) {
     await page.getByRole("combobox", { name: "Circuit engine" }).selectOption("compare");
     await page.getByTestId("run-circuit").click();
@@ -1479,6 +1498,7 @@ try {
   for(const runId of Object.values(preservedPassageRunIds))assert.ok(runIds.includes(runId),`saved evolution ${runId} survives full restart`);
   for(const runId of Object.values(preservedCavityRunIds))assert.ok(runIds.includes(runId),`saved cavity ${runId} survives full restart`);
   assert.ok(runIds.includes(preservedLindbladRunId),"saved Lindblad run survives full restart");
+  assert.ok(runIds.includes(preservedCircuitRunId),"saved Transmon run survives full restart");
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1515,6 +1535,11 @@ try {
   await page.getByTestId("workspace-run-id").filter({hasText:preservedLindbladRunId}).waitFor();
   await page.getByTestId("lindblad-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   assert.equal(await page.getByTestId("lindblad-inspector-time").innerText(),"0.0000");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Transmon circuit ${preservedCircuitRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedCircuitRunId}).waitFor();
+  await page.getByTestId("circuit-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("circuit-inspector-energy").count(),0);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);

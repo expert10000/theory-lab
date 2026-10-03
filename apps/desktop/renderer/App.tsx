@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import type {
   EngineName,
   CavityResult,
+  CircuitResult,
   EvolutionResult,
   LindbladResult,
   QuantumBridge,
@@ -28,6 +29,8 @@ import type { LindbladRunContext } from "./lindblad-selection";
 import { SweepLab } from "./SweepLab";
 import { ManyBodyLab } from "./ManyBodyLab";
 import { CircuitLab } from "./CircuitLab";
+import { CircuitRunInspector } from "./CircuitRunInspector";
+import type { CircuitRunContext } from "./circuit-selection";
 import { OscillatorLab } from "./OscillatorLab";
 import { OSCILLATOR_DEFAULTS } from "../../../packages/models/oscillator";
 import { OSCILLATOR_DYNAMICS_DEFAULTS } from "../../../packages/models/oscillator-dynamics";
@@ -127,6 +130,9 @@ export function App() {
   const [lindbladContext,setLindbladContext]=useState<LindbladRunContext|null>(null);
   const collectLindbladContext=useCallback((context:LindbladRunContext|null)=>setLindbladContext(context),[]);
   const [reopenedLindblad,setReopenedLindblad]=useState<{epoch:number;result:LindbladResult;data:Uint8Array}|null>(null);
+  const [circuitContext,setCircuitContext]=useState<CircuitRunContext|null>(null);
+  const collectCircuitContext=useCallback((context:CircuitRunContext|null)=>setCircuitContext(context),[]);
+  const [reopenedCircuit,setReopenedCircuit]=useState<{epoch:number;result:CircuitResult}|null>(null);
   const [selection,setSelection]=useState<ScientificSelection|null>(null);
   const [inspectorTab,setInspectorTab]=useState<"parameters"|"observables"|"provenance">("parameters");
   const runSelections=useRef(new Map<string,ScientificSelection>());
@@ -391,6 +397,13 @@ export function App() {
     setSelectedPreset(null);setActiveModel("lindblad");setTab("open");
     setWorkspaceMessage(`Verified Lindblad dynamics reopened · ${saved.result.runId}`);
   }
+  async function openSavedCircuit(runId:string){
+    const saved=await window.quantum.getCircuitRun(runId);
+    setCircuitContext(null);
+    setReopenedCircuit(current=>({epoch:(current?.epoch??0)+1,result:saved}));
+    setSelectedPreset(null);setActiveModel("transmon");setTab("circuit");
+    setWorkspaceMessage(`Verified Transmon circuit reopened · ${saved.runId}`);
+  }
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
     presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
@@ -402,7 +415,8 @@ export function App() {
   const visibleRunId=activeModel==="two_level"&&(tab==="spectrum"||tab==="hamiltonian")?result?.runId:
     tab==="dynamics"&&evolutionContext?.result.model.type===activeModel?evolutionContext.result.runId:
     tab==="cavity"&&cavityContext?.result.model.type===activeModel?cavityContext.result.runId:
-    tab==="open"&&activeModel==="lindblad"?lindbladContext?.result.runId:null;
+    tab==="open"&&activeModel==="lindblad"?lindbladContext?.result.runId:
+    tab==="circuit"&&activeModel==="transmon"?circuitContext?.result.runId:null;
   return (
     <div className="app">
       <header className="topbar">
@@ -434,7 +448,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"?"evolution-layout":""}`}>
+      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"||tab==="circuit"?"evolution-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
@@ -595,9 +609,9 @@ export function App() {
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} /></div>
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital}/></div>
-          <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} /></div>
+          <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} onCircuitContext={collectCircuitContext} reopenedCircuit={reopenedCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic}/></div>
-          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} /> : tab === "backend" ? (
+          {tab === "scenes" ? <SceneLab bridge={window.quantum} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -849,7 +863,7 @@ export function App() {
             )}
         </main>
         <aside className="inspector">
-          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:<>
+          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
           <nav className="inspector-tabs" aria-label="Model inspector views">

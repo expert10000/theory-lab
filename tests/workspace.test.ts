@@ -265,5 +265,10 @@ test("run store persists and exports bounded transmon spectra", async () => {
     await store.export(result.runId, "svg", svg);
     assert.match(await readFile(csv, "utf8"), /anharmonicity,0,-0.3,GHz/);
     assert.match(await readFile(svg, "utf8"), /E0 -16.000/);
+    assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).circuit(result.runId),result);
+    await assert.rejects(store.circuit("../bad"),/Invalid run ID/);
+    await assert.rejects(store.evolution(result.runId),/not a verified two-level evolution/);
+    await writeFile(join(root,"runs",result.runId,"result.json"),"{}\n");
+    await assert.rejects(store.circuit(result.runId),/integrity check/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });

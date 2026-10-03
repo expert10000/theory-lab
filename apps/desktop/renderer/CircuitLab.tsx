@@ -1,10 +1,11 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import type { CircuitResult, QuantumBridge, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
 import { CIRCUIT_DEFAULTS, circuitJob } from "../../../packages/models/circuit";
+import { selectedCircuitLevel, type CircuitLevelSelection, type CircuitRunContext } from "./circuit-selection";
 
 type Draft = NonNullable<WorkspaceSnapshot["circuit"]>;
 
-function EnergyFigure({ result }: { result: CircuitResult }) {
+function EnergyFigure({ result, selected, onSelect }: { result: CircuitResult; selected:number|null; onSelect:(index:number)=>void }) {
   const values = result.spectrum.energies;
   const origin = values[0], span = Math.max(1e-9, values[values.length - 1] - origin);
   return <div className="sweep-visual"><p className="eyebrow">CHARGE-BASIS LEVELS / E−E₀ IN GHz</p>
@@ -13,17 +14,20 @@ function EnergyFigure({ result }: { result: CircuitResult }) {
       {values.map((energy, index) => {
         const x = 75 + index * 665 / Math.max(1, values.length - 1);
         const y = 195 - (energy - origin) * 155 / span;
-        return <g key={index}><line x1={x - 25} x2={x + 25} y1={y} y2={y} stroke="#79d9c1" strokeWidth="4"/>
+        return <g key={index} data-testid={`circuit-level-mark-${index}`}><line x1={x - 25} x2={x + 25} y1={y} y2={y} stroke={selected===index?"#f2b36f":"#79d9c1"} strokeWidth={selected===index?"6":"4"}/>
           <text x={x} y="235" textAnchor="middle" fill="#acc1ca" fontSize="11">E{index}</text>
           <title>{`E${index} = ${energy.toFixed(8)} GHz`}</title></g>;
       })}
     </svg>
+    <div className="state-view-levels" aria-label="Stored transmon levels">{values.map((energy,index)=><button type="button" key={index} aria-label={`Select circuit E${index}`} aria-pressed={selected===index} onClick={()=>onSelect(index)}>E{index} · {energy.toFixed(4)} GHz</button>)}</div>
   </div>;
 }
 
-export function CircuitLab({ bridge, status, restored, restoreEpoch, onSnapshot }: {
+export function CircuitLab({ bridge, status, restored, restoreEpoch, onSnapshot, onCircuitContext, reopenedCircuit }: {
   bridge: QuantumBridge; status: WorkerStatus; restored?: Draft | null; restoreEpoch?: number;
   onSnapshot?: (value: Draft) => void;
+  onCircuitContext?:(context:CircuitRunContext|null)=>void;
+  reopenedCircuit?:{epoch:number;result:CircuitResult}|null;
 }) {
   const [draft, setDraft] = useState<Draft>(CIRCUIT_DEFAULTS);
   const [result, setResult] = useState<CircuitResult | null>(null);
@@ -32,11 +36,24 @@ export function CircuitLab({ bridge, status, restored, restoreEpoch, onSnapshot 
   const [running, setRunning] = useState(false);
   const [outcome, setOutcome] = useState("READY TO CALCULATE");
   const [error, setError] = useState("");
+  const [selection,setSelection]=useState<CircuitLevelSelection|null>(null);
+  const appliedReopenEpoch=useRef<number|null>(null);
+  const runEpoch=useRef(0);
   useEffect(() => {
     if (!restoreEpoch) return;
+    runEpoch.current++;setRunning(false);
     setDraft(restored ?? CIRCUIT_DEFAULTS); setResult(null); setReference(null);
+    setSelection(null);onCircuitContext?.(null);
     setOutcome("WORKSPACE RESTORED");
-  }, [restoreEpoch]);
+  }, [restoreEpoch,onCircuitContext]);
+  useEffect(()=>{
+    if(!reopenedCircuit||appliedReopenEpoch.current===reopenedCircuit.epoch)return;
+    const stored=reopenedCircuit.result,p=stored.model.parameters;
+    runEpoch.current++;setRunning(false);appliedReopenEpoch.current=reopenedCircuit.epoch;
+    setDraft({EJ:String(p.EJ),EC:String(p.EC),ng:String(p.ng),ncut:String(p.ncut),levels:String(p.levels),engine:stored.engine.name});
+    setResult(stored);setReference(null);setResultMode(stored.engine.name);setSelection(null);
+    setError("");setOutcome("SAVED RUN OPENED");
+  },[reopenedCircuit?.epoch]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
   function change<K extends keyof Draft>(key: K, value: Draft[K]) { setDraft(current => ({ ...current, [key]: value })); }
   let preview: ReturnType<typeof circuitJob> | null = null;
@@ -48,17 +65,25 @@ export function CircuitLab({ bridge, status, restored, restoreEpoch, onSnapshot 
       : !!capabilities.engines[draft.engine]?.available);
   const stale = result && (!preview || resultMode !== draft.engine ||
     JSON.stringify(result.model) !== JSON.stringify(preview.model));
+  const level=selectedCircuitLevel(selection,result);
+  useEffect(()=>{
+    onCircuitContext?.(result?{result,selection:level?selection:null,level,stale:!!stale}:null);
+  },[result,selection,level?.index,stale,onCircuitContext]);
   async function run() {
     if (!preview || !ready || running) return;
-    setRunning(true); setError(""); setOutcome("RUNNING"); setReference(null);
+    const epoch=++runEpoch.current;
+    setRunning(true); setError(""); setOutcome("RUNNING");setResult(null);setReference(null);setSelection(null);onCircuitContext?.(null);
     try {
       const first = await bridge.circuit({ ...preview, jobId: `job-${crypto.randomUUID()}` });
+      if(runEpoch.current!==epoch)return;
       let second: CircuitResult | null = null;
       if (draft.engine === "compare") second = await bridge.circuit(circuitJob(`job-${crypto.randomUUID()}`, draft, "native"));
+      if(runEpoch.current!==epoch)return;
       setResult(first); setReference(second); setResultMode(draft.engine); setOutcome("COMPLETE");
     } catch (exception) {
+      if(runEpoch.current!==epoch)return;
       setOutcome("FAILED"); setError(exception instanceof Error ? exception.message : String(exception));
-    } finally { setRunning(false); }
+    } finally { if(runEpoch.current===epoch)setRunning(false); }
   }
   const comparison = result && reference ? {
     levels: Math.max(...result.spectrum.energies.map((value, index) => Math.abs(value - reference.spectrum.energies[index]))),
@@ -96,7 +121,7 @@ export function CircuitLab({ bridge, status, restored, restoreEpoch, onSnapshot 
         <div><span>|ΔE₀₁| AT NCUT+2 / GHz</span><strong data-testid="circuit-cutoff">{result.spectrum.cutoffDriftE01.toExponential(3)}</strong><small>Diagnostic only; not a convergence proof</small></div></div>
       {comparison && <div className="comparison-report" data-testid="circuit-compare"><h3>scqubits versus Native</h3>
         <p>Max |ΔE| {comparison.levels.toExponential(3)} GHz · |Δn₀₁| {comparison.n01.toExponential(3)}</p></div>}
-      <EnergyFigure result={result}/>
+      <EnergyFigure result={result} selected={level?.index??null} onSelect={index=>setSelection({kind:"energy_level",runId:result.runId,index})}/>
       <div className="plot-caption"><span>{result.engine.name} {result.engine.version} · {result.provenance.durationMs.toFixed(1)} ms</span><span>Finite charge basis · saved run</span></div>
     </section>}
   </div>;
