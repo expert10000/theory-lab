@@ -2,13 +2,15 @@ import React, { useEffect, useState } from "react";
 import type { QuantumBridge, RunComparisonPins, RunExportFormat, RunSummary, SavedRunInspection } from "../../../packages/contracts";
 import { MODEL_REGISTRY, type EvolutionModelId } from "../../../packages/models";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
+import {supportsScene} from "../../../packages/quantum-scene/from-result";
+import {availableSceneViews,type SceneView} from "./scene-bridge";
 
 const evolutionModels:readonly EvolutionModelId[]=["driven_two_level","landau_zener","stuckelberg","strong_drive"];
 function evolutionLabel(model:string){return evolutionModels.includes(model as EvolutionModelId)?MODEL_REGISTRY[model as EvolutionModelId].label:null;}
 const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
 function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze,onViewScene }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void;onViewScene?:(runId:string,view:SceneView)=>void }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
@@ -18,6 +20,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   const [inspection,setInspection]=useState<SavedRunInspection|null>(null);
   const [inspecting,setInspecting]=useState<string|null>(null);
   const [rerunning,setRerunning]=useState(false);
+  const [topologyScenes,setTopologyScenes]=useState<Record<string,{standard:boolean;bands:boolean}>>({});
   async function refresh() {
     setBusy(true);
     try { const [saved,selected]=await Promise.all([bridge.listRuns(),bridge.getRunComparisonPins()]);setRuns(saved);setPins(selected);setMessage(""); }
@@ -25,6 +28,14 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
     finally { setBusy(false); }
   }
   useEffect(() => { void refresh(); }, [bridge]);
+  useEffect(()=>{
+    let active=true;
+    void Promise.all(runs.filter(run=>run.operation==="topology").map(async run=>{
+      try{const saved=await bridge.getVerifiedRun(run.runId);return [run.runId,availableSceneViews(saved.result)] as const;}
+      catch{return [run.runId,{standard:false,bands:false}] as const;}
+    })).then(entries=>{if(active)setTopologyScenes(Object.fromEntries(entries));});
+    return ()=>{active=false;};
+  },[runs,bridge]);
   async function pin(side:"a"|"b",runId:string|null){
     if(pinning)return;
     setPinning(true);setMessage("");
@@ -104,6 +115,10 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
           <button type="button" aria-label={`Pin B ${run.runId}`} aria-pressed={pins.b===run.runId} disabled={pinning||pins.a===run.runId} onClick={()=>void pin("b",run.runId)}>{pins.b===run.runId?"B pinned":"Pin B"}</button>
           <button type="button" aria-label={`Inspect provenance ${run.runId}`} aria-expanded={inspection?.summary.runId===run.runId}
             disabled={!!inspecting||rerunning} onClick={()=>void inspectOne(run.runId)}>{inspecting===run.runId?"Verifying…":inspection?.summary.runId===run.runId?"Close provenance":"Provenance / rerun"}</button>
+          {onViewScene&&(run.operation==="topology"?topologyScenes[run.runId]?.standard:supportsScene(run.operation,run.model))&&
+            <button type="button" aria-label={`View scene ${run.runId}`} onClick={()=>onViewScene(run.runId,"standard")}>View in Scenes</button>}
+          {onViewScene&&run.operation==="topology"&&topologyScenes[run.runId]?.bands&&
+            <button type="button" aria-label={`View bands scene ${run.runId}`} onClick={()=>onViewScene(run.runId,"bands")}>View bands</button>}
           {run.operation==="diagonalize"&&onOpenSpectrum&&
           <button type="button" className="run-open" aria-label={`Open spectrum ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,"spectrum")}>{opening===run.runId?"Opening…":"Open spectrum"}</button>}

@@ -10,11 +10,12 @@ import { SceneViewer,browserSceneDigest } from "../../../packages/quantum-3d/Sce
 import {SceneChunkLoader} from "../../../packages/quantum-scene/stream";
 import { FieldViewer } from "../../../packages/quantum-3d/FieldViewer";
 import {StreamViewer,type SceneStreamSource} from "../../../packages/quantum-3d/StreamViewer";
+import type {SceneLaunch} from "./scene-bridge";
 import "../../../packages/quantum-3d/scene.css";
 
-export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
+export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:SceneLaunch|null }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
-  const [runId, setRunId] = useState("");
+  const [runId, setRunId] = useState(launch?.runId??"");
   const [savedPayload, setPayload] = useState<ScenePayload | null>(null);
   const [imported, setImported] = useState<ScenePayload | null>(null);
   const [source, setSource] = useState<"saved" | "bundle" | "example"|"stream">("saved");
@@ -26,7 +27,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   const [family, setFamily] = useState<LatticeFamily>("square"),
     [repeats, setRepeats] = useState(["3", "3", "1"]);
   const [view,setView]=useState<"real"|"reciprocal">("real");
-  const [savedView,setSavedView]=useState<"standard"|"bands">("standard");
+  const [savedView,setSavedView]=useState<"standard"|"bands">(launch?.view??"standard");
   const payload =
     source === "stream"?null:source === "example"
       ? (example?.payload ?? null)
@@ -45,7 +46,7 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
       setRunId((current) =>
         values.some((r) => r.runId === current)
           ? current
-          : (values[0]?.runId ?? ""),
+          : (current || values[0]?.runId || ""),
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -54,6 +55,10 @@ export function SceneLab({ bridge }: { bridge: QuantumBridge }) {
   useEffect(() => {
     void refresh();
   }, [bridge]);
+  useEffect(()=>{
+    if(!launch)return;
+    setRunId(launch.runId);setSavedView(launch.view);setSource("saved");
+  },[launch?.nonce]);
   useEffect(() => {
     const request = ++sequence.current;
     if (source !== "saved") return;

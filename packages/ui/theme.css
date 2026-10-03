@@ -835,6 +835,8 @@ h1 {
   font-size: 11px;
   margin-bottom: 0;
 }
+.scene-context-actions { display: flex; flex-wrap: wrap; align-items: center; justify-content: flex-end; gap: 8px; flex-shrink: 0; }
+.scene-context-actions button { border: 1px solid #70bca9; border-radius: 5px; background: #28534a; color: #e1fff4; padding: 8px 11px; cursor: pointer; white-space: nowrap; }
 .pill {
   font:
     8px Consolas,
