@@ -1550,5 +1550,6 @@ h1 {
 .atlas-binding { margin-top: 22px; padding: 16px; border: 1px solid #3c7268; background: #142c2c; border-radius: 6px; }
 .topology-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
 .topology-density { display: flex; align-items: end; gap: 2px; height: 190px; border-bottom: 1px solid #6c8d95; padding: 0 12px; }
-.topology-density div { flex: 1; min-width: 2px; max-height: 180px; background: #79d9c1; }
+.topology-density button { flex: 1; min-width: 2px; max-height: 180px; background: #79d9c1; border: 0; padding: 0; cursor: pointer; }
+.topology-density button[aria-pressed="true"] { background: #f2b36f; outline: 2px solid #fff; }
 @media (max-width: 980px) { .atlas-browser { grid-template-columns: 1fr; } .atlas-list { max-height: 240px; } }
