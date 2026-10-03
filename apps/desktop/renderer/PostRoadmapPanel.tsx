@@ -5,6 +5,7 @@ import {
   ATLAS_RECONCILIATION_STEPS,
   D1_OSCILLATOR_STEPS,
   QLAB_UI_STEPS,
+  QVIS_WORKFLOW_STEPS,
 } from "../../../packages/models/roadmap";
 
 export function PostRoadmapPanel() {
@@ -40,6 +41,9 @@ export function PostRoadmapPanel() {
           integration remain outside this release.
         </p>
       )}
+      <h3>QVIS-014–023 · scientific workflow extension</h3>
+      <p>QVIS-014 links exact saved-run selections across current desktop laboratory adapters and the compatible Lab-side Scenes path. It does not add worker physics, missing state vectors or a Math3D importer. The later workflow extensions remain planned; see docs/ROADMAP.md §28.</p>
+      {QVIS_WORKFLOW_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`qvis-workflow-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
       {POST_QVIS.map((entry) => (
         <div
           className="roadmap-row"

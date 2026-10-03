@@ -181,6 +181,8 @@ try {
   assert.equal(await page.getByRole("button",{name:"Select upper energy E plus"}).getAttribute("aria-pressed"),"true");
   assert.match(await page.getByTestId("scientific-selection").innerText(),/E₊ = 0\.640312/);
   assert.match(await page.getByTestId("scientific-selection").innerText(),/Verified \|ψ⟩/);
+  assert.match(await page.getByTestId("scientific-reference-coordinate").innerText(),/Stored energy level 1/);
+  assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),await page.getByTestId("workspace-run-id").innerText());
   const stateView=page.getByTestId("two-level-state-view");
   assert.ok(await stateView.isVisible());
   assert.match(await page.getByTestId("state-view-run-matrix").innerText(),/0\.400000/);
@@ -637,6 +639,10 @@ try {
   assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6, QLAB-UI-7, QLAB-UI-8.*Partially done: none.*Current linked-workspace gates complete/s);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
+  for(let number=14;number<=23;number++){
+    const id=`QVIS-${String(number).padStart(3,"0")}`;
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number===14?/Implemented/:/Planned/);
+  }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -710,6 +716,8 @@ try {
   await page.locator('rect[aria-label="Select QWZ cell kx 2, ky 1"]').click();
   await page.getByTestId("topology-selected-cell").waitFor();
   await page.getByTestId("topology-inspector-selection").filter({hasText:"Berry curvature"}).waitFor();
+  assert.match(await page.getByTestId("scientific-reference-coordinate").innerText(),/Stored cell \(2, 1\)/);
+  assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),preservedTopologyRunIds.qwz);
   assert.match(await page.getByTestId("topology-inspector-selection").innerText(),/Stored lower band/);
   const storedTopologyInputs=await page.getByTestId("topology-inspector-inputs").innerText();
   await page.getByRole("spinbutton",{name:"QWZ mass"}).fill("-0.5");
@@ -881,6 +889,8 @@ try {
     "t = 10.0000",
   );
   await page.getByTestId("rabi-inspector-time").filter({hasText:"10.0000"}).waitFor();
+  assert.match(await page.getByTestId("scientific-reference-coordinate").innerText(),/Stored time row/);
+  assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),rabiRunId);
   const linkedTimeIndex=await cursor.inputValue();
   const rabiSource=await page.evaluate(id=>window.quantum.inspectSavedRun(id),rabiRunId);
   await page.getByTestId("view-in-scenes").click();
@@ -1230,6 +1240,9 @@ try {
   assert.equal(await page.getByTestId("many-body-level-mark-1").locator("line").getAttribute("stroke"),"#f2b36f");
   await page.getByRole("button",{name:"Select Ising site 2"}).click();
   await page.getByTestId("many-body-inspector-site").waitFor();
+  assert.match(await page.getByTestId("scientific-reference-coordinate").innerText(),/Stored site 2/);
+  assert.match(await page.getByTestId("scientific-reference-availability").innerText(),/full ground-state vector are unavailable/);
+  assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),preservedManyBodyRunId);
   assert.equal(await page.getByTestId("many-body-inspector-site").innerText(),await page.getByTestId("many-body-site-value-1").innerText());
   assert.equal(await page.getByRole("button",{name:"Select Ising site 2"}).getAttribute("aria-pressed"),"true");
   assert.ok(Number(await page.getByTestId("many-body-gap").textContent()) >= 0);
@@ -1242,6 +1255,7 @@ try {
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   await page.getByRole("button",{name:`Open Ising chain ${preservedManyBodyRunId}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:preservedManyBodyRunId}).waitFor();
+  assert.equal(await page.getByTestId("scientific-reference").count(),0,"reopening does not invent an Ising selection");
   await page.getByTestId("many-body-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   assert.equal(await page.getByTestId("many-body-inspector-energy").count(),0);
   assert.equal(await page.getByTestId("many-body-inspector-site").count(),0);
@@ -1772,8 +1786,12 @@ try {
   await page.getByRole("button",{name:`Open spectrum ${preservedSpectrumRunId}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:preservedSpectrumRunId}).waitFor();
   assert.equal(await page.getByTestId("scientific-selection").count(),0,"reopening after restart invents no selection");
+  assert.equal(await page.getByTestId("scientific-reference").count(),0,"restart does not restore an unstored scientific cursor");
   assert.equal(await page.getByTestId("two-level-state-view").count(),1,"verified saved state view reopens after restart");
   assert.equal(await page.getByTestId("state-view-prompt").count(),1,"restart does not invent a selected eigenstate");
+  await page.getByRole("button",{name:"Select upper energy E plus"}).click();
+  assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),preservedSpectrumRunId,
+    "a new post-restart selection references only the reopened verified run");
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   await page.getByRole("button",{name:`Open Rabi evolution ${preservedRabiRunId}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:preservedRabiRunId}).waitFor();
@@ -1901,6 +1919,10 @@ try {
   await page.getByRole("status").filter({hasText:/hash|integrity|altered|mismatch/i}).waitFor();
   assert.equal(await page.getByLabel("Scene saved run").inputValue(),preservedRabiRunId,"tampered launch cannot substitute another run");
   assert.equal(await page.getByTestId("scene-verification").count(),0,"tampered source yields no verified scene");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Rabi evolution ${preservedRabiRunId}`}).click();
+  await page.getByRole("status").filter({hasText:/hash|integrity|altered|mismatch/i}).waitFor();
+  assert.equal(await page.getByTestId("scientific-reference").count(),0,"tampered run cannot create a scientific selection");
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {
   await reopened.close();

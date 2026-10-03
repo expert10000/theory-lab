@@ -95,6 +95,19 @@ export const DELIVERED_QVIS: RoadmapEntry[] = [
   },
 ];
 export const POST_QVIS: RoadmapEntry[] = [];
+/** Additive post-v0.1 scientific workflow; historical QVIS-001–013 remain frozen. */
+export const QVIS_WORKFLOW_STEPS:RoadmapEntry[]=[
+  {id:"QVIS-014",title:"Linked scientific selection",state:"Implemented",detail:"Current desktop two-level, evolution, cavity, Lindblad, circuit, Ising, sweep, topology, orbital and oscillator selectors map resolved coordinates to one exact-run view reference. Existing plots/inspectors retain their recorded values; compatible Lab→Scenes samples use that reference. Unavailable states and observables are explicit. No worker or result schema change; independent web/imported-scene reverse selection is outside this scope."},
+  {id:"QVIS-015",title:"Parameter Sweep Laboratory",state:"Planned",detail:"Extend verified point-run sweeps to declared many-body/model outputs; distinguish already-stored Ising entropy from new fidelity/state requirements."},
+  {id:"QVIS-016",title:"Observable workspace",state:"Planned",detail:"Reusable, unit-labelled recorded observable cards and validated model-specific additions."},
+  {id:"QVIS-017",title:"Many-body state inspection",state:"Planned",detail:"Bounded verified correlation, cut and small-basis state views; no inferred full vector."},
+  {id:"QVIS-018",title:"Run comparison extension",state:"Planned",detail:"Extend delivered immutable A/B comparison with a contextual compatible-run drawer."},
+  {id:"QVIS-019",title:"Symmetry and sector awareness",state:"Planned",detail:"Display only computed and validated conserved-sector labels."},
+  {id:"QVIS-020",title:"Dynamics as a sibling of Spectrum",state:"Planned",detail:"Unify existing evolution interaction semantics; Ising quench requires new validated physics."},
+  {id:"QVIS-021",title:"Scientific figure export",state:"Planned",detail:"Consistent SVG/PNG, metadata sidecars and publication views."},
+  {id:"QVIS-022",title:"Atlas to Lab deep linking",state:"Planned",detail:"Extend existing pinned bindings with capability-gated canonical runs, sweeps and reverse references."},
+  {id:"QVIS-023",title:"Scenes and Math3D bridge",state:"Planned",detail:"Lab scene handoff already exists; Math3D importer and advanced handoff remain separately gated."},
+];
 export const D1_OSCILLATOR_STEPS: RoadmapEntry[] = [
   {id:"D1-001",title:"Bounded oscillator contracts and typed model",state:"Implemented",detail:"Append-only job/result variants; original schema branches fingerprint-tested against R5."},
   {id:"D1-002",title:"QuTiP/native stationary oscillator worker",state:"Implemented",detail:"Independent Fock operators, zero-point ladder, quadrature moments; shared analytic Hermite plotting."},

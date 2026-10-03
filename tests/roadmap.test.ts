@@ -8,6 +8,7 @@ import {
   ATLAS_RECONCILIATION_STEPS,
   D1_OSCILLATOR_STEPS,
   QLAB_UI_STEPS,
+  QVIS_WORKFLOW_STEPS,
 } from "../packages/models/roadmap";
 
 test("roadmap preserves delivered IDs and labels future work as planned", () => {
@@ -95,6 +96,17 @@ test("linked-workspace roadmap names completed current-lab adapters and next UI 
     assert.match(overview,/UI-7 is implemented|UI-7 implements/);
     assert.match(overview,/UI-8 is implemented|UI-8 implements/);
   }
+});
+
+test("QVIS-014 is scoped to current desktop adapters without relabelling QVIS-001–013",async()=>{
+  assert.deepEqual(QVIS_WORKFLOW_STEPS.map(entry=>[entry.id,entry.state]),
+    Array.from({length:10},(_,index)=>[`QVIS-${String(index+14).padStart(3,"0")}`,index===0?"Implemented":"Planned"]));
+  assert.equal(DELIVERED_QVIS.length,13);
+  const doc=await readFile("docs/ROADMAP.md","utf8");
+  assert.match(doc,/QVIS-014 implemented for declared current desktop\s+adapters; QVIS-015–023 planned/);
+  assert.match(doc,/renderer-local\s+`scientific-selection\/v1` reference/);
+  assert.match(doc,/independently opened web scenes/);
+  assert.match(doc,/Half-chain entropy is already recorded/);
 });
 
 test("UI-1–3 remaining-lab audit preserves explicit data and unavailable-state boundaries",async()=>{

@@ -1684,7 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-03): **proposed, not implemented as QVIS-014–023**. This is an
+Status (2026-10-03): **QVIS-014 implemented for declared current desktop
+adapters; QVIS-015–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1694,6 +1695,20 @@ points; the items below target broader scientific coverage and shared behavior.
 An individual item is complete only at its stated, tested scope.
 
 ## QVIS-014 — Linked scientific selection
+
+Delivered scope: the existing two-level, evolution, cavity, Lindblad,
+Transmon, Ising, final-population sweep, SSH/QWZ, orbital and oscillator
+selectors map their *resolved* coordinates to a renderer-local
+`scientific-selection/v1` reference containing exact run ID, model, operation
+and coordinate only. Existing plots and model-specific inspectors remain the
+source of recorded values. A shared inspector card identifies the reference
+and explicitly names unavailable state/observable data. Compatible Lab →
+Scenes handoff consumes the same reference and links only an adapter-supported
+sample; unsupported coordinates show a full-run scene. New-run transitions
+clear old cursors, no cursor is invented after restart, and verified reopening
+or scene materialization refuses a tampered source. This does not
+freeze a new IPC/worker schema or synchronize selection back from imported or
+independently opened web scenes.
 
 Generalize the existing exact-run selection pattern into a common,
 model-aware `ScientificSelection` contract. Selecting a spectrum level, site,
@@ -1712,10 +1727,11 @@ selections must be refused or clearly labelled, not inferred.
 Extend the existing two-level eigenenergy study and final-`P₁` sweep
 infrastructure to declared model/output pairs. First proposed many-body case:
 a bounded Ising `h/J` sweep with low-lying `Eₙ`, finite-size gap, and recorded
-magnetization. Half-chain entropy and neighboring-ground-state fidelity are
-separate proposed result additions requiring state data, numerical definitions,
-worker/contract validation and convergence tests; do not derive them from the
-current low-energy/site-magnetization summary. Each point is an immutable run,
+magnetization. Half-chain entropy is already recorded for a current single
+Ising run and may be collected from verified sweep-point runs.
+Neighboring-ground-state fidelity is a separate proposed result addition
+requiring state data, a numerical definition, worker/contract validation and
+convergence tests. Each point is an immutable run,
 and clicking it reopens or selects exactly that run. Two-level avoided-crossing
 studies versus `Δ` or `Ω` should reuse their existing verified point-run model
 where applicable. Checkpointing, cancellation, resume, units and provenance

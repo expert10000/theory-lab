@@ -28,8 +28,9 @@ test("QVIS-014 maps existing resolved selections into one exact-run reference",(
     ["cavity","jaynes_cummings","cavity","cavity"],
     ["open","lindblad","lindblad","lindblad"],
   ] as const){
-    expectRef(source(tab,model,key,{result:result(operation,model==="lindblad"?"open_jaynes_cummings":model),
-      selection:{kind:"time_sample",runId:"run-source",index:3},sample:{index:3}}),{kind:"time",index:3});
+    const resultModel=model==="lindblad"?"open_jaynes_cummings":model;
+    expectRef(source(tab,model,key,{result:result(operation,resultModel),
+      selection:{kind:"time_sample",model:resultModel,runId:"run-source",index:3},sample:{index:3}}),{kind:"time",index:3});
   }
   expectRef(source("circuit","transmon","circuit",{result:result("circuit","transmon"),
     selection:{kind:"energy_level",runId:"run-source",index:2},level:{index:2}}),{kind:"energy",index:2});
@@ -57,4 +58,7 @@ test("QVIS-014 refuses mismatched, unresolved and inactive references",()=>{
   assert.equal(activeSelectionReference({...base,activeModel:"two_level"}),null);
   assert.equal(activeSelectionReference({...base,tab:"runs"}),null);
   assert.equal(activeSelectionReference({...base,manyBody:{...base.manyBody!,selection:{kind:"energy_level",runId:"run-source",index:-1}}}),null);
+  const evolution=source("dynamics","driven_two_level","evolution",{result:result("evolve","driven_two_level"),
+    selection:{kind:"time_sample",model:"landau_zener",runId:"run-source",index:1},sample:{index:1}});
+  assert.equal(activeSelectionReference(evolution),null,"a matching row does not excuse a cross-model reference");
 });

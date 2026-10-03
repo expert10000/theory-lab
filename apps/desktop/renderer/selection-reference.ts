@@ -64,15 +64,18 @@ export function activeSelectionReference(s:SelectionSources):ScientificSelection
   }
   if(tab==="dynamics"&&s.evolution?.result.model.type===activeModel){
     const {result,selection,sample}=s.evolution;
-    return sample.index===selection.index?reference(result,selection.runId,{kind:"time",index:selection.index}):null;
+    return selection.kind==="time_sample"&&selection.model===result.model.type&&sample.index===selection.index?
+      reference(result,selection.runId,{kind:"time",index:selection.index}):null;
   }
   if(tab==="cavity"&&s.cavity?.result.model.type===activeModel){
     const {result,selection,sample}=s.cavity;
-    return sample.index===selection.index?reference(result,selection.runId,{kind:"time",index:selection.index}):null;
+    return selection.kind==="time_sample"&&selection.model===result.model.type&&sample.index===selection.index?
+      reference(result,selection.runId,{kind:"time",index:selection.index}):null;
   }
   if(tab==="open"&&activeModel==="lindblad"&&s.lindblad){
     const {result,selection,sample}=s.lindblad;
-    return sample.index===selection.index?reference(result,selection.runId,{kind:"time",index:selection.index}):null;
+    return selection.kind==="time_sample"&&selection.model===result.model.type&&sample.index===selection.index?
+      reference(result,selection.runId,{kind:"time",index:selection.index}):null;
   }
   if(tab==="circuit"&&activeModel==="transmon"&&s.circuit?.selection&&s.circuit.level){
     const {result,selection,level}=s.circuit;
