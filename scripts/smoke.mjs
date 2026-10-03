@@ -19,6 +19,7 @@ const preservedPassageRunIds = {};
 const preservedCavityRunIds = {};
 let preservedLindbladRunId = null;
 let preservedCircuitRunId = null;
+let preservedManyBodyRunId = null;
 let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
@@ -78,6 +79,7 @@ try {
       "getCircuitRun",
       "getEvolutionRun",
       "getLindbladRun",
+      "getManyBodyRun",
       "getRabiRun",
       "getResources",
       "getScene",
@@ -1086,10 +1088,31 @@ try {
   await page.getByTestId("run-many-body").click();
   await page.getByTestId("many-body-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("many-body-result").waitFor();
+  preservedManyBodyRunId=await page.getByTestId("workspace-run-id").innerText();
+  assert.equal(await page.getByTestId("many-body-inspector-inputs").locator("code").getAttribute("title"),preservedManyBodyRunId);
+  assert.equal(await page.getByTestId("many-body-inspector-energy").count(),0);
+  await page.getByRole("button",{name:"Select Ising E1"}).click();
+  await page.getByTestId("many-body-inspector-energy").waitFor();
+  assert.equal(await page.getByRole("button",{name:"Select Ising E1"}).getAttribute("aria-pressed"),"true");
+  assert.equal(await page.getByTestId("many-body-level-mark-1").locator("line").getAttribute("stroke"),"#f2b36f");
+  await page.getByRole("button",{name:"Select Ising site 2"}).click();
+  await page.getByTestId("many-body-inspector-site").waitFor();
+  assert.equal(await page.getByTestId("many-body-inspector-site").innerText(),await page.getByTestId("many-body-site-value-1").innerText());
+  assert.equal(await page.getByRole("button",{name:"Select Ising site 2"}).getAttribute("aria-pressed"),"true");
   assert.ok(Number(await page.getByTestId("many-body-gap").textContent()) >= 0);
   assert.ok(Number(await page.getByTestId("many-body-entropy").textContent()) >= 0);
+  const manyBodyStoredInputs=await page.getByTestId("many-body-inspector-inputs").innerText();
   await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("5");
   await page.getByTestId("many-body-result").getByText("OUT OF DATE").waitFor();
+  await page.getByTestId("many-body-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("many-body-inspector-inputs").innerText(),manyBodyStoredInputs);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Ising chain ${preservedManyBodyRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedManyBodyRunId}).waitFor();
+  await page.getByTestId("many-body-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("many-body-inspector-energy").count(),0);
+  assert.equal(await page.getByTestId("many-body-inspector-site").count(),0);
+  await page.getByRole("spinbutton",{name:"Many-body sites"}).fill("5");
   if (gpu.engines.quspin?.available) {
     await page.getByRole("combobox", { name: "Many-body engine" }).selectOption("compare");
     await page.getByTestId("run-many-body").click();
@@ -1499,6 +1522,7 @@ try {
   for(const runId of Object.values(preservedCavityRunIds))assert.ok(runIds.includes(runId),`saved cavity ${runId} survives full restart`);
   assert.ok(runIds.includes(preservedLindbladRunId),"saved Lindblad run survives full restart");
   assert.ok(runIds.includes(preservedCircuitRunId),"saved Transmon run survives full restart");
+  assert.ok(runIds.includes(preservedManyBodyRunId),"saved Ising-chain run survives full restart");
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1540,6 +1564,12 @@ try {
   await page.getByTestId("workspace-run-id").filter({hasText:preservedCircuitRunId}).waitFor();
   await page.getByTestId("circuit-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   assert.equal(await page.getByTestId("circuit-inspector-energy").count(),0);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Ising chain ${preservedManyBodyRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedManyBodyRunId}).waitFor();
+  await page.getByTestId("many-body-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("many-body-inspector-energy").count(),0);
+  assert.equal(await page.getByTestId("many-body-inspector-site").count(),0);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);

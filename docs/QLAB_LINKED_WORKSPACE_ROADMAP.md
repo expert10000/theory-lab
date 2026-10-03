@@ -11,10 +11,10 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | --- | --- | --- |
 | Done | QLAB-UI-4 | The model-selected Sweeps workspace has a bounded two-level eigenenergy study, verified point runs, durable study checkpoints, reopen and resume. Existing dynamics sweeps still mean final `P₁`. This gate is complete for declared adapters, not a claim that every model supports every output. |
 | Done | QLAB-UI-5 | The verified two-level eigenvectors drive a linked Bloch x-z great circle and state readout. Spectrum, inspector and Analysis share exact-run selection; legacy and degenerate results show why a unique state is unavailable. This is not a Bloch claim for larger Hilbert spaces. |
-| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, four two-state evolution, both cavity and Lindblad labs have saved-run breadcrumbs. Other labs still need assessment. |
-| Partially done | QLAB-UI-2 | Exact-run spectrum selection and time-sample cursors link recorded views for evolution, cavity and Lindblad models; these saved runs reopen. Other model adapters remain. |
-| Partially done | QLAB-UI-3 | Verified two-level eigenstate diagnostics and run-backed evolution, cavity and Lindblad inspectors work; wider model-specific observable/inspector adapters remain. |
-| Next | Transmon and Ising adapters | The [remaining-lab audit](QLAB_UI_1_3_REMAINING_LABS_AUDIT.md) identifies bounded inline Transmon and Ising results as the next adapters. Sweeps, topology, orbitals and multi-mode oscillators need separate designs. Do not infer unrecorded states. |
+| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, evolution, cavity, Lindblad, Transmon and Ising labs have saved-run breadcrumbs. Other labs need adapters. |
+| Partially done | QLAB-UI-2 | Exact-run spectrum, time, Transmon-level and Ising-level/site selections link only stored values; these supported runs reopen. Other model adapters remain. |
+| Partially done | QLAB-UI-3 | Run-backed two-level, evolution, cavity, Lindblad, Transmon and Ising inspectors distinguish stored inputs from drafts. Other model-specific inspectors remain. |
+| Next | Design remaining UI-1–3 adapters | The [remaining-lab audit](QLAB_UI_1_3_REMAINING_LABS_AUDIT.md) leaves sweeps, SSH/QWZ topology, orbitals and multi-mode oscillators for separate designs and acceptance gates. Do not infer unrecorded states. |
 | Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
 UI-5 is complete for the verified two-level adapter. UI-1–3 become complete
@@ -50,6 +50,18 @@ recorded-row diagnostics, optional steady-state readout and provenance. The
 artifact does not retain a density matrix, state vector or amplitudes; neither
 the plot nor inspector claims one. UI-1–3 remain Partial until the other lab
 families are assessed against their own acceptance gates.
+
+The bounded inline-result slice now covers Transmon and Ising chain. Both
+reopen after restart with job/result hash verification and manifest checks, clearing
+selection rather than inventing one. Transmon selection names a stored GHz
+energy level; its inspector shows exact inputs, transitions, charge-matrix
+element magnitude, ncut+2 E₀₁ drift and provenance, but no eigenvectors.
+Ising selection names a stored low-energy level or site magnetization; its
+inspector shows finite-size gap, ground energy, half-chain entropy and
+provenance, but no full ground-state vector or excited-state observables.
+An optional comparison computation is a separate saved run and is not
+silently reattached when a single result is reopened. The audited sweep,
+topology, orbital and oscillator families remain outside these adapters.
 
 ## Decision and current baseline
 
@@ -145,6 +157,7 @@ job registry.
 QLAB-UI-1 is **Partial**: six-mode navigation, grouped native-keyboard model
 disclosures, separate Library/System links, safe fragment routes, back/forward,
 legacy snapshot mapping and the two-level, four evolution, two cavity and Lindblad persisted-run breadcrumbs are tested.
+Transmon and Ising persisted-run breadcrumbs are also tested.
 Other labs still need run-context breadcrumb adapters; no result is inferred from
 their inputs. QLAB-UI-2 is **Partial**: the two-level pilot now has typed
 run-scoped energy references, draft parameter/operator references, keyboard
@@ -161,8 +174,10 @@ saved-run reopening without inventing a retained selection. The two cavity
 models similarly link only recorded six-column observables to an exact run and
 time index; no state amplitude or Bloch selection is implied. Lindblad links
 only its seven recorded time-series values and optional separate steady-state
-readout, not a retained density matrix. UI-3 is **Partial**: new two-level runs
-carry real normalized eigenvectors, populations, Bloch expectations and
+readout, not a retained density matrix. Transmon levels and Ising levels/sites
+add exact-run selections without claiming saved eigenvectors or a full
+spin-chain wavefunction. UI-3 is **Partial**: new two-level runs carry real
+normalized eigenvectors, populations, Bloch expectations and
 eigenpair residuals from QuTiP or native diagonalization. An independent
 Electron check validates them before display, persistence and reopening;
 degenerate/near-degenerate results carry only gap and threshold, without an
@@ -181,6 +196,8 @@ Jaynes–Cummings runs show their existing vacuum-Rabi reference.
 The Lindblad inspector shows trace, purity and boundary diagnostics, stored
 input/provenance and steady-state availability without claiming a stored
 density matrix or state vector.
+Transmon and Ising inspectors show only the saved scalar/array diagnostics,
+inputs and provenance, with stale drafts explicitly separated.
 Wider model adapters are still future work.
 UI-4 is **Implemented for declared adapters**: the two-level Sweeps view plots
 E₋/E₊ against Δ at fixed Ω from separately verified, saved spectrum runs.

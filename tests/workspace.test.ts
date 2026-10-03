@@ -244,6 +244,11 @@ test("run store persists inline many-body results and exports spectra", async ()
     await store.export(result.runId, "svg", svg);
     assert.match(await readFile(csv, "utf8"), /site_magnetization,0,0.7/);
     assert.match(await readFile(svg, "utf8"), /E0 -1.200/);
+    assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).manyBody(result.runId),result);
+    await assert.rejects(store.manyBody("../bad"),/Invalid run ID/);
+    await assert.rejects(store.circuit(result.runId),/not a verified transmon circuit result/);
+    await writeFile(join(root,"runs",result.runId,"result.json"),"{}\n");
+    await assert.rejects(store.manyBody(result.runId),/integrity check/);
   } finally { await rm(root, { recursive: true, force: true }); }
 });
 

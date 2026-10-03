@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
@@ -241,6 +241,17 @@ export class RunStore {
       manifest.files.data!==null||manifest.artifactSha256!==null||
       result.spectrum.energies.length!==result.model.parameters.levels)
       throw new Error("Saved run is not a verified transmon circuit result");
+    return result;
+  }
+  async manyBody(runId:string):Promise<ManyBodyResult>{
+    const {manifest,job,result,data}=await this.load(runId);
+    if(job.operation!=="many_body"||result.operation!=="many_body"||result.model.type!=="ising_chain"||
+      data!==null||manifest.operation!=="many_body"||manifest.model!=="ising_chain"||
+      manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
+      manifest.files.data!==null||manifest.artifactSha256!==null||
+      result.spectrum.lowEnergies.length<2||result.spectrum.lowEnergies.length>2**result.model.parameters.sites||
+      result.groundState.siteMagnetization.length!==result.model.parameters.sites)
+      throw new Error("Saved run is not a verified Ising-chain result");
     return result;
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
