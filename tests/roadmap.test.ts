@@ -84,11 +84,20 @@ test("linked-workspace roadmap names delivered, partial and next UI gates",async
   assert.match(doc,/\| Done \| QLAB-UI-5 \|/);
   for(const id of ["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"])
     assert.match(doc,new RegExp(`\\| Partially done \\| ${id} \\|`));
-  assert.match(doc,/\| Next \| Audit remaining UI-1–3 gaps \|/);
+  assert.match(doc,/\| Next \| Transmon and Ising adapters \|/);
   assert.match(doc,/\| Later \| QLAB-UI-6–8 \|/);
   for(const path of ["docs/ROADMAP.md","docs/POST_QLAB_QVIS_M3D_ROADMAP.md"]){
     const overview=await readFile(path,"utf8");
     assert.match(overview,/UI-4–5 are implemented for/);
     assert.match(overview,/UI-1–3 are partial and UI-6–8 are\s+planned/);
   }
+});
+
+test("UI-1–3 remaining-lab audit preserves explicit data and unavailable-state boundaries",async()=>{
+  const audit=await readFile("docs/QLAB_UI_1_3_REMAINING_LABS_AUDIT.md","utf8");
+  for(const lab of ["Transmon circuit","Ising chain","Evolution sweep","SSH/QWZ topology","Hydrogenic orbital","Oscillator family"])
+    assert.ok(audit.includes(lab));
+  assert.match(audit,/No eigenvectors or charge-basis amplitudes/);
+  assert.match(audit,/No full ground-state vector/);
+  assert.match(audit,/UI-1–3 remain \*\*Partial\*\*/);
 });

@@ -14,7 +14,7 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, four two-state evolution, both cavity and Lindblad labs have saved-run breadcrumbs. Other labs still need assessment. |
 | Partially done | QLAB-UI-2 | Exact-run spectrum selection and time-sample cursors link recorded views for evolution, cavity and Lindblad models; these saved runs reopen. Other model adapters remain. |
 | Partially done | QLAB-UI-3 | Verified two-level eigenstate diagnostics and run-backed evolution, cavity and Lindblad inspectors work; wider model-specific observable/inspector adapters remain. |
-| Next | Audit remaining UI-1–3 gaps | Assess existing sweeps, many-body, topology, orbital, circuit and oscillator labs against exact-run selection and inspector gates before declaring UI-1–3 complete. Do not infer unrecorded states. |
+| Next | Transmon and Ising adapters | The [remaining-lab audit](QLAB_UI_1_3_REMAINING_LABS_AUDIT.md) identifies bounded inline Transmon and Ising results as the next adapters. Sweeps, topology, orbitals and multi-mode oscillators need separate designs. Do not infer unrecorded states. |
 | Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
 UI-5 is complete for the verified two-level adapter. UI-1–3 become complete
