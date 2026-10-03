@@ -26,6 +26,7 @@ let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
 let preservedPulseRunId = null;
+let preservedOrbitalRunId = null;
 const errors = [];
 try {
   const page = await app.firstWindow();
@@ -82,6 +83,7 @@ try {
       "getEvolutionRun",
       "getLindbladRun",
       "getManyBodyRun",
+      "getOrbitalRun",
       "getRabiRun",
       "getResources",
       "getScene",
@@ -1406,6 +1408,14 @@ try {
   await page.getByTestId("open-orbitals").click();
   await page.getByTestId("run-orbital").click();
   await page.getByTestId("orbital-result").waitFor();
+  preservedOrbitalRunId=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByRole("slider",{name:"Orbital radial sample"}).focus();
+  await page.keyboard.press("End");
+  await page.getByTestId("orbital-inspector-selection").filter({hasText:"Radius / a₀"}).waitFor();
+  await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByTestId("field-slice").click();
+  await page.getByTestId("orbital-inspector-selection").filter({hasText:"Voxel index"}).waitFor();
+  assert.match(await page.getByTestId("orbital-inspector-selection").innerText(),/Sampled complex amplitude/);
   assert.equal(await page.getByTestId("orbital-energy").innerText(), "-0.500000");
   await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
@@ -1493,6 +1503,12 @@ try {
   assert.equal(await page.getByTestId("radial-node-marker").count(),1);
   await page.getByRole("img",{name:"Orbital radial probability"}).scrollIntoViewIfNeeded();
   await page.screenshot({path:"artifacts/desktop-orbital-nodes.png",fullPage:true});
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open hydrogenic orbital ${preservedOrbitalRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedOrbitalRunId}).waitFor();
+  await page.getByTestId("orbital-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("orbital-inspector-value").count(),0,"orbital reopen invents no sample");
+  await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.getByRole("tab",{name:"Scenes",exact:true}).click();
   const examplePage=page.getByTestId("scenes-page");
   const beforeExamples=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length));
@@ -1581,6 +1597,7 @@ try {
   assert.ok(runIds.includes(preservedManyBodyRunId),"saved Ising-chain run survives full restart");
   for(const runId of Object.values(preservedSweepRunIds))assert.ok(runIds.includes(runId),`saved sweep ${runId} survives full restart`);
   for(const runId of Object.values(preservedTopologyRunIds))assert.ok(runIds.includes(runId),`saved topology ${runId} survives full restart`);
+  assert.ok(runIds.includes(preservedOrbitalRunId),"saved orbital grid survives full restart");
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1615,6 +1632,11 @@ try {
     if(kind==="closed")assert.match(await page.getByTestId("topology-inspector-diagnostics").innerText(),/undefined at gap closure/);
     await page.getByRole("tab",{name:"Runs",exact:true}).click();
   }
+  await page.getByRole("button",{name:`Open hydrogenic orbital ${preservedOrbitalRunId}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedOrbitalRunId}).waitFor();
+  await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  assert.equal(await page.getByTestId("orbital-inspector-value").count(),0,"restart reopening does not invent an orbital sample");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
   for(const [label,runId,diagnostic] of [
     ["Landau–Zener",preservedPassageRunIds.landau,"inspector-lz-reference"],
     ["Stückelberg",preservedPassageRunIds.stuckelberg,"inspector-stuckelberg-crossings"],

@@ -76,6 +76,9 @@ test("supervised orbital → saved verified field → portable offline bundle", 
     assert.deepEqual(payload.scene.provenance.parameters, job.model.parameters);
     const source = await coordinator.readData(job.jobId),
       view = new DataView(source.buffer, source.byteOffset, source.byteLength);
+    const reopened=await new RunStore(join(root,"runs"),artifacts).orbital(result.runId);
+    assert.deepEqual(reopened.result,result);
+    assert.deepEqual(Buffer.from(reopened.data),Buffer.from(source));
     assert.ok(
       Math.abs(
         checkOrbitalData(result, source) - result.analysis.gridProbability,
@@ -124,6 +127,7 @@ test("supervised orbital → saved verified field → portable offline bundle", 
       Buffer.alloc(source.length),
     );
     await assert.rejects(store.scene(result.runId), /integrity/);
+    await assert.rejects(store.orbital(result.runId),/integrity/);
   } finally {
     await worker.stop();
     await rm(root, { recursive: true, force: true });

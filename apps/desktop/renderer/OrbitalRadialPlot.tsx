@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import type { OrbitalResult } from "../../../packages/contracts";
-export function OrbitalRadialPlot({ result }: { result: OrbitalResult }) {
+export function OrbitalRadialPlot({ result,selectedIndex,onSelect }: { result: OrbitalResult;selectedIndex?:number|null;onSelect?:(index:number)=>void }) {
   const [full, setFull] = useState(false),
     a = result.analysis;
   const maximum = full
@@ -8,6 +8,8 @@ export function OrbitalRadialPlot({ result }: { result: OrbitalResult }) {
     : Math.min(a.radialRadii[400], 3 * a.meanRadius);
   const max = Math.max(...a.radialProbability),
     nodes = a.radialNodes;
+  const maximumIndex=a.radialRadii.findIndex(value=>value>maximum);
+  const lastIndex=maximumIndex<0?a.radialRadii.length-1:maximumIndex-1;
   const points = a.radialProbability
     .flatMap((v, i) =>
       a.radialRadii[i] <= maximum
@@ -65,6 +67,8 @@ export function OrbitalRadialPlot({ result }: { result: OrbitalResult }) {
           r = {maximum.toPrecision(4)} a₀
         </text>
       </svg>
+      {onSelect&&<label>Stored radial sample <input aria-label="Orbital radial sample" type="range" min="0" max={lastIndex} value={selectedIndex!==null&&selectedIndex!==undefined?Math.min(selectedIndex,lastIndex):0} onChange={event=>onSelect(Number(event.target.value))}/></label>}
+      {selectedIndex!==null&&selectedIndex!==undefined&&<p data-testid="orbital-radial-selection">r = {a.radialRadii[selectedIndex].toFixed(6)} a₀ · radial probability = {a.radialProbability[selectedIndex].toFixed(6)}</p>}
       <p data-testid="orbital-radial-nodes">
         Radial nodes r &gt; 0:{" "}
         {nodes === undefined

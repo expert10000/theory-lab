@@ -8,7 +8,7 @@ function evolutionLabel(model:string){return evolutionModels.includes(model as E
 const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
 function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void> }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void> }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
@@ -26,8 +26,8 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
       setMessage(path ? `Exported ${format.toUpperCase()}: ${path}` : "Export cancelled");
     } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
   }
-  async function openOne(runId:string,kind:"spectrum"|"rabi"|"evolution"|"cavity"|"lindblad"|"circuit"|"many_body"|"sweep"|"topology"){
-    const open=kind==="spectrum"?onOpenSpectrum:kind==="rabi"?onOpenRabi:kind==="cavity"?onOpenCavity:kind==="lindblad"?onOpenLindblad:kind==="circuit"?onOpenCircuit:kind==="many_body"?onOpenManyBody:kind==="sweep"?onOpenSweep:kind==="topology"?onOpenTopology:onOpenEvolution;
+  async function openOne(runId:string,kind:"spectrum"|"rabi"|"evolution"|"cavity"|"lindblad"|"circuit"|"many_body"|"sweep"|"topology"|"orbital"){
+    const open=kind==="spectrum"?onOpenSpectrum:kind==="rabi"?onOpenRabi:kind==="cavity"?onOpenCavity:kind==="lindblad"?onOpenLindblad:kind==="circuit"?onOpenCircuit:kind==="many_body"?onOpenManyBody:kind==="sweep"?onOpenSweep:kind==="topology"?onOpenTopology:kind==="orbital"?onOpenOrbital:onOpenEvolution;
     if(!open||opening)return;
     setOpening(runId);setMessage("");
     try{await open(runId);}
@@ -68,6 +68,9 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
           {run.operation==="topology"&&(run.model==="ssh"||run.model==="qwz")&&onOpenTopology&&
           <button type="button" className="run-open" aria-label={`Open ${run.model.toUpperCase()} topology ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,"topology")}>{opening===run.runId?"Opening…":`Open ${run.model.toUpperCase()} topology`}</button>}
+          {run.operation==="orbital"&&run.model==="hydrogenic"&&onOpenOrbital&&
+          <button type="button" className="run-open" aria-label={`Open hydrogenic orbital ${run.runId}`} disabled={!!opening}
+            onClick={()=>void openOne(run.runId,"orbital")}>{opening===run.runId?"Opening…":"Open hydrogenic orbital"}</button>}
           {(["csv", "svg", "manifest"] as const).map(format =>
           <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}</div>
       </article>)}</div>}

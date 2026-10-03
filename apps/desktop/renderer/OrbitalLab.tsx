@@ -13,6 +13,7 @@ import type { ScenePayload } from "../../../packages/quantum-scene";
 import { FieldViewer } from "../../../packages/quantum-3d/FieldViewer";
 import { OrbitalConvergence } from "./OrbitalConvergence";
 import { OrbitalRadialPlot } from "./OrbitalRadialPlot";
+import {selectedOrbitalSample,type OrbitalSelection,type OrbitalRunContext} from "./orbital-selection";
 
 const presets = [
   [1, 0, "1s"],
@@ -28,31 +29,47 @@ export function OrbitalLab({
   restored,
   restoreEpoch,
   onSnapshot,
+  onOrbitalContext,
+  reopenedRun,
 }: {
   bridge: QuantumBridge;
   status: WorkerStatus;
   restored?: OrbitalDraft | null;
   restoreEpoch?: number;
   onSnapshot?: (draft: OrbitalDraft) => void;
+  onOrbitalContext?:(context:OrbitalRunContext|null)=>void;
+  reopenedRun?:{epoch:number;result:OrbitalResult;data:Uint8Array}|null;
 }) {
   const [draft, setDraft] = useState<OrbitalDraft>(ORBITAL_DEFAULTS);
   const [result, setResult] = useState<OrbitalResult | null>(null),
-    [payload, setPayload] = useState<ScenePayload | null>(null);
+    [payload, setPayload] = useState<ScenePayload | null>(null),
+    [data,setData]=useState<Uint8Array|null>(null),
+    [selection,setSelection]=useState<OrbitalSelection|null>(null);
   const [running, setRunning] = useState(false),
     [progress, setProgress] = useState(0),
     [message, setMessage] = useState("");
   const [studying, setStudying] = useState(false);
   const busy = running || studying;
   const jobId = useRef<string | null>(null),
-    sequence = useRef(0);
+    sequence = useRef(0),appliedReopen=useRef<number|null>(null);
   useEffect(() => {
     if (restoreEpoch) {
       sequence.current++;
       setDraft(restored ?? ORBITAL_DEFAULTS);
       setResult(null);
       setPayload(null);
+      setData(null);setSelection(null);
     }
   }, [restoreEpoch]);
+  useEffect(()=>{
+    if(!reopenedRun||appliedReopen.current===reopenedRun.epoch)return;
+    const request=++sequence.current,saved=reopenedRun.result,p=saved.model.parameters;
+    appliedReopen.current=reopenedRun.epoch;setRunning(false);jobId.current=null;
+    setDraft({n:String(p.n),l:String(p.l),m:String(p.m),basis:p.basis,Z:String(p.Z),radius:String(p.radius),grid:String(p.grid)});
+    setResult(saved);setData(reopenedRun.data);setSelection(null);setPayload(null);setMessage("");
+    void bridge.getScene(saved.runId).then(scene=>{if(sequence.current===request)setPayload(scene);})
+      .catch(error=>{if(sequence.current===request)setMessage(error instanceof Error?error.message:String(error));});
+  },[reopenedRun?.epoch,bridge]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
   useEffect(
     () =>
@@ -86,6 +103,9 @@ export function OrbitalLab({
     !!result &&
     (!preview ||
       JSON.stringify(preview.model) !== JSON.stringify(result.model));
+  const sample=selectedOrbitalSample(selection,result,data);
+  useEffect(()=>onOrbitalContext?.(result?{result,selection:sample?selection:null,sample,stale}:null),
+    [result,selection,data,stale,onOrbitalContext]);
   const displayN = Math.max(1, Math.min(3, Number(draft.n) || 1));
   const displayL = Math.max(0, Math.min(2, Number(draft.l) || 0));
   function quantumChange(key: "n" | "l" | "m" | "basis", value: string) {
@@ -113,10 +133,13 @@ export function OrbitalLab({
     setMessage("");
     setPayload(null);
     setResult(null);
+    setData(null);setSelection(null);onOrbitalContext?.(null);
     try {
       const value = await bridge.orbital({ ...preview, jobId: id });
       if (request !== sequence.current) return;
-      setResult(value);
+      const saved=await bridge.getOrbitalRun(value.runId);
+      if(request!==sequence.current)return;
+      setResult(saved.result);setData(saved.data);
       const scene = await bridge.getScene(value.runId);
       if (request === sequence.current) setPayload(scene);
     } catch (e) {
@@ -391,9 +414,11 @@ export function OrbitalLab({
             </p>
           )}
           {payload && (
-            <FieldViewer key={`field-${result.runId}`} payload={payload} />
+            <FieldViewer key={`field-${result.runId}`} payload={payload} onSelectGrid={(x,y,z)=>setSelection({kind:"voxel",runId:result.runId,x,y,z})}/>
           )}
-          <OrbitalRadialPlot key={`radial-${result.runId}`} result={result} />
+          <OrbitalRadialPlot key={`radial-${result.runId}`} result={result}
+            selectedIndex={selection?.kind==="radial"&&selection.runId===result.runId?selection.index:null}
+            onSelect={index=>setSelection({kind:"radial",runId:result.runId,index})}/>
           <button
             data-testid="export-orbital-scene"
             disabled={!payload}

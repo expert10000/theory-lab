@@ -5,7 +5,7 @@ import { fieldValues, gridIndex, gridPosition, phaseColor, surfacePayload, type 
 import { scalarColor, scalarRange } from "./scalarColor";
 import "./scene.css";
 
-export function FieldViewer({ payload }: { payload: ScenePayload }) {
+export function FieldViewer({ payload,onSelectGrid }: { payload: ScenePayload;onSelectGrid?:(x:number,y:number,z:number)=>void }) {
   const [verified,setVerified] = useState<{payload:ScenePayload;arrays:Map<string,Float64Array>} | null>(null);
   const ready=verified?.payload===payload?verified.arrays:null;
   const [quantity,setQuantity] = useState<FieldQuantity>("density");
@@ -68,7 +68,7 @@ export function FieldViewer({ payload }: { payload: ScenePayload }) {
     {error&&<p role="alert">{error}</p>}{busy&&<p role="status">Extracting bounded isosurface…</p>}
     {surface?<SceneViewer payload={surface}/>:ready&&!busy&&!error?<p>No surface at this threshold (the selected component may be identically zero). Slice inspection remains available.</p>:null}
     {ready&&field&&values&&<div className="field-slice-panel"><div className="scene-run-controls"><label>Slice normal<select aria-label="Slice normal" value={axis} onChange={e=>setAxis(Number(e.target.value))}><option value={0}>x</option><option value={1}>y</option><option value={2}>z</option></select></label><label>Slice index {safeSlice}<input aria-label="Field slice" type="range" min={0} max={field.grid.shape[axis]-1} value={safeSlice} onChange={e=>setSlice(Number(e.target.value))}/></label></div>
-      <canvas ref={canvas} className="field-slice" data-testid="field-slice" aria-label="Numerical field slice" onClick={e=>{const b=e.currentTarget.getBoundingClientRect();setSample([Math.min(shape![plane[0]]-1,Math.max(0,Math.floor((e.clientX-b.left)/b.width*shape![plane[0]]))),Math.min(shape![plane[1]]-1,Math.max(0,Math.floor((1-(e.clientY-b.top)/b.height)*shape![plane[1]])))]);}}/>
+      <canvas ref={canvas} className="field-slice" data-testid="field-slice" aria-label="Numerical field slice" onClick={e=>{const b=e.currentTarget.getBoundingClientRect();const next:[number,number]=[Math.min(shape![plane[0]]-1,Math.max(0,Math.floor((e.clientX-b.left)/b.width*shape![plane[0]]))),Math.min(shape![plane[1]]-1,Math.max(0,Math.floor((1-(e.clientY-b.top)/b.height)*shape![plane[1]])))];setSample(next);const grid:[number,number,number]=[0,0,0];grid[axis]=safeSlice;grid[plane[0]]=next[0];grid[plane[1]]=next[1];onSelectGrid?.(...grid);}}/>
       <p>Horizontal: {payload.scene.coordinates.axes[plane[0]]} · vertical (up): {payload.scene.coordinates.axes[plane[1]]}. Click a pixel to inspect its grid value.</p>
       <p data-testid="field-sample">({position?.map((v,i)=>`${v.toPrecision(5)} ${payload.scene.coordinates.units[i]}`).join(", ")}) · {quantity} = {phaseUndefined?"undefined near a node":values[selected].toPrecision(7)} {quantityUnit}</p>
       {range&&<p>Slice color scale: {quantity==="phase"?"cyclic phase −π…π (rad); near-zero density masked":`${range[0].toPrecision(5)} … ${range[1].toPrecision(5)}`} · {quantityUnit}</p>}

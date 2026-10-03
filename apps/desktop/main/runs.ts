@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult, type OrbitalResult,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
@@ -277,6 +277,17 @@ export class RunStore {
       !consistentTopologyResult(job,result))
       throw new Error("Saved run is not a verified topology result");
     return result;
+  }
+  async orbital(runId:string):Promise<{result:OrbitalResult;data:Uint8Array}>{
+    const {manifest,job,result,data}=await this.load(runId);
+    if(job.operation!=="orbital"||result.operation!=="orbital"||result.model.type!=="hydrogenic"||
+      manifest.operation!=="orbital"||manifest.model!=="hydrogenic"||
+      manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
+      manifest.files.data!=="data.f64"||!data||
+      result.data.rows!==result.model.parameters.grid**3||result.data.columns.join(",")!=="psi_re,psi_im"||
+      data.byteLength!==result.data.rows*16||!consistentOrbitalResult(job,result))
+      throw new Error("Saved run is not a verified orbital grid");
+    return {result,data:Uint8Array.from(data)};
   }
   async export(runId: string, format: RunExportFormat, target: string): Promise<void> {
     const { manifest, job, result, data } = await this.load(runId);
