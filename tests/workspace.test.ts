@@ -5,11 +5,12 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { createHash } from "node:crypto";
-import { EVOLUTION_COLUMNS, CAVITY_COLUMNS, LINDBLAD_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot, type CavityResult, type LindbladResult } from "../packages/contracts";
+import { EVOLUTION_COLUMNS, CAVITY_COLUMNS, LINDBLAD_COLUMNS, isWorkspaceSnapshot, type WorkspaceSnapshot, type CavityResult, type LindbladResult, type SweepResult } from "../packages/contracts";
 import { RunStore } from "../apps/desktop/main/runs";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
 import { cavityDefaults, cavityJob } from "../packages/models/cavity";
 import { lindbladDefaults, lindbladJob } from "../packages/models/lindblad";
+import { sweepJob } from "../packages/models/sweep";
 import type { CircuitJob, CircuitResult, ManyBodyJob, ManyBodyResult } from "../packages/contracts";
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../packages/models/many_body";
 import { CIRCUIT_DEFAULTS, circuitJob } from "../packages/models/circuit";
@@ -215,6 +216,36 @@ test("Lindblad saved run reopens only a hash-verified seven-column artifact",asy
     await writeFile(join(root,"runs",result.runId,"data.f64"),Buffer.alloc(binary.byteLength));
     await assert.rejects(store.lindblad(result.runId),/integrity check/);
     await assert.rejects(store.lindblad("../bad"),/Invalid run ID/);
+  }finally{await rm(root,{recursive:true,force:true});}
+});
+test("1D and 2D final-population sweeps reopen only their hash-verified bounded grids",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-sweep-run-"));
+  const artifacts=join(root,"artifacts");await mkdir(artifacts);
+  try{
+    const store=new RunStore(join(root,"runs"),artifacts);
+    for(const twoD of [false,true]){
+      const job=sweepJob("driven_two_level",`job-sweep-${twoD}`,defaultsFor("driven_two_level"),
+        {parameter:"amplitude",start:0,stop:1,points:3},
+        twoD?{parameter:"frequency",start:.8,stop:1.2,points:2}:null,0,2,0,"native");
+      const cells=3*(twoD?2:1),binary=Buffer.alloc(cells*8),view=new DataView(binary.buffer,binary.byteOffset,binary.byteLength);
+      for(let index=0;index<cells;index++)view.setFloat64(index*8,index/(cells-1),true);
+      await writeFile(join(artifacts,`${job.jobId}.f64`),binary);
+      const result:SweepResult={schema:"quantum-result/v1",jobId:job.jobId,runId:`run-sweep-${twoD}`,
+        status:"completed",operation:"sweep",model:job.model,sweep:job.sweep,
+        engine:{name:"native",version:"1.18"},
+        data:{schema:"quantum-sweep-data/v1",format:"f64le",path:`${job.jobId}.f64`,
+          shape:{x:3,y:twoD?2:1},bytes:binary.byteLength,sha256:createHash("sha256").update(binary).digest("hex")},
+        cache:{key:"a".repeat(64),reusedPoints:0,computedPoints:cells},
+        provenance:{pythonVersion:"3.12",workerVersion:"0.1",computedAt:"2026-10-03T00:00:00Z",durationMs:1}};
+      await store.record(job,result);
+      const reopened=await new RunStore(join(root,"runs"),artifacts).sweep(result.runId);
+      assert.deepEqual(reopened.result,result);
+      assert.deepEqual(Buffer.from(reopened.data),binary);
+      await assert.rejects(store.cavity(result.runId),/not a verified cavity evolution/);
+      await writeFile(join(root,"runs",result.runId,"data.f64"),Buffer.alloc(binary.byteLength));
+      await assert.rejects(store.sweep(result.runId),/integrity check/);
+    }
+    await assert.rejects(store.sweep("../bad"),/Invalid run ID/);
   }finally{await rm(root,{recursive:true,force:true});}
 });
 test("driven workspace settings are optional, bounded strings and reject executable or unsupported fields",()=>{

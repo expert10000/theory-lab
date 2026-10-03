@@ -385,6 +385,11 @@ app.whenReady().then(() => {
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid many-body run ID");
     return runs.manyBody(runId);
   });
+  ipcMain.handle("quantum:sweep-run", (event, runId:unknown) => {
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid sweep run ID");
+    return runs.sweep(runId);
+  });
   ipcMain.handle("quantum:save-spectrum-study", (event, result:unknown) => {
     trusted(event);
     return spectrumStudies.save(result);
