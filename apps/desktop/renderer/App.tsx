@@ -55,6 +55,7 @@ import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
 import { TopologyLab } from "./TopologyLab";
 import type {TopologyRunContext} from "./topology-selection";
+import {TopologyRunInspector} from "./TopologyRunInspector";
 import { TOPOLOGY_DEFAULTS } from "../../../packages/models/topology";
 import { OrbitalLab } from "./OrbitalLab";
 import { PostRoadmapPanel } from "./PostRoadmapPanel";
@@ -490,7 +491,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""}`}>
+      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
@@ -905,7 +906,7 @@ export function App() {
             )}
         </main>
         <aside className="inspector">
-          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:<>
+          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
           <nav className="inspector-tabs" aria-label="Model inspector views">

@@ -24,4 +24,7 @@ test("QWZ mesh selection uses recorded x-major cells and withholds closed-gap cu
   assert.equal(selectedTopologySample({kind:"qwz_cell",runId:"run-ssh",xIndex:1,yIndex:0},qwz),null);
   const closed={...qwz,analysis:{...qwz.analysis,gapClosed:true,berryCurvature:[]}} as TopologyResult;
   assert.equal(selectedTopologySample({kind:"qwz_cell",runId:"run-qwz",xIndex:1,yIndex:0},closed),null);
+  const legacy={...qwz,analysis:{...qwz.analysis,bandKValues:undefined,lowerBand:undefined,upperBand:undefined}} as TopologyResult;
+  assert.deepEqual(selectedTopologySample({kind:"qwz_cell",runId:"run-qwz",xIndex:1,yIndex:0},legacy),
+    {kind:"qwz_cell",xIndex:1,yIndex:0,curvature:.3,lower:null,upper:null});
 });

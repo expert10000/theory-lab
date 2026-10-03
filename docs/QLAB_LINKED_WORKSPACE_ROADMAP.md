@@ -11,10 +11,10 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | --- | --- | --- |
 | Done | QLAB-UI-4 | The model-selected Sweeps workspace has a bounded two-level eigenenergy study, verified point runs, durable study checkpoints, reopen and resume. Existing dynamics sweeps still mean final `P₁`. This gate is complete for declared adapters, not a claim that every model supports every output. |
 | Done | QLAB-UI-5 | The verified two-level eigenvectors drive a linked Bloch x-z great circle and state readout. Spectrum, inspector and Analysis share exact-run selection; legacy and degenerate results show why a unique state is unavailable. This is not a Bloch claim for larger Hilbert spaces. |
-| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, evolution, cavity, Lindblad, Transmon, Ising and final-population sweep runs have saved-run breadcrumbs. Other labs need adapters. |
-| Partially done | QLAB-UI-2 | Exact-run spectrum, time, Transmon-level, Ising-level/site and 1D/2D final-population grid selections link only stored values; these supported runs reopen. Other model adapters remain. |
-| Partially done | QLAB-UI-3 | Run-backed two-level, evolution, cavity, Lindblad, Transmon, Ising and final-population sweep inspectors distinguish stored inputs from drafts. Other model-specific inspectors remain. |
-| Next | SSH/QWZ topology adapter design | The [remaining-lab audit](QLAB_UI_1_3_REMAINING_LABS_AUDIT.md) leaves SSH/QWZ topology, orbitals and multi-mode oscillators for separate designs and acceptance gates. Do not infer unrecorded states. |
+| Partially done | QLAB-UI-1 | Six-mode navigation, grouped model access, history and legacy restore work; two-level, evolution, cavity, Lindblad, Transmon, Ising, final-population sweep and SSH/QWZ topology runs have saved-run breadcrumbs. Other labs need adapters. |
+| Partially done | QLAB-UI-2 | Exact-run spectrum, time, Transmon-level, Ising-level/site, final-population grid and SSH/QWZ sample selections link only stored values; these supported runs reopen. Other model adapters remain. |
+| Partially done | QLAB-UI-3 | Run-backed two-level, evolution, cavity, Lindblad, Transmon, Ising, final-population sweep and SSH/QWZ topology inspectors distinguish stored inputs from drafts. Other model-specific inspectors remain. |
+| Next | Orbital adapter design | The [remaining-lab audit](QLAB_UI_1_3_REMAINING_LABS_AUDIT.md) leaves hydrogenic orbitals and multi-mode oscillators for separate designs and acceptance gates. Do not infer unrecorded states. |
 | Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
 UI-5 is complete for the verified two-level adapter. UI-1–3 become complete
@@ -60,8 +60,8 @@ Ising selection names a stored low-energy level or site magnetization; its
 inspector shows finite-size gap, ground energy, half-chain entropy and
 provenance, but no full ground-state vector or excited-state observables.
 An optional comparison computation is a separate saved run and is not
-silently reattached when a single result is reopened. Topology, orbital and
-oscillator families remain outside these adapters.
+silently reattached when a single result is reopened. Orbital and oscillator
+families remain outside these adapters.
 
 The final-population sweep slice now reopens its hash-verified, row-major
 binary grid from Runs. One exact-run cursor selects a recorded 1D point or
@@ -71,8 +71,16 @@ engine, cache counts, resume key and provenance when the draft changes.
 Reopening clears the selection rather than inventing one. A grid cell is one
 final population at a parameter setting, **not** a saved time trajectory or
 state vector. This is separate from the two-level eigenenergy study in UI-4.
-UI-1–3 remain Partial while SSH/QWZ topology, orbitals and multi-mode
-oscillators await their own designs.
+The topology slice now reopens hash-verified inline SSH and QWZ results from
+Runs. SSH selection distinguishes stored periodic-band `k` samples from
+finite-chain edge-density sites. QWZ selection addresses recorded curvature
+cells using the saved grid's x-major indexing, and shows band energies only
+when those arrays are present. Inspectors keep immutable inputs separate from
+drafts, preserve the SSH gap-closure winding boundary and the QWZ undefined
+Chern/curvature state at gap closure, and report unresolved-mesh caveats and
+provenance. Reopening clears selection. No generic eigenvectors or quantum
+state are implied. UI-1–3 remain Partial while orbital and multi-mode
+oscillator adapters await their own designs.
 
 ## Decision and current baseline
 

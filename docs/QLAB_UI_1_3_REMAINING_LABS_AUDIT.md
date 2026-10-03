@@ -1,7 +1,7 @@
 # QLAB-UI-1–3 remaining-lab audit
 
-Status (2026-10-03): this records the baseline gaps before the Transmon, Ising
-and final-population sweep adapters, then tracks their delivery below. It does not change physics,
+Status (2026-10-03): this records the baseline gaps before the Transmon, Ising,
+final-population sweep and SSH/QWZ topology adapters, then tracks their delivery below. It does not change physics,
 imply a new worker operation, or declare UI-1–3 complete. Sources of truth are `packages/contracts/index.ts`,
 `apps/desktop/main/runs.ts`, and the corresponding renderer labs.
 
@@ -30,8 +30,12 @@ Final-population sweeps now reopen verified binary grids from Runs, with one
 run-scoped point/cell selection for both 1D and 2D. The inspector shows
 stored axes, selected final `P₁`, cache details, engine and provenance while
 keeping edited drafts separate. A cell is not a saved time trajectory. The
-three remaining rows—SSH/QWZ topology, orbital and oscillator—still require
-model-specific design and acceptance work; topology is next.
+SSH/QWZ topology now reopens verified inline results, selects exact-run
+periodic-band samples, finite-chain edge sites or QWZ curvature mesh cells,
+and inspects stored diagnostics and provenance. It withholds a QWZ cell and
+invariant at gap closure and labels unresolved meshes; optional band energies
+appear only if recorded. The two remaining rows—orbitals and oscillators—still
+require model-specific design and acceptance work; orbitals are next.
 
 Acceptance for each adapter is the same: a breadcrumb naming the exact saved
 run, a selection that rejects another run or missing item, immutable stored

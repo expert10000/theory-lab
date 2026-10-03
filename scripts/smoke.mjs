@@ -18,6 +18,7 @@ let preservedRabiRunId = null;
 const preservedPassageRunIds = {};
 const preservedCavityRunIds = {};
 const preservedSweepRunIds = {};
+const preservedTopologyRunIds = {};
 let preservedLindbladRunId = null;
 let preservedCircuitRunId = null;
 let preservedManyBodyRunId = null;
@@ -625,16 +626,43 @@ try {
   assert.ok(await page.getByTestId("topology-lab").isVisible());
   await page.getByTestId("run-topology").click();
   await page.getByTestId("topology-result").waitFor();
+  preservedTopologyRunIds.ssh=await page.getByTestId("workspace-run-id").innerText();
   assert.match(await page.getByTestId("topology-result").innerText(), /WINDING\s+1/);
+  await page.getByRole("slider",{name:"SSH band sample"}).focus();
+  await page.keyboard.press("End");
+  await page.getByTestId("topology-selected-band").waitFor({state:"attached"});
+  await page.getByTestId("topology-inspector-selection").filter({hasText:"Stored k"}).waitFor();
+  await page.getByRole("button",{name:"Select SSH edge site 1",exact:true}).click();
+  assert.equal(await page.getByRole("button",{name:"Select SSH edge site 1",exact:true}).getAttribute("aria-pressed"),"true");
+  assert.ok(Number(await page.getByTestId("topology-selected-value").innerText())>=0);
   await page.screenshot({ path: "artifacts/desktop-ssh.png", fullPage: true });
   await page.getByRole("combobox", { name: "Topology model" }).selectOption("qwz");
   await page.getByTestId("run-topology").click();
   await page.getByTestId("qwz-chern").waitFor();
+  preservedTopologyRunIds.qwz=await page.getByTestId("workspace-run-id").innerText();
   assert.equal(await page.getByTestId("qwz-chern").textContent(), "-1");
+  await page.locator('rect[aria-label="Select QWZ cell kx 2, ky 1"]').click();
+  await page.getByTestId("topology-selected-cell").waitFor();
+  await page.getByTestId("topology-inspector-selection").filter({hasText:"Berry curvature"}).waitFor();
+  assert.match(await page.getByTestId("topology-inspector-selection").innerText(),/Stored lower band/);
+  const storedTopologyInputs=await page.getByTestId("topology-inspector-inputs").innerText();
+  await page.getByRole("spinbutton",{name:"QWZ mass"}).fill("-0.5");
+  await page.getByTestId("topology-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("topology-inspector-inputs").innerText(),storedTopologyInputs);
   await page.screenshot({ path: "artifacts/desktop-qwz.png", fullPage: true });
   await page.getByRole("spinbutton", { name: "QWZ mass" }).fill("0");
   await page.getByTestId("run-topology").click();
   await page.getByTestId("qwz-chern").filter({ hasText: "undefined" }).waitFor();
+  preservedTopologyRunIds.closed=await page.getByTestId("workspace-run-id").innerText();
+  assert.equal(await page.getByTestId("topology-selected-cell").count(),0);
+  assert.equal(await page.getByTestId("topology-selected-value").count(),0);
+  assert.match(await page.getByTestId("topology-inspector-diagnostics").innerText(),/undefined at gap closure/);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open SSH topology ${preservedTopologyRunIds.ssh}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedTopologyRunIds.ssh}).waitFor();
+  assert.equal(await page.getByRole("combobox",{name:"Topology model"}).inputValue(),"ssh");
+  assert.equal(await page.getByTestId("topology-selected-value").count(),0,"reopening clears topology selection");
+  await page.getByTestId("topology-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   await page.getByRole("button",{name:/Two-level system/}).click();
   await page.getByRole("button", { name: "Restore smoke values" }).click();
   await page.getByRole("button", { name: "Run spectrum" }).click();
@@ -1552,6 +1580,7 @@ try {
   assert.ok(runIds.includes(preservedCircuitRunId),"saved Transmon run survives full restart");
   assert.ok(runIds.includes(preservedManyBodyRunId),"saved Ising-chain run survives full restart");
   for(const runId of Object.values(preservedSweepRunIds))assert.ok(runIds.includes(runId),`saved sweep ${runId} survives full restart`);
+  for(const runId of Object.values(preservedTopologyRunIds))assert.ok(runIds.includes(runId),`saved topology ${runId} survives full restart`);
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1574,6 +1603,16 @@ try {
     assert.equal(await page.getByRole("combobox",{name:"Sweep dimension"}).inputValue(),dimension);
     assert.equal(await page.getByTestId("sweep-inspector-value").count(),0,"restart reopening does not invent a sweep cell");
     await page.getByTestId("sweep-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+    await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  }
+  for(const [kind,model] of [["ssh","SSH"],["qwz","QWZ"],["closed","QWZ"]]){
+    const runId=preservedTopologyRunIds[kind];
+    await page.getByRole("button",{name:`Open ${model} topology ${runId}`}).click();
+    await page.getByTestId("workspace-run-id").filter({hasText:runId}).waitFor();
+    assert.equal(await page.getByRole("combobox",{name:"Topology model"}).inputValue(),model.toLowerCase());
+    assert.equal(await page.getByTestId("topology-selected-value").count(),0,"restart reopening does not invent a topology sample");
+    await page.getByTestId("topology-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+    if(kind==="closed")assert.match(await page.getByTestId("topology-inspector-diagnostics").innerText(),/undefined at gap closure/);
     await page.getByRole("tab",{name:"Runs",exact:true}).click();
   }
   for(const [label,runId,diagnostic] of [
