@@ -350,6 +350,20 @@ app.whenReady().then(() => {
     trusted(event);
     return runs.list();
   });
+  ipcMain.handle("quantum:verified-run", (event,runId:unknown) => {
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid saved run ID");
+    return runs.verified(runId);
+  });
+  ipcMain.handle("quantum:comparison-pins", (event) => {
+    trusted(event);
+    return runs.comparisonPins();
+  });
+  ipcMain.handle("quantum:set-comparison-pins", (event,pins:unknown) => {
+    trusted(event);
+    if(!pins||typeof pins!=="object"||Array.isArray(pins))throw new Error("Invalid comparison pins");
+    return runs.setComparisonPins(pins as import("../../../packages/contracts").RunComparisonPins);
+  });
   ipcMain.handle("quantum:spectrum-run", (event, runId:unknown) => {
     trusted(event);
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid spectrum run ID");

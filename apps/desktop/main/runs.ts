@@ -1,7 +1,7 @@
-import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, writeFile } from "node:fs/promises";
+import { createHash, randomUUID } from "node:crypto";
+import { copyFile, mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
-import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult, type OrbitalResult, type OscillatorFamilyResult,
+import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult, type OrbitalResult, type OscillatorFamilyResult, type RunComparisonPins, type VerifiedSavedRun,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
 import { consistentTwoLevelSpectrum } from "../../../packages/models/two-level-spectrum";
@@ -180,6 +180,38 @@ export class RunStore {
       if (result.operation === "oscillator_parametric") checkParametricData(result, data);
     }
     return { manifest, job, result, data };
+  }
+  async verified(runId:string):Promise<VerifiedSavedRun>{
+    const {job,result,data}=await this.load(runId);
+    return {job,result,data:data?Uint8Array.from(data):null};
+  }
+  async comparisonPins():Promise<RunComparisonPins>{
+    await this.ensureRoot();
+    let value:unknown;
+    try{value=JSON.parse(await readFile(join(this.root,"comparison-pins.json"),"utf8"));}
+    catch(error){if((error as NodeJS.ErrnoException).code==="ENOENT")return {a:null,b:null};throw error;}
+    if(!value||typeof value!=="object"||Array.isArray(value)||
+      (value as {schema?:unknown}).schema!=="quantum-comparison-pins/v1"||
+      !["a","b"].every(key=>{const id=(value as Record<string,unknown>)[key];return id===null||typeof id==="string"&&identifier.test(id);}))
+      throw new Error("Invalid saved comparison pins");
+    const pins=value as RunComparisonPins;
+    if(pins.a&&pins.a===pins.b)throw new Error("Comparison pins must name different runs");
+    return {a:pins.a,b:pins.b};
+  }
+  async setComparisonPins(pins:RunComparisonPins):Promise<RunComparisonPins>{
+    if(!pins||typeof pins!=="object"||Array.isArray(pins)||
+      ![pins.a,pins.b].every(id=>id===null||typeof id==="string"&&identifier.test(id))||
+      (pins.a!==null&&pins.a===pins.b))throw new Error("Invalid comparison pins");
+    await this.ensureRoot();
+    const previous=await this.comparisonPins();
+    if(pins.a&&pins.a!==previous.a)await this.verified(pins.a);
+    if(pins.b&&pins.b!==previous.b)await this.verified(pins.b);
+    const target=join(this.root,"comparison-pins.json"),temporary=join(this.root,`comparison-pins-${randomUUID()}.tmp`);
+    try{
+      await writeFile(temporary,JSON.stringify({schema:"quantum-comparison-pins/v1",a:pins.a,b:pins.b})+"\n",{flag:"wx"});
+      await rename(temporary,target);
+    }finally{await unlink(temporary).catch(()=>{});}
+    return {a:pins.a,b:pins.b};
   }
   async spectrum(runId:string):Promise<SpectrumResult>{
     const {manifest,job,result,data}=await this.load(runId);

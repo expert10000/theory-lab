@@ -544,6 +544,9 @@ export interface QuantumBridge {
   saveWorkspace(snapshot: import("./workspace").WorkspaceSnapshot): Promise<void>;
   loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
   listRuns(): Promise<import("./workspace").RunSummary[]>;
+  getVerifiedRun(runId:string):Promise<VerifiedSavedRun>;
+  getRunComparisonPins():Promise<RunComparisonPins>;
+  setRunComparisonPins(pins:RunComparisonPins):Promise<RunComparisonPins>;
   getSpectrumRun(runId:string):Promise<SpectrumResult>;
   getRabiRun(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>;
   getEvolutionRun(runId:string):Promise<{result:EvolutionResult;data:Uint8Array}>;

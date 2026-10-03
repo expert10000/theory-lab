@@ -39,6 +39,11 @@ const workspace: WorkspaceSnapshot = {
     y: { parameter: "frequency", start: .6, stop: 1.4, points: 4 }, twoD: true,
     start: "0", stop: "20", initialIndex: 0, engine: "native" },
 };
+test("A/B Analysis model context extends workspace v1 without changing legacy snapshots",()=>{
+  assert.ok(isWorkspaceSnapshot(workspace));
+  assert.ok(isWorkspaceSnapshot({...workspace,tab:"hamiltonian",analysisModel:"oscillator"}));
+  assert.equal(isWorkspaceSnapshot({...workspace,analysisModel:"unknown"}),false);
+});
 test("workspace v1 accepts all lab drafts and rejects unknown or unsafe fields", () => {
   assert.ok(isWorkspaceSnapshot(workspace));
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "scenes" }));

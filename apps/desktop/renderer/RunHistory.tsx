@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import type { QuantumBridge, RunExportFormat, RunSummary } from "../../../packages/contracts";
+import type { QuantumBridge, RunComparisonPins, RunExportFormat, RunSummary } from "../../../packages/contracts";
 import { MODEL_REGISTRY, type EvolutionModelId } from "../../../packages/models";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 
@@ -8,18 +8,31 @@ function evolutionLabel(model:string){return evolutionModels.includes(model as E
 const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
 function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void> }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
   const [message, setMessage] = useState("");
+  const [pins,setPins]=useState<RunComparisonPins>({a:null,b:null});
+  const [pinning,setPinning]=useState(false);
   async function refresh() {
     setBusy(true);
-    try { setRuns(await bridge.listRuns()); setMessage(""); }
+    try { const [saved,selected]=await Promise.all([bridge.listRuns(),bridge.getRunComparisonPins()]);setRuns(saved);setPins(selected);setMessage(""); }
     catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
     finally { setBusy(false); }
   }
   useEffect(() => { void refresh(); }, [bridge]);
+  async function pin(side:"a"|"b",runId:string|null){
+    if(pinning)return;
+    setPinning(true);setMessage("");
+    try{
+      if(runId)await bridge.getVerifiedRun(runId);
+      const next={...pins,[side]:runId};
+      if(next.a&&next.a===next.b)throw new Error("Pin A and B must be different saved runs");
+      setPins(await bridge.setRunComparisonPins(next));
+    }catch(error){setMessage(error instanceof Error?error.message:String(error));}
+    finally{setPinning(false);}
+  }
   async function exportOne(runId: string, format: RunExportFormat) {
     try {
       const path = await bridge.exportRun(runId, format);
@@ -36,15 +49,23 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   }
   return <section className="runs-page" data-testid="runs-page">
     <div className="panel runs-intro"><div><p className="eyebrow">DURABLE RUNS / QLAB-016</p><h2>Every completed calculation, accounted for.</h2>
-      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen supported spectra, dynamics, final-population sweeps, topology, Transmon and Ising runs, or export data, figures and manifests.</p></div>
+      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen any current lab result, pin two verified runs for A/B analysis, or export data, figures and manifests.</p></div>
       <button type="button" className="text-button" onClick={() => void refresh()} disabled={busy}>Refresh runs ↻</button></div>
+    <div className="panel runs-pins" data-testid="runs-pins"><div><p className="eyebrow">QLAB-UI-6 / SAVED RUN COMPARISON</p>
+      <strong>A: {pins.a??"not pinned"}</strong><strong>B: {pins.b??"not pinned"}</strong>
+      <small>Pins store run IDs only. A/B values are loaded and verified when Analysis opens.</small></div>
+      <div><button type="button" onClick={()=>void pin("a",null)} disabled={!pins.a||pinning}>Clear A</button>
+        <button type="button" onClick={()=>void pin("b",null)} disabled={!pins.b||pinning}>Clear B</button>
+        <button type="button" className="run-open" onClick={onAnalyze} disabled={!pins.a||!pins.b||!onAnalyze} data-testid="open-comparison">Open A/B Analysis</button></div></div>
     {message && <p className="runs-message" role="status">{message}</p>}
     {runs.length === 0 ? <div className="panel runs-empty">{busy ? "Loading saved runs…" : "No saved runs yet. Run any laboratory to create one."}</div> :
       <div className="runs-list">{runs.map(run => <article className="panel run-row" key={run.runId} data-testid="saved-run">
         <div><p className="eyebrow">{run.operation.toUpperCase()} / {run.model}</p><h3>{run.model.replaceAll("_", " ")}</h3>
           <small>{new Date(run.computedAt).toLocaleString()} · {run.engine} {run.engineVersion} · {run.durationMs.toFixed(1)} ms</small>
           <code>{run.runId} · {run.artifactSha256 ? `${run.artifactSha256.slice(0, 16)}…` : "inline spectrum"}</code></div>
-        <div className="run-exports">{run.operation==="diagonalize"&&onOpenSpectrum&&
+        <div className="run-exports"><button type="button" aria-label={`Pin A ${run.runId}`} aria-pressed={pins.a===run.runId} disabled={pinning||pins.b===run.runId} onClick={()=>void pin("a",run.runId)}>{pins.a===run.runId?"A pinned":"Pin A"}</button>
+          <button type="button" aria-label={`Pin B ${run.runId}`} aria-pressed={pins.b===run.runId} disabled={pinning||pins.a===run.runId} onClick={()=>void pin("b",run.runId)}>{pins.b===run.runId?"B pinned":"Pin B"}</button>
+          {run.operation==="diagonalize"&&onOpenSpectrum&&
           <button type="button" className="run-open" aria-label={`Open spectrum ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,"spectrum")}>{opening===run.runId?"Opening…":"Open spectrum"}</button>}
           {run.operation==="evolve"&&evolutionLabel(run.model)&&(onOpenEvolution||(run.model==="driven_two_level"&&onOpenRabi))&&

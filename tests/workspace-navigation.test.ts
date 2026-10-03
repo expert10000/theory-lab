@@ -16,7 +16,7 @@ test("QLAB-UI-1 gates existing experiments by selected model",()=>{
   assert.equal(tabForMode("two_level","sweeps"),"sweep","static energy study is distinct from dynamics final-population sweep");
   assert.equal(tabForMode("landau_zener","dynamics"),"dynamics");
   assert.equal(tabForMode("landau_zener","sweeps"),"sweep");
-  assert.equal(tabForMode("landau_zener","analysis"),null);
+  assert.equal(tabForMode("landau_zener","analysis"),"hamiltonian","saved-run A/B Analysis is available for every model");
   assert.equal(tabForMode("oscillator","explore"),"oscillator");
   assert.equal(tabForMode("oscillator","dynamics"),null,"internal oscillator modes are not yet a shared workspace adapter");
   for(const model of ["two_level","oscillator","lindblad"] as const){
@@ -33,6 +33,8 @@ test("QLAB-UI-1 maps legacy saved tabs to the same model and experiment",()=>{
   assert.equal(modelForSnapshot({...snapshot,tab:"cavity"}),"quantum_rabi");
   assert.equal(modelForSnapshot({...snapshot,tab:"oscillator"}),"oscillator");
   assert.equal(modelForSnapshot({...snapshot,tab:"atlas"}),"two_level");
+  assert.equal(modelForSnapshot({...snapshot,tab:"hamiltonian",analysisModel:"oscillator"}),"oscillator");
+  assert.equal(modelForSnapshot({...snapshot,tab:"hamiltonian"}),"two_level","legacy Hamiltonian snapshots remain two-level");
 });
 
 test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
@@ -43,6 +45,7 @@ test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
     {model:"two_level",tab:"spectrum"},{model:"landau_zener",tab:"dynamics"},
     {model:"oscillator",tab:"oscillator"},{model:"quantum_rabi",tab:"runs"},
     {model:"topology",tab:"atlas"},
+    {model:"oscillator",tab:"hamiltonian"},
   ] as const)assert.deepEqual(locationFromHash(workspaceHash(location)),location);
   assert.deepEqual(locationFromHash("#sweep"),{model:"driven_two_level",tab:"sweep"});
   assert.deepEqual(locationFromHash("#tab/circuit"),{model:"transmon",tab:"circuit"});
