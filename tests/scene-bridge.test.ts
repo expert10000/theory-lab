@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import type {QuantumResult} from "../packages/contracts";
 import type {ScenePayload} from "../packages/quantum-scene";
-import {availableSceneViews,sceneFocusForLaunch,type SceneLaunch} from "../apps/desktop/renderer/scene-bridge";
+import {availableSceneViews,sceneFocusForLaunch,sceneSampleForSelection,type SceneLaunch} from "../apps/desktop/renderer/scene-bridge";
+import type {ScientificSelectionReference} from "../apps/desktop/renderer/selection-reference";
 
 const result=(operation:string,model:string,analysis:Record<string,unknown>={})=>
   ({operation,model:{type:model},analysis}) as QuantumResult;
@@ -53,4 +54,22 @@ test("UI-8 links only an exact run-scoped sample represented in the scene",()=>{
   assert.deepEqual(sceneFocusForLaunch(orbital,{...launch,sample:{kind:"orbital_voxel",x:2,y:3,z:4}}).focus,
     {kind:"voxel",grid:[2,3,4]});
   assert.equal(sceneFocusForLaunch(orbital,{...launch,sample:{kind:"orbital_voxel",x:5,y:3,z:4}}).focus,null);
+});
+
+test("QVIS-014 Scenes receives only the common reference for its exact source run",()=>{
+  const selected=(model:ScientificSelectionReference["model"],operation:ScientificSelectionReference["operation"],coordinate:ScientificSelectionReference["coordinate"]):ScientificSelectionReference=>
+    ({schema:"scientific-selection/v1",runId:"run-a",model,operation,coordinate});
+  const saved=(operation:string,model:string)=>({...result(operation,model),runId:"run-a"});
+  assert.deepEqual(sceneSampleForSelection(selected("driven_two_level","evolve",{kind:"time",index:5}),saved("evolve","driven_two_level")),
+    {kind:"evolution_time",index:5});
+  assert.deepEqual(sceneSampleForSelection(selected("ssh","topology",{kind:"band",index:4}),saved("topology","ssh")),
+    {kind:"ssh_band",index:4});
+  const qwz={...saved("topology","qwz"),model:{type:"qwz",parameters:{grid:11}}} as QuantumResult;
+  assert.deepEqual(sceneSampleForSelection(selected("qwz","topology",{kind:"cell",xIndex:2,yIndex:3}),qwz),
+    {kind:"qwz_cell",x:2,y:3,grid:11});
+  assert.deepEqual(sceneSampleForSelection(selected("ising_chain","many_body",{kind:"energy",index:1}),saved("many_body","ising_chain")),
+    {kind:"unmapped",description:"Selected Ising energy level"});
+  assert.deepEqual(sceneSampleForSelection(selected("hydrogenic","orbital",{kind:"radial",index:2}),saved("orbital","hydrogenic")),
+    {kind:"unmapped",description:"Selected radial bin"});
+  assert.equal(sceneSampleForSelection({...selected("ssh","topology",{kind:"site",index:0}),runId:"other"},saved("topology","ssh")),null);
 });

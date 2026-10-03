@@ -1,6 +1,7 @@
 import type {QuantumResult} from "../../../packages/contracts";
 import {supportsScene} from "../../../packages/quantum-scene/from-result";
 import type {ScenePayload} from "../../../packages/quantum-scene";
+import type {ScientificSelectionReference} from "./selection-reference";
 
 export type SceneView="standard"|"bands";
 export type SceneSample=
@@ -23,6 +24,25 @@ export function availableSceneViews(result:QuantumResult):{standard:boolean;band
         (analysis.kind==="ssh"||!!analysis.bandKValues)};
   }
   return {standard:supportsScene(result.operation,result.model.type),bands:false};
+}
+
+/** Translate the common reference only for an exact compatible saved scene. */
+export function sceneSampleForSelection(selection:ScientificSelectionReference|null,result:QuantumResult|null):SceneSample|null{
+  if(!selection||!result||selection.runId!==result.runId||selection.model!==result.model.type||
+    selection.operation!==result.operation)return null;
+  const point=selection.coordinate;
+  if(result.operation==="evolve"&&point.kind==="time")return {kind:"evolution_time",index:point.index};
+  if(result.operation==="topology"&&result.model.type==="ssh"){
+    if(point.kind==="site")return {kind:"ssh_site",index:point.index};
+    if(point.kind==="band")return {kind:"ssh_band",index:point.index};
+  }
+  if(result.operation==="topology"&&result.model.type==="qwz"&&point.kind==="cell")
+    return {kind:"qwz_cell",x:point.xIndex,y:point.yIndex,grid:result.model.parameters.grid};
+  if(result.operation==="many_body"&&point.kind==="site")return {kind:"ising_site",index:point.index};
+  if(result.operation==="orbital"&&point.kind==="voxel")return {kind:"orbital_voxel",x:point.x,y:point.y,z:point.z};
+  if(result.operation==="many_body"&&point.kind==="energy")return {kind:"unmapped",description:"Selected Ising energy level"};
+  if(result.operation==="orbital"&&point.kind==="radial")return {kind:"unmapped",description:"Selected radial bin"};
+  return {kind:"unmapped",description:"Selected laboratory coordinate"};
 }
 
 /** Preserve a selection only when the existing scene has that exact saved sample. */

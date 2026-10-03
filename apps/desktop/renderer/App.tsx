@@ -10,6 +10,7 @@ import type {
   TopologyResult,
   OrbitalResult,
   OscillatorFamilyResult,
+  QuantumResult,
   QuantumBridge,
   SpectrumResult,
   WorkerStatus,
@@ -18,6 +19,8 @@ import type {
 } from "../../../packages/contracts";
 import { Spectrum, format } from "./Spectrum";
 import {ScientificSelectionPanel} from "./ScientificSelectionPanel";
+import {SelectionReferenceCard} from "./SelectionReferenceCard";
+import {activeSelectionReference} from "./selection-reference";
 import {TwoLevelStateView} from "./TwoLevelStateView";
 import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {spectrumSliderValue} from "./spectrum-slider";
@@ -53,7 +56,7 @@ import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets
 import { RunHistory } from "./RunHistory";
 import {RunComparisonPanel} from "./RunComparisonPanel";
 import { SceneLab } from "./SceneLab";
-import {availableSceneViews,type SceneLaunch,type SceneSample,type SceneView} from "./scene-bridge";
+import {availableSceneViews,sceneSampleForSelection,type SceneLaunch,type SceneSample,type SceneView} from "./scene-bridge";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
@@ -500,18 +503,15 @@ export function App() {
     tab==="many_body"&&activeModel==="ising_chain"?manyBodyContext?.result:
     tab==="orbital"&&activeModel==="hydrogenic"?orbitalContext?.result:null;
   const sceneViews=sceneResult?availableSceneViews(sceneResult):null;
-  const sceneSample:SceneSample|null=tab==="dynamics"&&evolutionContext?.sample&&evolutionContext.selection.runId===sceneResult?.runId?
-    {kind:"evolution_time",index:evolutionContext.selection.index}:
-    tab==="topology"&&topologyContext?.selection&&topologyContext.sample&&topologyContext.selection.runId===sceneResult?.runId?
-      topologyContext.selection.kind==="ssh_site"?{kind:"ssh_site",index:topologyContext.selection.index}:
-      topologyContext.selection.kind==="ssh_band"?{kind:"ssh_band",index:topologyContext.selection.index}:
-      {kind:"qwz_cell",x:topologyContext.selection.xIndex,y:topologyContext.selection.yIndex,grid:topologyContext.result.model.type==="qwz"?topologyContext.result.model.parameters.grid:0}:
-    tab==="many_body"&&manyBodyContext?.selection&&manyBodyContext.item&&manyBodyContext.selection.runId===sceneResult?.runId?
-      manyBodyContext.selection.kind==="site_magnetization"?{kind:"ising_site",index:manyBodyContext.selection.index}:
-      {kind:"unmapped",description:"Selected Ising energy level"}:
-    tab==="orbital"&&orbitalContext?.selection&&orbitalContext.sample&&orbitalContext.selection.runId===sceneResult?.runId?
-      orbitalContext.selection.kind==="voxel"?{kind:"orbital_voxel",x:orbitalContext.selection.x,y:orbitalContext.selection.y,z:orbitalContext.selection.z}:
-      {kind:"unmapped",description:"Selected radial bin"}:null;
+  const selectionReference=activeSelectionReference({tab,activeModel,spectrum:{result,selection:currentSelection},
+    evolution:evolutionContext,cavity:cavityContext,lindblad:lindbladContext,circuit:circuitContext,
+    manyBody:manyBodyContext,sweep:sweepContext,topology:topologyContext,orbital:orbitalContext,oscillator:oscillatorContext});
+  const selectionResult:QuantumResult|null=selectionReference?
+    [result,evolutionContext?.result,cavityContext?.result,lindbladContext?.result,circuitContext?.result,
+      manyBodyContext?.result,sweepContext?.result,topologyContext?.result,orbitalContext?.result,oscillatorContext?.result]
+      .find(value=>value?.runId===selectionReference.runId&&value.model.type===selectionReference.model&&
+        value.operation===selectionReference.operation)??null:null;
+  const sceneSample=sceneSampleForSelection(selectionReference,sceneResult??null);
   return (
     <div className="app">
       <header className="topbar">
@@ -963,6 +963,7 @@ export function App() {
             )}
         </main>
         <aside className="inspector">
+          <SelectionReferenceCard reference={selectionReference} result={selectionResult}/>
           {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
