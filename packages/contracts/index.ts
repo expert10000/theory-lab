@@ -478,6 +478,9 @@ export interface SweepResult {
   provenance: SpectrumResult["provenance"];
 }
 export type QuantumResult = SpectrumResult | EvolutionResult | CavityResult | LindbladResult | SweepResult | ManyBodyResult | CircuitResult | TopologyResult | OrbitalResult | OscillatorResult | OscillatorEvolutionResult | DrivenOscillatorResult | PulsedOscillatorResult | DampedOscillatorResult | ParametricOscillatorResult | AnharmonicOscillatorResult;
+/** Desktop-only verified saved-run readout; no new worker protocol or result schema. */
+export interface VerifiedSavedRun {job:QuantumJob;result:QuantumResult;data:Uint8Array|null}
+export interface RunComparisonPins {a:string|null;b:string|null}
 export type OscillatorFamilyResult=OscillatorResult|OscillatorEvolutionResult|DrivenOscillatorResult|PulsedOscillatorResult|DampedOscillatorResult|ParametricOscillatorResult|AnharmonicOscillatorResult;
 export interface EvolutionProgress {
   jobId: string;
