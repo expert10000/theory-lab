@@ -1679,3 +1679,163 @@ Python worker = permanent physics boundary
 ```
 
 That is the architecture I would freeze before writing QLAB-001.
+
+---
+
+# 28. Proposed QVIS-014–023 scientific-workflow extension
+
+Status (2026-10-03): **proposed, not implemented as QVIS-014–023**. This is an
+additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
+It does not reopen, rename, or downgrade those milestones, replace
+`quantum-scene/v1`, or change historical run semantics. Existing two-level
+selection, bounded studies, model-specific inspectors, A/B comparison,
+dynamics, Atlas bindings and the verified Lab-side scene bridge are starting
+points; the items below target broader scientific coverage and shared behavior.
+An individual item is complete only at its stated, tested scope.
+
+## QVIS-014 — Linked scientific selection
+
+Generalize the existing exact-run selection pattern into a common,
+model-aware `ScientificSelection` contract. Selecting a spectrum level, site,
+time sample, sweep point, or scene sample should identify its immutable run,
+result type, coordinate/index and available recorded values. Views and the
+inspector should resolve that reference against the saved artifact, not copy
+mutable display values. For a selected eigenstate, show energy, degeneracy,
+symmetry/parity sector, expectation values and state provenance **only when
+those quantities were computed and stored**. For an Ising site, expose
+`⟨σx⟩`, `⟨σy⟩`, `⟨σz⟩` only as each component becomes available. The current
+Ising result does not supply all three. Cross-run and unavailable-state
+selections must be refused or clearly labelled, not inferred.
+
+## QVIS-015 — Parameter Sweep Laboratory
+
+Extend the existing two-level eigenenergy study and final-`P₁` sweep
+infrastructure to declared model/output pairs. First proposed many-body case:
+a bounded Ising `h/J` sweep with low-lying `Eₙ`, finite-size gap, and recorded
+magnetization. Half-chain entropy and neighboring-ground-state fidelity are
+separate proposed result additions requiring state data, numerical definitions,
+worker/contract validation and convergence tests; do not derive them from the
+current low-energy/site-magnetization summary. Each point is an immutable run,
+and clicking it reopens or selects exactly that run. Two-level avoided-crossing
+studies versus `Δ` or `Ω` should reuse their existing verified point-run model
+where applicable. Checkpointing, cancellation, resume, units and provenance
+remain explicit.
+
+## QVIS-016 — Observable workspace
+
+Promote recorded observables into reusable, unit-labelled cards for
+expectation, variance, correlation, occupation/population, transition
+probability and operator matrix elements. Cards should declare their operator,
+state/run, basis, units, uncertainty or numerical diagnostic, and whether a
+value is stored or unavailable. Proposed Ising additions are site-resolved
+`⟨σᶻᵢ⟩`, connected `Cᶻᶻᵢⱼ = ⟨σᶻᵢσᶻⱼ⟩ − ⟨σᶻᵢ⟩⟨σᶻⱼ⟩`, total magnetization,
+and a correlation length only when its finite-size definition is meaningful.
+The present inspector remains intact until a shared view covers its existing
+diagnostics without loss.
+
+## QVIS-017 — Many-body state inspection
+
+For bounded Ising chains, propose a site-correlation matrix,
+entanglement-versus-cut plot and small-`N` computational-basis probability
+view. Dominant basis states (for example `|0000⟩` and `|0011⟩` at `N=4`)
+must come from a verified stored or reproducibly computed state; the current
+result does **not** store a full ground-state vector. Define a strict
+Hilbert-space/sample budget, truncation disclosure and convergence checks
+before adding state artifacts. Do not render all amplitudes for large `N`.
+
+## QVIS-018 — Run comparison extension
+
+Reuse the delivered immutable A/B pins and hash-verified Analysis view, not a
+second comparison store. Add a compact contextual drawer for compatible
+parameter deltas, spectra, gaps, recorded observables, backend/runtime and
+numerical residuals. Keep the existing compatibility gates: no pointwise
+difference without aligned model, observable, units and sample grid; no
+substituted, tampered or missing run. This is a presentation/scientific-coverage
+extension to QLAB-UI-6, not a claim that A/B comparison is currently absent.
+
+## QVIS-019 — Symmetry and sector awareness
+
+When a model and solver explicitly support it, record and display conserved
+quantities and sector labels such as parity, excitation number, particle
+number, spin or momentum. Label/color spectrum entries by *verified* sector,
+with degeneracy and basis conventions visible. Jaynes–Cummings excitation
+number is a useful first candidate; not every existing result stores it.
+Symmetry-reduced blocks may later improve computation, but only after a
+separate solver-equivalence and boundary-condition gate. Never assign a sector
+from a visually suggestive level crossing alone.
+
+## QVIS-020 — Dynamics as a sibling of Spectrum
+
+Unify interaction semantics around `initial state → Hamiltonian → evolution →
+recorded observables` within the existing model/run architecture. Rabi,
+Landau–Zener and cavity evolution already exist; this milestone extends their
+shared navigation and synchronized timeline/state semantics without replacing
+their validated jobs. Ising-quench magnetization is proposed new physics and
+requires its own bounded worker result, validation and persistence. A cursor
+may synchronize plots and state displays only for data actually stored at that
+time sample.
+
+## QVIS-021 — Scientific figure export
+
+Add a consistent Figure action to major plots: SVG and PNG where supported,
+plus a metadata sidecar containing model ID, exact run ID/result hash,
+parameters, units, backend/version and timestamp. A publication view should
+remove application chrome while retaining axes, legends, uncertainty and
+scientific context for Volume VIII use. Existing CSV/SVG/manifest exports are
+preserved; this milestone extends coverage and presentation rather than
+redefining their files. Exported figures must not silently recalculate or
+resample a run.
+
+## QVIS-022 — Atlas → Lab deep linking
+
+Extend the delivered pinned Atlas bindings with capability-gated actions:
+Open in Lab, Run canonical example, Sweep parameter and Open theory reference.
+The reverse link should show the exact Atlas entry/revision and Volume VIII
+section on applicable runs. Current bindings cover only declared entries;
+descriptive Atlas entries must not acquire executable buttons until their
+model, units, parameters, canonical job and provenance pass validation.
+
+## QVIS-023 — Scenes / Math3D bridge
+
+Use `QuantumResult → quantum-scene/v1 → independent consumers` for genuinely
+spatial data: Bloch trajectories, lattice-site fields, Berry curvature,
+supplied bands, probability densities and orbitals, with future crystal
+models gated separately. The lightweight Lab viewer and QLAB-UI-8 verified
+run-to-Scenes path are already implemented. “Open in Math3D” remains **outside
+this Lab milestone** until the separate Math3D importer accepts the same
+portable scene, hashes, units and sample semantics. No direct Math3D-to-worker
+or Lab-to-Math3D worker call is introduced.
+
+## Shared inspector and contract gate
+
+Move toward one contextual inspector with **Parameters → Selection →
+Observables → Provenance** views. Selecting `E₂`, Site 3, an entanglement cut
+or a sweep point changes the same run-backed context. Preserve model-specific
+details and drafts until each shared view can represent them without loss.
+The proposed logical flow is:
+
+```text
+ModelDefinition
+      ↓
+RunInput ───────────────┐
+      ↓                 │
+ImmutableRun            │
+      ↓                 │
+ScientificResult        │
+      ↓                 │
+ScientificSelection ←───┘
+      ↓
+View / Inspector / Scene / Export
+```
+
+These are *conceptual roles*, not five newly frozen wire schemas. Reconcile
+them with the existing versioned job/result, run-store, model registry and
+scene contracts before adding any type or protocol. Domain-specific two-level,
+Ising, Jaynes–Cummings and other results retain their validated physics.
+
+The recommended first delivery order is **QVIS-014 linked selection →
+QVIS-015 sweeps → QVIS-016 observables**, followed by the remaining items as
+their data contracts and scientific acceptance become ready. Every slice
+requires exact-run/restart/tamper checks, model-specific numerical tests,
+desktop and web regression where exposed, and an explicit unavailable-data
+state. The separate Math3D importer remains its own release gate.
