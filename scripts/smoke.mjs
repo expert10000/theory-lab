@@ -1413,6 +1413,9 @@ try {
   assert.ok(sceneRun, "a saved evolution run is available to QVIS");
   await page.getByRole("button",{name:`View scene ${sceneRun.runId}`}).click();
   await page.getByTestId("scenes-page").waitFor();
+  assert.ok(await page.locator(".scene-workspace-layout .workspace").evaluate(element=>
+    element.getBoundingClientRect().right>=window.innerWidth-2),
+    "Scenes uses the full main area instead of retaining a narrow inspector gutter");
   await page.getByTestId("scene-verification").filter({ hasText: "SHA-256 VERIFIED" }).waitFor();
   await page.getByLabel("Scene saved run").locator(`option[value="${sceneRun.runId}"]`).waitFor({state:"attached"});
   assert.equal(await page.getByLabel("Scene saved run").inputValue(),sceneRun.runId,"Runs launches the exact selected run");

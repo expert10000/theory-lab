@@ -543,7 +543,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""}`}>
+      <div className={`layout ${tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""} ${tab==="scenes"?"scene-workspace-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
