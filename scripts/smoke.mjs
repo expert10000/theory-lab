@@ -17,6 +17,7 @@ let preservedSpectrumRunId = null;
 let preservedRabiRunId = null;
 const preservedPassageRunIds = {};
 const preservedCavityRunIds = {};
+const preservedSweepRunIds = {};
 let preservedLindbladRunId = null;
 let preservedCircuitRunId = null;
 let preservedManyBodyRunId = null;
@@ -1057,6 +1058,14 @@ try {
   await page.getByTestId("run-sweep").click();
   await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("sweep-line").waitFor();
+  preservedSweepRunIds.line=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByTestId("sweep-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+  assert.equal(await page.getByTestId("sweep-inspector-value").count(),0,"a new grid has no invented selection");
+  await page.getByRole("slider",{name:"Sweep X point"}).focus();
+  await page.keyboard.press("End");
+  await page.getByTestId("sweep-selected-point").waitFor();
+  assert.equal(await page.getByTestId("sweep-selected-value").innerText(),`Final P₁ = ${await page.getByTestId("sweep-inspector-value").innerText()}`);
+  assert.match(await page.getByTestId("sweep-inspector-inputs").innerText(),/X axis.*points/s);
   assert.ok(["0", "5"].includes(await page.getByTestId("sweep-reused").textContent()));
   await page.screenshot({ path: "artifacts/desktop-sweep-line.png", fullPage: true });
   await page.getByTestId("run-sweep").evaluate(element => element.scrollIntoView({ block: "center" }));
@@ -1069,8 +1078,25 @@ try {
   await page.getByTestId("run-sweep").click();
   await page.getByTestId("sweep-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("sweep-heatmap").waitFor();
+  preservedSweepRunIds.heatmap=await page.getByTestId("workspace-run-id").innerText();
   assert.equal(await page.getByTestId("sweep-heatmap").locator(".sweep-heatmap button").count(), 20);
+  const chosenCell=page.getByTestId("sweep-heatmap").locator('.sweep-heatmap button[aria-label^="x 2, y 1,"]');
+  await chosenCell.click();
+  assert.equal(await chosenCell.getAttribute("aria-pressed"),"true");
+  assert.equal(await page.getByTestId("sweep-selected-value").innerText(),`Final P₁ = ${await page.getByTestId("sweep-inspector-value").innerText()}`);
+  assert.match(await page.getByTestId("sweep-inspector-cache").innerText(),/Reused \/ computed/);
+  assert.match(await page.getByTestId("sweep-inspector-cell").innerText(),/not a time trajectory/);
+  const storedSweepInputs=await page.getByTestId("sweep-inspector-inputs").innerText();
+  await page.getByRole("spinbutton",{name:"X axis from"}).fill("0.1");
+  await page.getByTestId("sweep-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
+  assert.equal(await page.getByTestId("sweep-inspector-inputs").innerText(),storedSweepInputs);
   await page.screenshot({ path: "artifacts/desktop-sweep-heatmap.png", fullPage: true });
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Open Rabi dynamics final-population sweep ${preservedSweepRunIds.heatmap}`}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:preservedSweepRunIds.heatmap}).waitFor();
+  assert.equal(await page.getByRole("combobox",{name:"Sweep dimension"}).inputValue(),"2d");
+  assert.equal(await page.getByTestId("sweep-inspector-value").count(),0,"verified reopening clears grid selection");
+  await page.getByTestId("sweep-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   if (gpu.engines.dynamiqs?.available) {
     await page.getByRole("combobox", { name: "Sweep engine" }).selectOption("dynamiqs");
     await page.getByTestId("run-sweep").evaluate(element => element.scrollIntoView({ block: "center" }));
@@ -1524,6 +1550,7 @@ try {
   assert.ok(runIds.includes(preservedLindbladRunId),"saved Lindblad run survives full restart");
   assert.ok(runIds.includes(preservedCircuitRunId),"saved Transmon run survives full restart");
   assert.ok(runIds.includes(preservedManyBodyRunId),"saved Ising-chain run survives full restart");
+  for(const runId of Object.values(preservedSweepRunIds))assert.ok(runIds.includes(runId),`saved sweep ${runId} survives full restart`);
   const reopenedStudy=await page.evaluate(id=>window.quantum.getSpectrumStudy(id),preservedStudyId);
   assert.equal(reopenedStudy.status,"completed","verified study manifest survives full Electron restart");
   assert.equal(reopenedStudy.points.length,3);
@@ -1538,6 +1565,16 @@ try {
   await page.getByTestId("rabi-inspector-time").filter({hasText:"0.0000"}).waitFor();
   assert.equal(await page.getByTestId("rabi-inspector-state").innerText(),"Run inputs match the draft");
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  for(const [kind,dimension,view] of [["line","1d","sweep-line"],["heatmap","2d","sweep-heatmap"]]){
+    const runId=preservedSweepRunIds[kind];
+    await page.getByRole("button",{name:`Open Rabi dynamics final-population sweep ${runId}`}).click();
+    await page.getByTestId("workspace-run-id").filter({hasText:runId}).waitFor();
+    await page.getByTestId(view).waitFor();
+    assert.equal(await page.getByRole("combobox",{name:"Sweep dimension"}).inputValue(),dimension);
+    assert.equal(await page.getByTestId("sweep-inspector-value").count(),0,"restart reopening does not invent a sweep cell");
+    await page.getByTestId("sweep-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
+    await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  }
   for(const [label,runId,diagnostic] of [
     ["Landau–Zener",preservedPassageRunIds.landau,"inspector-lz-reference"],
     ["Stückelberg",preservedPassageRunIds.stuckelberg,"inspector-stuckelberg-crossings"],
