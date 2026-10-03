@@ -634,9 +634,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
-  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6, QLAB-UI-7.*Partially done: none.*Next: QLAB-UI-8 Verified scene bridge/s);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6, QLAB-UI-7, QLAB-UI-8.*Partially done: none.*Current linked-workspace gates complete/s);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-8"?/Planned/:/Implemented/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -881,6 +881,17 @@ try {
     "t = 10.0000",
   );
   await page.getByTestId("rabi-inspector-time").filter({hasText:"10.0000"}).waitFor();
+  const linkedTimeIndex=await cursor.inputValue();
+  const rabiSource=await page.evaluate(id=>window.quantum.inspectSavedRun(id),rabiRunId);
+  await page.getByTestId("view-in-scenes").click();
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByLabel("Scene saved run").locator(`option[value="${rabiRunId}"]`).waitFor({state:"attached"});
+  assert.equal(await page.getByLabel("Scene saved run").inputValue(),rabiRunId,"lab launch keeps the exact run ID");
+  assert.equal(await page.getByLabel("Saved scene view").inputValue(),"standard");
+  assert.equal(await page.getByLabel("Scene sample").inputValue(),linkedTimeIndex,"saved time sample links to scene trajectory");
+  assert.match(await page.getByTestId("scene-bridge-status").innerText(),/Linked saved evolution time sample/);
+  assert.match(await page.getByTestId("scene-run-id").innerText(),new RegExp(rabiSource.hashes.result));
+  await page.getByRole("tab",{name:"Dynamics",exact:true}).click();
   const storedFrequency=await page.getByTestId("rabi-inspector-inputs").innerText();
   await page.getByLabel("Drive frequency ω", { exact: true }).fill("1.1");
   await page.getByTestId("rabi-inspector-state").filter({hasText:"Edited draft · showing stored run"}).waitFor();
@@ -1384,12 +1395,16 @@ try {
     if (format === "manifest") assert.equal(JSON.parse(exported).result.runId, latest);
   }
   await page.screenshot({ path: "artifacts/desktop-runs.png", fullPage: true });
-  await page.getByTestId("open-scenes").click();
-  await page.getByTestId("scenes-page").waitFor();
   const sceneRun = savedRuns.find(r => r.operation === "evolve");
   assert.ok(sceneRun, "a saved evolution run is available to QVIS");
-  await page.getByLabel("Scene saved run").selectOption(sceneRun.runId);
+  await page.getByRole("button",{name:`View scene ${sceneRun.runId}`}).click();
+  await page.getByTestId("scenes-page").waitFor();
   await page.getByTestId("scene-verification").filter({ hasText: "SHA-256 VERIFIED" }).waitFor();
+  await page.getByLabel("Scene saved run").locator(`option[value="${sceneRun.runId}"]`).waitFor({state:"attached"});
+  assert.equal(await page.getByLabel("Scene saved run").inputValue(),sceneRun.runId,"Runs launches the exact selected run");
+  assert.match(await page.getByTestId("scene-bridge-status").innerText(),/Full saved-run scene; no sample was selected/);
+  const sceneSource=await page.evaluate(id=>window.quantum.inspectSavedRun(id),sceneRun.runId);
+  assert.match(await page.getByTestId("scene-run-id").innerText(),new RegExp(sceneSource.hashes.result));
   assert.ok(await page.locator(".scene-canvas canvas").isVisible() || await page.locator(".scene-fallback").isVisible());
   await page.getByLabel("Inspect scene object").selectOption("bloch-trajectory");
   await page.getByRole("slider", { name: "Scene sample" }).focus();
@@ -1402,6 +1417,7 @@ try {
   const bundle = JSON.parse(await readFile(resolve(parent, `${sceneRun.runId}.qscene`, "scene.json"), "utf8"));
   assert.equal(bundle.schema, "quantum-scene/v1");
   assert.equal(bundle.provenance.runId, sceneRun.runId);
+  assert.equal(bundle.provenance.resultSha256,sceneSource.hashes.result,"portable scene retains verified result source hash");
   assert.ok(bundle.datasets.some(d => d.id === "trajectory"));
   await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-scenes.png", fullPage: true });
@@ -1734,6 +1750,13 @@ try {
   const persistedLineage=await page.evaluate(id=>window.quantum.inspectSavedRun(id),preservedRerunId);
   assert.equal(persistedLineage.lineage.parentRunId,preservedSpectrumRunId);
   assert.ok(runIds.includes(preservedRabiRunId),"saved Rabi evolution survives full restart");
+  await page.getByRole("button",{name:`View scene ${preservedRabiRunId}`}).click();
+  await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByLabel("Scene saved run").locator(`option[value="${preservedRabiRunId}"]`).waitFor({state:"attached"});
+  assert.equal(await page.getByLabel("Scene saved run").inputValue(),preservedRabiRunId);
+  const restartedSceneSource=await page.evaluate(id=>window.quantum.inspectSavedRun(id),preservedRabiRunId);
+  assert.match(await page.getByTestId("scene-run-id").innerText(),new RegExp(restartedSceneSource.hashes.result));
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
   for(const runId of Object.values(preservedPassageRunIds))assert.ok(runIds.includes(runId),`saved evolution ${runId} survives full restart`);
   for(const runId of Object.values(preservedCavityRunIds))assert.ok(runIds.includes(runId),`saved cavity ${runId} survives full restart`);
   assert.ok(runIds.includes(preservedLindbladRunId),"saved Lindblad run survives full restart");
@@ -1871,6 +1894,13 @@ try {
   await page.getByRole("alert").filter({hasText:"Pinned run unavailable or altered"}).waitFor();
   assert.equal(await page.getByTestId("comparison-delta").count(),0,"tampered pin has no numerical comparison");
   assert.deepEqual(await page.evaluate(()=>window.quantum.getRunComparisonPins()),preservedComparisonPins,"tamper does not replace either pin");
+  const tamperedScenePath=resolve(profileRoot,"runs",preservedRabiRunId,"result.json");
+  await writeFile(tamperedScenePath,(await readFile(tamperedScenePath,"utf8"))+" ");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`View scene ${preservedRabiRunId}`}).click();
+  await page.getByRole("status").filter({hasText:/hash|integrity|altered|mismatch/i}).waitFor();
+  assert.equal(await page.getByLabel("Scene saved run").inputValue(),preservedRabiRunId,"tampered launch cannot substitute another run");
+  assert.equal(await page.getByTestId("scene-verification").count(),0,"tampered source yields no verified scene");
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {
   await reopened.close();

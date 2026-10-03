@@ -1,6 +1,6 @@
 # Quantum Lab linked workspace roadmap
 
-Status (2026-10-03): QLAB-UI-1–7 implemented for declared adapters; UI-8 planned. This roadmap translates
+Status (2026-10-03): QLAB-UI-1–8 implemented for declared adapters. This roadmap translates
 the supplied UI critique into an additive desktop plan after D1-020–022. It
 changes how existing physics is explored, not the worker architecture or the
 meaning of historical QLAB, QVIS and D1 milestones.
@@ -16,7 +16,7 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | Done | QLAB-UI-3 | Run-backed model-specific inspectors distinguish stored inputs from drafts and expose recorded diagnostics and provenance across current labs; unavailable states remain explicitly unavailable. |
 | Done | QLAB-UI-6 | Durable A/B run-ID pins and Analysis view cover all current saved-result operations. Exact stored inputs, engine/provenance and numerical diagnostics remain side by side; physical Δ is shown only for explicitly aligned, unit-labelled observables. |
 | Done | QLAB-UI-7 | Runs verifies provenance and gates rerun on the available worker environment. All 16 operations pass rerun acceptance; portable `.qrun` folders preserve original run IDs, data and parent hashes across profiles and restart. |
-| Later | QLAB-UI-8 | Verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
+| Done | QLAB-UI-8 | Compatible saved results launch their exact verified run in Scenes from the lab or Runs. Only represented samples link; other selections become an explicit full-run view. Source hashes, round trips, restart and tamper refusal are accepted. Math3D remains separate. |
 
 UI-1–3 are complete for currently reachable desktop labs after the orbital and
 seven-mode oscillator adapters passed individual acceptance and restart gates.
@@ -435,6 +435,18 @@ hash-verified exports and imports retain source identity.
 
 ### QLAB-UI-8 Scene bridge
 
+Implemented for saved evolution, SSH/QWZ topology, Ising-chain and orbital
+results. Contextual Lab and Runs actions carry the exact run ID and supported
+standard/bands view into the existing Scenes workspace. Time, site, SSH band,
+QWZ cell and orbital voxel cursors link only where the adapter stores that
+sample. Ising energy levels and orbital radial bins open an explicitly labelled
+full-run scene, not a fabricated state/sample. Unsupported results have no
+action. Standard QWZ scenes remain unavailable at gap closure; supplied band
+scenes retain their separate bounded capability. Scene construction re-verifies
+the saved job, result and artifacts, and the displayed scene retains the
+result SHA-256. Desktop/web viewers and .qscene round trips use the existing
+contract; restart and altered-source refusal are covered by acceptance.
+
 From a selected compatible run/state/result, build or open a portable
 `quantum-scene/v1` through existing QVIS adapters, preview it in the Lab
 viewer and preserve source-run provenance. Unsupported results do not get a
@@ -450,9 +462,9 @@ the external importer/handoff has its own compatibility tests.
 
 ## Delivery order and release gates
 
-The UI-1–6 gates are delivered for the declared adapters, including all current
+The UI-1–8 gates are delivered for the declared adapters, including all current
 desktop labs in UI-1–3, all current saved-result operations in UI-6, and
-provenance/rerun/portable-run handling in UI-7. Proceed to UI-8 for compatible scenes. After each slice,
+provenance/rerun/portable-run handling in UI-7 and compatible scene handoff in UI-8. For future adapters,
 broaden model coverage by explicit adapters, preserving
 the current direct lab entry points until equivalent paths pass acceptance.
 

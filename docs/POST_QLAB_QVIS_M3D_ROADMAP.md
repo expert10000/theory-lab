@@ -88,8 +88,8 @@ declared two-level sweep/state adapters, including durable eigenenergy studies
 and a verified linked Bloch/state view. UI-1–3 cover currently reachable
 desktop labs; UI-6 implements immutable A/B saved-run comparison across all
 current result operations. UI-7 implements verified provenance, new-run
-rerun and portable `.qrun` import/export across all current operations. UI-8 plans compatible
-scene handoff. This is additive to
+rerun and portable `.qrun` import/export across all current operations. UI-8 implements compatible
+Lab-side scene handoff with verified run IDs and representable sample linking. This is additive to
 the delivered physics and QVIS system, not a new worker or scene schema.
 Math3D import/handoff remains separately gated. See
 [QLAB_LINKED_WORKSPACE_ROADMAP.md](QLAB_LINKED_WORKSPACE_ROADMAP.md) for

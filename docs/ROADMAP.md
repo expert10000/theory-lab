@@ -16,7 +16,8 @@ The `QLAB-UI-1–8` labels are a separate interaction track, not renumbered
 QLAB delivery commits. UI-4–5 are implemented for their declared two-level
 adapters; UI-1–3 cover currently reachable desktop labs, and UI-6 covers
 all current saved-result operations. UI-7 is implemented with all-operation
-rerun acceptance and portable verified `.qrun` import/export. UI-8 is planned. See the
+rerun acceptance and portable verified `.qrun` import/export. UI-8 is implemented
+for compatible saved scenes with exact source hashes and bounded sample linking. See the
 [linked workspace roadmap](QLAB_LINKED_WORKSPACE_ROADMAP.md) for navigation,
 shared selection, observable inspection, energy sweeps, state views, run
 comparison, provenance and the conditional scene bridge.
@@ -141,7 +142,7 @@ The current six-mode navigation
 is Explore, Dynamics, Sweeps, Analysis, Scenes and Runs; Atlas/Presets live in
 Library and Roadmap/Backend in System. UI-1–3 now cover every currently
 reachable lab; UI-6 adds durable A/B run comparison. UI-7 provenance-aware
-rerun and UI-8 compatible scene handoff follow. Existing
+rerun and UI-8 compatible scene handoff are implemented. Existing
 lab entry points and saved workspaces remain compatible. See
 [QLAB_LINKED_WORKSPACE_ROADMAP.md](QLAB_LINKED_WORKSPACE_ROADMAP.md) for
 dependencies, scientific boundaries and acceptance criteria. Math3D

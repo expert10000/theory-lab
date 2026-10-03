@@ -198,6 +198,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
               disabled={busy}
             >
               {!runs.length && <option value="">No compatible runs</option>}
+              {runId&&!runs.some(run=>run.runId===runId)&&<option value={runId}>Requested run · {runId.slice(-8)}</option>}
               {runs.map((r) => (
                 <option key={r.runId} value={r.runId}>
                   {r.model.replaceAll("_", " ")} · {r.engine} ·{" "}

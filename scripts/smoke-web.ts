@@ -187,6 +187,16 @@ try {
   await page.getByTestId("web-scenes").waitFor();
   const ssh = saved.find((r: any) => r.model === "ssh"),
     qwz = saved.find((r: any) => r.model === "qwz");
+  const webRunStore=new RunStore(join(dataDir,"runs"),join(dataDir,"artifacts"));
+  for(const run of [ssh,qwz]){
+    const inspection=await webRunStore.inspect(run.runId);
+    const response=await fetch(`${gateway.origin}/api/scenes/${run.runId}?view=${run.model==="ssh"?"bands":"standard"}`,
+      {headers:{Authorization:`Bearer ${token}`}});
+    assert.equal(response.status,200,"web scene metadata loads from an authenticated verified run");
+    const scene=await response.json();
+    assert.equal(scene.provenance.runId,run.runId);
+    assert.equal(scene.provenance.resultSha256,inspection.hashes.result,"web scene retains exact saved-result SHA-256");
+  }
   await page.getByLabel("Web scene saved run").selectOption(qwz.runId);
   await page
     .getByRole("button", { name: "Load saved scene", exact: true })
@@ -393,6 +403,11 @@ try {
     await page.locator(".worker-dashboard").innerText(),
   );
   assert.ok(callCount && Number(callCount[1]) >= 2);
+  const tamperedWebResult=join(dataDir,"runs",ssh.runId,"result.json");
+  await writeFile(tamperedWebResult,(await readFile(tamperedWebResult,"utf8"))+" ");
+  const refusedScene=await fetch(`${gateway.origin}/api/scenes/${ssh.runId}?view=bands`,
+    {headers:{Authorization:`Bearer ${token}`}});
+  assert.equal(refusedScene.status,422,"web gateway refuses a scene after its source result changes");
   if (process.env.QLAB_REMOTE_SSH_TARGET)
     assert.ok(
       (await page.locator(".worker-dashboard").innerText()).includes(
