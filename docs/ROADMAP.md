@@ -14,8 +14,9 @@ with the newly supplied plan's broader reciprocal-space/band milestones.
 Historical IDs are retained; no new QLAB numbers are planned.
 The `QLAB-UI-1–8` labels are a separate interaction track, not renumbered
 QLAB delivery commits. UI-4–5 are implemented for their declared two-level
-adapters; UI-1–3 are implemented for currently reachable desktop labs and
-UI-6–8 are planned. UI-6 immutable A/B run comparison is next. See the
+adapters; UI-1–3 cover currently reachable desktop labs, and UI-6 covers
+all current saved-result operations. UI-7–8 are planned; reproducible rerun
+is next. See the
 [linked workspace roadmap](QLAB_LINKED_WORKSPACE_ROADMAP.md) for navigation,
 shared selection, observable inspection, energy sweeps, state views, run
 comparison, provenance and the conditional scene bridge.
@@ -138,9 +139,9 @@ great-circle/state readout tied to verified eigenvectors and run-scoped
 selection; it withholds unique states for legacy or degenerate spectra.
 The current six-mode navigation
 is Explore, Dynamics, Sweeps, Analysis, Scenes and Runs; Atlas/Presets live in
-Library and Roadmap/Backend in System. Next are the remaining UI-1–3 wider
-adapter gaps, followed by
-UI-6–8 comparison, provenance/rerun and compatible scene handoff. Existing
+Library and Roadmap/Backend in System. UI-1–3 now cover every currently
+reachable lab; UI-6 adds durable A/B run comparison. UI-7 provenance-aware
+rerun and UI-8 compatible scene handoff follow. Existing
 lab entry points and saved workspaces remain compatible. See
 [QLAB_LINKED_WORKSPACE_ROADMAP.md](QLAB_LINKED_WORKSPACE_ROADMAP.md) for
 dependencies, scientific boundaries and acceptance criteria. Math3D

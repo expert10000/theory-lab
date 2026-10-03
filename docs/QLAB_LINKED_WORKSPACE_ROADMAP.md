@@ -1,6 +1,6 @@
 # Quantum Lab linked workspace roadmap
 
-Status (2026-10-03): QLAB-UI-1–5 implemented for declared adapters; UI-6–8 planned. This roadmap translates
+Status (2026-10-03): QLAB-UI-1–6 implemented for declared adapters; UI-7–8 planned. This roadmap translates
 the supplied UI critique into an additive desktop plan after D1-020–022. It
 changes how existing physics is explored, not the worker architecture or the
 meaning of historical QLAB, QVIS and D1 milestones.
@@ -14,8 +14,9 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | Done | QLAB-UI-1 | Six-mode navigation, grouped model access, history, legacy restore and exact saved-run breadcrumbs/reopening now cover every current lab, including orbitals and all seven oscillator operations. |
 | Done | QLAB-UI-2 | Exact-run spectrum, time, level/site, sweep, topology, orbital voxel/radial and oscillator energy/position/time selections link only values saved by that operation. |
 | Done | QLAB-UI-3 | Run-backed model-specific inspectors distinguish stored inputs from drafts and expose recorded diagnostics and provenance across current labs; unavailable states remain explicitly unavailable. |
-| Next | QLAB-UI-6 | Pin compatible immutable A/B runs and compare recorded observables with explicit units and alignment. |
-| Later | QLAB-UI-6–8 | Immutable A/B run comparison, provenance-aware rerun, then the verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
+| Done | QLAB-UI-6 | Durable A/B run-ID pins and Analysis view cover all current saved-result operations. Exact stored inputs, engine/provenance and numerical diagnostics remain side by side; physical Δ is shown only for explicitly aligned, unit-labelled observables. |
+| Next | QLAB-UI-7 | Provenance-aware rerun as a new saved run, with version differences disclosed. |
+| Later | QLAB-UI-8 | Verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
 UI-1–3 are complete for currently reachable desktop labs after the orbital and
 seven-mode oscillator adapters passed individual acceptance and restart gates.
@@ -96,6 +97,21 @@ only their named saved columns; damped artifacts contain density-matrix
 elements, whereas the other modes retain their distinct schemas. Each
 inspector keeps immutable run inputs, diagnostics and provenance separate from
 draft edits. Comparison/cutoff runs are never silently reattached.
+
+UI-6 adds independent, durable A/B pins in Runs and a model-available Analysis
+view. Each pin stores only an exact run ID; Analysis reloads the job, result
+and binary artifact through the existing hash and scientific-consistency
+checks. All 17 current saved-result operations have an explicit observable
+adapter. Same-operation/model comparisons use declared units and equal level,
+site, k, voxel, sweep-cell or time coordinates as applicable. The view names
+Δ = B − A and shows maximum absolute and RMS differences plus a selected
+saved sample. It displays exact stored inputs, changed engine/cutoff fields,
+recorded diagnostics and provenance side by side. Incompatible model/operation,
+unmatched sample grids, undefined gap-closure curvature, absent fields,
+deleted runs and tampered artifacts never receive invented physical deltas or
+silent replacement. Complex amplitudes and density-matrix elements are not
+compared as phase-independent scalar observables. Existing run exports and
+worker/result protocols remain unchanged.
 
 ## Decision and current baseline
 
@@ -370,6 +386,14 @@ engines, cutoffs and model revisions are visible; a deleted or incompatible
 run is handled without silently substituting another run; existing run
 exports remain valid.
 
+Delivered: Runs pins two verified saved IDs, and Analysis re-verifies both on
+opening. Pins survive a full Electron restart independently of input-only
+workspace restoration. Pure adapters cover all 17 current result operations,
+with bounded aligned-series summaries and exact selected values. Stored
+input/diagnostic/provenance tables remain available when scientific comparison
+is withheld. Unit, navigation, restart and tamper acceptance tests exercise
+the declared boundary. No worker physics or `quantum-result/v1` branch changed.
+
 ### QLAB-UI-7 Provenance and reproducible rerun
 
 Consolidate job, model, solver, source preset/Atlas revision, worker/engine
@@ -401,9 +425,9 @@ the external importer/handoff has its own compatibility tests.
 
 ## Delivery order and release gates
 
-The UI-1–5 gates are delivered for the declared adapters, including all current
-desktop labs in UI-1–3. Proceed to UI-6 and UI-7 comparison and
-reproducibility, and finally UI-8 for compatible scenes. After each slice,
+The UI-1–6 gates are delivered for the declared adapters, including all current
+desktop labs in UI-1–3 and all current saved-result operations in UI-6. Proceed
+to UI-7 reproducibility, then UI-8 for compatible scenes. After each slice,
 broaden model coverage by explicit adapters, preserving
 the current direct lab entry points until equivalent paths pass acceptance.
 

@@ -1,7 +1,7 @@
 import { _electron as electron } from "playwright";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp } from "node:fs/promises";
-import { readFile } from "node:fs/promises";
+import { readFile, writeFile } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 async function expandGroup(page,id){
@@ -28,6 +28,7 @@ let preservedDriveRunId = null;
 let preservedPulseRunId = null;
 let preservedOrbitalRunId = null;
 const preservedOscillatorRunIds = {};
+let preservedComparisonPins = null;
 const errors = [];
 try {
   const page = await app.firstWindow();
@@ -88,6 +89,7 @@ try {
       "getOscillatorRun",
       "getRabiRun",
       "getResources",
+      "getRunComparisonPins",
       "getScene",
       "getSceneExample",
       "getSpectrumRun",
@@ -95,6 +97,7 @@ try {
       "getStatus",
       "getSweepRun",
       "getTopologyRun",
+      "getVerifiedRun",
       "importScene",
       "importSceneStream",
       "lindblad",
@@ -119,6 +122,7 @@ try {
       "run",
       "saveSpectrumStudy",
       "saveWorkspace",
+      "setRunComparisonPins",
       "sweep",
       "topology",
     ],
@@ -216,6 +220,16 @@ try {
   assert.equal(await page.getByTestId("state-view-prompt").count(),1,"new run starts with no selected state");
   preservedSpectrumRunId=await page.getByTestId("workspace-run-id").innerText();
   await page.getByRole("button",{name:"Select upper energy E plus"}).click();
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Pin A ${preservedSpectrumRunId}`}).focus();
+  await page.keyboard.press("Enter");
+  await page.getByRole("button",{name:`Pin B ${selectedRunId}`}).click();
+  preservedComparisonPins={a:preservedSpectrumRunId,b:selectedRunId};
+  await page.getByTestId("open-comparison").click();
+  await page.getByTestId("comparison-status").filter({hasText:"Aligned"}).waitFor();
+  assert.match(await page.getByTestId("comparison-science").innerText(),/Δ = B − A, with no interpolation/);
+  assert.equal(await page.getByTestId("comparison-delta").innerText(),"0.000000");
+  assert.match(await page.getByTestId("comparison-inputs").innerText(),/model.parameters.delta/);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   await page.getByRole("button",{name:`Open spectrum ${preservedSpectrumRunId}`}).scrollIntoViewIfNeeded();
   await page.screenshot({path:"artifacts/desktop-reopen-spectrum.png",fullPage:true});
@@ -594,9 +608,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
-  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5.*Partially done: none.*Next: QLAB-UI-6 Run comparison/s);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6.*Partially done: none.*Next: QLAB-UI-7 Provenance and reproducible rerun/s);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4","QLAB-UI-5"].includes(id)?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4","QLAB-UI-5","QLAB-UI-6"].includes(id)?/Implemented/:/Planned/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -1533,6 +1547,25 @@ try {
   await page.getByTestId("orbital-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   assert.equal(await page.getByTestId("orbital-inspector-value").count(),0,"orbital reopen invents no sample");
   await page.getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  const otherOrbitalRunId=await page.evaluate(id=>window.quantum.listRuns().then(r=>r.find(v=>v.operation==="orbital"&&v.runId!==id)?.runId),preservedOrbitalRunId);
+  assert.ok(otherOrbitalRunId,"a second real orbital run exists for aligned comparison");
+  await page.getByRole("button",{name:`Pin A ${preservedOrbitalRunId}`}).click();
+  await page.getByRole("button",{name:`Pin B ${preservedOscillatorRunIds.oscillator}`}).click();
+  await page.getByTestId("open-comparison").click();
+  await page.getByTestId("comparison-status").filter({hasText:"Metadata only"}).waitFor();
+  assert.match(await page.getByTestId("comparison-status").innerText(),/Different operation or model/);
+  assert.equal(await page.getByTestId("comparison-delta").count(),0,"cross-model comparison invents no physical delta");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Pin B ${otherOrbitalRunId}`}).click();
+  preservedComparisonPins={a:preservedOrbitalRunId,b:otherOrbitalRunId};
+  await page.getByTestId("open-comparison").click();
+  await page.getByTestId("comparison-status").filter({hasText:"Aligned"}).waitFor();
+  await page.getByLabel("Comparison observable").selectOption({label:"Energy · Hartree"});
+  await page.getByTestId("comparison-delta").waitFor();
+  assert.match(await page.getByTestId("comparison-diagnostics").innerText(),/analysis.energyHartree/);
+  await page.screenshot({path:"artifacts/desktop-run-comparison.png",fullPage:true});
+  assert.match(await page.getByTestId("comparison-provenance").innerText(),/Python/);
   await page.getByRole("tab",{name:"Scenes",exact:true}).click();
   const examplePage=page.getByTestId("scenes-page");
   const beforeExamples=await page.evaluate(()=>window.quantum.listRuns().then(r=>r.length));
@@ -1608,6 +1641,12 @@ try {
   await page.getByTestId("worker-status").filter({ hasText: "READY" }).waitFor({ timeout: 45000 });
   await page.getByRole("tab", { name: "Runs" }).click();
   const runIds = await page.evaluate(() => window.quantum.listRuns().then(runs => runs.map(run => run.runId)));
+  assert.deepEqual(await page.evaluate(()=>window.quantum.getRunComparisonPins()),preservedComparisonPins,"A/B pins survive full Electron restart by ID");
+  await page.getByRole("tab",{name:"Analysis",exact:true}).click();
+  await page.getByTestId("comparison-status").filter({hasText:"Aligned"}).waitFor();
+  assert.equal(await page.getByTestId("comparison-pin-a").getAttribute("title"),preservedComparisonPins.a);
+  assert.equal(await page.getByTestId("comparison-pin-b").getAttribute("title"),preservedComparisonPins.b);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
   assert.ok(runIds.includes(preservedRunId), "saved run must survive app restart");
   assert.ok(runIds.includes(preservedMotionRunId),"saved motion amplitudes survive full restart");
   assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
@@ -1744,6 +1783,13 @@ try {
   assert.equal(await page.getByTestId("pulse-convergence").count(),0);
   await page.getByRole("button",{name:"Roadmap",exact:true}).click();
   for(const id of Array.from({length:13},(_,i)=>`D1-${String(i+1).padStart(3,"0")}`)) assert.match(await page.getByTestId(`oscillator-${id}`).innerText(),/Implemented/);
+  const profileRoot=await reopened.evaluate(({app})=>app.getPath("userData"));
+  const pinnedResultPath=resolve(profileRoot,"runs",preservedComparisonPins.a,"result.json");
+  await writeFile(pinnedResultPath,(await readFile(pinnedResultPath,"utf8"))+" ");
+  await page.getByRole("tab",{name:"Analysis",exact:true}).click();
+  await page.getByRole("alert").filter({hasText:"Pinned run unavailable or altered"}).waitFor();
+  assert.equal(await page.getByTestId("comparison-delta").count(),0,"tampered pin has no numerical comparison");
+  assert.deepEqual(await page.evaluate(()=>window.quantum.getRunComparisonPins()),preservedComparisonPins,"tamper does not replace either pin");
   console.log("PASS: saved run and all-lab workspace restore survive full Electron restart.");
 } finally {
   await reopened.close();

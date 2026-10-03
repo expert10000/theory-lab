@@ -1,6 +1,6 @@
 import {test} from "node:test";
 import assert from "node:assert/strict";
-import {mkdtemp,rm} from "node:fs/promises";
+import {mkdtemp,readFile,rm,writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import fixture from "../packages/contracts/fixtures/two-level.job.json";
@@ -46,13 +46,24 @@ test("saved spectra reopen with verified diagnostics; legacy energy-only runs re
   try{
     const store=new RunStore(join(root,"runs"),join(root,"artifacts"));
     await store.record(job,result);
+    assert.deepEqual(await store.verified(result.runId),{job,result,data:null});
     const loaded=await store.spectrum(result.runId);
     assert.deepEqual(loaded.stateAnalysis,result.stateAnalysis);
     const {stateAnalysis:_analysis,...legacy}=result;
     const old={...legacy,runId:"old-spectrum"};
     await store.record(job,old);
+    assert.deepEqual(await store.setComparisonPins({a:result.runId,b:old.runId}),{a:result.runId,b:old.runId});
+    const restarted=new RunStore(join(root,"runs"),join(root,"artifacts"));
+    assert.deepEqual(await restarted.comparisonPins(),{a:result.runId,b:old.runId});
+    await assert.rejects(restarted.setComparisonPins({a:result.runId,b:result.runId}),/different runs|Invalid comparison pins/);
+    await assert.rejects(restarted.setComparisonPins({a:"missing-run",b:old.runId}),/ENOENT/);
+    assert.deepEqual(await restarted.comparisonPins(),{a:result.runId,b:old.runId});
     assert.equal((await store.spectrum(old.runId)).stateAnalysis,undefined);
     const forged={...result,runId:"bad-spectrum",stateAnalysis:{...result.stateAnalysis,status:"degenerate"}};
     await assert.rejects(store.record(job,forged as SpectrumResult),/inconsistent two-level spectrum|mismatched quantum run/);
+    const path=join(root,"runs",result.runId,"result.json");
+    await writeFile(path,(await readFile(path,"utf8")).replace('"durationMs": 1','"durationMs": 2'));
+    await assert.rejects(restarted.verified(result.runId),/integrity/);
+    assert.deepEqual(await restarted.comparisonPins(),{a:result.runId,b:old.runId},"tampering never substitutes a pinned run");
   }finally{await rm(root,{recursive:true,force:true});}
 });

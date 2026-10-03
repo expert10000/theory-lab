@@ -20,7 +20,7 @@ test("roadmap preserves delivered IDs and labels future work as planned", () => 
   );
   assert.ok(DELIVERED_QVIS.every((r) => r.state === "Implemented"));
   assert.deepEqual(D1_OSCILLATOR_STEPS.map(r=>[r.id,r.state]),Array.from({length:22},(_,i)=>[`D1-${String(i+1).padStart(3,"0")}`,"Implemented"]));
-  assert.deepEqual(QLAB_UI_STEPS.map(r=>[r.id,r.state]),Array.from({length:8},(_,i)=>[`QLAB-UI-${i+1}`,i<5?"Implemented":"Planned"]));
+  assert.deepEqual(QLAB_UI_STEPS.map(r=>[r.id,r.state]),Array.from({length:8},(_,i)=>[`QLAB-UI-${i+1}`,i<6?"Implemented":"Planned"]));
   assert.match(DELIVERED_QVIS[5].title, /bundle import/);
   assert.match(DELIVERED_QVIS[6].title, /convergence/);
   assert.deepEqual(
@@ -79,17 +79,19 @@ test("tracked post-QLAB document keeps the source plan and a separate status ove
 
 test("linked-workspace roadmap names completed current-lab adapters and next UI gates",async()=>{
   const doc=await readFile("docs/QLAB_LINKED_WORKSPACE_ROADMAP.md","utf8");
-  assert.match(doc,/Status \(\d{4}-\d{2}-\d{2}\): QLAB-UI-1–5 implemented for declared adapters; UI-6–8 planned/);
+  assert.match(doc,/Status \(\d{4}-\d{2}-\d{2}\): QLAB-UI-1–6 implemented for declared adapters; UI-7–8 planned/);
   assert.match(doc,/\| Done \| QLAB-UI-4 \|/);
   assert.match(doc,/\| Done \| QLAB-UI-5 \|/);
   for(const id of ["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3"])
     assert.match(doc,new RegExp(`\\| Done \\| ${id} \\|`));
-  assert.match(doc,/\| Next \| QLAB-UI-6 \|/);
-  assert.match(doc,/\| Later \| QLAB-UI-6–8 \|/);
+  assert.match(doc,/\| Done \| QLAB-UI-6 \|/);
+  assert.match(doc,/\| Next \| QLAB-UI-7 \|/);
+  assert.match(doc,/\| Later \| QLAB-UI-8 \|/);
   for(const path of ["docs/ROADMAP.md","docs/POST_QLAB_QVIS_M3D_ROADMAP.md"]){
     const overview=await readFile(path,"utf8");
     assert.match(overview,/UI-4–5 are implemented for/);
-    assert.match(overview,/UI-1–3 are implemented for currently\s+reachable desktop labs and\s+UI-6–8 are planned/);
+    assert.match(overview,/UI-6 .*saved-run comparison|UI-6 covers\s+all current saved-result operations/);
+    assert.match(overview,/UI-7–8/);
   }
 });
 

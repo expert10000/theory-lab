@@ -288,8 +288,9 @@ export function DrivenOscillator({
     } catch (e) {
       if (generation.current === epoch) {
         const message = e instanceof Error ? e.message : String(e);
-        setOutcome(/cancelled/i.test(message) ? "CANCELLED" : "FAILED");
-        if (!/cancelled/i.test(message)) setError(message);
+        const cancelledByUser=cancelled.current||/cancelled/i.test(message);
+        setOutcome(cancelledByUser ? "CANCELLED" : "FAILED");
+        if (!cancelledByUser) setError(message);
       }
     } finally {
       active.current = null;
