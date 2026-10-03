@@ -1519,6 +1519,9 @@ h1 {
 .runs-intro { display: flex; align-items: center; justify-content: space-between; gap: 20px; padding: 24px; }
 .runs-intro h2 { margin: 4px 0 8px; font-size: 24px; }
 .runs-intro p { margin-bottom: 0; max-width: 800px; }
+.runs-intro-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.runs-intro-actions button { border: 1px solid #527c72; border-radius: 5px; background: #21433d; color: #d0f2e7; padding: 8px 11px; cursor: pointer; }
+.runs-intro-actions button:disabled { opacity: .5; cursor: default; }
 .runs-empty { padding: 24px; color: #9bafba; }
 .runs-message { margin: 0; border: 1px solid #355c59; padding: 12px 15px; border-radius: 8px; background: #1b3032; overflow-wrap: anywhere; }
 .runs-list { display: grid; gap: 10px; }

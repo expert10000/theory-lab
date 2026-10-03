@@ -61,5 +61,7 @@ const bridge: QuantumBridge = {
   getSceneExample: (request) => ipcRenderer.invoke("quantum:scene-example", request),
   exportSceneExample: (request) => ipcRenderer.invoke("quantum:export-scene-example", request),
   exportRun: (runId, format) => ipcRenderer.invoke("quantum:export-run", runId, format),
+  exportRunBundle: (runId) => ipcRenderer.invoke("quantum:export-run-bundle",runId),
+  importRunBundle: () => ipcRenderer.invoke("quantum:import-run-bundle"),
 };
 contextBridge.exposeInMainWorld("quantum", Object.freeze(bridge));

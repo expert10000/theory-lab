@@ -1,6 +1,6 @@
 # Quantum Lab linked workspace roadmap
 
-Status (2026-10-03): QLAB-UI-1–6 implemented for declared adapters; UI-7 partial, UI-8 planned. This roadmap translates
+Status (2026-10-03): QLAB-UI-1–7 implemented for declared adapters; UI-8 planned. This roadmap translates
 the supplied UI critique into an additive desktop plan after D1-020–022. It
 changes how existing physics is explored, not the worker architecture or the
 meaning of historical QLAB, QVIS and D1 milestones.
@@ -15,7 +15,7 @@ meaning of historical QLAB, QVIS and D1 milestones.
 | Done | QLAB-UI-2 | Exact-run spectrum, time, level/site, sweep, topology, orbital voxel/radial and oscillator energy/position/time selections link only values saved by that operation. |
 | Done | QLAB-UI-3 | Run-backed model-specific inspectors distinguish stored inputs from drafts and expose recorded diagnostics and provenance across current labs; unavailable states remain explicitly unavailable. |
 | Done | QLAB-UI-6 | Durable A/B run-ID pins and Analysis view cover all current saved-result operations. Exact stored inputs, engine/provenance and numerical diagnostics remain side by side; physical Δ is shown only for explicitly aligned, unit-labelled observables. |
-| Partial | QLAB-UI-7 | Runs has a verified provenance drawer, worker-version preflight and fingerprint-gated rerun. New runs retain parent IDs/hashes without changing the source. All-operation and portable-import acceptance remains. |
+| Done | QLAB-UI-7 | Runs verifies provenance and gates rerun on the available worker environment. All 16 operations pass rerun acceptance; portable `.qrun` folders preserve original run IDs, data and parent hashes across profiles and restart. |
 | Later | QLAB-UI-8 | Verified Lab-side scene bridge. Math3D handoff remains a separate acceptance boundary. |
 
 UI-1–3 are complete for currently reachable desktop labs after the orbital and
@@ -396,22 +396,36 @@ the declared boundary. No worker physics or `quantum-result/v1` branch changed.
 
 ### QLAB-UI-7 Provenance and reproducible rerun
 
-First slice delivered (2026-10-03): Runs exposes the exact hash-verified input
+Delivered (2026-10-03): Runs exposes the exact hash-verified input
 job, result/artifact hashes, runtime, available source fields, worker/engine
 versions and rerun lineage. Preflight refuses unavailable engines and discloses
 worker/Python/engine/device differences before execution; a stale preflight
 fingerprint cannot dispatch. Re-run clones the original job except for a new
 job ID, records a separate run, and stores parent job/result hashes in its
-manifest and JSON manifest export. Unit and desktop restart acceptance cover
-the initial spectrum path. This is **Partial** pending representative
-all-operation rerun acceptance, legacy-contract refusal checks and any portable
-run-import lineage design; no run-import feature is claimed here.
+manifest and JSON manifest export. Electron/Playwright acceptance reruns all
+16 current operations, including all four evolution models, both cavity
+models and both topology models (21 operation/model paths). Each child uses
+the source job unchanged except for the new job ID, and the original remains
+readable. The saved child survives an Electron restart.
+
+Portable `.qrun` folder export/import copies the original manifest, job,
+result and optional binary bytes without changing the source run ID. A bounded
+envelope hashes every member, including the manifest's parent ID and hashes.
+Import checks the fixed file list, file identities and sizes, contracts,
+scientific consistency, and duplicate IDs before exposing a run. Missing
+parents remain explicitly detached; if the exact parent is later imported,
+lineage becomes locally verified. Unit and fresh-profile Electron acceptance
+cover inline and binary round trips, restart, tampering, extra files, collision
+and an obsolete job contract rehashed into an otherwise intact bundle.
+Hashes verify integrity, not author identity; this format is not signed.
 
 Consolidate job, model, solver, source preset/Atlas revision, worker/engine
 versions, runtime, artifact hashes and export lineage in a provenance drawer.
 “Re-run exactly” means reconstructing the stored input job. It does **not**
 promise bitwise-identical results if the available worker/engine versions or
-hardware differ; show that difference before execution. Never mutate the
+hardware differ; show recorded version/device differences before execution.
+Historical runs do not record CPU/GPU hardware identity, so hardware equality
+cannot be certified. Never mutate the
 original run or silently upgrade its schema.
 
 Acceptance: rerun job bytes/semantics match the stored job after explicit
@@ -437,8 +451,8 @@ the external importer/handoff has its own compatibility tests.
 ## Delivery order and release gates
 
 The UI-1–6 gates are delivered for the declared adapters, including all current
-desktop labs in UI-1–3 and all current saved-result operations in UI-6. Finish
-UI-7 reproducibility acceptance, then UI-8 for compatible scenes. After each slice,
+desktop labs in UI-1–3, all current saved-result operations in UI-6, and
+provenance/rerun/portable-run handling in UI-7. Proceed to UI-8 for compatible scenes. After each slice,
 broaden model coverage by explicit adapters, preserving
 the current direct lab entry points until equivalent paths pass acceptance.
 

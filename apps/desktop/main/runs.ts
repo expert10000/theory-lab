@@ -1,6 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, rename, unlink, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { copyFile, lstat, mkdir, readFile, readdir, rename, rm, unlink, writeFile } from "node:fs/promises";
+import { basename, join, resolve, sep } from "node:path";
 import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult, type OrbitalResult, type OscillatorFamilyResult, type RunComparisonPins, type VerifiedSavedRun,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
 import { consistentTopologyResult } from "../../../packages/models/topology";
@@ -19,9 +19,13 @@ import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {makeSceneStream} from "../../../packages/quantum-scene/stream";
 import {scenePreview} from "../../../packages/quantum-scene/lod";
 import {writeStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
+import {boundedRead} from "../../../packages/quantum-scene/bundle";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const sha = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
+const portableLimits={"manifest.json":128*1024,"job.json":128*1024,"result.json":8*1024*1024,"data.f64":256*1024*1024} as const;
+type PortableName=keyof typeof portableLimits;
+const portableNames=["manifest.json","job.json","result.json","data.f64"] as const;
 function verifyId(id: string) {
   if (!identifier.test(id)) throw new Error("Invalid run ID");
 }
@@ -139,7 +143,8 @@ export class RunStore {
   private async load(runId: string) {
     verifyId(runId);
     const dir = join(this.root, runId);
-    const manifest = JSON.parse(await readFile(join(dir, "manifest.json"), "utf8"));
+    const manifestText=await readFile(join(dir,"manifest.json"),"utf8");
+    const manifest = JSON.parse(manifestText);
     if (manifest.schema !== "quantum-run-manifest/v1" || manifest.runId !== runId ||
         manifest.files?.job !== "job.json" || manifest.files?.result !== "result.json" ||
         !/^[a-f0-9]{64}$/.test(manifest.hashes?.job) || !/^[a-f0-9]{64}$/.test(manifest.hashes?.result))
@@ -203,7 +208,7 @@ export class RunStore {
       if (result.operation === "oscillator_damped") checkDampedOscillatorData(result, data);
       if (result.operation === "oscillator_parametric") checkParametricData(result, data);
     }
-    return { manifest, job, result, data };
+    return { manifest, job, result, data, manifestText, jobText, resultText };
   }
   async verified(runId:string):Promise<VerifiedSavedRun>{
     const {job,result,data}=await this.load(runId);
@@ -212,10 +217,98 @@ export class RunStore {
   async inspect(runId:string){
     const {manifest,job,result}=await this.load(runId);
     const lineage=manifest.lineage??null;
+    let lineageStatus:"verified-parent"|"detached-parent"|null=null;
+    if(lineage){
+      let parentInfo:Awaited<ReturnType<typeof lstat>>|null=null;
+      try{
+        parentInfo=await lstat(join(this.root,lineage.parentRunId));
+      }catch(error){
+        if((error as NodeJS.ErrnoException).code!=="ENOENT")throw error;
+      }
+      if(!parentInfo)lineageStatus="detached-parent";
+      else{
+        if(!parentInfo.isDirectory()||parentInfo.isSymbolicLink())throw new Error("Invalid saved parent directory");
+        const parent=await this.load(lineage.parentRunId);
+        if(parent.manifest.hashes.job!==lineage.parentJobSha256||
+            parent.manifest.hashes.result!==lineage.parentResultSha256)
+          throw new Error("Stored parent hashes do not match the run lineage");
+        lineageStatus="verified-parent";
+      }
+    }
     return {summary:{...summary(result),...(lineage?{parentRunId:lineage.parentRunId}:{})},job,engine:result.engine,
       provenance:result.provenance,
       hashes:{job:manifest.hashes.job as string,result:manifest.hashes.result as string,
-        artifact:"data" in result?result.data.sha256:null},lineage} as const;
+        artifact:"data" in result?result.data.sha256:null},lineage,lineageStatus} as const;
+  }
+  /** Portable, lossless copy of an already verified run; never overwrites a bundle. */
+  async exportBundle(runId:string,parent:string):Promise<string>{
+    const source=await this.load(runId);
+    const directory=join(parent,`${runId}.qrun`);
+    const parentPath=resolve(parent),targetPath=resolve(directory);
+    if(!targetPath.startsWith(parentPath+sep))throw new Error("Invalid run bundle destination");
+    await mkdir(directory,{recursive:false});
+    try{
+      const contents=new Map<PortableName,Buffer>([
+        ["manifest.json",Buffer.from(source.manifestText)],
+        ["job.json",Buffer.from(source.jobText)],
+        ["result.json",Buffer.from(source.resultText)],
+      ]);
+      if(source.data)contents.set("data.f64",source.data);
+      const files:Record<string,{bytes:number;sha256:string}>={};
+      for(const [name,bytes] of contents){
+        if(bytes.byteLength>portableLimits[name])throw new Error("Run exceeds portable bundle limit");
+        await writeFile(join(directory,name),bytes,{flag:"wx"});
+        files[name]={bytes:bytes.byteLength,sha256:sha(bytes)};
+      }
+      await writeFile(join(directory,"bundle.json"),JSON.stringify({schema:"quantum-run-bundle/v1",runId,files},null,2)+"\n",{flag:"wx"});
+      return directory;
+    }catch(error){await rm(targetPath,{recursive:true,force:true});throw error;}
+  }
+  /** Import only the fixed bundle members, verify before installing, preserve source run ID/lineage. */
+  async importBundle(directory:string):Promise<RunSummary>{
+    const root=await lstat(directory);
+    if(!root.isDirectory()||root.isSymbolicLink())throw new Error("Run bundle root must be a directory, not a link");
+    const envelope:unknown=JSON.parse((await boundedRead(join(directory,"bundle.json"))).toString("utf8"));
+    if(!envelope||typeof envelope!=="object"||Array.isArray(envelope))throw new Error("Invalid run bundle envelope");
+    const bundle=envelope as {schema?:unknown;runId?:unknown;files?:unknown};
+    if(bundle.schema!=="quantum-run-bundle/v1"||typeof bundle.runId!=="string"||
+        !identifier.test(bundle.runId)||!bundle.files||typeof bundle.files!=="object"||Array.isArray(bundle.files)||
+        Object.keys(bundle).sort().join(",")!=="files,runId,schema")
+      throw new Error("Invalid run bundle envelope");
+    const descriptors=bundle.files as Record<string,unknown>;
+    const names=Object.keys(descriptors).sort();
+    const hasData=names.includes("data.f64");
+    const expected=(hasData?portableNames:portableNames.slice(0,3)).slice().sort();
+    if(JSON.stringify(names)!==JSON.stringify(expected))throw new Error("Invalid run bundle files");
+    const entries=await readdir(directory,{withFileTypes:true});
+    if(entries.length!==names.length+1||entries.some(entry=>
+      !entry.isFile()||entry.isSymbolicLink()||!["bundle.json",...names].includes(entry.name)))
+      throw new Error("Run bundle contains missing, unexpected or linked files");
+    const contents=new Map<PortableName,Buffer>();
+    for(const name of names as PortableName[]){
+      const descriptor=descriptors[name];
+      if(!descriptor||typeof descriptor!=="object"||Array.isArray(descriptor)||
+          Object.keys(descriptor).sort().join(",")!=="bytes,sha256")throw new Error("Invalid run bundle file descriptor");
+      const {bytes,sha256}=descriptor as {bytes:unknown;sha256:unknown};
+      if(!Number.isSafeInteger(bytes)||typeof bytes!=="number"||bytes<1||bytes>portableLimits[name]||
+          typeof sha256!=="string"||!/^[a-f0-9]{64}$/.test(sha256))throw new Error("Invalid run bundle file descriptor");
+      const data=await boundedRead(join(directory,name),bytes);
+      if(sha(data)!==sha256)throw new Error("Run bundle file failed integrity check");
+      contents.set(name,data);
+    }
+    const manifest=JSON.parse(contents.get("manifest.json")!.toString("utf8"));
+    if(manifest.runId!==bundle.runId||manifest.files?.data!==(hasData?"data.f64":null))
+      throw new Error("Run bundle identity or data declaration mismatch");
+    await this.ensureRoot();
+    const target=resolve(this.root,bundle.runId);
+    if(!target.startsWith(resolve(this.root)+sep))throw new Error("Invalid imported run destination");
+    try{await mkdir(target,{recursive:false});}
+    catch(error){if((error as NodeJS.ErrnoException).code==="EEXIST")throw new Error(`Saved run ${bundle.runId} already exists; import never overwrites it`);throw error;}
+    try{
+      for(const [name,bytes] of contents)await writeFile(join(target,name),bytes,{flag:"wx"});
+      const verified=await this.inspect(bundle.runId);
+      return verified.summary;
+    }catch(error){await rm(target,{recursive:true,force:true});throw error;}
   }
   async comparisonPins():Promise<RunComparisonPins>{
     await this.ensureRoot();

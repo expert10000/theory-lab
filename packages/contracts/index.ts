@@ -488,6 +488,7 @@ export interface SavedRunInspection {
   provenance: QuantumResult["provenance"];
   hashes: {job:string;result:string;artifact:string|null};
   lineage: {parentRunId:string;parentJobSha256:string;parentResultSha256:string}|null;
+  lineageStatus: "verified-parent"|"detached-parent"|null;
   preflight: {ready:boolean;reason:string|null;differences:string[];fingerprint:string|null};
 }
 export type OscillatorFamilyResult=OscillatorResult|OscillatorEvolutionResult|DrivenOscillatorResult|PulsedOscillatorResult|DampedOscillatorResult|ParametricOscillatorResult|AnharmonicOscillatorResult;
@@ -581,6 +582,8 @@ export interface QuantumBridge {
   getSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<import("../quantum-scene").ScenePayload>;
   exportSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<string | null>;
   exportRun(runId: string, format: import("./workspace").RunExportFormat): Promise<string | null>;
+  exportRunBundle(runId:string):Promise<string|null>;
+  importRunBundle():Promise<import("./workspace").RunSummary|null>;
 }
 const ajv = new Ajv({ allErrors: true, strict: true });
 export const isQuantumJob = ajv.compile<QuantumJob>(jobSchema);

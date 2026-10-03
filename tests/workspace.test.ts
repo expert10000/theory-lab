@@ -157,6 +157,15 @@ test("run store persists provenance and verified data, then exports CSV, SVG and
     assert.match(await readFile(csv, "utf8"), /\n2,0,1,/);
     assert.match(await readFile(svg, "utf8"), /<svg xmlns=/);
     assert.equal(JSON.parse(await readFile(manifest, "utf8")).job.jobId, job.jobId);
+    const bundle=await store.exportBundle(result.runId,root);
+    const portable=new RunStore(join(root,"portable-runs"),join(root,"no-worker-artifacts"));
+    assert.equal((await portable.importBundle(bundle)).runId,result.runId);
+    assert.deepEqual(Buffer.from((await portable.rabi(result.runId)).data),binary,
+      "portable binary import is usable without the original worker artifact directory");
+    const bundleData=join(bundle,"data.f64"),originalBundleData=await readFile(bundleData);
+    await writeFile(bundleData,Buffer.alloc(binary.byteLength));
+    await assert.rejects(new RunStore(join(root,"tampered-import"),artifacts).importBundle(bundle),/integrity/);
+    await writeFile(bundleData,originalBundleData);
     await store.export(spectrum.runId, "csv", join(root, "spectrum.csv"));
     assert.match(await readFile(join(root, "spectrum.csv"), "utf8"), /E\+,0.64/);
     await writeFile(join(root, "runs", result.runId, "data.f64"), Buffer.alloc(binary.byteLength));

@@ -539,6 +539,21 @@ app.whenReady().then(() => {
     await runs.export(runId, kind, selection.filePath);
     return selection.filePath;
   });
+  ipcMain.handle("quantum:export-run-bundle",async(event,runId:unknown)=>{
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid run bundle ID");
+    await runs.inspect(runId);
+    const selection=await dialog.showOpenDialog({title:"Choose parent folder for portable .qrun bundle",properties:["openDirectory"]});
+    if(selection.canceled||!selection.filePaths[0])return null;
+    return runs.exportBundle(runId,selection.filePaths[0]);
+  });
+  ipcMain.handle("quantum:import-run-bundle",async(event,...args:unknown[])=>{
+    trusted(event);
+    if(args.length)throw new Error("Run import accepts no renderer paths or arguments");
+    const selection=await dialog.showOpenDialog({title:"Open a portable .qrun folder",properties:["openDirectory"]});
+    if(selection.canceled||!selection.filePaths[0])return null;
+    return runs.importBundle(selection.filePaths[0]);
+  });
   session.defaultSession.setPermissionRequestHandler(
     (_webContents, _permission, callback) => callback(false),
   );

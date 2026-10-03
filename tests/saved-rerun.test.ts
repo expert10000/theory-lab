@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {mkdtemp,readFile,rm,writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
+import {createHash} from "node:crypto";
 import fixture from "../packages/contracts/fixtures/two-level.job.json";
 import type {SpectrumJob,SpectrumResult,WorkerStatus} from "../packages/contracts";
 import {cloneSavedJob,savedRerunPreflight} from "../packages/models/saved-rerun";
@@ -51,6 +52,7 @@ test("UI-7 rerun records a distinct immutable child with verified parent hashes 
     const inspection=await restarted.inspect("child-run");
     const source=await restarted.inspect("parent-run");
     assert.equal(inspection.lineage?.parentRunId,"parent-run");
+    assert.equal(inspection.lineageStatus,"verified-parent");
     assert.equal(inspection.lineage?.parentJobSha256,source.hashes.job);
     assert.equal(inspection.lineage?.parentResultSha256,source.hashes.result);
     assert.deepEqual((await restarted.verified("parent-run")).job,job);
@@ -60,6 +62,44 @@ test("UI-7 rerun records a distinct immutable child with verified parent hashes 
     const exported=JSON.parse(await readFile(exportPath,"utf8"));
     assert.equal(exported.manifest.lineage.parentRunId,"parent-run");
     assert.equal(exported.manifest.hashes.job,inspection.hashes.job);
+    const bundle=await restarted.exportBundle("child-run",root);
+    const portable=new RunStore(join(root,"portable-runs"),join(root,"absent-artifacts"));
+    const imported=await portable.importBundle(bundle);
+    assert.equal(imported.runId,"child-run");
+    assert.equal(imported.parentRunId,"parent-run","parent identity survives without importing the parent");
+    assert.deepEqual((await portable.inspect("child-run")).lineage,inspection.lineage);
+    assert.equal((await portable.inspect("child-run")).lineageStatus,"detached-parent");
+    assert.deepEqual(await portable.verified("child-run"),await restarted.verified("child-run"));
+    await assert.rejects(portable.importBundle(bundle),/already exists/);
+    const secondDestination=new RunStore(join(root,"tamper-runs"),join(root,"absent-artifacts"));
+    const bundledResult=join(bundle,"result.json"),originalResult=await readFile(bundledResult);
+    await writeFile(bundledResult,Buffer.from(originalResult.toString("utf8").replace('"durationMs": 2','"durationMs": 3')));
+    await assert.rejects(secondDestination.importBundle(bundle),/integrity/);
+    assert.deepEqual(await secondDestination.list(),[]);
+    await writeFile(bundledResult,originalResult);
+    await writeFile(join(bundle,"unexpected.txt"),"extra");
+    await assert.rejects(secondDestination.importBundle(bundle),/unexpected/);
+    assert.deepEqual(await secondDestination.list(),[]);
+    const oldBundle=await restarted.exportBundle("parent-run",root);
+    await portable.importBundle(oldBundle);
+    assert.equal((await portable.inspect("child-run")).lineageStatus,"verified-parent",
+      "detached lineage becomes locally verified when the exact parent is imported");
+    const oldJobPath=join(oldBundle,"job.json"),oldManifestPath=join(oldBundle,"manifest.json"),oldEnvelopePath=join(oldBundle,"bundle.json");
+    const oldJob=JSON.parse(await readFile(oldJobPath,"utf8"));
+    oldJob.schema="quantum-job/v0";
+    const jobBytes=Buffer.from(JSON.stringify(oldJob,null,2)+"\n");
+    await writeFile(oldJobPath,jobBytes);
+    const oldManifest=JSON.parse(await readFile(oldManifestPath,"utf8"));
+    oldManifest.hashes.job=createHash("sha256").update(jobBytes).digest("hex");
+    const manifestBytes=Buffer.from(JSON.stringify(oldManifest,null,2)+"\n");
+    await writeFile(oldManifestPath,manifestBytes);
+    const oldEnvelope=JSON.parse(await readFile(oldEnvelopePath,"utf8"));
+    for(const [name,bytes] of [["job.json",jobBytes],["manifest.json",manifestBytes]] as const){
+      oldEnvelope.files[name]={bytes:bytes.byteLength,sha256:createHash("sha256").update(bytes).digest("hex")};
+    }
+    await writeFile(oldEnvelopePath,JSON.stringify(oldEnvelope,null,2)+"\n");
+    await assert.rejects(new RunStore(join(root,"old-contract-runs"),join(root,"absent-artifacts")).importBundle(oldBundle),
+      /Invalid quantum-job\/v1/);
     const jobPath=join(root,"runs","parent-run","job.json");
     await writeFile(jobPath,(await readFile(jobPath,"utf8")).replace('"delta": 1','"delta": 9'));
     await assert.rejects(restarted.inspect("parent-run"),/integrity/);

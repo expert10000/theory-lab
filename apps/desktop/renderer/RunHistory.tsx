@@ -42,6 +42,19 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
       setMessage(path ? `Exported ${format.toUpperCase()}: ${path}` : "Export cancelled");
     } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
   }
+  async function exportBundle(runId:string){
+    try{const path=await bridge.exportRunBundle(runId);setMessage(path?`Exported portable run: ${path}`:"Export cancelled");}
+    catch(error){setMessage(error instanceof Error?error.message:String(error));}
+  }
+  async function importBundle(){
+    setBusy(true);setMessage("");
+    try{
+      const imported=await bridge.importRunBundle();
+      if(imported){setRuns(await bridge.listRuns());setMessage(`Imported verified run ${imported.runId}${imported.parentRunId?` (parent ${imported.parentRunId})`:""}.`);}
+      else setMessage("Import cancelled");
+    }catch(error){setMessage(error instanceof Error?error.message:String(error));}
+    finally{setBusy(false);}
+  }
   async function inspectOne(runId:string){
     if(inspecting||rerunning)return;
     if(inspection?.summary.runId===runId){setInspection(null);return;}
@@ -71,8 +84,9 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   }
   return <section className="runs-page" data-testid="runs-page">
     <div className="panel runs-intro"><div><p className="eyebrow">DURABLE RUNS / QLAB-016</p><h2>Every completed calculation, accounted for.</h2>
-      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen, inspect provenance, or rerun a verified job as a new saved run. You can also pin A/B comparisons and export data, figures and manifests.</p></div>
-      <button type="button" className="text-button" onClick={() => void refresh()} disabled={busy}>Refresh runs ↻</button></div>
+      <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen, inspect provenance, or rerun a verified job as a new saved run. Portable .qrun bundles preserve exact source identities and parent hashes.</p></div>
+      <div className="runs-intro-actions"><button type="button" onClick={() => void importBundle()} disabled={busy} data-testid="import-run-bundle">Import .qrun</button>
+        <button type="button" className="text-button" onClick={() => void refresh()} disabled={busy}>Refresh runs ↻</button></div></div>
     <div className="panel runs-pins" data-testid="runs-pins"><div><p className="eyebrow">QLAB-UI-6 / SAVED RUN COMPARISON</p>
       <strong>A: {pins.a??"not pinned"}</strong><strong>B: {pins.b??"not pinned"}</strong>
       <small>Pins store run IDs only. A/B values are loaded and verified when Analysis opens.</small></div>
@@ -121,7 +135,8 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
           <button type="button" className="run-open" aria-label={`Open ${run.operation} ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,"oscillator")}>{opening===run.runId?"Opening…":`Open ${run.operation.replaceAll("_"," ")}`}</button>}
           {(["csv", "svg", "manifest"] as const).map(format =>
-          <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}</div>
+          <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}
+          <button type="button" aria-label={`Export portable run ${run.runId}`} onClick={()=>void exportBundle(run.runId)}>.qrun</button></div>
         {inspection?.summary.runId===run.runId&&<div className="run-provenance" data-testid="run-provenance">
           <p className="eyebrow">QLAB-UI-7 / HASH-VERIFIED SOURCE RUN</p>
           <div className="run-provenance-grid">
@@ -132,7 +147,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
               <code>Computed {inspection.provenance.computedAt} · {inspection.provenance.durationMs.toFixed(1)} ms</code></div>
             <div><strong>Result and lineage</strong><code>Result SHA-256 {inspection.hashes.result}</code>
               <code>Artifact SHA-256 {inspection.hashes.artifact??"inline result (no binary artifact)"}</code>
-              <code>Parent {inspection.lineage?.parentRunId??"none"}</code>
+              <code>Parent {inspection.lineage?.parentRunId??"none"}{inspection.lineageStatus?` · ${inspection.lineageStatus==="verified-parent"?"verified locally":"not present locally"}`:""}</code>
               {inspection.lineage&&<><code>Parent job SHA-256 {inspection.lineage.parentJobSha256}</code>
                 <code>Parent result SHA-256 {inspection.lineage.parentResultSha256}</code></>}</div>
           </div>

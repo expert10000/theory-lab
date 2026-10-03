@@ -30,6 +30,10 @@ let preservedPulseRunId = null;
 let preservedOrbitalRunId = null;
 const preservedOscillatorRunIds = {};
 let preservedComparisonPins = null;
+let portableInlineBundle = null;
+let portableBinaryBundle = null;
+let preservedBinaryRerunId = null;
+let portableHashes = null;
 const errors = [];
 try {
   const page = await app.firstWindow();
@@ -78,6 +82,7 @@ try {
       "circuit",
       "evolve",
       "exportRun",
+      "exportRunBundle",
       "exportScene",
       "exportSceneExample",
       "getCapabilities",
@@ -99,6 +104,7 @@ try {
       "getSweepRun",
       "getTopologyRun",
       "getVerifiedRun",
+      "importRunBundle",
       "importScene",
       "importSceneStream",
       "inspectSavedRun",
@@ -628,9 +634,9 @@ try {
   assert.match(await page.getByTestId("reconciliation-R2").innerText(),/Implemented/);
   for (const id of ["R3", "R4", "R5"]) assert.match(await page.getByTestId(`reconciliation-${id}`).innerText(),/Implemented/);
   assert.match(await page.getByTestId("reconciliation-freeze-status").innerText(),/All existing labs and features are retained/);
-  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6.*Partially done: QLAB-UI-7.*Next: close QLAB-UI-7 adapter gaps/s);
+  assert.match(await page.getByTestId("linked-workspace-status").innerText(),/Done: QLAB-UI-1, QLAB-UI-2, QLAB-UI-3, QLAB-UI-4, QLAB-UI-5, QLAB-UI-6, QLAB-UI-7.*Partially done: none.*Next: QLAB-UI-8 Verified scene bridge/s);
   for(const id of Array.from({length:8},(_,index)=>`QLAB-UI-${index+1}`))
-    assert.match(await page.getByTestId(`planned-${id}`).innerText(),["QLAB-UI-1","QLAB-UI-2","QLAB-UI-3","QLAB-UI-4","QLAB-UI-5","QLAB-UI-6"].includes(id)?/Implemented/:id==="QLAB-UI-7"?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`planned-${id}`).innerText(),id==="QLAB-UI-8"?/Planned/:/Implemented/);
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
   assert.match(await page.getByTestId("plan-coverage-QVIS-006").innerText(), /Partial/);
@@ -1641,6 +1647,58 @@ try {
   await examplePage.getByTestId("stream-status").filter({hasText:"displayed: Full supplied samples"}).waitFor();
   assert.ok(await examplePage.getByTestId("export-scene").isDisabled());
   assert.ok(await page.evaluate(async()=>{try{await window.quantum.readSceneChunk("unknown","../secret");return false;}catch{return true;}}));
+  const rerunOperations=["diagonalize","evolve","cavity","lindblad","sweep","many_body","circuit","topology","orbital",
+    "oscillator","oscillator_evolve","oscillator_drive","oscillator_pulse","oscillator_damped","oscillator_parametric","oscillator_anharmonic"];
+  const rerunCases=rerunOperations.flatMap(operation=>operation==="evolve"?
+    ["driven_two_level","landau_zener","stuckelberg","strong_drive"].map(model=>({operation,model})):
+    operation==="cavity"?["jaynes_cummings","quantum_rabi"].map(model=>({operation,model})):
+    operation==="topology"?["ssh","qwz"].map(model=>({operation,model})):[{operation,model:null}]);
+  const rerunSources=await page.evaluate(()=>window.quantum.listRuns());
+  for(const {operation,model} of rerunCases){
+    const label=model?`${operation}/${model}`:operation;
+    const candidates=rerunSources.filter(run=>run.operation===operation&&(!model||run.model===model)).sort((a,b)=>a.durationMs-b.durationMs);
+    assert.ok(candidates.length,`UI-7 needs a real saved ${label} source`);
+    let inspection=null;
+    for(const candidate of candidates){
+      const reviewed=await page.evaluate(id=>window.quantum.inspectSavedRun(id),candidate.runId);
+      if(reviewed.preflight.ready){inspection=reviewed;break;}
+    }
+    assert.ok(inspection,`UI-7 requires a ready saved ${label} engine`);
+    const sourceId=inspection.summary.runId;
+    const newRun=await page.evaluate(({id,fingerprint})=>window.quantum.rerunSaved(id,fingerprint),
+      {id:sourceId,fingerprint:inspection.preflight.fingerprint});
+    assert.equal(newRun.parentRunId,sourceId,`${label} rerun retains parent identity`);
+    assert.notEqual(newRun.runId,sourceId,`${label} rerun has a new run ID`);
+    const [source,child,childInspection]=await page.evaluate(async ids=>{
+      const [a,b,c]=await Promise.all([window.quantum.getVerifiedRun(ids[0]),window.quantum.getVerifiedRun(ids[1]),window.quantum.inspectSavedRun(ids[1])]);
+      return [a,b,c];
+    },[sourceId,newRun.runId]);
+    assert.deepEqual({...child.job,jobId:source.job.jobId},source.job,`${label} retains exact stored inputs`);
+    assert.equal(child.result.operation,operation);
+    if(model)assert.equal(child.result.model.type,model);
+    assert.equal(childInspection.lineageStatus,"verified-parent");
+    assert.equal(childInspection.lineage.parentJobSha256,inspection.hashes.job);
+    assert.equal(childInspection.lineage.parentResultSha256,inspection.hashes.result);
+    if(source.data)assert.ok(child.data?.byteLength>0,`${label} child has a verified binary artifact`);
+    if(operation==="evolve"&&!preservedBinaryRerunId)preservedBinaryRerunId=newRun.runId;
+    console.log(`UI-7 verified rerun: ${label}`);
+  }
+  const portableParent=resolve("artifacts/exports");
+  await mkdir(portableParent,{recursive:true});
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},portableParent);
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Export portable run ${preservedRerunId}`}).click();
+  await page.getByRole("status").filter({hasText:"Exported portable run"}).waitFor();
+  portableInlineBundle=resolve(portableParent,`${preservedRerunId}.qrun`);
+  portableBinaryBundle=await page.evaluate(id=>window.quantum.exportRunBundle(id),preservedBinaryRerunId);
+  assert.ok(portableBinaryBundle);
+  portableHashes=await page.evaluate(async ids=>Promise.all(ids.map(async id=>(await window.quantum.inspectSavedRun(id)).hashes)),
+    [preservedRerunId,preservedBinaryRerunId]);
+  await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},portableInlineBundle);
+  await page.getByTestId("import-run-bundle").click();
+  await page.getByRole("status").filter({hasText:"already exists"}).waitFor();
+  assert.ok(await page.evaluate(async()=>{try{await window.quantum.importRunBundle("renderer-path");return false;}catch{return true;}}),
+    "renderer cannot select arbitrary import paths");
   assert.deepEqual(errors, []);
   console.log(
     "PASS: Electron → QuTiP/Native labs, sweeps and presets; orbital studies; lattice/reciprocal fixtures, supplied SSH/QWZ bands including gap closure, shared sample selection, verified export/import; durable runs, workspace restore, integrity, cancellation, restart and sandbox.",
@@ -1817,3 +1875,37 @@ try {
 } finally {
   await reopened.close();
 }
+const importEnv={...env,QLAB_TEST_PROFILE:await mkdtemp(join(tmpdir(),"qlab-run-import-"))};
+const importedApp=await electron.launch({args:["."],env:importEnv});
+try{
+  const page=await importedApp.firstWindow();
+  await page.getByTestId("worker-status").filter({hasText:"READY"}).waitFor({timeout:45000});
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  for(const [folder,id,hashes] of [
+    [portableInlineBundle,preservedRerunId,portableHashes[0]],
+    [portableBinaryBundle,preservedBinaryRerunId,portableHashes[1]],
+  ]){
+    await importedApp.evaluate(({dialog},path)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[path]});},folder);
+    await page.getByTestId("import-run-bundle").click();
+    await page.getByRole("status").filter({hasText:`Imported verified run ${id}`}).waitFor();
+    const imported=await page.evaluate(runId=>window.quantum.inspectSavedRun(runId),id);
+    assert.deepEqual(imported.hashes,hashes,"portable import preserves exact metadata and artifact hashes");
+    assert.equal(imported.lineageStatus,"detached-parent","source identity remains explicit without fabricating an imported parent");
+    const verified=await page.evaluate(runId=>window.quantum.getVerifiedRun(runId),id);
+    if(id===preservedBinaryRerunId)assert.ok(verified.data?.byteLength>0,"portable binary run reopens without source worker files");
+  }
+  await page.getByRole("button",{name:`Inspect provenance ${preservedRerunId}`}).click();
+  assert.match(await page.getByTestId("run-provenance").innerText(),/not present locally/);
+  console.log("PASS: portable inline and binary .qrun imports preserve source identity in a fresh Electron profile.");
+}finally{await importedApp.close();}
+const importedRestart=await electron.launch({args:["."],env:importEnv});
+try{
+  const page=await importedRestart.firstWindow();
+  await page.getByTestId("worker-status").filter({hasText:"READY"}).waitFor({timeout:45000});
+  for(const [id,hashes] of [[preservedRerunId,portableHashes[0]],[preservedBinaryRerunId,portableHashes[1]]]){
+    const stored=await page.evaluate(runId=>window.quantum.inspectSavedRun(runId),id);
+    assert.deepEqual(stored.hashes,hashes,"imported source hashes survive full Electron restart");
+    assert.equal(stored.lineageStatus,"detached-parent");
+  }
+  console.log("PASS: imported .qrun identity and artifacts survive full Electron restart.");
+}finally{await importedRestart.close();}
