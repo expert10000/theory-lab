@@ -61,6 +61,13 @@ test("two-level energy-study draft is additive and does not relabel the old dyna
   assert.equal(isWorkspaceSnapshot({...workspace,spectrumStudy:{...draft,code:"eval()"}}),false);
   assert.equal(isWorkspaceSnapshot({...workspace,spectrumStudy:{...draft,points:"1".repeat(101)}}),false);
 });
+test("Ising-study draft is additive and restored without a fabricated result",()=>{
+  const draft={sites:"4",interaction:"1",longitudinal:"0.15",boundary:"open",start:"0",stop:"2",points:"11",engine:"native"};
+  assert.ok(isWorkspaceSnapshot({...workspace,tab:"sweep",sweepView:"ising_chain",isingStudy:draft}));
+  assert.equal(isWorkspaceSnapshot({...workspace,isingStudy:{...draft,engine:"qutip"}}),false);
+  assert.equal(isWorkspaceSnapshot({...workspace,isingStudy:{...draft,points:"1".repeat(101)}}),false);
+  assert.equal(isWorkspaceSnapshot({...workspace,isingStudy:{...draft,runId:"forged"}}),false);
+});
 
 test("many-body job bounds and additive workspace v1 compatibility", () => {
   const job = manyBodyJob("ising-test", MANY_BODY_DEFAULTS, "open", "native");

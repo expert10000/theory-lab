@@ -16,6 +16,7 @@ test("QLAB-UI-1 gates existing experiments by selected model",()=>{
   assert.equal(tabForMode("two_level","sweeps"),"sweep","static energy study is distinct from dynamics final-population sweep");
   assert.equal(tabForMode("landau_zener","dynamics"),"dynamics");
   assert.equal(tabForMode("landau_zener","sweeps"),"sweep");
+  assert.equal(tabForMode("ising_chain","sweeps"),"sweep");
   assert.equal(tabForMode("landau_zener","analysis"),"hamiltonian","saved-run A/B Analysis is available for every model");
   assert.equal(tabForMode("oscillator","explore"),"oscillator");
   assert.equal(tabForMode("oscillator","dynamics"),null,"internal oscillator modes are not yet a shared workspace adapter");
@@ -30,6 +31,7 @@ test("QLAB-UI-1 maps legacy saved tabs to the same model and experiment",()=>{
   assert.equal(modelForSnapshot(snapshot),"stuckelberg");
   assert.equal(modelForSnapshot({...snapshot,tab:"sweep"}),"landau_zener");
   assert.equal(modelForSnapshot({...snapshot,tab:"sweep",sweepView:"two_level"}),"two_level");
+  assert.equal(modelForSnapshot({...snapshot,tab:"sweep",sweepView:"ising_chain"}),"ising_chain");
   assert.equal(modelForSnapshot({...snapshot,tab:"cavity"}),"quantum_rabi");
   assert.equal(modelForSnapshot({...snapshot,tab:"oscillator"}),"oscillator");
   assert.equal(modelForSnapshot({...snapshot,tab:"atlas"}),"two_level");

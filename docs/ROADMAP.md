@@ -1684,8 +1684,9 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-03): **QVIS-014 implemented for declared current desktop
-adapters; QVIS-015–023 planned**. This is an
+Status (2026-10-04): **QVIS-014 implemented for declared current desktop
+adapters; QVIS-015 partially implemented (bounded Ising h/J slice);
+QVIS-016–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1723,6 +1724,22 @@ Ising result does not supply all three. Cross-run and unavailable-state
 selections must be refused or clearly labelled, not inferred.
 
 ## QVIS-015 — Parameter Sweep Laboratory
+
+Delivered Ising slice (2026-10-04): `quantum-ising-study/v1` fixes 2–8 sites,
+open/periodic boundary, nonzero `J` and longitudinal field, then varies
+transverse `h/J` over 3–31 points while keeping every generated job within
+the existing ±10 field/coupling limits. Native and optional QuSpin use the
+unchanged many-body worker job. Each point is an immutable Ising run; an
+atomic, hash-wrapped manifest verifies the exact saved job and result before
+listing, reopening or resuming a checkpoint. Cancellation is between points.
+The desktop Ising Sweeps view plots stored low energies, gap, stored
+half-chain entropy, and an explicitly derived mean of stored site
+magnetizations. Selecting a point shows recorded values and opens that exact
+verified run. Workspace restore preserves inputs, not a fabricated study.
+Restart, manifest/run tampering, and both installed engines are tested.
+Neighboring-ground-state fidelity remains out of scope: the current result
+does not store the ground-state vector. Wider model/output sweep adapters and
+additional axes remain planned; this milestone is therefore Partial.
 
 Extend the existing two-level eigenenergy study and final-`P₁` sweep
 infrastructure to declared model/output pairs. First proposed many-body case:

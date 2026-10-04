@@ -23,6 +23,7 @@ const preservedTopologyRunIds = {};
 let preservedLindbladRunId = null;
 let preservedCircuitRunId = null;
 let preservedManyBodyRunId = null;
+let preservedIsingStudyId = null;
 let preservedStudyId = null;
 let preservedMotionRunId = null;
 let preservedDriveRunId = null;
@@ -89,6 +90,7 @@ try {
       "getCavityRun",
       "getCircuitRun",
       "getEvolutionRun",
+      "getIsingStudy",
       "getLindbladRun",
       "getManyBodyRun",
       "getOrbitalRun",
@@ -109,6 +111,7 @@ try {
       "importSceneStream",
       "inspectSavedRun",
       "lindblad",
+      "listIsingStudies",
       "listRuns",
       "listSpectrumStudies",
       "loadWorkspace",
@@ -129,6 +132,7 @@ try {
       "rerunSaved",
       "restart",
       "run",
+      "saveIsingStudy",
       "saveSpectrumStudy",
       "saveWorkspace",
       "setRunComparisonPins",
@@ -641,7 +645,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number===14?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number===14?/Implemented/:number===15?/Partial/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1267,6 +1271,22 @@ try {
     assert.match(await page.getByTestId("many-body-compare").textContent(), /QuSpin versus Native/);
   }
   await page.screenshot({ path: "artifacts/desktop-many-body.png", fullPage: true });
+  await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
+  await page.getByTestId("ising-study-lab").waitFor();
+  await page.getByRole("spinbutton",{name:"Ising sweep samples"}).fill("3");
+  await page.getByTestId("run-ising-study").click();
+  await page.getByTestId("ising-study-status").filter({hasText:"Study complete"}).waitFor({timeout:30000});
+  assert.match(await page.getByTestId("ising-study-progress").innerText(),/3\/3 verified points/);
+  assert.equal(await page.getByTestId("ising-study-charts").locator("svg").count(),5);
+  preservedIsingStudyId=(await page.evaluate(()=>window.quantum.listIsingStudies()))[0].studyId;
+  const selectedIsingRun=await page.getByTestId("ising-study-selection").locator("code").innerText();
+  await page.getByTestId("open-ising-point").click();
+  await page.getByTestId("workspace-run-id").filter({hasText:selectedIsingRun}).waitFor();
+  await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
+  await page.getByTestId(`open-ising-study-${preservedIsingStudyId}`).click();
+  await page.getByTestId("ising-study-status").filter({hasText:"Verified saved study reopened"}).waitFor();
+  await page.getByRole("tab",{name:"Explore",exact:true}).click();
+  await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("5");
   await page.getByTestId("save-workspace").click();
   await page.getByTestId("workspace-message").filter({ hasText: "Workspace saved" }).waitFor();
   await page.getByRole("spinbutton", { name: "Many-body sites" }).fill("6");

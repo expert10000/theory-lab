@@ -26,8 +26,10 @@ export interface WorkspaceSnapshot {
     parameters: Record<string, string>; x: SweepAxis; y: SweepAxis; twoD: boolean;
     start: string; stop: string; initialIndex: 0 | 1; engine: SweepEngineName };
   /** Optional: older workspaces and dynamics-sweep drafts remain unchanged. */
-  sweepView?: "two_level" | "dynamics";
+  sweepView?: "two_level" | "dynamics" | "ising_chain";
   spectrumStudy?: {omega:string;start:string;stop:string;points:string;engine:EngineName};
+  isingStudy?: {sites:string;interaction:string;longitudinal:string;boundary:"open"|"periodic";
+    start:string;stop:string;points:string;engine:ManyBodyEngineName};
   manyBody?: { sites: string; interaction: string; transverse: string; longitudinal: string;
     boundary: "open" | "periodic"; engine: ManyBodyWorkspaceEngine };
   circuit?: { EJ: string; EC: string; ng: string; ncut: string; levels: string;
@@ -94,9 +96,13 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
     modelId: evolutionModel, parameters: values, x: axis, y: axis, twoD: { type: "boolean" },
     start: shortText, stop: shortText, initialIndex: { enum: [0, 1] }, engine: { enum: ["qutip", "native", "dynamiqs"] },
   }),
-  sweepView: {enum:["two_level","dynamics"]},
+  sweepView: {enum:["two_level","dynamics","ising_chain"]},
   spectrumStudy: block(["omega","start","stop","points","engine"],{
     omega:shortText,start:shortText,stop:shortText,points:shortText,engine,
+  }),
+  isingStudy: block(["sites","interaction","longitudinal","boundary","start","stop","points","engine"],{
+    sites:shortText,interaction:shortText,longitudinal:shortText,boundary:{enum:["open","periodic"]},
+    start:shortText,stop:shortText,points:shortText,engine:{enum:["native","quspin"]},
   }),
   manyBody: block(["sites", "interaction", "transverse", "longitudinal", "boundary", "engine"], {
     sites: shortText, interaction: shortText, transverse: shortText, longitudinal: shortText,

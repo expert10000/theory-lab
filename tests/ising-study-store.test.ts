@@ -49,6 +49,11 @@ test("Ising checkpoints survive restart, resume exact prefix, and refuse tamperi
     assert.deepEqual(launched,[0,1,2,3,4]);
     assert.equal((await restarted.get(plan.studyId)).status,"completed");
     await assert.rejects(studies.save(partial),/cannot replace verified history/);
+    const runPath=join(root,"runs",partial.points[0].runId,"result.json");
+    const runText=await readFile(runPath,"utf8");
+    await writeFile(runPath,runText.replace('"gap": 1','"gap": 9'));
+    await assert.rejects(restarted.get(plan.studyId),/lineage/);
+    await writeFile(runPath,runText);
     const path=join(root,"studies",`${plan.studyId}.json`);
     const manifest=JSON.parse(await readFile(path,"utf8"));
     manifest.payload=manifest.payload.replace("run-ising-durable-0","run-ising-durable-X");

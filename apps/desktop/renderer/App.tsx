@@ -23,6 +23,7 @@ import {SelectionReferenceCard} from "./SelectionReferenceCard";
 import {activeSelectionReference} from "./selection-reference";
 import {TwoLevelStateView} from "./TwoLevelStateView";
 import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
+import {IsingStudyLab,ISING_STUDY_DEFAULTS} from "./IsingStudyLab";
 import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
@@ -114,7 +115,7 @@ export function App() {
     return model==="quantum_rabi"?"quantum_rabi":"jaynes_cummings";
   });
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
-  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "spectrumStudy" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse" | "oscillatorDamped" | "oscillatorParametric" | "oscillatorAnharmonic">>>({});
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "spectrumStudy" | "isingStudy" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse" | "oscillatorDamped" | "oscillatorParametric" | "oscillatorAnharmonic">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
@@ -127,6 +128,7 @@ export function App() {
   const collectOpen = useCallback((value: WorkspaceSnapshot["open"]) => { workspaceParts.current.open = value; checkParts(); }, []);
   const collectSweep = useCallback((value: WorkspaceSnapshot["sweep"]) => { workspaceParts.current.sweep = value; checkParts(); }, []);
   const collectSpectrumStudy=useCallback((value:NonNullable<WorkspaceSnapshot["spectrumStudy"]>)=>{workspaceParts.current.spectrumStudy=value;},[]);
+  const collectIsingStudy=useCallback((value:NonNullable<WorkspaceSnapshot["isingStudy"]>)=>{workspaceParts.current.isingStudy=value;},[]);
   const collectManyBody = useCallback((value: NonNullable<WorkspaceSnapshot["manyBody"]>) => { workspaceParts.current.manyBody = value; checkParts(); }, []);
   const collectCircuit = useCallback((value: NonNullable<WorkspaceSnapshot["circuit"]>) => { workspaceParts.current.circuit = value; checkParts(); }, []);
   const collectTopology = useCallback((value: NonNullable<WorkspaceSnapshot["topology"]>) => { workspaceParts.current.topology = value; }, []);
@@ -380,8 +382,9 @@ export function App() {
       tab, analysisModel:tab==="hamiltonian"?activeModel:undefined, selectedPresetId: selectedPreset?.id ?? null,
       spectrum: { parameters, engine: engineMode }, dynamics: parts.dynamics,
       cavity: parts.cavity, open: parts.open, sweep: parts.sweep, manyBody: parts.manyBody, circuit: parts.circuit,
-      sweepView:tab==="sweep"&&activeModel==="two_level"?"two_level":"dynamics",
+      sweepView:tab==="sweep"&&activeModel==="two_level"?"two_level":tab==="sweep"&&activeModel==="ising_chain"?"ising_chain":"dynamics",
       spectrumStudy:parts.spectrumStudy??SPECTRUM_STUDY_DEFAULTS,
+      isingStudy:parts.isingStudy??ISING_STUDY_DEFAULTS,
       topology: parts.topology ?? TOPOLOGY_DEFAULTS, orbital: parts.orbital ?? ORBITAL_DEFAULTS,
       oscillator: parts.oscillator ?? OSCILLATOR_DEFAULTS,
       oscillatorDynamics: parts.oscillatorDynamics ?? OSCILLATOR_DYNAMICS_DEFAULTS,
@@ -608,7 +611,7 @@ export function App() {
                       : tab === "open"
                         ? "OPEN-SYSTEM LABORATORY / 008"
                         : tab === "sweep"
-                          ? activeModel==="two_level"?"EIGENENERGY STUDY / QLAB-UI-4":"SWEEP LABORATORY / 009"
+                          ? activeModel==="two_level"?"EIGENENERGY STUDY / QLAB-UI-4":activeModel==="ising_chain"?"ISING h/J STUDY / QVIS-015":"SWEEP LABORATORY / 009"
                         : tab === "many_body"
                           ? "MANY-BODY LABORATORY / 021"
                         : tab === "topology" ? "LATTICE TOPOLOGY / 027–028"
@@ -654,7 +657,7 @@ export function App() {
                       : tab === "open"
                         ? "Explore relaxation, dephasing, cavity loss and stationary states."
                       : tab === "sweep"
-                        ? activeModel==="two_level"?"Scan static eigenenergies across Δ at fixed Ω; every point is a saved spectrum run.":"Sweep one or two parameters with checkpoints, cancellation and resume."
+                          ? activeModel==="two_level"?"Scan static eigenenergies across Δ at fixed Ω; every point is a saved spectrum run.":activeModel==="ising_chain"?"Scan transverse h/J at fixed Ising inputs; each point is a verified saved run.":"Sweep one or two parameters with checkpoints, cancellation and resume."
                       : tab === "many_body"
                         ? "Explore a finite Ising chain with independent QuSpin and NumPy engines."
                       : tab === "topology" ? "Computed band topology for finite and periodic lattice models."
@@ -697,14 +700,17 @@ export function App() {
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} onCavityContext={collectCavityContext} reopenedCavity={reopenedCavity} /></div>
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} onLindbladContext={collectLindbladContext} reopenedLindblad={reopenedLindblad} /></div>
-          <div hidden={tab !== "sweep"||activeModel==="two_level"}><SweepLab bridge={window.quantum} status={status}
-            selectedModel={activeModel!=="two_level"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
+          <div hidden={tab !== "sweep"||activeModel==="two_level"||activeModel==="ising_chain"}><SweepLab bridge={window.quantum} status={status}
+            selectedModel={activeModel!=="two_level"&&activeModel!=="ising_chain"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
             onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} onSweepContext={collectSweepContext} reopenedSweep={reopenedSweep} /></div>
           <div hidden={tab!=="sweep"||activeModel!=="two_level"}><SpectrumStudyLab bridge={window.quantum} status={status}
             restored={restored?.snapshot.spectrumStudy} restoreEpoch={restored?.epoch} onSnapshot={collectSpectrumStudy}
             onOpenPoint={openSavedSpectrum}
             onDraftPoint={(delta,omega)=>{setParameters({delta:String(delta),omega:String(omega)});
               setResult(null);setResultMode(null);setComparison(null);setSelection(null);setTab("spectrum");}}/></div>
+          <div hidden={tab!=="sweep"||activeModel!=="ising_chain"}><IsingStudyLab bridge={window.quantum} status={status}
+            restored={restored?.snapshot.isingStudy} restoreEpoch={restored?.epoch} onSnapshot={collectIsingStudy}
+            onOpenPoint={openSavedManyBody}/></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} onManyBodyContext={collectManyBodyContext} reopenedManyBody={reopenedManyBody} /></div>
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} onTopologyContext={collectTopologyContext} reopenedRun={reopenedTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital} onOrbitalContext={collectOrbitalContext} reopenedRun={reopenedOrbital}/></div>
@@ -964,7 +970,7 @@ export function App() {
         </main>
         <aside className="inspector">
           <SelectionReferenceCard reference={selectionReference} result={selectionResult}/>
-          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
+          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel==="ising_chain"?<div><p className="eyebrow">ISING STUDY</p><h2>Saved point runs</h2><p>Select any plotted point to inspect its recorded values. Open it to see the verified Ising-run inspector and provenance.</p><p>Mean magnetization is derived only from saved site values. Fidelity and full state vectors are unavailable.</p></div>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
           <nav className="inspector-tabs" aria-label="Model inspector views">
