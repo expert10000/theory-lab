@@ -15,6 +15,7 @@ import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
 import { SpectrumStudyStore } from "./spectrum-studies";
+import { IsingStudyStore } from "./ising-studies";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
@@ -72,6 +73,7 @@ app.whenReady().then(() => {
   const artifactDir = join(app.getPath("userData"), "artifacts");
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir);
   const spectrumStudies = new SpectrumStudyStore(join(app.getPath("userData"), "spectrum-studies"), runs);
+  const isingStudies = new IsingStudyStore(join(app.getPath("userData"), "ising-studies"), runs);
   const workspaceFile = join(app.getPath("userData"), "workspace.json");
   const evolution = new EvolutionCoordinator(
     worker,
@@ -482,6 +484,17 @@ app.whenReady().then(() => {
   ipcMain.handle("quantum:list-spectrum-studies", (event) => {
     trusted(event);
     return spectrumStudies.list();
+  });
+  ipcMain.handle("quantum:save-ising-study", (event,value:unknown) => {
+    trusted(event);return isingStudies.save(value);
+  });
+  ipcMain.handle("quantum:get-ising-study", (event,studyId:unknown) => {
+    trusted(event);
+    if(typeof studyId!=="string")throw new Error("Invalid Ising study ID");
+    return isingStudies.get(studyId);
+  });
+  ipcMain.handle("quantum:list-ising-studies", (event) => {
+    trusted(event);return isingStudies.list();
   });
   ipcMain.handle("quantum:scene", (event, runId: unknown, view: unknown) => {
     trusted(event);

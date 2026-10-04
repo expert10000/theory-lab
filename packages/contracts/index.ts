@@ -573,6 +573,9 @@ export interface QuantumBridge {
   saveSpectrumStudy(result:import("./spectrum-study").SpectrumStudyResult):Promise<import("./spectrum-study").SpectrumStudyResult>;
   getSpectrumStudy(studyId:string):Promise<import("./spectrum-study").SpectrumStudyResult>;
   listSpectrumStudies():Promise<import("./spectrum-study").SpectrumStudySummary[]>;
+  saveIsingStudy(result:import("./ising-study").IsingStudyResult):Promise<import("./ising-study").IsingStudyResult>;
+  getIsingStudy(studyId:string):Promise<import("./ising-study").IsingStudyResult>;
+  listIsingStudies():Promise<import("./ising-study").IsingStudySummary[]>;
   getScene(runId: string, view?: "standard" | "bands"): Promise<import("../quantum-scene").ScenePayload>;
   exportScene(runId: string, view?: "standard" | "bands", format?: "regular"|"stream"): Promise<string | null>;
   importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;

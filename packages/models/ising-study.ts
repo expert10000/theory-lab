@@ -40,7 +40,9 @@ export async function runIsingStudy(plan:IsingStudyPlan,run:(job:ManyBodyJob)=>P
     if(signal?.aborted)break;
     const job=isingStudyJob(plan,index),result=await run(job);
     if(!candidate(result)||result.jobId!==job.jobId||result.engine.name!==job.engine||
-      JSON.stringify(result.model)!==JSON.stringify(job.model))throw new Error(`Ising study point ${index} failed run lineage`);
+      result.model.type!==job.model.type||
+      Object.keys(job.model.parameters).some(key=>result.model.parameters[key as keyof typeof job.model.parameters]!==job.model.parameters[key as keyof typeof job.model.parameters]))
+      throw new Error(`Ising study point ${index} failed run lineage`);
     const point:IsingStudyPoint={index,ratio:isingStudyRatio(plan,index),runId:result.runId,
       lowEnergies:result.spectrum.lowEnergies,gap:result.spectrum.gap,
       siteMagnetization:result.groundState.siteMagnetization,halfChainEntropy:result.groundState.halfChainEntropy};
