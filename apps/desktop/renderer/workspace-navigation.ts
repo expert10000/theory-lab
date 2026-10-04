@@ -17,7 +17,7 @@ export const MODEL_GROUPS:readonly {id:string;label:string;models:readonly Works
   {id:"circuits",label:"Circuits",models:["transmon"]},
 ];
 const MODELS=new Set<WorkspaceModel>(MODEL_GROUPS.flatMap(group=>group.models));
-const TABS=new Set<WorkspaceTab>(["spectrum","hamiltonian","theory","dynamics","cavity","open","sweep","many_body","circuit","presets","runs","roadmap","backend","atlas","topology","scenes","orbital","oscillator"]);
+const TABS=new Set<WorkspaceTab>(["spectrum","hamiltonian","theory","dynamics","ising_quench","cavity","open","sweep","many_body","circuit","presets","runs","roadmap","backend","atlas","topology","scenes","orbital","oscillator"]);
 const UTILITIES=new Set<WorkspaceTab>(["presets","roadmap","backend","atlas"]);
 
 export function workspaceHash({model,tab}:WorkspaceLocation):string{
@@ -38,7 +38,7 @@ export function locationFromHash(hash:string):WorkspaceLocation|null{
   if(!legacy||!TABS.has(legacy as WorkspaceTab))return null;
   const tab=legacy as WorkspaceTab;
   const model:WorkspaceModel=tab==="cavity"?"jaynes_cummings":tab==="open"?"lindblad":
-    tab==="many_body"?"ising_chain":tab==="topology"?"topology":tab==="orbital"?"hydrogenic":
+    tab==="many_body"||tab==="ising_quench"?"ising_chain":tab==="topology"?"topology":tab==="orbital"?"hydrogenic":
     tab==="oscillator"?"oscillator":tab==="circuit"?"transmon":tab==="dynamics"||tab==="sweep"?"driven_two_level":"two_level";
   return {model,tab};
 }
@@ -52,7 +52,7 @@ export const WORKSPACE_MODES:readonly {id:WorkspaceMode;label:string}[]=[
 
 export function modeForTab(tab:WorkspaceTab):WorkspaceMode|null{
   if(tab==="scenes"||tab==="runs"||tab==="theory")return tab;
-  if(tab==="dynamics"||tab==="open")return "dynamics";
+  if(tab==="dynamics"||tab==="open"||tab==="ising_quench")return "dynamics";
   if(tab==="sweep")return "sweeps";
   if(tab==="hamiltonian")return "analysis";
   if(["spectrum","cavity","many_body","topology","orbital","oscillator","circuit"].includes(tab))return "explore";
@@ -63,7 +63,7 @@ export function tabForMode(model:WorkspaceModel,mode:WorkspaceMode):WorkspaceTab
   if(mode==="scenes"||mode==="runs"||mode==="theory")return mode;
   if(mode==="analysis")return "hamiltonian";
   if(mode==="sweeps")return ["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","ising_chain"].includes(model)?"sweep":null;
-  if(mode==="dynamics")return model==="lindblad"?"open":
+  if(mode==="dynamics")return model==="lindblad"?"open":model==="ising_chain"?"ising_quench":
     ["driven_two_level","landau_zener","stuckelberg","strong_drive"].includes(model)?"dynamics":null;
   switch(model){
     case "two_level":return "spectrum";
@@ -85,7 +85,7 @@ export function modelForSnapshot(snapshot:WorkspaceSnapshot):WorkspaceModel{
     case "sweep":return snapshot.sweepView==="two_level"?"two_level":snapshot.sweepView==="ising_chain"?"ising_chain":snapshot.sweep.modelId;
     case "cavity":return snapshot.cavity.modelId;
     case "open":return "lindblad";
-    case "many_body":return "ising_chain";
+    case "many_body":case "ising_quench":return "ising_chain";
     case "topology":return "topology";
     case "orbital":return "hydrogenic";
     case "oscillator":return "oscillator";

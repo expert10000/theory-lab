@@ -48,6 +48,13 @@ test("selected-model Theory restores from an additive workspace context",()=>{
   assert.ok(isWorkspaceSnapshot({...workspace,tab:"theory",theoryModel:"quantum_rabi"}));
   assert.equal(isWorkspaceSnapshot({...workspace,tab:"theory",theoryModel:"unknown"}),false);
 });
+test("Ising quench workspace restores only bounded draft controls, not a numerical artifact",()=>{
+  const draft={sourceRunId:"run-ising",targetTransverse:"1.2",duration:"10",samples:"51"};
+  assert.ok(isWorkspaceSnapshot({...workspace,tab:"ising_quench",isingQuench:draft}));
+  assert.ok(isWorkspaceSnapshot({...workspace,tab:"ising_quench"}),"legacy snapshot remains valid");
+  assert.equal(isWorkspaceSnapshot({...workspace,isingQuench:{...draft,artifact:{rows:[]}}}),false);
+  assert.equal(isWorkspaceSnapshot({...workspace,isingQuench:{...draft,sourceRunId:"../run"}}),false);
+});
 test("workspace v1 accepts all lab drafts and rejects unknown or unsafe fields", () => {
   assert.ok(isWorkspaceSnapshot(workspace));
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "scenes" }));

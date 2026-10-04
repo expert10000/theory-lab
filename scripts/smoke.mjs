@@ -65,6 +65,10 @@ try {
   assert.equal(await page.locator("[data-testid=model-theory] h2").innerText(),"Two-level system");
   assert.match(await page.getByTestId("theory-visual").innerText(),/Conceptual schematic/);
   assert.match(await page.getByRole("img",{name:/Schematic illustration of Two-level system/}).getAttribute("aria-label"),/Two-level system/);
+  await page.getByRole("button",{name:"Detailed view"}).click();
+  assert.match(await page.getByTestId("theory-detailed-visual").innerText(),/Annotated model anatomy/);
+  await page.screenshot({path:"artifacts/desktop-theory-detailed.png",fullPage:true});
+  await page.getByRole("button",{name:"Overview image"}).click();
   assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/theory");
   assert.ok(await historyBack.isEnabled());
   await historyBack.click();
@@ -111,6 +115,7 @@ try {
       "getCavityRun",
       "getCircuitRun",
       "getEvolutionRun",
+      "getIsingQuench",
       "getIsingState",
       "getIsingStudy",
       "getLindbladRun",
@@ -684,7 +689,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=19?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=20?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1280,6 +1285,17 @@ try {
   await page.getByTestId("many-body-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("many-body-result").waitFor();
   preservedManyBodyRunId=await page.getByTestId("workspace-run-id").innerText();
+  await page.getByRole("tab",{name:"Dynamics",exact:true}).click();
+  await page.getByTestId("ising-quench-lab").waitFor();
+  await page.getByTestId("run-ising-quench").click();
+  await page.getByTestId("ising-quench-result").waitFor({timeout:30000});
+  assert.match(await page.getByTestId("ising-quench-result").innerText(),new RegExp(preservedManyBodyRunId));
+  assert.equal(await page.getByTestId("ising-quench-selected-row").locator("div").count(),4);
+  await page.getByRole("slider",{name:"Ising quench time cursor"}).focus();
+  await page.getByRole("slider",{name:"Ising quench time cursor"}).press("End");
+  assert.match(await page.getByTestId("ising-quench-result").innerText(),/t = 10.0000/);
+  await page.screenshot({path:"artifacts/desktop-ising-quench.png",fullPage:true});
+  await page.getByRole("tab",{name:"Explore",exact:true}).click();
   assert.equal(await page.getByTestId("many-body-inspector-inputs").locator("code").getAttribute("title"),preservedManyBodyRunId);
   assert.equal(await page.getByTestId("many-body-inspector-energy").count(),0);
   await page.getByRole("button",{name:"Select Ising E1"}).click();

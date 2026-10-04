@@ -1,7 +1,7 @@
 import Ajv from "ajv";
 import type { CavityModel, EngineName, EvolutionEngineName, ManyBodyEngineName, SweepEngineName, SweepAxis } from "./index";
 
-export type WorkspaceTab = "spectrum" | "hamiltonian" | "theory" | "dynamics" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas" | "topology" | "scenes" | "orbital" | "oscillator";
+export type WorkspaceTab = "spectrum" | "hamiltonian" | "theory" | "dynamics" | "ising_quench" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas" | "topology" | "scenes" | "orbital" | "oscillator";
 export type ManyBodyWorkspaceEngine = ManyBodyEngineName | "compare";
 export type CircuitWorkspaceEngine = import("./index").CircuitEngineName | "compare";
 export type WorkspaceEngine = EngineName | "compare";
@@ -33,6 +33,7 @@ export interface WorkspaceSnapshot {
     axisParameter?:"delta"|"omega";delta?:string};
   isingStudy?: {sites:string;interaction:string;longitudinal:string;boundary:"open"|"periodic";
     start:string;stop:string;points:string;engine:ManyBodyEngineName};
+  isingQuench?: {sourceRunId:string;targetTransverse:string;duration:string;samples:string};
   manyBody?: { sites: string; interaction: string; transverse: string; longitudinal: string;
     boundary: "open" | "periodic"; engine: ManyBodyWorkspaceEngine };
   circuit?: { EJ: string; EC: string; ng: string; ncut: string; levels: string;
@@ -78,7 +79,7 @@ const axis = block(["parameter", "start", "stop", "points"], {
 const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "spectrum", "dynamics", "cavity", "open", "sweep"], {
   schema: { const: "quantum-workspace/v1" },
   savedAt: { type: "string", minLength: 1, maxLength: 50 },
-  tab: { enum: ["spectrum", "hamiltonian", "theory", "dynamics", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "topology", "scenes", "orbital", "oscillator"] },
+  tab: { enum: ["spectrum", "hamiltonian", "theory", "dynamics", "ising_quench", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "topology", "scenes", "orbital", "oscillator"] },
   analysisModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
   theoryModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
   selectedPresetId: { anyOf: [{ type: "string", maxLength: 100 }, { type: "null" }] },
@@ -108,6 +109,10 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   isingStudy: block(["sites","interaction","longitudinal","boundary","start","stop","points","engine"],{
     sites:shortText,interaction:shortText,longitudinal:shortText,boundary:{enum:["open","periodic"]},
     start:shortText,stop:shortText,points:shortText,engine:{enum:["native","quspin"]},
+  }),
+  isingQuench:block(["sourceRunId","targetTransverse","duration","samples"],{
+    sourceRunId:{type:"string",maxLength:100,pattern:"^([A-Za-z0-9_-]{1,100})?$"},
+    targetTransverse:shortText,duration:shortText,samples:shortText,
   }),
   manyBody: block(["sites", "interaction", "transverse", "longitudinal", "boundary", "engine"], {
     sites: shortText, interaction: shortText, transverse: shortText, longitudinal: shortText,

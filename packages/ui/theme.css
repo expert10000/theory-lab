@@ -956,6 +956,18 @@ h1 {
 .theory-visual { margin: 22px 0; border: 1px solid #355159; border-radius: 7px; background: radial-gradient(ellipse at center,#173040,#0d1b26 72%); overflow: hidden; }
 .theory-visual svg { display: block; width: 100%; max-height: 340px; }
 .theory-visual figcaption { padding: 0 18px 14px; color: #89a7b1; font-size: 10px; text-align: right; }
+.theory-view-switch { display: flex; gap: 8px; margin-top: 18px; }
+.theory-view-switch button { border: 1px solid #355159; border-radius: 5px; background: #142a32; color: #aaccc5; padding: 8px 13px; cursor: pointer; }
+.theory-view-switch button[aria-pressed="true"] { background: #245148; border-color: #78cbb8; color: #dbf6e9; }
+.theory-detailed svg { max-height: 450px; }
+.dynamics-flow { display: flex; align-items: stretch; gap: 8px; margin: 0 0 15px; }
+.dynamics-flow > div { flex: 1; min-width: 0; padding: 10px 12px; background: #152a31; border: 1px solid #315052; border-radius: 5px; }
+.dynamics-flow small { display: block; color: #7fbdb1; font-size: 9px; letter-spacing: .12em; margin-bottom: 5px; }
+.dynamics-flow strong { color: #d1e0df; font-size: 11px; font-weight: 500; }
+.dynamics-flow > span { align-self: center; color: #75bdb0; }
+@media (max-width: 1100px) { .dynamics-flow { flex-wrap: wrap; } .dynamics-flow > div { flex-basis: 42%; } }
+.quench-legend { display: flex; flex-wrap: wrap; gap: 10px 18px; margin: 0 0 8px; font-size: 11px; }
+[data-testid="ising-quench-plot"] { cursor: crosshair; }
 .theory-formula {
   margin: 24px 0;
   padding: 20px 22px;

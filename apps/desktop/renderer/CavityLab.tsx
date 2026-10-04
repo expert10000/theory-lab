@@ -6,6 +6,7 @@ import { PresetCheck } from "./PresetCheck";
 import { selectedCavitySample, type CavityRunContext } from "./cavity-selection";
 import {cavitySectorEvidence,type CavitySectorEvidence} from "../../../packages/models/cavity-sectors";
 import {CavitySectorPanel} from "./CavitySectorPanel";
+import {DynamicsFlow} from "./DynamicsFlow";
 
 function readF64(bytes: Uint8Array): Float64Array {
   if (bytes.byteLength % 8) throw new Error("Invalid cavity artifact length");
@@ -160,6 +161,7 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
     } finally { activeJob.current = null; setRunning(false); }
   }
   return <div className="cavity-lab">
+    <DynamicsFlow initial="qubit ⊗ Fock state" hamiltonian={CAVITY_REGISTRY[modelId].label} recorded="population + photon rows"/>
     {preset && <div className="preset-loaded" data-testid="preset-loaded">VOLUME VIII PRESET · {preset.title}<small>{preset.reference}</small></div>}
     <section className="hamiltonian-card"><div><p className="eyebrow">CAVITY QED / {definition.label.toUpperCase()}</p><div className="formula">{definition.hamiltonian}</div></div><div className="model-convention"><span>ATOM × FOCK</span><p>|g⟩ = |0⟩ · |e⟩ = |1⟩ · ħ = 1</p></div></section>
     <section className="panel dynamics-settings">

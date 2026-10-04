@@ -1684,8 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-04): **QVIS-014–019 implemented for their declared bounded
-desktop scope; QVIS-020–023 planned**. This is an
+Status (2026-10-04): **QVIS-014–020 implemented for their declared bounded
+desktop scope; QVIS-021–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1899,6 +1899,34 @@ separate solver-equivalence and boundary-condition gate. Never assign a sector
 from a visually suggestive level crossing alone.
 
 ## QVIS-020 — Dynamics as a sibling of Spectrum
+
+Implemented bounded desktop scope (2026-10-04): Dynamics is a distinct
+selected-model mode for the Ising chain as well as the already delivered
+two-level and Lindblad evolutions. The existing Rabi, Landau–Zener,
+Stückelberg, strong-drive, cavity and open-system plots retain their
+exact-run recorded-row cursors and model-specific inspectors. They are not
+recomputed merely to present a common workflow.
+
+For a finite Ising chain, the new `quantum-ising-quench/v1` sidecar starts
+from the unique ground state of a hash-verified, saved 2–8-site Ising run,
+then changes only transverse field `hₓ` suddenly at `t=0`. A bounded
+5–101-row grid (duration at most 20) records each site's `⟨σᶻᵢ⟩`, norm,
+and target-H energy. Native dense propagation accepts a native or optional
+QuSpin *source* run and independently checks the source energy, gap, and
+initial site magnetizations. A degenerate initial ground state is refused.
+The optional workspace snapshot retains the source-run choice and bounded
+control drafts without silently restoring an artifact. The exact source
+job/result hashes and a manifest hash bind the sidecar;
+restart reopens it without recomputing, while corruption is an error.
+The cursor selects one recorded row across plot and site values. Neither
+the frozen `quantum-result/v1` nor the saved source run changes. Full
+time-dependent state vectors, arbitrary quench protocols, thermodynamic
+phase transitions and a Web quench adapter remain outside this bounded
+delivery.
+
+The selected-system Theory page keeps its overview illustration and adds
+a second annotated anatomy view for all 13 current models. Both views are
+schematics, never depictions of a computed run.
 
 Unify interaction semantics around `initial state → Hamiltonian → evolution →
 recorded observables` within the existing model/run architecture. Rabi,

@@ -3,6 +3,7 @@ import type { EngineName, EvolutionProgress, LindbladJob, LindbladResult, Quantu
 import { LINDBLAD_FIELDS, lindbladDefaults, lindbladJob } from "../../../packages/models/lindblad";
 import type { OpenPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
+import {DynamicsFlow} from "./DynamicsFlow";
 import { selectedLindbladSample, type LindbladRunContext } from "./lindblad-selection";
 
 function decode(bytes: Uint8Array, rows: number): Float64Array {
@@ -128,6 +129,7 @@ export function OpenSystemLab({ bridge, status, preset, restored, restoreEpoch, 
     } finally { if(active.current===jobId){active.current = null; setRunning(false);} }
   }
   return <div className="cavity-lab">
+    <DynamicsFlow initial="atom ⊗ cavity density" hamiltonian="driven Lindblad" recorded="density-derived rows"/>
     {preset && <div className="preset-loaded" data-testid="preset-loaded">VOLUME VIII PRESET · {preset.title}<small>{preset.reference}</small></div>}
     <section className="hamiltonian-card"><div><p className="eyebrow">LINDBLAD / OPEN ATOM–CAVITY MODEL</p><div className="formula">H = Δq |e⟩⟨e| + Δc a†a + g(σ₊a + σ₋a†) + F(a + a†)</div></div><div className="model-convention"><span>ROTATING FRAME</span><p>Master equation · ħ = 1</p></div></section>
     <section className="panel dynamics-settings">

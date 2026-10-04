@@ -41,6 +41,7 @@ import { SweepLab } from "./SweepLab";
 import type { SweepRunContext } from "./sweep-selection";
 import { SweepRunInspector } from "./SweepRunInspector";
 import { ManyBodyLab } from "./ManyBodyLab";
+import {IsingQuenchLab} from "./IsingQuenchLab";
 import { ManyBodyRunInspector } from "./ManyBodyRunInspector";
 import type { ManyBodyRunContext } from "./many-body-selection";
 import { CircuitLab } from "./CircuitLab";
@@ -118,7 +119,7 @@ export function App() {
     return model==="quantum_rabi"?"quantum_rabi":"jaynes_cummings";
   });
   const [selectedPreset, setSelectedPreset] = useState<LaboratoryPreset | null>(null);
-  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "spectrumStudy" | "isingStudy" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse" | "oscillatorDamped" | "oscillatorParametric" | "oscillatorAnharmonic">>>({});
+  const workspaceParts = useRef<Partial<Pick<WorkspaceSnapshot, "dynamics" | "cavity" | "open" | "sweep" | "spectrumStudy" | "isingStudy" | "isingQuench" | "manyBody" | "circuit" | "topology" | "orbital" | "oscillator" | "oscillatorDynamics" | "oscillatorMode" | "oscillatorDriven" | "oscillatorPulse" | "oscillatorDamped" | "oscillatorParametric" | "oscillatorAnharmonic">>>({});
   const [workspaceReady, setWorkspaceReady] = useState(false);
   const [restored, setRestored] = useState<{ epoch: number; snapshot: WorkspaceSnapshot } | null>(null);
   const [atlasManyBody, setAtlasManyBody] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["manyBody"]> } | null>(null);
@@ -132,6 +133,7 @@ export function App() {
   const collectSweep = useCallback((value: WorkspaceSnapshot["sweep"]) => { workspaceParts.current.sweep = value; checkParts(); }, []);
   const collectSpectrumStudy=useCallback((value:NonNullable<WorkspaceSnapshot["spectrumStudy"]>)=>{workspaceParts.current.spectrumStudy=value;},[]);
   const collectIsingStudy=useCallback((value:NonNullable<WorkspaceSnapshot["isingStudy"]>)=>{workspaceParts.current.isingStudy=value;},[]);
+  const collectIsingQuench=useCallback((value:NonNullable<WorkspaceSnapshot["isingQuench"]>)=>{workspaceParts.current.isingQuench=value;},[]);
   const collectManyBody = useCallback((value: NonNullable<WorkspaceSnapshot["manyBody"]>) => { workspaceParts.current.manyBody = value; checkParts(); }, []);
   const collectCircuit = useCallback((value: NonNullable<WorkspaceSnapshot["circuit"]>) => { workspaceParts.current.circuit = value; checkParts(); }, []);
   const collectTopology = useCallback((value: NonNullable<WorkspaceSnapshot["topology"]>) => { workspaceParts.current.topology = value; }, []);
@@ -402,6 +404,7 @@ export function App() {
       sweepView:tab==="sweep"&&activeModel==="two_level"?"two_level":tab==="sweep"&&activeModel==="ising_chain"?"ising_chain":"dynamics",
       spectrumStudy:parts.spectrumStudy??SPECTRUM_STUDY_DEFAULTS,
       isingStudy:parts.isingStudy??ISING_STUDY_DEFAULTS,
+      isingQuench:parts.isingQuench,
       topology: parts.topology ?? TOPOLOGY_DEFAULTS, orbital: parts.orbital ?? ORBITAL_DEFAULTS,
       oscillator: parts.oscillator ?? OSCILLATOR_DEFAULTS,
       oscillatorDynamics: parts.oscillatorDynamics ?? OSCILLATOR_DYNAMICS_DEFAULTS,
@@ -553,7 +556,7 @@ export function App() {
             <button type="button" aria-label="Forward" title="Forward" disabled={navigation.index>=navigation.max}
               onClick={()=>window.history.forward()}>→</button>
           </nav>
-          <span className="version">V0.1+ · QVIS-019</span>
+          <span className="version">V0.1+ · QVIS-020</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -571,7 +574,7 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "theory" || tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""} ${tab==="scenes"?"scene-workspace-layout":""}`}>
+      <div className={`layout ${tab === "theory" || tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "ising_quench" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="ising_quench"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""} ${tab==="scenes"?"scene-workspace-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
@@ -626,7 +629,7 @@ export function App() {
           <div className="workspace-title">
             <div>
               <p className="eyebrow accent">
-                {tab==="theory"?"MODEL GUIDE / SELECTED SYSTEM":tab==="hamiltonian"&&activeModel!=="two_level"?"SAVED RUN ANALYSIS / QLAB-UI-6":tab === "oscillator" ? "STATIONARY / DRIVEN / OPEN OSCILLATOR · D1" : tab === "orbital" ? "ATOMIC ORBITALS / QVIS-004" : tab === "scenes" ? "PORTABLE VISUALIZATION / QVIS-001–004" : tab === "backend"
+                {tab==="theory"?"MODEL GUIDE / SELECTED SYSTEM":tab==="ising_quench"?"ISING QUENCH / QVIS-020":tab==="hamiltonian"&&activeModel!=="two_level"?"SAVED RUN ANALYSIS / QLAB-UI-6":tab === "oscillator" ? "STATIONARY / DRIVEN / OPEN OSCILLATOR · D1" : tab === "orbital" ? "ATOMIC ORBITALS / QVIS-004" : tab === "scenes" ? "PORTABLE VISUALIZATION / QVIS-001–004" : tab === "backend"
                   ? "ARCHITECTURE / 008–009"
                   : tab === "atlas" ? "PINNED THEORY REFERENCE / 025"
                   : tab === "dynamics"
@@ -649,7 +652,7 @@ export function App() {
                     : "SMOKE LABORATORY / 001"}
               </p>
               <h1>
-                {tab==="theory"?`Understanding ${modelLabel(activeModel)}.`:tab==="hamiltonian"&&activeModel!=="two_level"?"Compare what was actually saved.":tab === "oscillator" ? "A ladder meets a wavefunction." : tab === "orbital" ? "A wavefunction takes shape." : tab === "scenes" ? "A result becomes a scene." : tab === "backend"
+                {tab==="theory"?`Understanding ${modelLabel(activeModel)}.`:tab==="ising_quench"?"A finite chain in motion.":tab==="hamiltonian"&&activeModel!=="two_level"?"Compare what was actually saved.":tab === "oscillator" ? "A ladder meets a wavefunction." : tab === "orbital" ? "A wavefunction takes shape." : tab === "scenes" ? "A result becomes a scene." : tab === "backend"
                   ? "Under the hood."
                   : tab === "atlas" ? "The map of Hamiltonians."
                   : tab === "dynamics"
@@ -672,7 +675,7 @@ export function App() {
                     : "A two-level universe."}
               </h1>
               <p>
-                {tab==="theory"?"Understand the Hamiltonian, basis, parameters, observables and limits of the selected system.":tab==="hamiltonian"&&activeModel!=="two_level"?"Inspect immutable A/B inputs, provenance and only aligned recorded observables.":tab === "oscillator" ? "Explore stationary, free and driven Fock/coherent states, Gaussian pulses and bounded thermal relaxation with verified density matrices." : tab === "orbital" ? "Explore normalized hydrogenic s, p and d states with explicit units and basis conventions." : tab === "scenes" ? "Inspect verified numerical data and export application-independent scene bundles." : tab === "backend"
+                {tab==="theory"?"Understand the Hamiltonian, basis, parameters, observables and limits of the selected system.":tab==="ising_quench"?"Evolve a verified finite-chain ground state after a bounded transverse-field change.":tab==="hamiltonian"&&activeModel!=="two_level"?"Inspect immutable A/B inputs, provenance and only aligned recorded observables.":tab === "oscillator" ? "Explore stationary, free and driven Fock/coherent states, Gaussian pulses and bounded thermal relaxation with verified density matrices." : tab === "orbital" ? "Explore normalized hydrogenic s, p and d states with explicit units and basis conventions." : tab === "scenes" ? "Inspect verified numerical data and export application-independent scene bundles." : tab === "backend"
                   ? "Independent numerical engines behind versioned, verified results."
                   : tab === "atlas" ? "Browse source-pinned definitions and explicit laboratory bindings."
                   : tab === "dynamics"
@@ -698,7 +701,7 @@ export function App() {
             <div className="scene-context-actions">
               {sceneResult&&sceneViews?.standard&&<button type="button" data-testid="view-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,sceneSample?.kind==="ssh_band"&&sceneViews.bands?"bands":"standard",sceneSample)}>View in Scenes</button>}
               {sceneResult&&sceneViews?.bands&&<button type="button" data-testid="view-bands-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"bands",sceneSample)}>View bands in Scenes</button>}
-              <span className="pill">{tab==="theory"?"MODEL REFERENCE · NO COMPUTE":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+              <span className="pill">{tab==="theory"?"MODEL REFERENCE · NO COMPUTE":tab==="ising_quench"?"2–8 SPINS · ℏ=1":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
             </div>
           </div>
           <div className="tabs workspace-modes" role="tablist" aria-label={`Workspace modes for ${modelLabel(activeModel)}`}>
@@ -737,6 +740,8 @@ export function App() {
             restored={restored?.snapshot.isingStudy} restoreEpoch={restored?.epoch} onSnapshot={collectIsingStudy}
             onOpenPoint={openSavedManyBody}/></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} onManyBodyContext={collectManyBodyContext} reopenedManyBody={reopenedManyBody} /></div>
+          <div hidden={tab!=="ising_quench"}><IsingQuenchLab bridge={window.quantum} status={status} preferredRunId={manyBodyContext?.result.runId??null}
+            restored={restored?.snapshot.isingQuench} restoreEpoch={restored?.epoch} onSnapshot={collectIsingQuench}/></div>
           <div hidden={tab !== "topology"}><TopologyLab bridge={window.quantum} status={status} restored={restored?.snapshot.topology} restoreEpoch={restored?.epoch} atlasDraft={atlasTopology?.draft} atlasEpoch={atlasTopology?.epoch} onSnapshot={collectTopology} onTopologyContext={collectTopologyContext} reopenedRun={reopenedTopology} /></div>
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital} onOrbitalContext={collectOrbitalContext} reopenedRun={reopenedOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} onCircuitContext={collectCircuitContext} reopenedCircuit={reopenedCircuit} /></div>
@@ -804,7 +809,7 @@ export function App() {
               </p>
               <PostRoadmapPanel />
             </section>
-          ) : tab==="hamiltonian"&&activeModel!=="two_level"?<RunComparisonPanel bridge={window.quantum} onChangePins={()=>setTab("runs")}/> : tab === "oscillator" || tab === "orbital" || tab === "dynamics" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" ? null : (
+          ) : tab==="hamiltonian"&&activeModel!=="two_level"?<RunComparisonPanel bridge={window.quantum} onChangePins={()=>setTab("runs")}/> : tab === "oscillator" || tab === "orbital" || tab === "dynamics" || tab === "ising_quench" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" ? null : (
             <>
               {tab==="hamiltonian"&&<RunComparisonPanel bridge={window.quantum} onChangePins={()=>setTab("runs")}/>}
               <section className="hamiltonian-card">
@@ -996,7 +1001,7 @@ export function App() {
         <aside className="inspector">
           <SelectionReferenceCard reference={selectionReference} result={selectionResult}/>
           <ObservableWorkspace view={observableView}/>
-          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel==="ising_chain"?<div><p className="eyebrow">ISING STUDY</p><h2>Saved point runs</h2><p>Select any plotted point to inspect its recorded values. Open it to see the verified Ising-run inspector and provenance.</p><p>Mean magnetization is derived only from saved site values. Fidelity and full state vectors are unavailable.</p></div>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
+          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="ising_quench"?<div><p className="eyebrow">QVIS-020 / DYNAMICS</p><h2>Finite-chain quench</h2><p>Choose a verified saved Ising run in the main workspace. The time cursor then selects only its quench artifact's recorded site magnetizations, norm and target energy.</p><p>No evolving state vector is persisted.</p></div>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel==="ising_chain"?<div><p className="eyebrow">ISING STUDY</p><h2>Saved point runs</h2><p>Select any plotted point to inspect its recorded values. Open it to see the verified Ising-run inspector and provenance.</p><p>Mean magnetization is derived only from saved site values. Fidelity and full state vectors are unavailable.</p></div>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
           <nav className="inspector-tabs" aria-label="Model inspector views">

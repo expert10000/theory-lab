@@ -18,6 +18,8 @@ test("QLAB-UI-1 gates existing experiments by selected model",()=>{
   assert.equal(tabForMode("landau_zener","dynamics"),"dynamics");
   assert.equal(tabForMode("landau_zener","sweeps"),"sweep");
   assert.equal(tabForMode("ising_chain","sweeps"),"sweep");
+  assert.equal(tabForMode("ising_chain","dynamics"),"ising_quench");
+  assert.equal(modeForTab("ising_quench"),"dynamics");
   assert.equal(tabForMode("landau_zener","analysis"),"hamiltonian","saved-run A/B Analysis is available for every model");
   assert.equal(tabForMode("oscillator","explore"),"oscillator");
   assert.equal(tabForMode("oscillator","dynamics"),null,"internal oscillator modes are not yet a shared workspace adapter");
@@ -52,6 +54,7 @@ test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
     {model:"topology",tab:"atlas"},
     {model:"oscillator",tab:"hamiltonian"},
     {model:"quantum_rabi",tab:"theory"},
+    {model:"ising_chain",tab:"ising_quench"},
   ] as const)assert.deepEqual(locationFromHash(workspaceHash(location)),location);
   assert.deepEqual(locationFromHash("#sweep"),{model:"driven_two_level",tab:"sweep"});
   assert.deepEqual(locationFromHash("#tab/circuit"),{model:"transmon",tab:"circuit"});

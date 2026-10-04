@@ -17,6 +17,8 @@ import { RunStore } from "./runs";
 import { SpectrumStudyStore } from "./spectrum-studies";
 import { IsingStudyStore } from "./ising-studies";
 import { IsingStateStore } from "./ising-state";
+import {IsingQuenchStore} from "./ising-quench";
+import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
@@ -76,6 +78,7 @@ app.whenReady().then(() => {
   const spectrumStudies = new SpectrumStudyStore(join(app.getPath("userData"), "spectrum-studies"), runs);
   const isingStudies = new IsingStudyStore(join(app.getPath("userData"), "ising-studies"), runs);
   const isingStates = new IsingStateStore(join(app.getPath("userData"), "ising-states"), runs);
+  const isingQuenches = new IsingQuenchStore(join(app.getPath("userData"),"ising-quenches"),runs);
   const workspaceFile = join(app.getPath("userData"), "workspace.json");
   const evolution = new EvolutionCoordinator(
     worker,
@@ -463,6 +466,19 @@ app.whenReady().then(() => {
         throw new Error(`${job.engine} Ising state engine is unavailable`);
       running=true;
       try{return await worker.request("quantum.isingState",{job,source},60000)}
+      finally{running=false}
+    });
+  });
+  ipcMain.handle("quantum:ising-quench",async(event,runId:unknown,request:unknown)=>{
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId)||!isIsingQuenchRequest(request))
+      throw new Error("Invalid bounded Ising quench request");
+    return isingQuenches.ensure(runId,request,async(job,source,sourceResult,quench)=>{
+      if(running||evolution.isRunning)throw new Error("A calculation is already running");
+      if(worker.status.state!=="READY"||!worker.status.capabilities?.engines.native.available)
+        throw new Error("Native Ising quench engine is unavailable");
+      running=true;
+      try{return await worker.request("quantum.isingQuench",{job,source,sourceResult,quench},60000)}
       finally{running=false}
     });
   });

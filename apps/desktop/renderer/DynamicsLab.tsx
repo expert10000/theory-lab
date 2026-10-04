@@ -22,6 +22,7 @@ import {
 } from "../../../packages/quantum-3d/comparison";
 import type { EvolutionPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
+import {DynamicsFlow} from "./DynamicsFlow";
 import { selectedEvolutionSample, type EvolutionRunContext, type EvolutionTimeSelection } from "./evolution-selection";
 
 type EngineMode = EvolutionEngineName | "compare";
@@ -389,6 +390,7 @@ export function DynamicsLab({
   }
   return (
     <div className="dynamics-lab">
+      <DynamicsFlow initial="chosen |0⟩ or |1⟩" hamiltonian={definition.label} recorded="populations + Bloch rows"/>
       <section className="hamiltonian-card">
         <div>
           <p className="eyebrow">{definition.label.toUpperCase()} MODEL</p>

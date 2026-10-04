@@ -1,0 +1,26 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#","title":"Bounded saved-run Ising quench",
+  "type":"object","additionalProperties":false,
+  "required":["schema","source","initial","targetTransverse","duration","samples","basis","columns","rows","maximumNormDrift","maximumEnergyDrift","provenance"],
+  "properties":{
+    "schema":{"const":"quantum-ising-quench/v1"},
+    "source":{"type":"object","additionalProperties":false,"required":["runId","jobSha256","resultSha256"],"properties":{
+      "runId":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,100}$"},"jobSha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},"resultSha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}},
+    "initial":{"type":"object","additionalProperties":false,"required":["sites","interaction","transverse","longitudinal","boundary","groundEnergy","gap"],"properties":{
+      "sites":{"type":"integer","minimum":2,"maximum":8},"interaction":{"type":"number","minimum":-10,"maximum":10},
+      "transverse":{"type":"number","minimum":-10,"maximum":10},"longitudinal":{"type":"number","minimum":-10,"maximum":10},
+      "boundary":{"enum":["open","periodic"]},"groundEnergy":{"type":"number"},"gap":{"type":"number","minimum":0}}},
+    "targetTransverse":{"type":"number","minimum":-10,"maximum":10},"duration":{"type":"number","exclusiveMinimum":0,"maximum":20},
+    "samples":{"type":"integer","minimum":5,"maximum":101},"basis":{"const":"z-up-is-0-msb-first"},
+    "columns":{"const":"time,site_magnetization,norm,energy"},
+    "rows":{"type":"array","minItems":5,"maxItems":101,"items":{"type":"object","additionalProperties":false,
+      "required":["time","siteMagnetization","norm","energy"],"properties":{
+        "time":{"type":"number","minimum":0,"maximum":20},
+        "siteMagnetization":{"type":"array","minItems":2,"maxItems":8,"items":{"type":"number","minimum":-1.000001,"maximum":1.000001}},
+        "norm":{"type":"number","minimum":0.99999,"maximum":1.00001},"energy":{"type":"number"}}}},
+    "maximumNormDrift":{"type":"number","minimum":0,"maximum":0.00001},"maximumEnergyDrift":{"type":"number","minimum":0,"maximum":0.00001},
+    "provenance":{"type":"object","additionalProperties":false,"required":["engine","sourceEngine","pythonVersion","workerVersion","computedAt"],"properties":{
+      "engine":{"const":"native"},"sourceEngine":{"enum":["native","quspin"]},"pythonVersion":{"type":"string"},
+      "workerVersion":{"type":"string"},"computedAt":{"type":"string"}}}
+  }
+}
