@@ -55,6 +55,10 @@ try {
   assert.equal(await page.getByTestId("energy-low").textContent(), "-0.640312");
   assert.equal(await page.getByTestId("energy-high").textContent(), "0.640312");
   const workspaceModes=page.getByRole("tablist",{name:/Workspace modes for/});
+  const historyBack=page.getByRole("button",{name:"Back",exact:true});
+  const historyForward=page.getByRole("button",{name:"Forward",exact:true});
+  assert.ok(await historyBack.isDisabled());
+  assert.ok(await historyForward.isDisabled());
   assert.deepEqual(await workspaceModes.getByRole("tab").allTextContents(),
     ["Explore","Dynamics","Sweeps","Analysis","Theory","Scenes","Runs"]);
   await workspaceModes.getByRole("tab",{name:"Theory"}).click();
@@ -62,11 +66,18 @@ try {
   assert.match(await page.getByTestId("theory-visual").innerText(),/Conceptual schematic/);
   assert.match(await page.getByRole("img",{name:/Schematic illustration of Two-level system/}).getAttribute("aria-label"),/Two-level system/);
   assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/theory");
+  assert.ok(await historyBack.isEnabled());
+  await historyBack.click();
+  await page.waitForFunction(()=>window.location.hash==="#lab/two_level/spectrum");
+  assert.ok(await historyForward.isEnabled());
+  await historyForward.click();
+  await page.waitForFunction(()=>window.location.hash==="#lab/two_level/theory");
   assert.ok(await page.locator(".dynamics-layout .workspace").evaluate(element=>{
     const workspace=element.getBoundingClientRect(),layout=element.parentElement.getBoundingClientRect();
     return Math.abs(workspace.right-layout.right)<2;
   }),"Theory stretches to the right edge of the desktop layout");
   await workspaceModes.getByRole("tab",{name:"Explore"}).click();
+  assert.ok(await historyForward.isDisabled(),"a new route drops the forward branch");
   assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isDisabled(),false);
   assert.equal(await page.getByRole("button",{name:/Two-level system/}).getAttribute("aria-pressed"),"true");
   assert.equal(await page.getByRole("navigation",{name:"Model families"}).locator("details").count(),7);
@@ -673,7 +684,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=18?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=19?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1111,6 +1122,9 @@ try {
   await page.getByTestId("run-cavity").click();
   await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("cavity-result").waitFor();
+  await page.getByTestId("sector-summary").filter({hasText:"Excitation N = 1"}).waitFor();
+  assert.match(await page.getByTestId("cavity-sector-panel").innerText(),/verified run/);
+  assert.ok(await page.getByTestId("cavity-level-sector-0").isVisible());
   const jaynesRunId=await page.getByTestId("workspace-run-id").innerText();
   preservedCavityRunIds.jaynes=jaynesRunId;
   assert.equal(await page.getByTestId("cavity-inspector-inputs").locator("code").getAttribute("title"),jaynesRunId);
@@ -1146,6 +1160,8 @@ try {
   await page.getByRole("combobox", { name: "Cavity engine" }).selectOption("native");
   await page.getByTestId("run-cavity").click();
   await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
+  await page.getByTestId("sector-summary").filter({hasText:"Parity −1"}).waitFor();
+  assert.equal(await page.locator('[data-testid^="cavity-level-sector-"]').count(),0,"Rabi energies do not receive unsupported parity labels");
   const quantumRabiRunId=await page.getByTestId("workspace-run-id").innerText();
   preservedCavityRunIds.quantumRabi=quantumRabiRunId;
   assert.equal(await page.getByTestId("cavity-inspector-inputs").locator("code").getAttribute("title"),quantumRabiRunId);

@@ -204,10 +204,18 @@ export function App() {
   currentLocation.current={tab,model:activeModel};
   const firstLocation=useRef(true);
   const restoringHistory=useRef(false);
+  const [navigation,setNavigation]=useState({index:0,max:0});
+  const navigationRef=useRef({index:0,max:0});
   useEffect(()=>{
     const onHistory=()=>{
       const next=locationFromHash(window.location.hash);
-      if(!next||next.tab===currentLocation.current.tab&&next.model===currentLocation.current.model)return;
+      if(!next)return;
+      const stateIndex=(window.history.state as {qlabIndex?:unknown}|null)?.qlabIndex;
+      const index=Number.isInteger(stateIndex)&&typeof stateIndex==="number"&&stateIndex>=0?stateIndex:navigationRef.current.index+1;
+      if(stateIndex!==index)window.history.replaceState({qlabIndex:index},"",window.location.href);
+      navigationRef.current={index,max:stateIndex===index?Math.max(index,navigationRef.current.max):index};
+      setNavigation(navigationRef.current);
+      if(next.tab===currentLocation.current.tab&&next.model===currentLocation.current.model)return;
       restoringHistory.current=true;
       setSelectedPreset(null);
       setTab(next.tab);setActiveModel(next.model);
@@ -220,9 +228,14 @@ export function App() {
   },[]);
   useEffect(()=>{
     const hash=workspaceHash({model:activeModel,tab});
-    if(firstLocation.current){firstLocation.current=false;window.history.replaceState(null,"",hash);return;}
+    if(firstLocation.current){firstLocation.current=false;window.history.replaceState({qlabIndex:0},"",hash);return;}
     if(restoringHistory.current){restoringHistory.current=false;return;}
-    if(window.location.hash!==hash)window.history.pushState(null,"",hash);
+    if(window.location.hash!==hash){
+      const index=navigationRef.current.index+1;
+      window.history.pushState({qlabIndex:index},"",hash);
+      navigationRef.current={index,max:index};
+      setNavigation(navigationRef.current);
+    }
   },[tab,activeModel]);
   const primaryMode=modeForTab(tab);
   function selectMode(mode:WorkspaceMode){
@@ -534,10 +547,16 @@ export function App() {
           </div>
         </div>
         <div className="top-actions">
-          <span className="version">V0.1+ · QVIS-018</span>
+          <nav className="history-controls" aria-label="Workspace history">
+            <button type="button" aria-label="Back" title="Back" disabled={navigation.index===0}
+              onClick={()=>window.history.back()}>←</button>
+            <button type="button" aria-label="Forward" title="Forward" disabled={navigation.index>=navigation.max}
+              onClick={()=>window.history.forward()}>→</button>
+          </nav>
+          <span className="version">V0.1+ · QVIS-019</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
-          {activeModel==="two_level" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
+          {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}

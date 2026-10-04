@@ -98,12 +98,12 @@ test("linked-workspace roadmap names completed current-lab adapters and next UI 
   }
 });
 
-test("QVIS-014–018 complete declared bounded adapters without relabelling later work",async()=>{
+test("QVIS-014–019 complete declared bounded adapters without relabelling later work",async()=>{
   assert.deepEqual(QVIS_WORKFLOW_STEPS.map(entry=>[entry.id,entry.state]),
-    Array.from({length:10},(_,index)=>[`QVIS-${String(index+14).padStart(3,"0")}`,index<=4?"Implemented":"Planned"]));
+    Array.from({length:10},(_,index)=>[`QVIS-${String(index+14).padStart(3,"0")}`,index<=5?"Implemented":"Planned"]));
   assert.equal(DELIVERED_QVIS.length,13);
   const doc=await readFile("docs/ROADMAP.md","utf8");
-  assert.match(doc,/QVIS-014–018 implemented for their declared bounded\s+desktop scope/);
+  assert.match(doc,/QVIS-014–019 implemented for their declared bounded\s+desktop scope/);
   assert.match(doc,/fingerprint guard forbids silently extending it/);
   const audit=await readFile("docs/QVIS016_OBSERVABLE_AUDIT.md","utf8");
   assert.match(audit,/All base v1 results lack pair expectations/);

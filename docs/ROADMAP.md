@@ -1684,8 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-04): **QVIS-014–018 implemented for their declared bounded
-desktop scope; QVIS-019–023 planned**. This is an
+Status (2026-10-04): **QVIS-014–019 implemented for their declared bounded
+desktop scope; QVIS-020–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1869,6 +1869,25 @@ substituted, tampered or missing run. This is a presentation/scientific-coverage
 extension to QLAB-UI-6, not a claim that A/B comparison is currently absent.
 
 ## QVIS-019 — Symmetry and sector awareness
+
+Implemented bounded cavity scope (2026-10-04): the desktop reopens the exact
+hash-verified saved cavity run before displaying symmetry evidence. For
+Jaynes–Cummings, each stored row checks conservation of
+`N = a†a + |e⟩⟨e|` against the initial Fock/qubit state. Independently
+constructed finite excitation blocks must reproduce every sorted worker
+dressed energy before a level is labelled and color-coded by `N`. A
+cross-sector degeneracy is labelled unresolved, never assigned by sort order;
+the highest-`N` singleton is explicitly a Fock-cutoff edge state. For quantum
+Rabi, every saved row checks conservation of
+`Π = (−1)ⁿ(Pg − Pe)`; only the *run* parity is shown because dressed
+eigenvectors and level-parity labels are absent from the frozen result.
+Both native and QuTiP, restart, corruption refusal and desktop navigation
+are tested. The original worker/result protocols remain unchanged; wider
+models and symmetry-reduced solvers remain separate future additions.
+
+Desktop Back/Forward controls now traverse the existing model/mode history;
+a new navigation branch clears Forward availability. These route controls
+do not rewind a saved run or worker computation.
 
 When a model and solver explicitly support it, record and display conserved
 quantities and sector labels such as parity, excitation number, particle

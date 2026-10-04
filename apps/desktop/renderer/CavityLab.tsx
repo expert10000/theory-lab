@@ -4,6 +4,8 @@ import { CAVITY_REGISTRY, cavityDefaults, cavityJob, type CavityModelId } from "
 import type { CavityPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
 import { selectedCavitySample, type CavityRunContext } from "./cavity-selection";
+import {cavitySectorEvidence,type CavitySectorEvidence} from "../../../packages/models/cavity-sectors";
+import {CavitySectorPanel} from "./CavitySectorPanel";
 
 function readF64(bytes: Uint8Array): Float64Array {
   if (bytes.byteLength % 8) throw new Error("Invalid cavity artifact length");
@@ -52,6 +54,10 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
   const [outcome, setOutcome] = useState("READY TO RUN");
   const [error, setError] = useState("");
   const [running, setRunning] = useState(false);
+  const [sectorCheck,setSectorCheck]=useState(0);
+  const [sectorEvidence,setSectorEvidence]=useState<CavitySectorEvidence|null>(null);
+  const [sectorError,setSectorError]=useState("");
+  const [sectorLoading,setSectorLoading]=useState(false);
   const activeJob = useRef<string | null>(null);
   const appliedReopenEpoch=useRef<number|null>(null);
   useEffect(() => {
@@ -91,6 +97,17 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
   useEffect(() => onSnapshot?.({ modelId, parameters, qubit, photons, start, stop, samples, engine }),
     [modelId, parameters, qubit, photons, start, stop, samples, engine, onSnapshot]);
   useEffect(() => bridge.onProgress(update => { if (update.jobId === activeJob.current) setProgress(update); }), [bridge]);
+  useEffect(()=>{
+    if(!result){setSectorEvidence(null);setSectorError("");setSectorLoading(false);return;}
+    let live=true;
+    setSectorEvidence(null);setSectorError("");setSectorLoading(true);
+    void bridge.getVerifiedRun(result.runId).then(saved=>{
+      const evidence=cavitySectorEvidence(saved);
+      if(live&&evidence.runId===result.runId)setSectorEvidence(evidence);
+    }).catch(cause=>{if(live)setSectorError(cause instanceof Error?cause.message:String(cause));})
+      .finally(()=>{if(live)setSectorLoading(false);});
+    return ()=>{live=false;};
+  },[bridge,result?.runId,sectorCheck]);
   const solver = { type: "schrodinger" as const, tStart: Number(start), tStop: Number(stop), samples: Number(samples) };
   let valid = Boolean(photons.trim() && start.trim() && stop.trim() && samples.trim());
   try { cavityJob(modelId, "preview", parameters, { qubit, photons: Number(photons) }, solver, engine); }
@@ -166,7 +183,14 @@ export function CavityLab({ bridge, status, modelId, preset, restored, restoreEp
     {result && data && diagnostics && <section className="panel cavity-result" data-testid="cavity-result">
       <div className="panel-heading"><div><p className="eyebrow">QUANTUM-CAVITY-DATA / V1</p><h2>Dressed spectrum & dynamics</h2></div><span className={`result-badge ${stale ? "stale" : ""}`} data-testid="cavity-result-state">{stale ? "OUT OF DATE" : `${result.data.rows} SAMPLES`}</span></div>
       <div className="cavity-metrics"><div><span>BOUNDARY POPULATION / MAX</span><strong data-testid="cavity-boundary">{diagnostics.maxBoundary.toExponential(3)}</strong><small>{diagnostics.maxBoundary > 0.02 ? "Increase cutoff; truncation may affect results" : "Fock cutoff appears adequate for this run"}</small></div><div><span>NORM DRIFT / MAX</span><strong>{diagnostics.maxNormDrift.toExponential(3)}</strong></div><div><span>PARITY DRIFT / MAX</span><strong>{diagnostics.maxParityDrift.toExponential(3)}</strong></div>{result.model.type === "jaynes_cummings" && <div><span>VACUUM-RABI REFERENCE</span><strong data-testid="jc-reference">{result.initialState.qubit === "excited" && result.initialState.photons === 0 ? diagnostics.maxReferenceError.toExponential(3) : "|e,0⟩ only"}</strong><small>√(Δ²+4g²) = {diagnostics.dressedSplitting.toFixed(4)}</small></div>}</div>
-      <div className="cavity-spectrum" data-testid="dressed-spectrum"><p className="eyebrow">SORTED DRESSED ENERGIES / {result.dressedSpectrum.length} LEVELS</p><div>{result.dressedSpectrum.map((energy, i) => <span key={i} title={`E${i} = ${energy.toFixed(8)}`}>{energy.toFixed(3)}</span>)}</div></div>
+      <div className="cavity-spectrum" data-testid="dressed-spectrum"><p className="eyebrow">SORTED DRESSED ENERGIES / {result.dressedSpectrum.length} LEVELS</p><div>{result.dressedSpectrum.map((energy, i) => {
+        const label=sectorEvidence?.runId===result.runId?sectorEvidence.levels[i]:undefined;
+        return <span key={i} className={label?.excitation===null?"sector-unresolved":label?`sector-n-${label.excitation%4}`:""}
+          title={`E${i} = ${energy.toFixed(8)}${label?label.excitation===null?" · sector unresolved":` · N=${label.excitation}${label.cutoffEdge?" · cutoff edge":""}`:""}`}>
+          {energy.toFixed(3)}{label&&<small data-testid={`cavity-level-sector-${i}`}>{label.excitation===null?"N=?":`N=${label.excitation}`}{label.cutoffEdge?" · edge":""}</small>}</span>;
+      })}</div></div>
+      <CavitySectorPanel runId={result.runId} evidence={sectorEvidence} loading={sectorLoading} error={sectorError}
+        onRefresh={()=>setSectorCheck(value=>value+1)}/>
       <CavityPlot data={data} rows={result.data.rows} selected={selected} onSelect={setSelected}/>
       <div className="dynamics-timeline"><div className="timeline-heading"><span className="eyebrow">SYNCHRONIZED TIME CURSOR</span><strong>t = {row?.[0].toFixed(4)}</strong></div><input aria-label="Cavity time cursor" type="range" min="0" max={result.data.rows - 1} value={selected} onChange={event => setSelected(Number(event.target.value))}/></div>
       <div className="cavity-readouts"><span>P(e) <strong data-testid="cavity-excited">{row?.[1].toFixed(5)}</strong></span><span>⟨n⟩ <strong data-testid="cavity-photons">{row?.[2].toFixed(5)}</strong></span><span>Boundary <strong data-testid="cavity-selected-boundary">{row?.[3].toExponential(2)}</strong></span><span>Norm <strong data-testid="cavity-selected-norm">{row?.[4].toFixed(5)}</strong></span><span>Parity <strong data-testid="cavity-selected-parity">{row?.[5].toFixed(5)}</strong></span></div>

@@ -99,6 +99,9 @@ code {
   align-items: center;
   gap: 12px;
 }
+.history-controls { display: flex; gap: 4px; margin-right: 5px; }
+.history-controls button { width: 29px; height: 29px; border: 1px solid #3b5555; border-radius: 5px; background: #1b2b31; color: #b8e4da; font-size: 16px; line-height: 1; }
+.history-controls button:hover:enabled { background: #28433f; }
 .workspace-button { border: 1px solid #3b5555; border-radius: 6px; padding: 8px 11px; background: #1b2b31; color: #b8e4da; font-size: 11px; white-space: nowrap; }
 .workspace-button:hover:enabled { background: #28433f; }
 .workspace-notice { position: fixed; bottom: 48px; left: 50%; transform: translateX(-50%); z-index: 10; max-width: min(90vw,700px); padding: 9px 16px; border-radius: 8px; border: 1px solid #528076; background: #1c3536; color: #d6f6ec; box-shadow: 0 8px 30px #0008; font-size: 11px; overflow-wrap: anywhere; }
@@ -1525,6 +1528,20 @@ h1 {
 .cavity-metrics small { color: #a9bac4; }
 .cavity-spectrum > div { display: grid; grid-template-columns: repeat(auto-fill,minmax(78px,1fr)); gap: 6px; margin-top: 11px; }
 .cavity-spectrum > div > span { border-radius: 7px; padding: 9px; background: rgba(121,217,193,.07); color: #cde9e4; text-align: center; font: 12px monospace; }
+.cavity-spectrum > div > span small { display: block; margin-top: 5px; font: 10px Consolas,monospace; color: #d3e8de; }
+.cavity-spectrum .sector-n-0 { border: 1px solid #4c8b7d; }
+.cavity-spectrum .sector-n-1 { border: 1px solid #8f799f; }
+.cavity-spectrum .sector-n-2 { border: 1px solid #9c8059; }
+.cavity-spectrum .sector-n-3 { border: 1px solid #5f8ca2; }
+.cavity-spectrum .sector-unresolved { border: 1px dashed #9c8990; }
+.cavity-sector-panel { padding: 18px 20px; border: 1px solid #34565a; border-radius: 8px; background: #10262a; }
+.sector-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; }
+.sector-heading h3 { margin: 3px 0 12px; }
+.cavity-sector-panel p { max-width: 90ch; color: #abc1bf; line-height: 1.5; }
+.sector-summary { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 20px; margin-bottom: 12px; }
+.sector-summary strong { color: #a9e9d5; font-size: 17px; }
+.sector-summary span { color: #d0dfe0; }
+.sector-summary small { overflow-wrap: anywhere; }
 .cavity-chart { background: rgba(4,12,18,.33); border-radius: 12px; padding: 16px; }
 .cavity-chart svg { width: 100%; max-height: 280px; cursor: crosshair; }
 .cavity-legend { display: flex; gap: 20px; font-size: 12px; }
