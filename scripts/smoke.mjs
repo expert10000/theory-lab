@@ -660,7 +660,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=15?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=16?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1260,6 +1260,9 @@ try {
   await page.getByRole("button",{name:"Select Ising site 2"}).click();
   await page.getByTestId("many-body-inspector-site").waitFor();
   assert.match(await page.getByTestId("scientific-reference-coordinate").innerText(),/Stored site 2/);
+  assert.match(await page.getByTestId("observable-workspace").innerText(),/QVIS-016 \/ OBSERVABLE WORKSPACE/);
+  assert.match(await page.getByTestId("observable-card-czz").innerText(),/Unavailable/);
+  assert.match(await page.getByTestId("observable-card-correlation_length").innerText(),/Unavailable/);
   assert.match(await page.getByTestId("scientific-reference-availability").innerText(),/full ground-state vector are unavailable/);
   assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),preservedManyBodyRunId);
   assert.equal(await page.getByTestId("many-body-inspector-site").innerText(),await page.getByTestId("many-body-site-value-1").innerText());
@@ -1275,6 +1278,7 @@ try {
   await page.getByRole("button",{name:`Open Ising chain ${preservedManyBodyRunId}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:preservedManyBodyRunId}).waitFor();
   assert.equal(await page.getByTestId("scientific-reference").count(),0,"reopening does not invent an Ising selection");
+  assert.equal(await page.getByTestId("observable-workspace").count(),0,"reopening does not invent an observable selection");
   await page.getByTestId("many-body-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   assert.equal(await page.getByTestId("many-body-inspector-energy").count(),0);
   assert.equal(await page.getByTestId("many-body-inspector-site").count(),0);

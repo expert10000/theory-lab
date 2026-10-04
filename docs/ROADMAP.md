@@ -1684,8 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-04): **QVIS-014–015 implemented for their declared bounded
-desktop scope; QVIS-016–023 planned**. This is an
+Status (2026-10-04): **QVIS-014–016 implemented for their declared bounded
+desktop scope; QVIS-017–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1777,6 +1777,31 @@ where applicable. Checkpointing, cancellation, resume, units and provenance
 remain explicit.
 
 ## QVIS-016 — Observable workspace
+
+Implemented bounded scope (2026-10-04): a renderer-local
+`observable-workspace/v1` projection resolves only the active
+`scientific-selection/v1` coordinate and matching result. Reusable cards
+declare operator, state/sample, basis, unit, exact stored field or labelled
+derivation, and numerical diagnostic or explicit unavailability. Spectrum,
+four two-level evolution models, both cavity models, Lindblad, Transmon,
+Ising, final-population sweeps, SSH/QWZ topology, hydrogenic orbitals and the
+oscillator family use this same view. Existing model-specific inspectors and
+their richer diagnostics remain in place; this is not a second worker protocol
+or a replacement for existing run verification. Hash-verified reopening and
+restart continue to clear unselected cursors.
+
+Ising connected `Cᶻᶻᵢⱼ` and correlation length are explicit unavailable cards:
+the frozen `quantum-result/v1` branch stores no pair expectations, and its
+fingerprint guard forbids silently extending it. Total `⟨Σσᶻ⟩` is visibly
+derived from the stored sites. A future separately versioned result or
+verified sidecar can provide bounded correlations after scientific and
+compatibility review; no finite-size fitting protocol is asserted here. A
+selected Ising energy does not acquire a fabricated excited-state correlation.
+No full ground-state vector, Lindblad density matrix, cavity state vector,
+Transmon eigenvector or sweep-cell time trajectory is implied. See
+`docs/QVIS016_OBSERVABLE_AUDIT.md` for the coverage and boundary inventory.
+
+Original proposed scope, retained for context:
 
 Promote recorded observables into reusable, unit-labelled cards for
 expectation, variance, correlation, occupation/population, transition

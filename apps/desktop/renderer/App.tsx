@@ -20,7 +20,9 @@ import type {
 import { Spectrum, format } from "./Spectrum";
 import {ScientificSelectionPanel} from "./ScientificSelectionPanel";
 import {SelectionReferenceCard} from "./SelectionReferenceCard";
-import {activeSelectionReference} from "./selection-reference";
+import {activeSelectionReference,type SelectionSources} from "./selection-reference";
+import {resolveObservableWorkspace} from "./observable-workspace";
+import {ObservableWorkspace} from "./ObservableWorkspace";
 import {TwoLevelStateView} from "./TwoLevelStateView";
 import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {IsingStudyLab,ISING_STUDY_DEFAULTS} from "./IsingStudyLab";
@@ -506,14 +508,16 @@ export function App() {
     tab==="many_body"&&activeModel==="ising_chain"?manyBodyContext?.result:
     tab==="orbital"&&activeModel==="hydrogenic"?orbitalContext?.result:null;
   const sceneViews=sceneResult?availableSceneViews(sceneResult):null;
-  const selectionReference=activeSelectionReference({tab,activeModel,spectrum:{result,selection:currentSelection},
+  const selectionSources:SelectionSources={tab,activeModel,spectrum:{result,selection:currentSelection},
     evolution:evolutionContext,cavity:cavityContext,lindblad:lindbladContext,circuit:circuitContext,
-    manyBody:manyBodyContext,sweep:sweepContext,topology:topologyContext,orbital:orbitalContext,oscillator:oscillatorContext});
+    manyBody:manyBodyContext,sweep:sweepContext,topology:topologyContext,orbital:orbitalContext,oscillator:oscillatorContext};
+  const selectionReference=activeSelectionReference(selectionSources);
   const selectionResult:QuantumResult|null=selectionReference?
     [result,evolutionContext?.result,cavityContext?.result,lindbladContext?.result,circuitContext?.result,
       manyBodyContext?.result,sweepContext?.result,topologyContext?.result,orbitalContext?.result,oscillatorContext?.result]
       .find(value=>value?.runId===selectionReference.runId&&value.model.type===selectionReference.model&&
         value.operation===selectionReference.operation)??null:null;
+  const observableView=resolveObservableWorkspace(selectionReference,selectionResult,selectionSources);
   const sceneSample=sceneSampleForSelection(selectionReference,sceneResult??null);
   return (
     <div className="app">
@@ -970,6 +974,7 @@ export function App() {
         </main>
         <aside className="inspector">
           <SelectionReferenceCard reference={selectionReference} result={selectionResult}/>
+          <ObservableWorkspace view={observableView}/>
           {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel==="ising_chain"?<div><p className="eyebrow">ISING STUDY</p><h2>Saved point runs</h2><p>Select any plotted point to inspect its recorded values. Open it to see the verified Ising-run inspector and provenance.</p><p>Mean magnetization is derived only from saved site values. Fidelity and full state vectors are unavailable.</p></div>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>

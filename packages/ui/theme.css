@@ -1313,6 +1313,15 @@ h1 {
 .inspector-observables code { overflow-wrap: anywhere; }
 .inspector-observables .key-value { gap: 8px; }
 .inspector-observables .key-value strong { text-align: right; overflow-wrap: anywhere; }
+.observable-card-list { display: grid; gap: 8px; margin-top: 12px; }
+.observable-card { border: 1px solid #30434a; border-radius: 5px; background: #152228; padding: 10px; }
+.observable-card-heading { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; cursor: pointer; }
+.observable-card-heading span { color: #8fcdbb; text-align: right; font-variant-numeric: tabular-nums; }
+.observable-unavailable .observable-card-heading span { color: #a8acb3; }
+.observable-card-status { margin: 8px 0; color: #91b4aa; font-size: 9px; text-transform: uppercase; }
+.observable-card .key-value { gap: 7px; margin-bottom: 6px; line-height: 1.4; }
+.observable-card .key-value span:last-child,.observable-card .key-value code { text-align: right; overflow-wrap: anywhere; }
+.observable-card small { display: block; color: #8f9fa9; line-height: 1.45; }
 .evolution-inspector .key-value { gap: 8px; align-items: baseline; }
 .evolution-inspector .key-value strong,.evolution-inspector .key-value code { min-width: 0; text-align: right; overflow-wrap: anywhere; }
 .evolution-inspector .provenance small { overflow-wrap: anywhere; }
