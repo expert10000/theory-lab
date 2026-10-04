@@ -57,7 +57,9 @@ test("two-level energy-study draft is additive and does not relabel the old dyna
   assert.ok(isWorkspaceSnapshot(workspace));
   const draft={omega:"0.8",start:"-2",stop:"2",points:"21",engine:"native"};
   assert.ok(isWorkspaceSnapshot({...workspace,sweepView:"two_level",spectrumStudy:draft}));
+  assert.ok(isWorkspaceSnapshot({...workspace,sweepView:"two_level",spectrumStudy:{...draft,axisParameter:"omega",delta:"0.4"}}));
   assert.equal(isWorkspaceSnapshot({...workspace,sweepView:"unknown",spectrumStudy:draft}),false);
+  assert.equal(isWorkspaceSnapshot({...workspace,spectrumStudy:{...draft,axisParameter:"fidelity"}}),false);
   assert.equal(isWorkspaceSnapshot({...workspace,spectrumStudy:{...draft,code:"eval()"}}),false);
   assert.equal(isWorkspaceSnapshot({...workspace,spectrumStudy:{...draft,points:"1".repeat(101)}}),false);
 });

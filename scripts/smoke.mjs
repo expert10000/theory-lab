@@ -314,6 +314,21 @@ try {
     await page.getByTestId("spectrum-study-status").filter({hasText:"Verified saved study reopened"}).waitFor();
     assert.equal(await page.getByTestId("spectrum-study-chart").count(),1,"verified study can be reopened separately from workspace inputs");
     assert.match(await page.getByTestId("spectrum-study-progress").innerText(),/3\/3 verified points/);
+  await page.getByRole("combobox",{name:"Study axis"}).selectOption("omega");
+  await page.getByRole("spinbutton",{name:"Study fixed Delta"}).fill("0.4");
+  await page.getByTestId("run-spectrum-study").click();
+  await page.getByTestId("spectrum-study-status").filter({hasText:"Study complete"}).waitFor();
+  assert.match(await page.getByTestId("spectrum-study-selection").innerText(),/Δ = 0\.400000/);
+  const omegaStudy=(await page.evaluate(()=>window.quantum.listSpectrumStudies())).find(study=>"fixedDelta" in study&&study.fixedDelta===.4);
+  assert.ok(omegaStudy,"versioned Ω study is listed separately from legacy Δ studies");
+  await page.getByTestId(`open-study-${omegaStudy.studyId}`).click();
+  await page.getByTestId("spectrum-study-status").filter({hasText:"Verified saved study reopened"}).waitFor();
+  assert.equal(await page.getByRole("combobox",{name:"Study axis"}).inputValue(),"omega");
+  const omegaPointId=await page.getByTestId("spectrum-study-selection").locator("code").innerText();
+  await page.getByRole("button",{name:"Open verified spectrum"}).click();
+  await page.getByTestId("workspace-run-id").filter({hasText:omegaPointId}).waitFor();
+  await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
+  await page.getByRole("combobox",{name:"Study axis"}).selectOption("delta");
   await page.getByRole("tab",{name:"Explore",exact:true}).click();
   await page.getByRole("button",{name:"Restore smoke values"}).click();
   await page.getByRole("button",{name:/Run spectrum/}).click();
@@ -645,7 +660,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number===14?/Implemented/:number===15?/Partial/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=15?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);

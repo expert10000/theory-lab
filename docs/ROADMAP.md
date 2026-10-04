@@ -1684,9 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-04): **QVIS-014 implemented for declared current desktop
-adapters; QVIS-015 partially implemented (bounded Ising h/J slice);
-QVIS-016–023 planned**. This is an
+Status (2026-10-04): **QVIS-014–015 implemented for their declared bounded
+desktop scope; QVIS-016–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1725,6 +1724,29 @@ selections must be refused or clearly labelled, not inferred.
 
 ## QVIS-015 — Parameter Sweep Laboratory
 
+Implemented bounded scope (2026-10-04):
+
+| Model/output | Axis and record | Reopening/selection |
+| --- | --- | --- |
+| Static two-level `E₋, E₊` | `Δ` at fixed `Ω` (`quantum-spectrum-study/v1`) or `Ω` at fixed `Δ` (`v2`); 3–31 points | Each point is an immutable, verified spectrum run; selecting opens that run. Existing v1 manifests remain readable. |
+| Rabi, Landau–Zener, Stückelberg, strong-drive final `P₁` | Existing bounded 1D/2D parameter grids | The grid is one immutable saved run. A clicked cell is an exact recorded coordinate in that run, **not** a separate run or saved trajectory. Existing cache/cancel/resume and grid integrity rules are retained. |
+| Finite Ising `Eₙ`, gap, site `⟨σᶻ⟩`, half-chain entropy | `h/J` at fixed sites, boundary, `J ≠ 0`, longitudinal field (`quantum-ising-study/v1`); 3–31 points | Each point is an immutable, verified Ising run; selecting opens that run. Mean magnetization is explicitly derived from saved site values. |
+
+The static and Ising point-run studies use bounded versioned plans,
+atomic hash-wrapped checkpoints, cancellation between points and
+verified-prefix resume. Run IDs, numerical outputs, engine, normalized units
+and saved-run provenance are preserved; a study is never promoted from
+edited workspace inputs. Desktop acceptance covers point selection, exact-run
+reopening and restart; contract/numerical tests cover QuTiP/native static
+studies, native/installed QuSpin Ising, checkpoint integrity and tampering.
+The existing final-`P₁` inspector provides its recorded grid/cache/provenance
+and explicitly withholds a time trajectory or state vector per cell.
+
+Neighboring-ground-state fidelity remains out of scope: the current Ising
+result has no stored ground-state vector. Other model/output extensions are
+still welcome as additive follow-on work; QVIS-015's declared bounded
+adapters are complete, not a claim that arbitrary models can be swept.
+
 Delivered Ising slice (2026-10-04): `quantum-ising-study/v1` fixes 2–8 sites,
 open/periodic boundary, nonzero `J` and longitudinal field, then varies
 transverse `h/J` over 3–31 points while keeping every generated job within
@@ -1738,8 +1760,8 @@ magnetizations. Selecting a point shows recorded values and opens that exact
 verified run. Workspace restore preserves inputs, not a fabricated study.
 Restart, manifest/run tampering, and both installed engines are tested.
 Neighboring-ground-state fidelity remains out of scope: the current result
-does not store the ground-state vector. Wider model/output sweep adapters and
-additional axes remain planned; this milestone is therefore Partial.
+does not store the ground-state vector. Wider model/output sweep adapters
+remain future additive work and do not alter the delivered bounded scope.
 
 Extend the existing two-level eigenenergy study and final-`P₁` sweep
 infrastructure to declared model/output pairs. First proposed many-body case:

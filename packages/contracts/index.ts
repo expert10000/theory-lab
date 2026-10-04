@@ -570,9 +570,9 @@ export interface QuantumBridge {
   getTopologyRun(runId:string):Promise<TopologyResult>;
   getOrbitalRun(runId:string):Promise<{result:OrbitalResult;data:Uint8Array}>;
   getOscillatorRun(runId:string):Promise<{result:OscillatorFamilyResult;data:Uint8Array|null}>;
-  saveSpectrumStudy(result:import("./spectrum-study").SpectrumStudyResult):Promise<import("./spectrum-study").SpectrumStudyResult>;
-  getSpectrumStudy(studyId:string):Promise<import("./spectrum-study").SpectrumStudyResult>;
-  listSpectrumStudies():Promise<import("./spectrum-study").SpectrumStudySummary[]>;
+  saveSpectrumStudy(result:import("./spectrum-study").SpectrumStudyResult|import("./spectrum-omega-study").SpectrumOmegaStudyResult):Promise<import("./spectrum-study").SpectrumStudyResult|import("./spectrum-omega-study").SpectrumOmegaStudyResult>;
+  getSpectrumStudy(studyId:string):Promise<import("./spectrum-study").SpectrumStudyResult|import("./spectrum-omega-study").SpectrumOmegaStudyResult>;
+  listSpectrumStudies():Promise<(import("./spectrum-study").SpectrumStudySummary|import("./spectrum-omega-study").SpectrumOmegaStudySummary)[]>;
   saveIsingStudy(result:import("./ising-study").IsingStudyResult):Promise<import("./ising-study").IsingStudyResult>;
   getIsingStudy(studyId:string):Promise<import("./ising-study").IsingStudyResult>;
   listIsingStudies():Promise<import("./ising-study").IsingStudySummary[]>;

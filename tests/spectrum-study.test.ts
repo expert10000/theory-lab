@@ -123,6 +123,7 @@ test("study checkpoints reopen after restart, resume without redoing points, and
     const reopened=await restarted.get(plan.studyId);
     assert.deepEqual(reopened.points,partial.points);
     const summary=(await restarted.list())[0];
+    assert.ok("fixedOmega" in summary);
     assert.equal(summary.completedPoints,2);
     assert.equal(summary.deltaStart,-2);
     assert.equal(summary.fixedOmega,.8);

@@ -27,7 +27,8 @@ export interface WorkspaceSnapshot {
     start: string; stop: string; initialIndex: 0 | 1; engine: SweepEngineName };
   /** Optional: older workspaces and dynamics-sweep drafts remain unchanged. */
   sweepView?: "two_level" | "dynamics" | "ising_chain";
-  spectrumStudy?: {omega:string;start:string;stop:string;points:string;engine:EngineName};
+  spectrumStudy?: {omega:string;start:string;stop:string;points:string;engine:EngineName;
+    axisParameter?:"delta"|"omega";delta?:string};
   isingStudy?: {sites:string;interaction:string;longitudinal:string;boundary:"open"|"periodic";
     start:string;stop:string;points:string;engine:ManyBodyEngineName};
   manyBody?: { sites: string; interaction: string; transverse: string; longitudinal: string;
@@ -99,6 +100,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   sweepView: {enum:["two_level","dynamics","ising_chain"]},
   spectrumStudy: block(["omega","start","stop","points","engine"],{
     omega:shortText,start:shortText,stop:shortText,points:shortText,engine,
+    axisParameter:{enum:["delta","omega"]},delta:shortText,
   }),
   isingStudy: block(["sites","interaction","longitudinal","boundary","start","stop","points","engine"],{
     sites:shortText,interaction:shortText,longitudinal:shortText,boundary:{enum:["open","periodic"]},
