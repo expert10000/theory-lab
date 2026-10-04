@@ -566,6 +566,7 @@ export interface QuantumBridge {
   getLindbladRun(runId:string):Promise<{result:LindbladResult;data:Uint8Array}>;
   getCircuitRun(runId:string):Promise<CircuitResult>;
   getManyBodyRun(runId:string):Promise<ManyBodyResult>;
+  getIsingState(runId:string):Promise<import("./ising-state").IsingStateArtifact>;
   getSweepRun(runId:string):Promise<{result:SweepResult;data:Uint8Array}>;
   getTopologyRun(runId:string):Promise<TopologyResult>;
   getOrbitalRun(runId:string):Promise<{result:OrbitalResult;data:Uint8Array}>;

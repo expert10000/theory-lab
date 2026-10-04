@@ -45,6 +45,7 @@ const bridge: QuantumBridge = {
   getLindbladRun: (runId) => ipcRenderer.invoke("quantum:lindblad-run", runId),
   getCircuitRun: (runId) => ipcRenderer.invoke("quantum:circuit-run", runId),
   getManyBodyRun: (runId) => ipcRenderer.invoke("quantum:many-body-run", runId),
+  getIsingState: (runId) => ipcRenderer.invoke("quantum:ising-state", runId),
   getSweepRun: (runId) => ipcRenderer.invoke("quantum:sweep-run", runId),
   getTopologyRun: (runId) => ipcRenderer.invoke("quantum:topology-run", runId),
   getOrbitalRun: (runId) => ipcRenderer.invoke("quantum:orbital-run", runId),

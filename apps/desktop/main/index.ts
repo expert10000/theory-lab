@@ -16,6 +16,7 @@ import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
 import { SpectrumStudyStore } from "./spectrum-studies";
 import { IsingStudyStore } from "./ising-studies";
+import { IsingStateStore } from "./ising-state";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
@@ -74,6 +75,7 @@ app.whenReady().then(() => {
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir);
   const spectrumStudies = new SpectrumStudyStore(join(app.getPath("userData"), "spectrum-studies"), runs);
   const isingStudies = new IsingStudyStore(join(app.getPath("userData"), "ising-studies"), runs);
+  const isingStates = new IsingStateStore(join(app.getPath("userData"), "ising-states"), runs);
   const workspaceFile = join(app.getPath("userData"), "workspace.json");
   const evolution = new EvolutionCoordinator(
     worker,
@@ -451,6 +453,18 @@ app.whenReady().then(() => {
     trusted(event);
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid many-body run ID");
     return runs.manyBody(runId);
+  });
+  ipcMain.handle("quantum:ising-state",async(event,runId:unknown)=>{
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid Ising source run ID");
+    return isingStates.ensure(runId,async(job,source)=>{
+      if(running||evolution.isRunning)throw new Error("A calculation is already running");
+      if(worker.status.state!=="READY"||!worker.status.capabilities?.engines[job.engine]?.available)
+        throw new Error(`${job.engine} Ising state engine is unavailable`);
+      running=true;
+      try{return await worker.request("quantum.isingState",{job,source},60000)}
+      finally{running=false}
+    });
   });
   ipcMain.handle("quantum:sweep-run", (event, runId:unknown) => {
     trusted(event);
