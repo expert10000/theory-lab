@@ -3,6 +3,7 @@ import { MODEL_REGISTRY } from "../../../packages/models";
 import { CAVITY_REGISTRY } from "../../../packages/models/cavity";
 import type { WorkspaceModel } from "./workspace-navigation";
 import { modelLabel } from "./workspace-navigation";
+import {TheoryIllustration} from "./TheoryIllustration";
 
 type TheoryContent = {
   idea: string;
@@ -122,6 +123,7 @@ export function TheoryPanel({model}:{model:WorkspaceModel}){
     <p className="eyebrow">SELECTED SYSTEM / THEORY GUIDE</p>
     <h2>{modelLabel(model)}</h2>
     <p>{content.idea}</p>
+    <TheoryIllustration model={model}/>
     <div className="theory-formula" aria-label="Model Hamiltonian or wavefunction">{content.formula}</div>
     <div className="theory-grid">
       <div><h3>Basis & conventions</h3><p>{content.basis}</p></div>

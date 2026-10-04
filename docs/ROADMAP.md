@@ -1684,8 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-04): **QVIS-014–017 implemented for their declared bounded
-desktop scope; QVIS-018–023 planned**. This is an
+Status (2026-10-04): **QVIS-014–018 implemented for their declared bounded
+desktop scope; QVIS-019–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1846,6 +1846,19 @@ Hilbert-space/sample budget, truncation disclosure and convergence checks
 before adding state artifacts. Do not render all amplitudes for large `N`.
 
 ## QVIS-018 — Run comparison extension
+
+Implemented bounded desktop scope (2026-10-04): the existing verified A/B
+pins and Analysis view now include an inline contextual drawer. It compares
+changed numerical model inputs for the same operation/model; a stored level,
+transition or bulk gap only when recorded observables align; summaries of all
+already-aligned observable series; and explicitly declared numerical
+diagnostics present in both results. Backend versions and elapsed worker time
+are shown as context, not as an accuracy measure. Different models, unaligned
+grids, absent fields and tampered/missing saved runs produce no physical
+delta. The drawer creates no new run, worker call, persistence store or
+`quantum-result/v1` branch. Desktop Theory also gained selected-model
+conceptual SVG schematics, including a nucleus and probability cloud for the
+hydrogenic model; these are labelled as illustrations, never computed data.
 
 Reuse the delivered immutable A/B pins and hash-verified Analysis view, not a
 second comparison store. Add a compact contextual drawer for compatible

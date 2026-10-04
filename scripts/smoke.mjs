@@ -59,6 +59,8 @@ try {
     ["Explore","Dynamics","Sweeps","Analysis","Theory","Scenes","Runs"]);
   await workspaceModes.getByRole("tab",{name:"Theory"}).click();
   assert.equal(await page.locator("[data-testid=model-theory] h2").innerText(),"Two-level system");
+  assert.match(await page.getByTestId("theory-visual").innerText(),/Conceptual schematic/);
+  assert.match(await page.getByRole("img",{name:/Schematic illustration of Two-level system/}).getAttribute("aria-label"),/Two-level system/);
   assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/theory");
   assert.ok(await page.locator(".dynamics-layout .workspace").evaluate(element=>{
     const workspace=element.getBoundingClientRect(),layout=element.parentElement.getBoundingClientRect();
@@ -268,6 +270,8 @@ try {
   preservedComparisonPins={a:preservedSpectrumRunId,b:selectedRunId};
   await page.getByTestId("open-comparison").click();
   await page.getByTestId("comparison-status").filter({hasText:"Aligned"}).waitFor();
+  assert.match(await page.getByTestId("comparison-context").innerText(),/Stored gap \/ transition.*Level gap/s);
+  assert.match(await page.getByTestId("comparison-context").innerText(),/Backend and runtime/);
   assert.match(await page.getByTestId("comparison-science").innerText(),/Δ = B − A, with no interpolation/);
   assert.equal(await page.getByTestId("comparison-delta").innerText(),"0.000000");
   assert.match(await page.getByTestId("comparison-inputs").innerText(),/model.parameters.delta/);
@@ -669,7 +673,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=17?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=18?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1564,6 +1568,11 @@ try {
   });
   assert.ok(rejectedScene, "scene IPC rejects renderer path traversal");
   await page.getByTestId("open-orbitals").click();
+  await page.getByRole("tab",{name:"Theory",exact:true}).click();
+  assert.equal(await page.locator("[data-testid=model-theory] h2").innerText(),"Atomic orbitals");
+  assert.match(await page.getByTestId("theory-visual").innerText(),/electron probability cloud/);
+  await page.screenshot({path:"artifacts/desktop-theory-orbitals.png",fullPage:true});
+  await page.getByRole("tab",{name:"Explore",exact:true}).click();
   await page.getByTestId("run-orbital").click();
   await page.getByTestId("orbital-result").waitFor();
   preservedOrbitalRunId=await page.getByTestId("workspace-run-id").innerText();
@@ -1674,6 +1683,7 @@ try {
   await page.getByRole("button",{name:`Pin B ${preservedOscillatorRunIds.oscillator}`}).click();
   await page.getByTestId("open-comparison").click();
   await page.getByTestId("comparison-status").filter({hasText:"Metadata only"}).waitFor();
+  assert.match(await page.getByTestId("comparison-context").innerText(),/different operation or model/i);
   assert.match(await page.getByTestId("comparison-status").innerText(),/Different operation or model/);
   assert.equal(await page.getByTestId("comparison-delta").count(),0,"cross-model comparison invents no physical delta");
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
@@ -1681,6 +1691,7 @@ try {
   preservedComparisonPins={a:preservedOrbitalRunId,b:otherOrbitalRunId};
   await page.getByTestId("open-comparison").click();
   await page.getByTestId("comparison-status").filter({hasText:"Aligned"}).waitFor();
+  assert.match(await page.getByTestId("comparison-context").innerText(),/Aligned recorded observables/);
   await page.getByLabel("Comparison observable").selectOption({label:"Energy · Hartree"});
   await page.getByTestId("comparison-delta").waitFor();
   assert.match(await page.getByTestId("comparison-diagnostics").innerText(),/analysis.energyHartree/);
@@ -1816,6 +1827,7 @@ try {
   assert.deepEqual(await page.evaluate(()=>window.quantum.getRunComparisonPins()),preservedComparisonPins,"A/B pins survive full Electron restart by ID");
   await page.getByRole("tab",{name:"Analysis",exact:true}).click();
   await page.getByTestId("comparison-status").filter({hasText:"Aligned"}).waitFor();
+  assert.match(await page.getByTestId("comparison-context").innerText(),/QVIS-018/);
   assert.equal(await page.getByTestId("comparison-pin-a").getAttribute("title"),preservedComparisonPins.a);
   assert.equal(await page.getByTestId("comparison-pin-b").getAttribute("title"),preservedComparisonPins.b);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
@@ -1975,6 +1987,7 @@ try {
   await page.getByRole("tab",{name:"Analysis",exact:true}).click();
   await page.getByRole("alert").filter({hasText:"Pinned run unavailable or altered"}).waitFor();
   assert.equal(await page.getByTestId("comparison-delta").count(),0,"tampered pin has no numerical comparison");
+  assert.equal(await page.getByTestId("comparison-context").count(),0,"tampered pin has no contextual deltas");
   assert.deepEqual(await page.evaluate(()=>window.quantum.getRunComparisonPins()),preservedComparisonPins,"tamper does not replace either pin");
   const tamperedScenePath=resolve(profileRoot,"runs",preservedRabiRunId,"result.json");
   await writeFile(tamperedScenePath,(await readFile(tamperedScenePath,"utf8"))+" ");

@@ -1,6 +1,7 @@
 import React,{useEffect,useMemo,useState} from "react";
 import type {QuantumBridge,QuantumJob,QuantumResult,RunComparisonPins,VerifiedSavedRun} from "../../../packages/contracts";
 import {compareVerifiedRuns} from "../../../packages/models/run-comparison";
+import {comparisonContext,type ComparisonDelta} from "../../../packages/models/run-comparison-context";
 
 function flatten(value:unknown,prefix="",output:Record<string,string>={}):Record<string,string>{
   if(value&&typeof value==="object"&&!Array.isArray(value)){
@@ -23,6 +24,10 @@ function diagnostics(result:QuantumResult){
 const label=(value:string|undefined)=>value===undefined?"—":value.length>160?`${value.slice(0,157)}…`:value;
 const short=(id:string|null)=>id?`${id.slice(0,22)}…`:"Not pinned";
 const fmt=(value:number)=>Math.abs(value)<1e-4&&value!==0?value.toExponential(5):value.toFixed(6);
+function DeltaLine({item}:{item:ComparisonDelta}){
+  return <div className="comparison-context-line"><span>{item.label}</span><code>{fmt(item.a)} → {fmt(item.b)}</code>
+    <strong>Δ {fmt(item.delta)} <small>{item.unit}</small></strong></div>;
+}
 
 export function RunComparisonPanel({bridge,onChangePins}:{bridge:QuantumBridge;onChangePins?:()=>void}){
   const [pins,setPins]=useState<RunComparisonPins|null>(null);
@@ -45,6 +50,7 @@ export function RunComparisonPanel({bridge,onChangePins}:{bridge:QuantumBridge;o
     return ()=>{live=false;};
   },[bridge]);
   const comparison=useMemo(()=>a&&b?compareVerifiedRuns(a,b):null,[a,b]);
+  const context=useMemo(()=>a&&b&&comparison?comparisonContext(a,b,comparison):null,[a,b,comparison]);
   const metric=comparison?.observables[metricIndex]??null;
   const sample=metric?Math.min(sampleIndex,metric.a.length-1):0;
   const aInputs=a?inputs(a.job):{},bInputs=b?inputs(b.job):{};
@@ -68,6 +74,30 @@ export function RunComparisonPanel({bridge,onChangePins}:{bridge:QuantumBridge;o
             <small>{run.result.provenance.pythonVersion} Python · {run.result.provenance.workerVersion} worker · {new Date(run.result.provenance.computedAt).toLocaleString()} · {run.result.provenance.durationMs.toFixed(2)} ms</small>
             <small>{"data" in run.result?`Artifact SHA-256 ${run.result.data.sha256}`:"Verified inline result"}</small></div>)}
         </div>
+        {context&&<details className="comparison-context" data-testid="comparison-context" open>
+          <summary>QVIS-018 · Contextual A/B summary</summary>
+          <p>Only exact, hash-verified saved runs are inspected. Δ = B − A. No job is run and no sample is interpolated.</p>
+          <div className="comparison-context-grid">
+            <div><h4>Changed model inputs</h4>
+              {context.compatibleModel?(context.parameters.length?context.parameters.map(item=><DeltaLine key={item.label} item={item}/>):<p>No numerical model input changed.</p>):
+                <p>Unavailable: different operation or model.</p>}</div>
+            <div><h4>Stored gap / transition</h4>
+              {context.gap?<DeltaLine item={context.gap}/>:<p>Unavailable: no compatible aligned stored gap.</p>}
+              <h4>Backend and runtime</h4>
+              <p>A: {context.backend.a} · B: {context.backend.b}</p>
+              {context.runtime?<><DeltaLine item={context.runtime}/><small>Elapsed worker time is context, not a numerical accuracy measure.</small></>:
+                <p>Runtime delta unavailable across incompatible runs.</p>}</div>
+            <div><h4>Aligned recorded observables</h4>
+              {context.observables.length?context.observables.map(item=><div className="comparison-context-line" key={item.name}>
+                <span>{item.name}</span><code>max |Δ| {fmt(item.maxAbsDelta)}</code><strong>RMS {fmt(item.rmsDelta)} <small>{item.unit}</small></strong></div>):
+                <p>Unavailable: model, units, or sample coordinates do not align.</p>}</div>
+            <div><h4>Recorded numerical diagnostics</h4>
+              {context.diagnostics.length?context.diagnostics.map(item=><DeltaLine key={item.label} item={item}/>):
+                <p>No paired, declared numerical diagnostic is available.</p>}
+              {!!context.withheld.length&&<details><summary>Why values are withheld ({context.withheld.length})</summary>
+                <ul>{context.withheld.map(reason=><li key={reason}>{reason}</li>)}</ul></details>}</div>
+          </div>
+        </details>}
         <h3>Exact stored inputs</h3>
         <p>Changed inputs are highlighted; neither run is edited or rerun.</p>
         <div className="comparison-inputs" data-testid="comparison-inputs"><div className="comparison-row comparison-header"><span>Field</span><strong>A</strong><strong>B</strong></div>
