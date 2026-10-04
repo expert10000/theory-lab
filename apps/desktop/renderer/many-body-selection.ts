@@ -1,4 +1,5 @@
 import type { ManyBodyResult } from "../../../packages/contracts";
+import type { IsingStateArtifact } from "../../../packages/contracts/ising-state";
 
 export type ManyBodySelection =
   | {kind:"energy_level";runId:string;index:number}
@@ -11,6 +12,7 @@ export interface ManyBodyRunContext {
   selection:ManyBodySelection|null;
   item:ManyBodyItem|null;
   stale:boolean;
+  stateArtifact?:IsingStateArtifact|null;
 }
 export function selectedManyBodyItem(selection:ManyBodySelection|null,result:ManyBodyResult|null):ManyBodyItem|null{
   if(!selection||!result||selection.runId!==result.runId||!Number.isInteger(selection.index)||selection.index<0)return null;

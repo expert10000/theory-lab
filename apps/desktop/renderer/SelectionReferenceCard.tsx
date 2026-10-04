@@ -22,7 +22,7 @@ function availability(ref:ScientificSelectionReference,result:QuantumResult):str
     return "Verified eigenstate observables appear below; no parity/symmetry sector was recorded.";
   }
   if(result.operation==="many_body")return ref.coordinate.kind==="site"?
-    "This run stores site ⟨σᶻ⟩ only; ⟨σˣ⟩, ⟨σʸ⟩ and a full ground-state vector are unavailable.":
+    "The base run stores site ⟨σᶻ⟩; a verified state sidecar may add Cᶻᶻ. ⟨σˣ⟩, ⟨σʸ⟩ and a full ground-state vector are unavailable.":
     "This run stores low energies, not selected excited-state vectors, symmetry sectors or their observables.";
   if(result.operation==="circuit")return "Energy levels are stored; charge-basis eigenvectors and parity sectors are unavailable.";
   if(result.operation==="sweep")return "This cell stores final P₁ only; no time trajectory or selected state is saved.";

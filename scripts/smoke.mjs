@@ -90,6 +90,7 @@ try {
       "getCavityRun",
       "getCircuitRun",
       "getEvolutionRun",
+      "getIsingState",
       "getIsingStudy",
       "getLindbladRun",
       "getManyBodyRun",
@@ -660,7 +661,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=16?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=17?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1258,11 +1259,21 @@ try {
   assert.equal(await page.getByRole("button",{name:"Select Ising E1"}).getAttribute("aria-pressed"),"true");
   assert.equal(await page.getByTestId("many-body-level-mark-1").locator("line").getAttribute("stroke"),"#f2b36f");
   await page.getByRole("button",{name:"Select Ising site 2"}).click();
+  await page.getByTestId("scientific-reference-coordinate").filter({hasText:"Stored site 2"}).waitFor();
   await page.getByTestId("many-body-inspector-site").waitFor();
   assert.match(await page.getByTestId("scientific-reference-coordinate").innerText(),/Stored site 2/);
   assert.match(await page.getByTestId("observable-workspace").innerText(),/QVIS-016 \/ OBSERVABLE WORKSPACE/);
   assert.match(await page.getByTestId("observable-card-czz").innerText(),/Unavailable/);
   assert.match(await page.getByTestId("observable-card-correlation_length").innerText(),/Unavailable/);
+  await page.getByTestId("inspect-ising-state").click();
+  await page.getByTestId("ising-state-panel").waitFor({timeout:30000});
+  assert.match(await page.getByTestId("ising-state-panel").innerText(),/CONNECTED Cᶻᶻᵢⱼ/);
+  assert.equal(await page.getByTestId("observable-card-czz_1_0").count(),1,"loaded sidecar links the selected site's correlation row");
+  assert.match(await page.getByTestId("ising-state-panel").innerText(),/omitted probability/);
+  await page.getByRole("button",{name:"Focus correlation row 1"}).click();
+  await page.getByTestId("scientific-reference-coordinate").filter({hasText:"Stored site 1"}).waitFor();
+  await page.getByRole("button",{name:"Select Ising site 2"}).click();
+  await page.getByTestId("scientific-reference-coordinate").filter({hasText:"Stored site 2"}).waitFor();
   assert.match(await page.getByTestId("scientific-reference-availability").innerText(),/full ground-state vector are unavailable/);
   assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),preservedManyBodyRunId);
   assert.equal(await page.getByTestId("many-body-inspector-site").innerText(),await page.getByTestId("many-body-site-value-1").innerText());
@@ -1282,6 +1293,9 @@ try {
   await page.getByTestId("many-body-inspector-state").filter({hasText:"Run inputs match the draft"}).waitFor();
   assert.equal(await page.getByTestId("many-body-inspector-energy").count(),0);
   assert.equal(await page.getByTestId("many-body-inspector-site").count(),0);
+  assert.equal(await page.getByTestId("ising-state-panel").count(),0,"reopening does not invent a state view");
+  await page.getByTestId("inspect-ising-state").click();
+  await page.getByTestId("ising-state-panel").waitFor({timeout:30000});
   await page.getByRole("spinbutton",{name:"Many-body sites"}).fill("5");
   if (gpu.engines.quspin?.available) {
     await page.getByRole("combobox", { name: "Many-body engine" }).selectOption("compare");

@@ -1684,8 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-04): **QVIS-014–016 implemented for their declared bounded
-desktop scope; QVIS-017–023 planned**. This is an
+Status (2026-10-04): **QVIS-014–017 implemented for their declared bounded
+desktop scope; QVIS-018–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1790,12 +1790,12 @@ their richer diagnostics remain in place; this is not a second worker protocol
 or a replacement for existing run verification. Hash-verified reopening and
 restart continue to clear unselected cursors.
 
-Ising connected `Cᶻᶻᵢⱼ` and correlation length are explicit unavailable cards:
-the frozen `quantum-result/v1` branch stores no pair expectations, and its
-fingerprint guard forbids silently extending it. Total `⟨Σσᶻ⟩` is visibly
-derived from the stored sites. A future separately versioned result or
-verified sidecar can provide bounded correlations after scientific and
-compatibility review; no finite-size fitting protocol is asserted here. A
+The frozen `quantum-result/v1` branch stores no pair expectations, and its
+fingerprint guard forbids silently extending it. QVIS-017 now supplies
+connected `Cᶻᶻᵢⱼ` only when a separate exact-run, hash-verified state sidecar
+is loaded; otherwise the card remains unavailable. Correlation length stays
+unavailable because no universal finite-size fit is asserted. Total
+`⟨Σσᶻ⟩` is visibly derived from stored site means. A
 selected Ising energy does not acquire a fabricated excited-state correlation.
 No full ground-state vector, Lindblad density matrix, cavity state vector,
 Transmon eigenvector or sweep-cell time trajectory is implied. See
@@ -1814,6 +1814,28 @@ The present inspector remains intact until a shared view covers its existing
 diagnostics without loss.
 
 ## QVIS-017 — Many-body state inspection
+
+Implemented bounded scope (2026-10-04): a separate
+`quantum-ising-state/v1` sidecar is bound to the SHA-256 hashes of one
+verified saved Ising job and result. The worker recomputes the state with the
+source engine (native or optional QuSpin), independently checks the
+MSB-first Pauli-z basis, ground energy, norm and residual, and the host
+compares the recomputed gap, site means and middle-cut entropy to the saved
+run before caching. The cache is hash-wrapped and reopened only against the
+same still-verified source; missing sidecars compute on request, corrupt
+sidecars are refused, and restarting does not invent an active selection.
+`quantum-result/v1` and its fingerprint remain unchanged.
+
+For resolved 2–8-site ground states, the Lab shows the connected-z
+correlation matrix, natural-log von Neumann entropy at every contiguous cut,
+and at most 16 leading computational-basis **probabilities** plus omitted
+probability. A clicked correlation row selects that exact saved-run Ising
+site and enables the matching QVIS-016 cards. A declared near-degenerate
+ground level withholds state-specific quantities. No amplitudes or full
+vector are exposed, no excited-state sector is inferred, and no universal
+finite-chain correlation length is claimed. See `docs/QVIS017_ISING_STATE.md`.
+
+Original proposed scope, retained for context:
 
 For bounded Ising chains, propose a site-correlation matrix,
 entanglement-versus-cut plot and small-`N` computational-basis probability

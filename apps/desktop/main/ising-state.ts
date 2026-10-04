@@ -1,5 +1,5 @@
-import {createHash,randomUUID} from "node:crypto";
-import {lstat,mkdir,readFile,rename,writeFile} from "node:fs/promises";
+import {createHash} from "node:crypto";
+import {lstat,mkdir,readFile,writeFile} from "node:fs/promises";
 import {join} from "node:path";
 import type {ManyBodyJob,ManyBodyResult} from "../../../packages/contracts";
 import {isIsingStateArtifact,type IsingStateArtifact,type IsingStateSource} from "../../../packages/contracts/ising-state";
@@ -24,7 +24,8 @@ export class IsingStateStore {
     return {job,result,source:{runId,jobSha256:inspected.hashes.job,resultSha256:inspected.hashes.result}};
   }
   private check(value:unknown,source:IsingStateSource,job:ManyBodyJob,result:ManyBodyResult):IsingStateArtifact{
-    if(!isIsingStateArtifact(value)||JSON.stringify(value.source)!==JSON.stringify(source)||
+    if(!isIsingStateArtifact(value)||value.source.runId!==source.runId||
+      value.source.jobSha256!==source.jobSha256||value.source.resultSha256!==source.resultSha256||
       value.engine!==job.engine||value.sites!==job.model.parameters.sites||
       Math.abs(value.groundEnergy-result.spectrum.lowEnergies[0])>1e-7||
       Math.abs(value.gap-result.spectrum.gap)>1e-7||
@@ -57,13 +58,9 @@ export class IsingStateStore {
     }
     const calculated=this.check(await compute(job,source),source,job,result);
     await mkdir(this.root,{recursive:true});
-    const payload=JSON.stringify(calculated),temporary=join(this.root,`${runId}.${randomUUID()}.tmp`);
-    await writeFile(temporary,JSON.stringify({schema:"quantum-ising-state-manifest/v1",sha256:hash(payload),payload})+"\n",{flag:"wx"});
-    try{await rename(temporary,this.path(runId))}catch(error){
-      // A concurrent request may have completed first; never overwrite or trust blindly.
-      await import("node:fs/promises").then(fs=>fs.unlink(temporary)).catch(()=>{});
-      throw error;
-    }
+    const payload=JSON.stringify(calculated);
+    try{await writeFile(this.path(runId),JSON.stringify({schema:"quantum-ising-state-manifest/v1",sha256:hash(payload),payload})+"\n",{flag:"wx"})}
+    catch(error){if((error as NodeJS.ErrnoException).code!=="EEXIST")throw error;}
     return this.get(runId);
   }
 }

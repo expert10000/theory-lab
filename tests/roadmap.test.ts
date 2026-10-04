@@ -98,15 +98,17 @@ test("linked-workspace roadmap names completed current-lab adapters and next UI 
   }
 });
 
-test("QVIS-014–016 complete declared bounded adapters without relabelling later work",async()=>{
+test("QVIS-014–017 complete declared bounded adapters without relabelling later work",async()=>{
   assert.deepEqual(QVIS_WORKFLOW_STEPS.map(entry=>[entry.id,entry.state]),
-    Array.from({length:10},(_,index)=>[`QVIS-${String(index+14).padStart(3,"0")}`,index<=2?"Implemented":"Planned"]));
+    Array.from({length:10},(_,index)=>[`QVIS-${String(index+14).padStart(3,"0")}`,index<=3?"Implemented":"Planned"]));
   assert.equal(DELIVERED_QVIS.length,13);
   const doc=await readFile("docs/ROADMAP.md","utf8");
-  assert.match(doc,/QVIS-014–016 implemented for their declared bounded\s+desktop scope/);
+  assert.match(doc,/QVIS-014–017 implemented for their declared bounded\s+desktop scope/);
   assert.match(doc,/fingerprint guard forbids silently extending it/);
   const audit=await readFile("docs/QVIS016_OBSERVABLE_AUDIT.md","utf8");
-  assert.match(audit,/All current v1 results lack pair expectations/);
+  assert.match(audit,/All base v1 results lack pair expectations/);
+  const ising=await readFile("docs/QVIS017_ISING_STATE.md","utf8");
+  assert.match(ising,/Corruption is an error/);
   assert.match(doc,/renderer-local\s+`scientific-selection\/v1` reference/);
   assert.match(doc,/independently opened web scenes/);
   assert.match(doc,/Half-chain entropy is already recorded/);

@@ -90,6 +90,17 @@ test("QVIS-016 Ising, sweep and topology avoid invented state, trajectory and co
   assert.equal(isingView.cards.find(card=>card.id==="total_z")?.availability,"derived");
   assert.equal(isingView.cards.find(card=>card.id==="czz")?.availability,"unavailable");
   assert.equal(isingView.cards.find(card=>card.id==="correlation_length")?.availability,"unavailable");
+  const sidecar={schema:"quantum-ising-state/v1",source:{runId:"run-a",jobSha256:"a".repeat(64),resultSha256:"b".repeat(64)},
+    engine:"native",sites:2,basis:"z-up-is-0-msb-first",groundEnergy:-1.5,gap:0.5,degeneracyThreshold:1e-8,
+    status:"resolved",norm:1,residual:1e-12,siteMagnetization:[0.7,-0.4],
+    connectedZCorrelation:[[0.51,0.12],[0.12,0.84]],cutEntropy:[0.2],
+    dominantBasis:[{bits:"00",probability:0.7}],omittedProbability:0.3};
+  const enrichedSources={...empty,tab:"many_body",activeModel:"ising_chain",manyBody:{result:ising,
+    selection:{kind:"site_magnetization",runId:"run-a",index:1},item:{kind:"site_magnetization",index:1,magnetization:-0.4},
+    stateArtifact:sidecar}} as SelectionSources;
+  const enrichedRef=activeSelectionReference(enrichedSources);assert.ok(enrichedRef);
+  const enriched=resolveObservableWorkspace(enrichedRef,ising,enrichedSources);assert.ok(enriched);
+  assert.equal(enriched.cards.find(card=>card.id==="czz_1_0")?.value,0.12);
 
   const sweep=result("sweep","driven_two_level",{data:{shape:{x:3,y:2}}});
   const sweepView=resolve("sweep","driven_two_level","sweep",sweep,

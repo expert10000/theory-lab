@@ -1322,6 +1322,18 @@ h1 {
 .observable-card .key-value { gap: 7px; margin-bottom: 6px; line-height: 1.4; }
 .observable-card .key-value span:last-child,.observable-card .key-value code { text-align: right; overflow-wrap: anywhere; }
 .observable-card small { display: block; color: #8f9fa9; line-height: 1.45; }
+.ising-state-panel { margin-top: 18px; }
+.ising-state-panel code { overflow-wrap: anywhere; }
+.ising-state-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 22px; margin: 20px 0; }
+.ising-correlation-table { display: grid; gap: 3px; overflow-x: auto; }
+.ising-correlation-table [role="row"] { display: grid; grid-template-columns: 45px repeat(8,minmax(49px,1fr)); gap: 3px; min-width: max-content; }
+.ising-correlation-table [role="row"] > * { padding: 6px 3px; text-align: center; background: #172c31; color: #b9d9d1; font-size: 10px; }
+.ising-correlation-table [role="row"].selected > * { background: #25483f; color: #a5efdb; }
+.ising-correlation-table button { width: 100%; color: inherit; background: transparent; border: 1px solid #48635d; cursor: pointer; }
+.ising-cut { display: grid; grid-template-columns: 44px 1fr 64px; gap: 9px; align-items: center; margin: 8px 0; font-size: 11px; }
+.ising-cut meter { width: 100%; }
+.ising-basis { max-width: 620px; }
+@media (max-width: 900px) { .ising-state-grid { grid-template-columns: 1fr; } }
 .evolution-inspector .key-value { gap: 8px; align-items: baseline; }
 .evolution-inspector .key-value strong,.evolution-inspector .key-value code { min-width: 0; text-align: right; overflow-wrap: anywhere; }
 .evolution-inspector .provenance small { overflow-wrap: anywhere; }

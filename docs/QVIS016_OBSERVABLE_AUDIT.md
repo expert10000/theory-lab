@@ -14,7 +14,7 @@ hash-verified path; reopening does not invent a sample selection.
 | Jaynes–Cummings and Quantum Rabi | Selected population, mean photons, parity, cutoff-boundary occupation | The artifact does not store the full state vector. |
 | Lindblad | Selected density-derived population, photons, purity, coherence, trace | The artifact does not store the full density matrix. |
 | Transmon | Selected level in GHz; run-level stored charge `0↔1` matrix element | Selected-state charge expectation and eigenvector are unavailable. |
-| Ising chain | Selected site's `⟨σᶻ⟩`, derived total `⟨Σσᶻ⟩`; selected low energy | All current v1 results lack pair expectations, so connected `Cᶻᶻᵢⱼ` is unavailable. No excited-state vector or universal finite-chain correlation length. |
+| Ising chain | Selected site's `⟨σᶻ⟩`, derived total `⟨Σσᶻ⟩`; selected low energy; selected row of connected `Cᶻᶻᵢⱼ` when a QVIS-017 sidecar is loaded | All base v1 results lack pair expectations. Without an exact-run, verified sidecar, `Cᶻᶻᵢⱼ` remains unavailable. No excited-state vector or universal finite-chain correlation length. |
 | Final-population sweep | Selected grid cell's final `P₁` | A cell is not a saved trajectory. |
 | SSH/QWZ | Selected stored SSH bands or edge density, or QWZ Berry curvature and optional supplied band | No generic eigenvector or inferred band value. |
 | Hydrogenic orbital | Selected radial probability density or voxel `|ψ|²` derived from verified complex amplitudes | Radial and voxel coordinates are not interchangeable. |

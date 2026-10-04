@@ -1,8 +1,10 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { ManyBodyEngineName, ManyBodyResult, QuantumBridge, WorkerStatus,
   WorkspaceSnapshot } from "../../../packages/contracts";
+import type {IsingStateArtifact} from "../../../packages/contracts/ising-state";
 import { MANY_BODY_DEFAULTS, manyBodyJob } from "../../../packages/models/many_body";
 import { selectedManyBodyItem, type ManyBodySelection, type ManyBodyRunContext } from "./many-body-selection";
+import {IsingStatePanel} from "./IsingStatePanel";
 
 type Draft = NonNullable<WorkspaceSnapshot["manyBody"]>;
 
@@ -45,6 +47,9 @@ export function ManyBodyLab({ bridge, status, restored, restoreEpoch, atlasDraft
   const [outcome, setOutcome] = useState("READY TO CALCULATE");
   const [error, setError] = useState("");
   const [selection,setSelection]=useState<ManyBodySelection|null>(null);
+  const [stateArtifact,setStateArtifact]=useState<IsingStateArtifact|null>(null);
+  const [stateLoading,setStateLoading]=useState(false);
+  const [stateError,setStateError]=useState("");
   const appliedReopenEpoch=useRef<number|null>(null);
   const runEpoch=useRef(0);
   useEffect(() => {
@@ -52,13 +57,13 @@ export function ManyBodyLab({ bridge, status, restored, restoreEpoch, atlasDraft
     runEpoch.current++;setRunning(false);
     setDraft(restored ?? MANY_BODY_DEFAULTS);
     setResult(null); setReference(null); setOutcome("WORKSPACE RESTORED");
-    setSelection(null);onManyBodyContext?.(null);
+    setSelection(null);setStateArtifact(null);setStateError("");setStateLoading(false);onManyBodyContext?.(null);
   }, [restoreEpoch,onManyBodyContext]);
   useEffect(() => {
     if (!atlasEpoch || !atlasDraft) return;
     runEpoch.current++;setRunning(false);
     setDraft(atlasDraft); setResult(null); setReference(null); setOutcome("ATLAS BINDING LOADED");
-    setSelection(null);onManyBodyContext?.(null);
+    setSelection(null);setStateArtifact(null);setStateError("");setStateLoading(false);onManyBodyContext?.(null);
   }, [atlasEpoch,onManyBodyContext]);
   useEffect(()=>{
     if(!reopenedManyBody||appliedReopenEpoch.current===reopenedManyBody.epoch)return;
@@ -66,6 +71,7 @@ export function ManyBodyLab({ bridge, status, restored, restoreEpoch, atlasDraft
     runEpoch.current++;setRunning(false);appliedReopenEpoch.current=reopenedManyBody.epoch;
     setDraft({sites:String(p.sites),interaction:String(p.interaction),transverse:String(p.transverse),longitudinal:String(p.longitudinal),boundary:p.boundary,engine:stored.engine.name});
     setResult(stored);setReference(null);setResultMode(stored.engine.name);setSelection(null);
+    setStateArtifact(null);setStateError("");setStateLoading(false);
     setError("");setOutcome("SAVED RUN OPENED");
   },[reopenedManyBody?.epoch]);
   useEffect(() => onSnapshot?.(draft), [draft, onSnapshot]);
@@ -81,12 +87,26 @@ export function ManyBodyLab({ bridge, status, restored, restoreEpoch, atlasDraft
     JSON.stringify(result.model) !== JSON.stringify(preview.model));
   const item=selectedManyBodyItem(selection,result);
   useEffect(()=>{
-    onManyBodyContext?.(result?{result,selection:item?selection:null,item,stale:!!stale}:null);
-  },[result,selection,item?.kind,item?.index,stale,onManyBodyContext]);
+    onManyBodyContext?.(result?{result,selection:item?selection:null,item,stale:!!stale,stateArtifact}:null);
+  },[result,selection,item?.kind,item?.index,stale,stateArtifact,onManyBodyContext]);
+  async function inspectState(){
+    if(!result||stateLoading)return;
+    const epoch=runEpoch.current,runId=result.runId;
+    setStateLoading(true);setStateError("");
+    try{
+      const state=await bridge.getIsingState(runId);
+      if(runEpoch.current!==epoch)return;
+      if(state.source.runId!==runId)throw new Error("State artifact source run mismatch");
+      setStateArtifact(state);
+    }catch(exception){
+      if(runEpoch.current===epoch)setStateError(exception instanceof Error?exception.message:String(exception));
+    }finally{if(runEpoch.current===epoch)setStateLoading(false)}
+  }
   async function run() {
     if (!preview || !ready || running) return;
     const epoch=++runEpoch.current;
-    setRunning(true); setError(""); setOutcome("RUNNING");setResult(null);setReference(null);setSelection(null);onManyBodyContext?.(null);
+    setRunning(true); setError(""); setOutcome("RUNNING");setResult(null);setReference(null);setSelection(null);
+    setStateArtifact(null);setStateError("");setStateLoading(false);onManyBodyContext?.(null);
     try {
       const first = await bridge.manyBody({ ...preview, jobId: `job-${crypto.randomUUID()}` });
       if(runEpoch.current!==epoch)return;
@@ -132,6 +152,12 @@ export function ManyBodyLab({ bridge, status, restored, restoreEpoch, atlasDraft
         <div><span>HALF-CHAIN ENTROPY</span><strong data-testid="many-body-entropy">{result.groundState.halfChainEntropy.toFixed(6)}</strong><small>natural-log von Neumann</small></div></div>
       {comparison && <div className="comparison-report" data-testid="many-body-compare"><h3>QuSpin versus Native</h3><p>Max |ΔE| {comparison.energy.toExponential(3)} · max |Δ⟨σᶻ⟩| {comparison.magnetization.toExponential(3)} · |ΔS| {comparison.entropy.toExponential(3)}</p></div>}
       <ManyBodyFigure result={result} selection={item?selection:null} onSelect={(kind,index)=>setSelection({kind,runId:result.runId,index})}/>
+      <div className="dynamics-actions"><button type="button" className="run-button" data-testid="inspect-ising-state"
+        disabled={stateLoading} onClick={()=>void inspectState()}>{stateLoading?"Inspecting saved state…":stateArtifact?"Reopen verified state view":"Inspect saved ground state"}</button>
+        <span>Run-bound, bounded 2–8-site state summary</span></div>
+      {stateError&&<p className="error-message" role="alert" data-testid="ising-state-error">{stateError}</p>}
+      {stateArtifact&&<IsingStatePanel state={stateArtifact} selectedSite={item?.kind==="site_magnetization"?item.index:null}
+        onSelectSite={index=>setSelection({kind:"site_magnetization",runId:result.runId,index})}/>}
       <div className="plot-caption"><span>{result.engine.name} {result.engine.version} · {result.provenance.durationMs.toFixed(1)} ms</span><span>Full basis · finite chain · saved run</span></div>
     </section>}
   </div>;

@@ -137,10 +137,19 @@ export function resolveObservableWorkspace(reference:ScientificSelectionReferenc
         add(cards,card("energy","energy",`E${coordinate.index}`,"H",`finite-chain level ${coordinate.index}`,basis,"normalized"),
           context.item.energy,`spectrum.lowEnergies[${coordinate.index}]`,"No selected excited-state vector stored");
       else return null;
-      unavailable(cards,card("czz","correlation","Connected Cᶻᶻᵢⱼ","⟨σᶻᵢσᶻⱼ⟩ − ⟨σᶻᵢ⟩⟨σᶻⱼ⟩",state,basis,"dimensionless"),
-        "Pair expectations are not stored; site means alone cannot determine connected correlations");
+      const sidecar=context.stateArtifact;
+      if(coordinate.kind==="site"&&sidecar?.status==="resolved"&&sidecar.source.runId===result.runId&&
+        sidecar.engine===result.engine.name&&sidecar.sites===result.model.parameters.sites&&sidecar.connectedZCorrelation){
+        for(let j=0;j<sidecar.sites;j++)add(cards,card(`czz_${coordinate.index}_${j}`,"correlation",
+          `Cᶻᶻ(${coordinate.index+1}, ${j+1})`,`⟨σᶻ_${coordinate.index+1}σᶻ_${j+1}⟩ − ⟨σᶻ_${coordinate.index+1}⟩⟨σᶻ_${j+1}⟩`,
+          state,basis,"dimensionless"),sidecar.connectedZCorrelation[coordinate.index][j],
+          `quantum-ising-state/v1 · row ${coordinate.index}, column ${j}`,
+          `Verified source result SHA-256 ${sidecar.source.resultSha256.slice(0,12)}…`);
+      }else unavailable(cards,card("czz","correlation","Connected Cᶻᶻᵢⱼ","⟨σᶻᵢσᶻⱼ⟩ − ⟨σᶻᵢ⟩⟨σᶻⱼ⟩",state,basis,"dimensionless"),
+        sidecar?.status==="degenerate"?"No unique ground-state correlation at this degeneracy":
+          "Run-bound state sidecar not loaded; site means alone cannot determine connected correlations");
       unavailable(cards,card("correlation_length","correlation","Correlation length","ξ",state,basis,"sites"),
-        "No pair-correlation series or meaningful finite-size fit is stored");
+        "No validated finite-size fit is defined for all 2–8-site configurations");
     }else if(result.operation==="sweep"&&coordinate.kind==="cell"){
       const context=sources.sweep;
       if(!context||context.result.runId!==result.runId||context.selection?.runId!==result.runId||
