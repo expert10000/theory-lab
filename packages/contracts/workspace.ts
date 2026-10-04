@@ -1,7 +1,7 @@
 import Ajv from "ajv";
 import type { CavityModel, EngineName, EvolutionEngineName, ManyBodyEngineName, SweepEngineName, SweepAxis } from "./index";
 
-export type WorkspaceTab = "spectrum" | "hamiltonian" | "dynamics" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas" | "topology" | "scenes" | "orbital" | "oscillator";
+export type WorkspaceTab = "spectrum" | "hamiltonian" | "theory" | "dynamics" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas" | "topology" | "scenes" | "orbital" | "oscillator";
 export type ManyBodyWorkspaceEngine = ManyBodyEngineName | "compare";
 export type CircuitWorkspaceEngine = import("./index").CircuitEngineName | "compare";
 export type WorkspaceEngine = EngineName | "compare";
@@ -12,6 +12,8 @@ export interface WorkspaceSnapshot {
   tab: WorkspaceTab;
   /** Additive Analysis route context; old Hamiltonian snapshots remain two-level. */
   analysisModel?: "two_level"|"driven_two_level"|"landau_zener"|"stuckelberg"|"strong_drive"|"jaynes_cummings"|"quantum_rabi"|"lindblad"|"ising_chain"|"topology"|"hydrogenic"|"oscillator"|"transmon";
+  /** Selected model when the informational Theory view is saved. */
+  theoryModel?: WorkspaceSnapshot["analysisModel"];
   selectedPresetId: string | null;
   spectrum: { parameters: Record<string, string>; engine: WorkspaceEngine };
   dynamics: { modelId: "driven_two_level" | "landau_zener" | "stuckelberg" | "strong_drive";
@@ -76,8 +78,9 @@ const axis = block(["parameter", "start", "stop", "points"], {
 const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "spectrum", "dynamics", "cavity", "open", "sweep"], {
   schema: { const: "quantum-workspace/v1" },
   savedAt: { type: "string", minLength: 1, maxLength: 50 },
-  tab: { enum: ["spectrum", "hamiltonian", "dynamics", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "topology", "scenes", "orbital", "oscillator"] },
+  tab: { enum: ["spectrum", "hamiltonian", "theory", "dynamics", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "topology", "scenes", "orbital", "oscillator"] },
   analysisModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
+  theoryModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
   selectedPresetId: { anyOf: [{ type: "string", maxLength: 100 }, { type: "null" }] },
   spectrum: block(["parameters", "engine"], { parameters: values, engine: { enum: ["qutip", "native", "compare"] } }),
   dynamics: block(["modelId", "parameters", "start", "stop", "samples", "basis", "engine"], {

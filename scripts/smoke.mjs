@@ -56,7 +56,15 @@ try {
   assert.equal(await page.getByTestId("energy-high").textContent(), "0.640312");
   const workspaceModes=page.getByRole("tablist",{name:/Workspace modes for/});
   assert.deepEqual(await workspaceModes.getByRole("tab").allTextContents(),
-    ["Explore","Dynamics","Sweeps","Analysis","Scenes","Runs"]);
+    ["Explore","Dynamics","Sweeps","Analysis","Theory","Scenes","Runs"]);
+  await workspaceModes.getByRole("tab",{name:"Theory"}).click();
+  assert.equal(await page.locator("[data-testid=model-theory] h2").innerText(),"Two-level system");
+  assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/theory");
+  assert.ok(await page.locator(".dynamics-layout .workspace").evaluate(element=>{
+    const workspace=element.getBoundingClientRect(),layout=element.parentElement.getBoundingClientRect();
+    return Math.abs(workspace.right-layout.right)<2;
+  }),"Theory stretches to the right edge of the desktop layout");
+  await workspaceModes.getByRole("tab",{name:"Explore"}).click();
   assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isDisabled(),false);
   assert.equal(await page.getByRole("button",{name:/Two-level system/}).getAttribute("aria-pressed"),"true");
   assert.equal(await page.getByRole("navigation",{name:"Model families"}).locator("details").count(),7);

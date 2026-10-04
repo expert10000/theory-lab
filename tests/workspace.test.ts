@@ -44,6 +44,10 @@ test("A/B Analysis model context extends workspace v1 without changing legacy sn
   assert.ok(isWorkspaceSnapshot({...workspace,tab:"hamiltonian",analysisModel:"oscillator"}));
   assert.equal(isWorkspaceSnapshot({...workspace,analysisModel:"unknown"}),false);
 });
+test("selected-model Theory restores from an additive workspace context",()=>{
+  assert.ok(isWorkspaceSnapshot({...workspace,tab:"theory",theoryModel:"quantum_rabi"}));
+  assert.equal(isWorkspaceSnapshot({...workspace,tab:"theory",theoryModel:"unknown"}),false);
+});
 test("workspace v1 accepts all lab drafts and rejects unknown or unsafe fields", () => {
   assert.ok(isWorkspaceSnapshot(workspace));
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "scenes" }));

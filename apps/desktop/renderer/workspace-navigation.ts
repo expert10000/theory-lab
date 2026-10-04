@@ -2,7 +2,7 @@ import type {WorkspaceSnapshot, WorkspaceTab} from "../../../packages/contracts"
 import type {EvolutionModelId} from "../../../packages/models";
 import type {CavityModelId} from "../../../packages/models/cavity";
 
-export type WorkspaceMode="explore"|"dynamics"|"sweeps"|"analysis"|"scenes"|"runs";
+export type WorkspaceMode="explore"|"dynamics"|"sweeps"|"analysis"|"theory"|"scenes"|"runs";
 export type WorkspaceModel="two_level"|EvolutionModelId|CavityModelId|
   "lindblad"|"ising_chain"|"topology"|"hydrogenic"|"oscillator"|"transmon";
 export type WorkspaceLocation={model:WorkspaceModel;tab:WorkspaceTab};
@@ -17,7 +17,7 @@ export const MODEL_GROUPS:readonly {id:string;label:string;models:readonly Works
   {id:"circuits",label:"Circuits",models:["transmon"]},
 ];
 const MODELS=new Set<WorkspaceModel>(MODEL_GROUPS.flatMap(group=>group.models));
-const TABS=new Set<WorkspaceTab>(["spectrum","hamiltonian","dynamics","cavity","open","sweep","many_body","circuit","presets","runs","roadmap","backend","atlas","topology","scenes","orbital","oscillator"]);
+const TABS=new Set<WorkspaceTab>(["spectrum","hamiltonian","theory","dynamics","cavity","open","sweep","many_body","circuit","presets","runs","roadmap","backend","atlas","topology","scenes","orbital","oscillator"]);
 const UTILITIES=new Set<WorkspaceTab>(["presets","roadmap","backend","atlas"]);
 
 export function workspaceHash({model,tab}:WorkspaceLocation):string{
@@ -46,11 +46,12 @@ export function locationFromHash(hash:string):WorkspaceLocation|null{
 export const WORKSPACE_MODES:readonly {id:WorkspaceMode;label:string}[]=[
   {id:"explore",label:"Explore"},{id:"dynamics",label:"Dynamics"},
   {id:"sweeps",label:"Sweeps"},{id:"analysis",label:"Analysis"},
+  {id:"theory",label:"Theory"},
   {id:"scenes",label:"Scenes"},{id:"runs",label:"Runs"},
 ];
 
 export function modeForTab(tab:WorkspaceTab):WorkspaceMode|null{
-  if(tab==="scenes"||tab==="runs")return tab;
+  if(tab==="scenes"||tab==="runs"||tab==="theory")return tab;
   if(tab==="dynamics"||tab==="open")return "dynamics";
   if(tab==="sweep")return "sweeps";
   if(tab==="hamiltonian")return "analysis";
@@ -59,7 +60,7 @@ export function modeForTab(tab:WorkspaceTab):WorkspaceMode|null{
 }
 
 export function tabForMode(model:WorkspaceModel,mode:WorkspaceMode):WorkspaceTab|null{
-  if(mode==="scenes"||mode==="runs")return mode;
+  if(mode==="scenes"||mode==="runs"||mode==="theory")return mode;
   if(mode==="analysis")return "hamiltonian";
   if(mode==="sweeps")return ["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","ising_chain"].includes(model)?"sweep":null;
   if(mode==="dynamics")return model==="lindblad"?"open":
@@ -78,6 +79,7 @@ export function tabForMode(model:WorkspaceModel,mode:WorkspaceMode):WorkspaceTab
 
 export function modelForSnapshot(snapshot:WorkspaceSnapshot):WorkspaceModel{
   if(snapshot.tab==="hamiltonian"&&snapshot.analysisModel)return snapshot.analysisModel;
+  if(snapshot.tab==="theory"&&snapshot.theoryModel)return snapshot.theoryModel;
   switch(snapshot.tab){
     case "dynamics":return snapshot.dynamics.modelId;
     case "sweep":return snapshot.sweepView==="two_level"?"two_level":snapshot.sweepView==="ising_chain"?"ising_chain":snapshot.sweep.modelId;

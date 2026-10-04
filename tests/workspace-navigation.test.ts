@@ -3,11 +3,12 @@ import assert from "node:assert/strict";
 import {locationFromHash,modeForTab,modelForSnapshot,MODEL_GROUPS,tabForMode,workspaceHash,WORKSPACE_MODES} from "../apps/desktop/renderer/workspace-navigation";
 import type {WorkspaceSnapshot,WorkspaceTab} from "../packages/contracts";
 
-test("QLAB-UI-1 exposes six modes without turning utilities into experiments",()=>{
-  assert.deepEqual(WORKSPACE_MODES.map(mode=>mode.label),["Explore","Dynamics","Sweeps","Analysis","Scenes","Runs"]);
+test("workspace exposes selected-model Theory without turning utilities into experiments",()=>{
+  assert.deepEqual(WORKSPACE_MODES.map(mode=>mode.label),["Explore","Dynamics","Sweeps","Analysis","Theory","Scenes","Runs"]);
   assert.deepEqual(["atlas","presets","roadmap","backend"].map(tab=>modeForTab(tab as WorkspaceTab)),[null,null,null,null]);
   assert.equal(modeForTab("spectrum"),"explore");
   assert.equal(modeForTab("hamiltonian"),"analysis");
+  assert.equal(modeForTab("theory"),"theory");
 });
 
 test("QLAB-UI-1 gates existing experiments by selected model",()=>{
@@ -21,6 +22,7 @@ test("QLAB-UI-1 gates existing experiments by selected model",()=>{
   assert.equal(tabForMode("oscillator","explore"),"oscillator");
   assert.equal(tabForMode("oscillator","dynamics"),null,"internal oscillator modes are not yet a shared workspace adapter");
   for(const model of ["two_level","oscillator","lindblad"] as const){
+    assert.equal(tabForMode(model,"theory"),"theory");
     assert.equal(tabForMode(model,"scenes"),"scenes");
     assert.equal(tabForMode(model,"runs"),"runs");
   }
@@ -37,6 +39,7 @@ test("QLAB-UI-1 maps legacy saved tabs to the same model and experiment",()=>{
   assert.equal(modelForSnapshot({...snapshot,tab:"atlas"}),"two_level");
   assert.equal(modelForSnapshot({...snapshot,tab:"hamiltonian",analysisModel:"oscillator"}),"oscillator");
   assert.equal(modelForSnapshot({...snapshot,tab:"hamiltonian"}),"two_level","legacy Hamiltonian snapshots remain two-level");
+  assert.equal(modelForSnapshot({...snapshot,tab:"theory",theoryModel:"quantum_rabi"}),"quantum_rabi");
 });
 
 test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
@@ -48,6 +51,7 @@ test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
     {model:"oscillator",tab:"oscillator"},{model:"quantum_rabi",tab:"runs"},
     {model:"topology",tab:"atlas"},
     {model:"oscillator",tab:"hamiltonian"},
+    {model:"quantum_rabi",tab:"theory"},
   ] as const)assert.deepEqual(locationFromHash(workspaceHash(location)),location);
   assert.deepEqual(locationFromHash("#sweep"),{model:"driven_two_level",tab:"sweep"});
   assert.deepEqual(locationFromHash("#tab/circuit"),{model:"transmon",tab:"circuit"});
