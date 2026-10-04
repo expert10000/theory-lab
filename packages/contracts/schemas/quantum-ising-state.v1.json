@@ -1,0 +1,27 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#",
+  "title":"Run-bound bounded Ising ground-state inspection",
+  "type":"object","additionalProperties":false,
+  "required":["schema","source","engine","sites","basis","groundEnergy","gap","degeneracyThreshold","status","norm","residual","siteMagnetization","connectedZCorrelation","cutEntropy","dominantBasis","omittedProbability"],
+  "properties":{
+    "schema":{"const":"quantum-ising-state/v1"},
+    "source":{"type":"object","additionalProperties":false,"required":["runId","jobSha256","resultSha256"],"properties":{
+      "runId":{"type":"string","pattern":"^[A-Za-z0-9_-]{1,100}$"},
+      "jobSha256":{"type":"string","pattern":"^[a-f0-9]{64}$"},
+      "resultSha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}},
+    "engine":{"enum":["native","quspin"]},
+    "sites":{"type":"integer","minimum":2,"maximum":8},
+    "basis":{"const":"z-up-is-0-msb-first"},
+    "groundEnergy":{"type":"number"},
+    "gap":{"type":"number","minimum":0},
+    "degeneracyThreshold":{"type":"number","exclusiveMinimum":0},
+    "status":{"enum":["resolved","degenerate"]},
+    "norm":{"type":"number","minimum":0.999999,"maximum":1.000001},
+    "residual":{"type":"number","minimum":0,"maximum":0.000001},
+    "siteMagnetization":{"oneOf":[{"type":"null"},{"type":"array","minItems":2,"maxItems":8,"items":{"type":"number","minimum":-1.000001,"maximum":1.000001}}]},
+    "connectedZCorrelation":{"oneOf":[{"type":"null"},{"type":"array","minItems":2,"maxItems":8,"items":{"type":"array","minItems":2,"maxItems":8,"items":{"type":"number","minimum":-2.000001,"maximum":2.000001}}}]},
+    "cutEntropy":{"oneOf":[{"type":"null"},{"type":"array","minItems":1,"maxItems":7,"items":{"type":"number","minimum":0,"maximum":6}}]},
+    "dominantBasis":{"type":"array","maxItems":16,"items":{"type":"object","additionalProperties":false,"required":["bits","probability"],"properties":{"bits":{"type":"string","pattern":"^[01]{2,8}$"},"probability":{"type":"number","minimum":0,"maximum":1.000001}}}},
+    "omittedProbability":{"oneOf":[{"type":"null"},{"type":"number","minimum":0,"maximum":1.000001}]}
+  }
+}

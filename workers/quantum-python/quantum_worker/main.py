@@ -11,6 +11,7 @@ from quantum_worker.engines.qutip_engine import availability, diagonalize
 from quantum_worker.engines.native_engine import availability as native_availability, diagonalize as native_diagonalize
 from quantum_worker.engines.dynamiqs_engine import availability as dynamiqs_availability
 from quantum_worker.engines.many_body import quspin_availability, solve as many_body_solve
+from quantum_worker.engines.ising_state import solve as ising_state_solve
 from quantum_worker.engines.circuit import scqubits_availability, solve as circuit_solve
 from quantum_worker.engines.topology import solve as topology_solve
 from quantum_worker.engines.orbital import available as orbital_available
@@ -70,6 +71,8 @@ def resources():
     return result
 
 def dispatch(method, params):
+    if method == "quantum.isingState":
+        return ising_state_solve(params)
     if method == "quantum.start":
         return MANAGER.start(params.get("job"), params.get("outputDir"))
     if method == "quantum.cancel":
