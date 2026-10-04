@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "quantum-ising-study/v1",
+  "oneOf": [
+    { "$ref": "#/$defs/plan" },
+    { "$ref": "#/$defs/result" }
+  ],
+  "$defs": {
+    "plan": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "studyId", "engine", "fixed", "axis", "output"],
+      "properties": {
+        "schema": { "const": "quantum-ising-study/v1" },
+        "studyId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" },
+        "engine": { "enum": ["native", "quspin"] },
+        "fixed": { "type": "object", "additionalProperties": false,
+          "required": ["sites", "interaction", "longitudinal", "boundary"],
+          "properties": { "sites": { "type": "integer", "minimum": 2, "maximum": 8 },
+            "interaction": { "type": "number", "minimum": -10, "maximum": 10, "not": { "const": 0 } },
+            "longitudinal": { "type": "number", "minimum": -10, "maximum": 10 },
+            "boundary": { "enum": ["open", "periodic"] } } },
+        "axis": { "type": "object", "additionalProperties": false,
+          "required": ["parameter", "start", "stop", "points"],
+          "properties": { "parameter": { "const": "transverse_over_interaction" },
+            "start": { "type": "number" }, "stop": { "type": "number" },
+            "points": { "type": "integer", "minimum": 3, "maximum": 31 } } },
+        "output": { "const": "low_energies_gap_magnetization_entropy" }
+      }
+    },
+    "result": {
+      "type": "object", "additionalProperties": false,
+      "required": ["schema", "studyId", "plan", "status", "points", "computedAt"],
+      "properties": {
+        "schema": { "const": "quantum-ising-study-result/v1" },
+        "studyId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,80}$" },
+        "plan": { "$ref": "#/$defs/plan" },
+        "status": { "enum": ["completed", "cancelled"] },
+        "points": { "type": "array", "maxItems": 31, "items": { "type": "object", "additionalProperties": false,
+          "required": ["index", "ratio", "runId", "lowEnergies", "gap", "siteMagnetization", "halfChainEntropy"],
+          "properties": { "index": { "type": "integer", "minimum": 0 }, "ratio": { "type": "number" },
+            "runId": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,100}$" },
+            "lowEnergies": { "type": "array", "minItems": 2, "maxItems": 256, "items": { "type": "number" } },
+            "gap": { "type": "number", "minimum": 0 },
+            "siteMagnetization": { "type": "array", "minItems": 2, "maxItems": 8, "items": { "type": "number", "minimum": -1.000001, "maximum": 1.000001 } },
+            "halfChainEntropy": { "type": "number", "minimum": 0 } } } },
+        "computedAt": { "type": "string", "minLength": 20 }
+      }
+    }
+  }
+}
