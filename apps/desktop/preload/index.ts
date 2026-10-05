@@ -60,6 +60,7 @@ const bridge: QuantumBridge = {
   getScene: (runId, view) => ipcRenderer.invoke("quantum:scene", runId, view),
   exportScene: (runId, view, format) => ipcRenderer.invoke("quantum:export-scene", runId, view, format),
   prepareSceneHandoff: (runId, view, expectedResultHash) => ipcRenderer.invoke("quantum:prepare-scene-handoff", runId, view, expectedResultHash),
+  openInMath3D: (runId, view, expectedResultHash) => ipcRenderer.invoke("quantum:open-in-math3d", runId, view, expectedResultHash),
   importSceneStream: () => ipcRenderer.invoke("quantum:import-scene-stream"),
   readSceneChunk: (id,path) => ipcRenderer.invoke("quantum:scene-chunk",id,path),
   releaseSceneStream: id => ipcRenderer.invoke("quantum:release-scene-stream",id),

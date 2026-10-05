@@ -18,6 +18,7 @@
     "test:desktop": "npm run build && node scripts/smoke.mjs",
     "test:web": "npm run build && tsx scripts/smoke-web.ts",
     "test:scenes": "tsx scripts/smoke-scenes.ts",
+    "test:math3d-handoff": "npm run build && node scripts/smoke-math3d-handoff.mjs",
     "test:ssh-ui": "npm run build && node scripts/smoke-ssh-ui.mjs",
     "accept:remote": "tsx scripts/accept-remote.ts",
     "start:gateway": "npm run build && node dist/gateway.cjs",

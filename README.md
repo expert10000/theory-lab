@@ -42,8 +42,10 @@ On Linux, create `.venv` with `python3.12 -m venv .venv`, then `.venv/bin/python
 
 Open **Scenes** or **Portable scenes** in the sidebar to preview saved Dynamics,
 SSH or QWZ runs. Orbit the geometry, inspect Float64 samples, toggle objects and
-export a verified `quantum-scene/v1` bundle to a new `.qscene` folder. Math3D is
-unchanged; a separate importer comes later. See [the scene contract and usage](docs/QUANTUM_SCENE.md).
+export a verified `quantum-scene/v1` bundle to a new `.qscene` folder. For a
+saved run, **Open in Math3D** writes and verifies that bundle, then launches a
+local Math3D checkout; choose its folder once. Math3D checks the bundle again
+before showing a read-only preview. See [the scene contract and usage](docs/QUANTUM_SCENE.md).
 The web client's **Portable scenes** uses the same viewers for authenticated
 saved runs and read-only local `.qscene` folder imports, including fields,
 lattices, reciprocal guides, bands and supplied topology. Imports never upload
@@ -140,7 +142,8 @@ single-electron Coulomb fields in Bohr/Hartree units. Explore density, signed
 real/imaginary lobes, phase, threshold surfaces and orthogonal slices. Radial
 normalization and the unrenormalized finite-grid integral are shown separately.
 Saved orbital runs replay in **Scenes** and export verified `.qscene` bundles,
-CSV grids or radial SVGs. Math3D is unchanged and is not connected. Scientific
+CSV grids or radial SVGs. The local Math3D handoff opens a read-only preview;
+field rendering is still deferred there. Scientific
 scope, conventions and tests are in [docs/FIELDS_ORBITALS.md](docs/FIELDS_ORBITALS.md).
 
 **Scenes → Open scene bundle** reopens a trusted `.qscene` folder as a read-only,

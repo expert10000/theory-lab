@@ -581,6 +581,7 @@ export interface QuantumBridge {
   getScene(runId: string, view?: "standard" | "bands"): Promise<import("../quantum-scene").ScenePayload>;
   exportScene(runId: string, view?: "standard" | "bands", format?: "regular"|"stream"): Promise<string | null>;
   prepareSceneHandoff(runId: string, view: "standard" | "bands", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
+  openInMath3D(runId: string, view: "standard" | "bands", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
   importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;
   readSceneChunk(id:string,path:string): Promise<Uint8Array>;
   releaseSceneStream(id:string): Promise<void>;

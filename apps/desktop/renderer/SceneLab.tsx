@@ -136,6 +136,19 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     }catch(error){setMessage(error instanceof Error?error.message:String(error));}
     finally{setBusy(false);}
   }
+  async function openInMath3D() {
+    if (source !== "saved" || !payload) return;
+    const current = runId, selectedView = savedView, sourceHash = payload.scene.provenance.resultSha256;
+    setHandoff(null); setBusy(true); setMessage("");
+    try {
+      const receipt = await bridge.openInMath3D(current, selectedView, sourceHash);
+      if (receipt) {
+        setHandoff(receipt);
+        setMessage("Math3D launched with this verified scene; it checks the bundle before displaying it.");
+      } else setMessage("Math3D launch cancelled");
+    } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
+    finally { setBusy(false); }
+  }
   async function openExample() {
     setBusy(true);
     setMessage("");
@@ -197,8 +210,8 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
           Preview verified saved Bloch trajectories, SSH sublattices and bonds,
           Ising magnetization, QWZ curvature, supplied SSH/QWZ bands and hydrogenic orbital fields.
           Export the scene and binary datasets as a new .qscene folder. A
-          verified external-viewer handoff is available for saved runs; Math3D
-          still needs its own importer before direct opening is enabled.
+          saved run can open directly in a local Math3D checkout after its bundle
+          is written and verified. Choose the Math3D checkout once.
         </p>
         <div className="scene-run-controls">
           <label>
@@ -246,6 +259,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
           <button data-testid="export-scene-stream" disabled={busy||source!=="saved"||!payload} onClick={()=>void exportScene("stream")}>Export chunked LOD bundle</button>
           <button data-testid="import-scene-stream" disabled={busy} onClick={()=>void importStream()}>Open chunked scene bundle</button>
           <button data-testid="prepare-scene-handoff" disabled={busy||source!=="saved"||!payload} onClick={()=>void prepareHandoff()}>Prepare verified external-viewer bundle</button>
+          <button data-testid="open-in-math3d" disabled={busy||source!=="saved"||!payload} onClick={()=>void openInMath3D()}>Open in Math3D</button>
           {source !== "saved" && (
             <button
               type="button"
@@ -334,7 +348,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
           <p><strong>View:</strong> {handoff.view} · {handoff.bundleSchema} · {handoff.sceneSchema}</p>
           <p><strong>Coordinates:</strong> {handoff.coordinates.axes.map((axis,i)=>`${axis} [${handoff.coordinates.units[i]}]`).join(" · ")} · {handoff.coordinates.handedness}-handed</p>
           <p><strong>Datasets:</strong> {handoff.datasets.map(d=>`${d.id}: ${d.count}×${d.components} ${d.unit}`).join(" · ")}</p>
-          <p>Full saved-run scene only. The current lab time/site selection is a local viewer focus and was not transferred. No Math3D import or automatic launch has been verified.</p>
+          <p>Full saved-run scene only. The current lab time/site selection is a local viewer focus and was not transferred. Math3D verifies this same portable bundle independently before displaying it.</p>
         </div>
       )}
       {busy && !payload && (

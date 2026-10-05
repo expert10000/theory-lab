@@ -2,7 +2,8 @@
 
 `quantum-scene/v1` is a Lab-owned, application-independent visualization boundary.
 The scene is declarative data, not JavaScript, formulas to execute, a worker job,
-or a Math3D document. Math3D is unchanged and needs a separate future importer.
+or a Math3D document. Math3D now has an independent verified reader and a
+read-only preview for this portable format.
 
 ## Contract
 
@@ -113,14 +114,15 @@ provenance is not independently authenticated. Hashes detect corruption, not
 publisher identity or scientific correctness. Open only trusted bundles.
 Export of imported data is disabled; **Return to saved run** restores the normal
 saved-run workflow. Cancelling or rejecting another import keeps the previous
-valid preview. No Math3D integration is introduced.
+valid preview. The later QVIS-023 handoff uses this same file format.
 
 The web client's **Portable scenes** exposes the shared viewers under strict
 CSP. Authenticated saved-run views use read-only scene metadata/dataset/chunk
 routes; local folder imports require no token, upload nothing and create no
 runs. Both regular and separate chunked bundles are accepted. The first external
-integration remains file-based; no Math3D launch, importer or live worker bridge
-is part of these milestones. See [the bounded release record](RELEASE_QVIS_V0.1.md).
+integration remains file-based. A later local checkout launcher opens verified
+saved-run bundles in Math3D; no live worker bridge is involved. See
+[the bounded release record](RELEASE_QVIS_V0.1.md) and [the handoff](SCENE_HANDOFF.md).
 
 ## QVIS-008–010: bounded lattices, reciprocal guides and bands
 
@@ -133,7 +135,7 @@ rejected. Original Float64 energies, k coordinates and source hashes survive
 offline bundle import. See [scope, conventions and UI controls](LATTICE_RECIPROCAL_BANDS.md).
 Older strict consumers must update their schema before accepting these optional
 fields or the `segments` primitive. This does not change worker routing or add
-a live Math3D connection.
+a live Math3D worker connection.
 
 ## Acceptance
 

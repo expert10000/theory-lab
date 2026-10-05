@@ -2,7 +2,9 @@
 
 The Theory Lab desktop Scenes page prepares a **regular `.qscene` folder**
 from an exact, hash-verified saved run and selected standard or SSH/QWZ band
-view. The Lab does not launch Math3D or contact a Math3D worker. Existing
+view. **Open in Math3D** creates the same verified bundle under the Lab's
+user-data directory, then starts a local Math3D checkout with its folder path.
+The first use asks for the Math3D checkout folder and remembers it. Existing
 scene export/import paths and `quantum-scene/v1` remain unchanged.
 
 The folder contains `bundle.json`, `scene.json`, and the `f64le` binary files
@@ -24,7 +26,9 @@ other Lab cursor is **not serialized** in `.qscene`. An independent viewer
 may provide its own selection. Imported scenes, geometry fixtures and
 chunked LOD bundles do not receive a saved-run handoff receipt.
 
-Math3D integration remains a separate gate: its importer must pass the
-same schema/hash/unit/sample acceptance on real Lab bundles, including
-restart and tamper refusal, before an “Open in Math3D” action is enabled.
-No direct Math3D-to-worker or Lab-to-Math3D worker call is part of this path.
+Math3D verifies the manifest, schema and every binary dataset independently
+before opening its read-only preview. A changed or damaged bundle is refused.
+The current local launcher supports a built Math3D source checkout with its
+Electron dependency installed; packaged application discovery is later work.
+Math3D opens a new window when launched this way. No direct Math3D-to-worker
+or Lab-to-Math3D worker call is part of this path.
