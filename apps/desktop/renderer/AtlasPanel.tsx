@@ -1,16 +1,24 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect,useMemo, useState } from "react";
 import { ATLAS_ENTRIES, ATLAS_REVISION, atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { atlasBinding } from "../../../packages/atlas/bindings";
+import {atlasDeepLinkCapabilities} from "../../../packages/atlas/deep-link";
 import { AtlasCapabilities } from "../../../packages/ui/AtlasCapabilities";
 
-export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
+export function AtlasPanel({ openLab,onRun,onSweep,runReady=false,availableOperations=[],running=false,message,focus }:
+  {openLab?:(id:string)=>void;onRun?:(id:string)=>void;onSweep?:(id:string)=>void;
+    runReady?:boolean;availableOperations?:readonly string[];running?:boolean;message?:{id:string;text:string}|null;focus?:{id:string;nonce:number}|null}) {
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState("all");
   const [selectedId, setSelectedId] = useState("two_level_pauli");
+  useEffect(()=>{if(focus&&atlasEntry(focus.id)){setSelectedId(focus.id);setFamily("all");setQuery("");}},[focus?.nonce]);
   const filtered = useMemo(() => ATLAS_ENTRIES.filter(entry => (family === "all" || entry.family === family) &&
     `${entry.id} ${entry.name} ${entry.presentation.tags.join(" ")}`.toLowerCase().includes(query.toLowerCase())), [query, family]);
   const selected = atlasEntry(selectedId);
   const binding = atlasBinding(selectedId);
+  const actions=atlasDeepLinkCapabilities(selectedId);
+  const operation=binding?.kind==="spectrum"?"diagonalize":binding?.kind==="dynamics"?"evolve":
+    binding?.kind==="cavity"?"cavity":binding?.kind==="topology"?"topology":null;
+  const canRun=runReady&&!!operation&&availableOperations.includes(operation);
   return <div className="atlas-panel" data-testid="atlas-panel">
     <section className="panel"><p className="eyebrow">THEORY ATLAS / PINNED SOURCE · R1</p><h2>{ATLAS_ENTRIES.length} Hamiltonians, one inspected revision.</h2>
       <p>Source revision <code>{ATLAS_REVISION.slice(0, 12)}</code>. Reference definitions, theory examples and tested Lab bindings are separate capabilities. A source example never enables a Lab Run action.</p>
@@ -23,9 +31,16 @@ export function AtlasPanel({ openLab }: { openLab?: (id: string) => void }) {
           <h4>Assumptions & limits</h4><p>{selected.assumptions.join(" · ") || "Not specified"}</p>{selected.important_limits.map((limit, index) => <p key={index}><strong>{limit.condition}</strong> → {limit.result}</p>)}
           <h4>Observables</h4><p>{selected.observables.join(" · ")}</p>
           {selected.relations.length > 0 && <><h4>Related entries</h4><div className="atlas-relations">{selected.relations.map((relation, index) => <button key={index} onClick={() => { setSelectedId(relation.target); setFamily("all"); setQuery(""); }}>{relation.target} ↗</button>)}</div></>}
-          <p><button className="text-button" onClick={() => void window.quantum.openAtlasSource(selected.id)}>View pinned source ↗</button> <small>({atlasUrl(selected)})</small></p>
+          <p><button className="text-button" data-testid="atlas-theory-reference" onClick={() => void window.quantum.openAtlasSource(selected.id)}>Open theory reference ↗</button> <small>({atlasUrl(selected)})</small></p>
           <AtlasCapabilities id={selected.id}/>
-          {binding ? <div className="atlas-binding"><p className="eyebrow">THEORY LAB BINDING / TESTED SUBSPACE</p><p>{binding.convention}</p><button className="run-button" data-testid="open-atlas-binding" onClick={() => openLab?.(selectedId)}>Load in {binding.modelId.replaceAll("_", " ")} lab ↗</button></div> : <p className="scope-note">No tested Theory Lab binding for this entry yet.</p>}
+          {binding ? <div className="atlas-binding"><p className="eyebrow">THEORY LAB BINDING / TESTED SUBSPACE</p><p>{binding.convention}</p>
+            <div className="dynamics-actions"><button className="run-button" data-testid="open-atlas-binding" onClick={() => openLab?.(selectedId)}>Open in {binding.modelId.replaceAll("_", " ")} lab ↗</button>
+              {actions.run&&<button type="button" data-testid="run-atlas-canonical" disabled={!canRun||running} onClick={()=>onRun?.(selectedId)}>{running?"Running…":"Run canonical example"}</button>}
+              {actions.sweep&&<button type="button" data-testid="sweep-atlas-parameter" onClick={()=>onSweep?.(selectedId)}>Sweep Δ parameter ↗</button>}</div>
+            {!actions.run&&<p className="scope-note">Canonical one-click run unavailable: this binding cannot retain pinned Atlas identity in its current saved-job contract. Open in Lab remains available.</p>}
+            {actions.sweep&&<p className="scope-note">Sweep opens editable Lab study inputs. Point runs are ordinary Lab runs; they do not acquire canonical Atlas provenance.</p>}
+            {message?.id===selectedId&&<p role="status" data-testid="atlas-action-message">{message.text}</p>}
+          </div> : <p className="scope-note">No tested Theory Lab binding for this entry yet. This entry has no Load, Run or Sweep action.</p>}
         </article>}</div>
     </section>
   </div>;

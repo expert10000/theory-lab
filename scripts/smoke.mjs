@@ -8,11 +8,27 @@ async function expandGroup(page,id){
   const group=page.locator(`[data-model-group="${id}"]`);
   if(!(await group.evaluate(element=>element.open)))await group.locator("summary").click();
 }
+async function cancelWhenRendered(page,runId,cancelId){
+  await page.evaluate(async({runId,cancelId})=>{
+    const run=document.querySelector(`[data-testid="${runId}"]`);
+    if(!(run instanceof HTMLButtonElement)||run.disabled)throw new Error(`Cannot start cancellable ${runId}`);
+    run.click();
+    await new Promise((resolve,reject)=>{
+      const click=()=>{const cancel=document.querySelector(`[data-testid="${cancelId}"]`);
+        if(!(cancel instanceof HTMLButtonElement))return false;
+        observer.disconnect();clearTimeout(timeout);cancel.click();resolve();return true;};
+      const observer=new MutationObserver(click);
+      const timeout=setTimeout(()=>{observer.disconnect();reject(new Error(`Missing ${cancelId} cancellation UI`));},5000);
+      observer.observe(document.body,{childList:true,subtree:true});click();
+    });
+  },{runId,cancelId});
+}
 const env = { ...process.env };
 env.QLAB_TEST_PROFILE=await mkdtemp(join(tmpdir(),"qlab-desktop-acceptance-"));
 delete env.ELECTRON_RUN_AS_NODE;
 const app = await electron.launch({ args: ["."], env });
 let preservedRunId = null;
+let preservedAtlasRunId = null;
 let preservedSpectrumRunId = null;
 let preservedRerunId = null;
 let preservedRabiRunId = null;
@@ -97,6 +113,9 @@ try {
   await page.getByRole("button",{name:"Detailed view"}).click();
   assert.match(await page.getByTestId("theory-detailed-visual").innerText(),/Annotated model anatomy/);
   await page.screenshot({path:"artifacts/desktop-theory-detailed.png",fullPage:true});
+  await page.getByRole("button",{name:"Bloch sphere"}).click();
+  assert.match(await page.getByTestId("theory-bloch-visual").innerText(),/Bloch-sphere geometry/);
+  await page.screenshot({path:"artifacts/desktop-theory-bloch.png",fullPage:true});
   await page.getByRole("button",{name:"Overview image"}).click();
   assert.equal(await page.evaluate(()=>window.location.hash),"#lab/two_level/theory");
   assert.ok(await historyBack.isEnabled());
@@ -474,12 +493,7 @@ try {
   await page.getByLabel("Motion stop",{exact:true}).fill("100");
   await page.getByLabel("Motion samples",{exact:true}).fill("1001");
   // Cancel through the visible UI immediately after React renders its running state.
-  await page.evaluate(async()=>{
-    document.querySelector('[data-testid="run-oscillator-motion"]').click();
-    await new Promise(requestAnimationFrame);
-    const cancel=document.querySelector('[data-testid="cancel-oscillator-motion"]');
-    if(!cancel)throw new Error("Missing oscillator cancellation UI");cancel.click();
-  });
+  await cancelWhenRendered(page,"run-oscillator-motion","cancel-oscillator-motion");
   await page.getByTestId("oscillator-motion-state").filter({hasText:"CANCELLED"}).waitFor();
   assert.ok(await page.getByRole("img",{name:"Moving oscillator density",exact:true}).isVisible(),"last verified plot survives cancellation");
   const beforeCancelRuns=await page.evaluate(()=>window.quantum.listRuns());
@@ -533,7 +547,7 @@ try {
   await page.getByLabel("Drive cutoff",{exact:true}).fill("64");
   await page.getByLabel("Drive stop",{exact:true}).fill("10");
   await page.getByLabel("Drive samples",{exact:true}).fill("1001");
-  await page.evaluate(async()=>{document.querySelector('[data-testid="run-oscillator-drive"]').click();await new Promise(resolve=>requestAnimationFrame(resolve));const cancel=document.querySelector('[data-testid="cancel-oscillator-drive"]');if(!cancel)throw new Error("Missing drive cancellation UI");cancel.click();});
+  await cancelWhenRendered(page,"run-oscillator-drive","cancel-oscillator-drive");
   await page.getByTestId("oscillator-drive-state").filter({hasText:"CANCELLED"}).waitFor();
   assert.ok(await page.getByRole("img",{name:"Driven oscillator occupation",exact:true}).isVisible());
   assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_drive").length)),initialDriveRuns+3,"cancelled drive is never saved");
@@ -575,7 +589,7 @@ try {
   await page.screenshot({path:"artifacts/desktop-oscillator-pulse.png",fullPage:true});
   await page.getByLabel("Pulse cutoff",{exact:true}).fill("64");
   await page.getByLabel("Pulse samples",{exact:true}).fill("1001");
-  await page.evaluate(async()=>{document.querySelector('[data-testid="run-oscillator-pulse"]').click();await new Promise(resolve=>requestAnimationFrame(resolve));const cancel=document.querySelector('[data-testid="cancel-oscillator-pulse"]');if(!cancel)throw new Error("Missing pulse cancellation UI");cancel.click();});
+  await cancelWhenRendered(page,"run-oscillator-pulse","cancel-oscillator-pulse");
   await page.getByTestId("oscillator-pulse-state").filter({hasText:"CANCELLED"}).waitFor();
   assert.ok(await page.getByTestId("pulse-convergence").isVisible(),"cancelled study/run retains the last verified comparison");
   assert.equal(await page.evaluate(()=>window.quantum.listRuns().then(r=>r.filter(v=>v.operation==="oscillator_pulse").length)),initialPulseRuns+5,"cancelled incomplete pulse is not saved");
@@ -720,7 +734,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=21?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=22?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -752,6 +766,8 @@ try {
     await page.getByRole("button",{name:new RegExp(id)}).click();
     assert.match(await page.getByTestId("atlas-capability-status").innerText(),new RegExp(`Theory example: ${kind}.*Lab executable binding: none`));
     assert.equal(await page.getByTestId("open-atlas-binding").count(),0);
+    assert.equal(await page.getByTestId("run-atlas-canonical").count(),0);
+    assert.equal(await page.getByTestId("sweep-atlas-parameter").count(),0);
     assert.match(await page.getByTestId("atlas-freeze-status").innerText(),/atlas-lab-reconciliation\/v1.*68 entries/);
     assert.ok(await page.getByTestId("atlas-executable-review").isVisible());
     assert.ok(await page.getByTestId("atlas-scene-review").isVisible());
@@ -770,6 +786,36 @@ try {
   await page.getByTestId("atlas-executable-review").locator("summary").click();
   await page.getByTestId("atlas-gap-review").locator("summary").click();
   await page.screenshot({ path: "artifacts/desktop-atlas.png", fullPage: true });
+  await page.getByLabel("Search Atlas").fill("two_level_pauli");
+  await page.getByRole("button",{name:/two_level_pauli/}).click();
+  assert.ok(await page.getByTestId("run-atlas-canonical").isEnabled());
+  await page.getByTestId("run-atlas-canonical").click();
+  await page.getByTestId("workspace-run-id").waitFor();
+  const canonicalRunId=await page.getByTestId("workspace-run-id").innerText();
+  preservedAtlasRunId=canonicalRunId;
+  const canonicalInspection=await page.evaluate(id=>window.quantum.inspectSavedRun(id),canonicalRunId);
+  assert.equal(canonicalInspection.job.model.source.exampleId,"Atlas two_level_pauli");
+  await page.getByRole("tab",{name:"Runs",exact:true}).click();
+  await page.getByRole("button",{name:`Inspect provenance ${canonicalRunId}`}).click();
+  await page.getByTestId("run-atlas-origin").waitFor();
+  assert.match(await page.getByTestId("run-atlas-origin").innerText(),/two.level|Two-level/i);
+  await page.getByRole("button",{name:"Open Atlas entry"}).click();
+  assert.match(await page.getByTestId("atlas-panel").innerText(),/two_level_pauli/);
+  await page.getByTestId("sweep-atlas-parameter").click();
+  await page.getByTestId("spectrum-study-lab").waitFor();
+  await page.getByTestId("spectrum-study-status").filter({hasText:"ordinary Lab provenance"}).waitFor();
+  await page.getByTestId("open-atlas").click();
+  for(const [id,expectedOperation] of [["semiclassical_rabi_drive","evolve"],["jaynes_cummings","cavity"],["ssh","topology"]]){
+    await page.getByLabel("Search Atlas").fill(id);
+    await page.getByRole("button",{name:new RegExp(id)}).click();
+    await page.getByTestId("run-atlas-canonical").click();
+    await page.getByTestId("atlas-panel").waitFor({state:"hidden"});
+    const runId=await page.getByTestId("workspace-run-id").innerText();
+    const inspected=await page.evaluate(value=>window.quantum.inspectSavedRun(value),runId);
+    assert.equal(inspected.job.operation,expectedOperation);
+    assert.equal(inspected.job.model.source.exampleId,`Atlas ${id}`);
+    await page.getByTestId("open-atlas").click();
+  }
   await page.getByLabel("Search Atlas").fill("Su-Schrieffer-Heeger");
   await page.getByRole("button", { name: /Su-Schrieffer-Heeger model/ }).click();
   assert.match(await page.getByTestId("atlas-panel").innerText(), /Atlas t₁\/t₂/);
@@ -779,6 +825,10 @@ try {
   await page.getByTestId("topology-result").waitFor();
   preservedTopologyRunIds.ssh=await page.getByTestId("workspace-run-id").innerText();
   assert.match(await page.getByTestId("topology-result").innerText(), /WINDING\s+1/);
+  await page.getByRole("tab",{name:"Theory",exact:true}).click();
+  await page.getByRole("button",{name:"Bloch sphere"}).click();
+  assert.match(await page.getByTestId("theory-bloch-visual").innerText(),/pseudospin map/);
+  await page.getByRole("tab",{name:"Explore",exact:true}).click();
   await page.getByRole("slider",{name:"SSH band sample"}).focus();
   await page.keyboard.press("End");
   await page.getByTestId("topology-selected-band").waitFor({state:"attached"});
@@ -875,10 +925,14 @@ try {
     .waitFor();
   await app.evaluate(({ BrowserWindow }) => {
     const window = BrowserWindow.getAllWindows()[0];
-    window.unmaximize();
-    window.setSize(1050, 700);
+    window.restore();
+    window.setBounds({x:80,y:80,width:1050,height:700});
   });
-  await page.waitForFunction(() => innerWidth < 1100);
+  try{await page.waitForFunction(() => innerWidth < 1100,null,{timeout:5000})}
+  catch{
+    await app.evaluate(({BrowserWindow})=>BrowserWindow.getAllWindows()[0].setBounds({x:80,y:80,width:1050,height:700}));
+    await page.waitForFunction(() => innerWidth < 1100);
+  }
   const overflow = await page.evaluate(
     () => document.documentElement.scrollWidth > innerWidth,
   );
@@ -902,9 +956,11 @@ try {
   await app.evaluate(({ BrowserWindow }) =>
     BrowserWindow.getAllWindows()[0].setSize(1440, 900),
   );
+  await page.getByRole("button",{name:/Landau–Zener/}).click();
   await page.getByRole("button",{name:/Rabi dynamics/}).click();
   assert.equal(await workspaceModes.getByRole("tab",{name:"Sweeps"}).isEnabled(),true);
   assert.equal(await page.getByRole("button",{name:/Rabi dynamics/}).getAttribute("aria-pressed"),"true");
+  await page.getByRole("combobox",{name:"Dynamics engine"}).selectOption("qutip");
   await page.getByTestId("run-evolution").click();
   await page
     .getByTestId("evolution-state")
@@ -1154,7 +1210,11 @@ try {
   await page.getByTestId("floquet-analysis").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-floquet.png", fullPage: true });
   await expandGroup(page,"light-matter");
+  await page.getByRole("button", { name: "Quantum Rabi" }).click();
   await page.getByRole("button", { name: "Jaynes–Cummings" }).click();
+  await page.getByRole("combobox",{name:"Cavity engine"}).selectOption("qutip");
+  await page.getByLabel("Cavity end time").fill("25");
+  await page.getByLabel("Cavity samples").fill("401");
   await page.getByTestId("run-cavity").click();
   await page.getByTestId("cavity-state").filter({ hasText: "COMPLETE" }).waitFor({ timeout: 30000 });
   await page.getByTestId("cavity-result").waitFor();
@@ -1906,6 +1966,13 @@ try {
   assert.equal(await page.getByTestId("comparison-pin-b").getAttribute("title"),preservedComparisonPins.b);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   assert.ok(runIds.includes(preservedRunId), "saved run must survive app restart");
+  assert.ok(runIds.includes(preservedAtlasRunId),"canonical Atlas run survives full restart");
+  const atlasReopened=await page.evaluate(id=>window.quantum.inspectSavedRun(id),preservedAtlasRunId);
+  assert.equal(atlasReopened.job.model.source.exampleId,"Atlas two_level_pauli");
+  await page.getByRole("button",{name:`Inspect provenance ${preservedAtlasRunId}`}).click();
+  await page.getByTestId("run-atlas-origin").waitFor();
+  assert.match(await page.getByTestId("run-atlas-origin").innerText(),/pinned revision/);
+  await page.getByRole("button",{name:`Inspect provenance ${preservedAtlasRunId}`}).click();
   assert.ok(runIds.includes(preservedMotionRunId),"saved motion amplitudes survive full restart");
   assert.ok(runIds.includes(preservedDriveRunId),"saved driven amplitudes survive full restart");
   assert.ok(runIds.includes(preservedPulseRunId),"saved pulse envelope and coefficients survive full restart");

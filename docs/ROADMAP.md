@@ -1684,8 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-05): **QVIS-014–021 implemented for their declared bounded
-desktop scope; QVIS-022–023 planned**. This is an
+Status (2026-10-05): **QVIS-014–022 implemented for their declared bounded
+desktop scope; QVIS-023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1972,6 +1972,32 @@ The reverse link should show the exact Atlas entry/revision and Volume VIII
 section on applicable runs. Current bindings cover only declared entries;
 descriptive Atlas entries must not acquire executable buttons until their
 model, units, parameters, canonical job and provenance pass validation.
+
+Implemented (bounded desktop scope, 2026-10-05): all 68 pinned entries keep
+their theory-reference link; the 11 existing reviewed Lab bindings keep
+Open in Lab. Eight source-capable bindings (two-level Pauli, Rabi drive,
+Landau–Zener, Floquet two-level, Jaynes–Cummings, quantum Rabi, SSH and QWZ)
+now offer a native canonical run built from the tested conversion and exact
+Atlas revision in the existing job source field. Worker capability and
+operation gates apply before submission; the result reopens through the
+normal verified saved-run path. Exact canonical inputs and source fields
+enable a reverse Atlas link in Runs, with the entry, revision and pinned
+Volume VIII chapter reference. Altered inputs, altered source fields and
+descriptive entries cannot acquire that link. The two-level binding also
+opens an editable Δ spectrum-study draft; its point runs retain ordinary
+Lab provenance, not a fabricated canonical Atlas identity. The oscillator,
+driven oscillator and Ising bindings remain Load-only for one-click Atlas
+execution because their current saved-job branches cannot retain this pinned
+source field; no frozen job/result schema was changed. Tests cover all 68
+action gates, eight contract-valid canonical jobs, refusal cases, desktop
+navigation and restart.
+
+The selected-system Theory guide now also offers an explicitly conceptual
+Bloch-sphere view for five qubit models and a two-band **pseudospin** sphere
+for SSH/QWZ. It never presents a schematic vector as a stored state, does not
+claim a physical spin direction for topology, and is absent for cavity,
+Lindblad, Ising, orbitals, oscillator and transmon where a single-qubit
+sphere would misdescribe the saved result.
 
 ## QVIS-023 — Scenes / Math3D bridge
 

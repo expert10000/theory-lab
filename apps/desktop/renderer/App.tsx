@@ -82,6 +82,7 @@ import {locationFromHash,modeForTab,modelForSnapshot,modelLabel,tabForMode,works
 import { ORBITAL_DEFAULTS } from "../../../packages/models/orbital";
 import { ATLAS_ENTRIES, ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../../../packages/atlas";
 import { atlasBinding } from "../../../packages/atlas/bindings";
+import {atlasDeepLinkCapabilities,canonicalAtlasJob} from "../../../packages/atlas/deep-link";
 import {
   compareSpectrum,
   type SpectrumComparison,
@@ -127,6 +128,10 @@ export function App() {
   const [atlasTopology, setAtlasTopology] = useState<{ epoch: number; draft: NonNullable<WorkspaceSnapshot["topology"]> } | null>(null);
   const [atlasOscillator, setAtlasOscillator] = useState<{ epoch:number; draft:NonNullable<WorkspaceSnapshot["oscillator"]> } | null>(null);
   const [atlasDriven, setAtlasDriven] = useState<{epoch:number;draft:NonNullable<WorkspaceSnapshot["oscillatorDriven"]>}|null>(null);
+  const [atlasSpectrumStudy,setAtlasSpectrumStudy]=useState<{epoch:number;draft:NonNullable<WorkspaceSnapshot["spectrumStudy"]>}|null>(null);
+  const [atlasFocus,setAtlasFocus]=useState<{id:string;nonce:number}|null>(null);
+  const [atlasRunning,setAtlasRunning]=useState(false);
+  const [atlasMessage,setAtlasMessage]=useState<{id:string;text:string}|null>(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
   const collectDynamics = useCallback((value: WorkspaceSnapshot["dynamics"]) => { workspaceParts.current.dynamics = value; checkParts(); }, []);
   const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
@@ -395,6 +400,42 @@ export function App() {
       setTab("topology");
     }
   }
+  function openAtlasOrigin(id:string){
+    if(!atlasEntry(id))return;
+    setAtlasFocus(current=>({id,nonce:(current?.nonce??0)+1}));
+    setTab("atlas");
+  }
+  function sweepAtlasParameter(id:string){
+    if(!atlasDeepLinkCapabilities(id).sweep)return;
+    const binding=atlasBinding(id);
+    if(!binding||binding.kind!=="spectrum")return;
+    setAtlasSpectrumStudy(current=>({epoch:(current?.epoch??0)+1,
+      draft:{...SPECTRUM_STUDY_DEFAULTS,axisParameter:"delta",omega:String(binding.parameters.omega)}}));
+    setActiveModel("two_level");setTab("sweep");
+    setWorkspaceMessage(`Atlas ${id}: Δ sweep inputs loaded; point runs use ordinary Lab provenance.`);
+  }
+  async function runCanonicalAtlas(id:string){
+    if(atlasRunning)return;
+    setAtlasRunning(true);setAtlasMessage(null);
+    try{
+      const job=canonicalAtlasJob(id,`job-${crypto.randomUUID()}`);
+      if(!job)throw new Error("No reviewed canonical Atlas job for this entry");
+      const capabilities=await window.quantum.getCapabilities();
+      if(!capabilities.engines.native.available||!capabilities.operations.includes(job.operation))
+        throw new Error(`Native ${job.operation} capability is unavailable`);
+      const result=job.operation==="diagonalize"?await window.quantum.run(job):
+        job.operation==="evolve"?await window.quantum.evolve(job):
+        job.operation==="cavity"?await window.quantum.cavity(job):
+        job.operation==="topology"?await window.quantum.topology(job):null;
+      if(!result)throw new Error("Canonical Atlas job has no reviewed dispatch");
+      if(job.operation==="diagonalize")await openSavedSpectrum(result.runId);
+      else if(job.operation==="evolve")await openSavedEvolution(result.runId);
+      else if(job.operation==="cavity")await openSavedCavity(result.runId);
+      else await openSavedTopology(result.runId);
+      setWorkspaceMessage(`Pinned Atlas ${id} canonical run verified · ${result.runId}`);
+    }catch(error){setAtlasMessage({id,text:error instanceof Error?error.message:String(error)});}
+    finally{setAtlasRunning(false)}
+  }
   async function saveWorkspace() {
     const parts = workspaceParts.current;
     if (!parts.dynamics || !parts.cavity || !parts.open || !parts.sweep || !parts.manyBody || !parts.circuit) return;
@@ -558,7 +599,7 @@ export function App() {
             <button type="button" aria-label="Forward" title="Forward" disabled={navigation.index>=navigation.max}
               onClick={()=>window.history.forward()}>→</button>
           </nav>
-          <span className="version">V0.1+ · QVIS-021</span>
+          <span className="version">V0.1+ · QVIS-022</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -735,7 +776,7 @@ export function App() {
             selectedModel={activeModel!=="two_level"&&activeModel!=="ising_chain"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
             onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} onSweepContext={collectSweepContext} reopenedSweep={reopenedSweep} /></div>
           <div hidden={tab!=="sweep"||activeModel!=="two_level"}><SpectrumStudyLab bridge={window.quantum} status={status}
-            restored={restored?.snapshot.spectrumStudy} restoreEpoch={restored?.epoch} onSnapshot={collectSpectrumStudy}
+            restored={restored?.snapshot.spectrumStudy} restoreEpoch={restored?.epoch} atlasDraft={atlasSpectrumStudy?.draft} atlasEpoch={atlasSpectrumStudy?.epoch} onSnapshot={collectSpectrumStudy}
             onOpenPoint={openSavedSpectrum}
             onDraftPoint={(delta,omega)=>{setParameters({delta:String(delta),omega:String(omega)});
               setResult(null);setResultMode(null);setComparison(null);setSelection(null);setTab("spectrum");}}/></div>
@@ -749,7 +790,7 @@ export function App() {
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital} onOrbitalContext={collectOrbitalContext} reopenedRun={reopenedOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} onCircuitContext={collectCircuitContext} reopenedCircuit={reopenedCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic} onOscillatorContext={collectOscillatorContext} reopenedRun={reopenedOscillator}/></div>
-          {tab === "theory" ? <TheoryPanel model={activeModel} /> : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onFigure={setFigureRunId} /> : tab === "backend" ? (
+          {tab === "theory" ? <TheoryPanel model={activeModel} /> : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} onRun={id=>void runCanonicalAtlas(id)} onSweep={sweepAtlasParameter} runReady={status.state==="READY"&&!!status.capabilities?.engines.native.available} availableOperations={status.capabilities?.operations} running={atlasRunning} message={atlasMessage} focus={atlasFocus} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onFigure={setFigureRunId} onOpenAtlas={openAtlasOrigin} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">

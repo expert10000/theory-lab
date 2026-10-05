@@ -5,6 +5,7 @@ import type { WorkspaceModel } from "./workspace-navigation";
 import { modelLabel } from "./workspace-navigation";
 import {TheoryIllustration} from "./TheoryIllustration";
 import {DetailedTheoryIllustration} from "./DetailedTheoryIllustration";
+import {BlochSphereIllustration,hasBlochSphere} from "./BlochSphereIllustration";
 
 type TheoryContent = {
   idea: string;
@@ -120,16 +121,18 @@ export function theoryForModel(model:WorkspaceModel):TheoryContent {
 
 export function TheoryPanel({model}:{model:WorkspaceModel}){
   const content=theoryForModel(model);
-  const [visualMode,setVisualMode]=useState<"overview"|"detail">("overview");
+  const [visualMode,setVisualMode]=useState<"overview"|"detail"|"bloch">("overview");
+  const shownMode=visualMode==="bloch"&&!hasBlochSphere(model)?"overview":visualMode;
   return <section className="panel theory-panel" data-testid="model-theory">
     <p className="eyebrow">SELECTED SYSTEM / THEORY GUIDE</p>
     <h2>{modelLabel(model)}</h2>
     <p>{content.idea}</p>
     <div className="theory-view-switch" role="group" aria-label="Theory illustration view">
-      <button type="button" aria-pressed={visualMode==="overview"} onClick={()=>setVisualMode("overview")}>Overview image</button>
-      <button type="button" aria-pressed={visualMode==="detail"} onClick={()=>setVisualMode("detail")}>Detailed view</button>
+      <button type="button" aria-pressed={shownMode==="overview"} onClick={()=>setVisualMode("overview")}>Overview image</button>
+      <button type="button" aria-pressed={shownMode==="detail"} onClick={()=>setVisualMode("detail")}>Detailed view</button>
+      {hasBlochSphere(model)&&<button type="button" aria-pressed={shownMode==="bloch"} onClick={()=>setVisualMode("bloch")}>Bloch sphere</button>}
     </div>
-    {visualMode==="overview"?<TheoryIllustration model={model}/>:<DetailedTheoryIllustration model={model}/>}
+    {shownMode==="overview"?<TheoryIllustration model={model}/>:shownMode==="detail"?<DetailedTheoryIllustration model={model}/>:<BlochSphereIllustration model={model}/>}
     <div className="theory-formula" aria-label="Model Hamiltonian or wavefunction">{content.formula}</div>
     <div className="theory-grid">
       <div><h3>Basis & conventions</h3><p>{content.basis}</p></div>

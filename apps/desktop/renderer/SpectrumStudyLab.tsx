@@ -14,8 +14,8 @@ type Result=SpectrumStudyResult|SpectrumOmegaStudyResult;
 type Summary=SpectrumStudySummary|SpectrumOmegaStudySummary;
 const coordinate=(point:Point)=>"delta" in point?point.delta:point.omega;
 const axisSymbol=(plan:Plan)=>plan.axis.parameter==="delta"?"Δ":"Ω";
-export function SpectrumStudyLab({bridge,status,restored,restoreEpoch,onSnapshot,onOpenPoint,onDraftPoint}:{
-  bridge:QuantumBridge;status:WorkerStatus;restored?:Draft;restoreEpoch?:number;
+export function SpectrumStudyLab({bridge,status,restored,restoreEpoch,atlasDraft,atlasEpoch,onSnapshot,onOpenPoint,onDraftPoint}:{
+  bridge:QuantumBridge;status:WorkerStatus;restored?:Draft;restoreEpoch?:number;atlasDraft?:Draft;atlasEpoch?:number;
   onSnapshot?:(draft:Draft)=>void;onOpenPoint:(runId:string)=>Promise<void>;
   onDraftPoint:(delta:number,omega:number)=>void;
 }){
@@ -30,6 +30,7 @@ export function SpectrumStudyLab({bridge,status,restored,restoreEpoch,onSnapshot
   const cancelRef=useRef<AbortController|null>(null);
   useEffect(()=>{void bridge.listSpectrumStudies().then(setSavedStudies).catch(()=>{});},[bridge]);
   useEffect(()=>{if(restoreEpoch){setDraft(restored??SPECTRUM_STUDY_DEFAULTS);setResult(null);setLivePoints([]);setLivePlan(null);setSelected(null);setMessage("Workspace inputs restored; recompute the study.");}},[restoreEpoch]);
+  useEffect(()=>{if(atlasEpoch&&atlasDraft){setDraft(atlasDraft);setResult(null);setLivePoints([]);setLivePlan(null);setSelected(null);setMessage("Pinned Atlas binding loaded as editable sweep inputs; point runs retain ordinary Lab provenance.");}},[atlasEpoch]);
   useEffect(()=>onSnapshot?.(draft),[draft,onSnapshot]);
   let preview:Plan|null=null;
   try{

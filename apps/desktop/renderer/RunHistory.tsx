@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import {canonicalAtlasOrigin} from "../../../packages/atlas/deep-link";
 import type { QuantumBridge, RunComparisonPins, RunExportFormat, RunSummary, SavedRunInspection } from "../../../packages/contracts";
 import { MODEL_REGISTRY, type EvolutionModelId } from "../../../packages/models";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
@@ -10,7 +11,7 @@ function evolutionLabel(model:string){return evolutionModels.includes(model as E
 const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
 function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze,onViewScene,onFigure }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void;onViewScene?:(runId:string,view:SceneView)=>void;onFigure?:(runId:string)=>void }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze,onViewScene,onFigure,onOpenAtlas }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void;onViewScene?:(runId:string,view:SceneView)=>void;onFigure?:(runId:string)=>void;onOpenAtlas?:(id:string)=>void }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
@@ -167,6 +168,11 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
               {inspection.lineage&&<><code>Parent job SHA-256 {inspection.lineage.parentJobSha256}</code>
                 <code>Parent result SHA-256 {inspection.lineage.parentResultSha256}</code></>}</div>
           </div>
+          {(()=>{const origin=canonicalAtlasOrigin(inspection.job);return origin&&<div className="atlas-binding" data-testid="run-atlas-origin">
+            <strong>Exact canonical Atlas binding</strong><p>{origin.entry.name} · {origin.section} · pinned revision <code>{origin.revision}</code></p>
+            <p>The verified stored job matches this entry's source and canonical parameters exactly.</p>
+            {onOpenAtlas&&<button type="button" onClick={()=>onOpenAtlas(origin.id)}>Open Atlas entry ↗</button>}
+          </div>})()}
           <details><summary>Exact stored job JSON (model, solver and source)</summary><pre>{JSON.stringify(inspection.job,null,2)}</pre></details>
           <p>Source preset or Atlas revision is shown only if it was recorded in the job; older jobs may not contain one. Rerun changes only the job ID. Numerical results may differ across worker, engine, device or hardware versions.</p>
           {inspection.preflight.differences.length>0&&<div role="status"><strong>Environment differences</strong><ul>{inspection.preflight.differences.map(value=><li key={value}>{value}</li>)}</ul></div>}
