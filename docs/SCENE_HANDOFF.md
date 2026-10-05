@@ -34,6 +34,10 @@ regular bundle can be opened in Math3D but does not receive that receipt.
 
 Math3D verifies the manifest, schema and every binary dataset independently
 before opening its read-only preview. A changed or damaged bundle is refused.
+Math3D can save the source folder and fingerprint in a `.math3d` workspace;
+opening that workspace rechecks the original `.qscene` before showing it.
+The source must remain at its saved location. This is a read-only reference,
+not an editable native Math3D scene.
 The current local launcher supports a built Math3D source checkout with its
 Electron dependency installed; packaged application discovery is later work.
 Math3D opens a new window when launched this way. No direct Math3D-to-worker
