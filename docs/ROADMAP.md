@@ -1684,8 +1684,8 @@ That is the architecture I would freeze before writing QLAB-001.
 
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
-Status (2026-10-04): **QVIS-014–020 implemented for their declared bounded
-desktop scope; QVIS-021–023 planned**. This is an
+Status (2026-10-05): **QVIS-014–021 implemented for their declared bounded
+desktop scope; QVIS-022–023 planned**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -1947,6 +1947,22 @@ scientific context for Volume VIII use. Existing CSV/SVG/manifest exports are
 preserved; this milestone extends coverage and presentation rather than
 redefining their files. Exported figures must not silently recalculate or
 resample a run.
+
+Implemented (bounded desktop scope, 2026-10-05): the active exact-run lab and
+Runs list expose a Figure action for every current `quantum-result/v1` saved
+result with an existing numerical SVG adapter: two-level, evolution, cavity,
+Lindblad, sweep, Ising, transmon, SSH/QWZ, orbital and oscillator variants.
+The publication preview and standalone SVG/PNG plus `quantum-figure/v1`
+`metadata.json` are generated only after saved-run hash and artifact
+verification. The sidecar records exact job/result/artifact hashes, model and
+parameters, axes/series units, engine and Python/worker versions, computation
+and export times, and explicitly states when uncertainty was not recorded.
+Binary series use every saved row in this figure path; the older CSV/SVG/
+manifest exports are unchanged. Desktop acceptance exercises SVG/PNG output,
+a second model adapter, restart and integrity refusal. This is an export of
+the existing saved-result plot, not a new calculation or an assertion that
+every auxiliary study is itself a `quantum-result/v1` run: composed study
+overlays and the Ising quench sidecar need their own future figure adapters.
 
 ## QVIS-022 — Atlas → Lab deep linking
 

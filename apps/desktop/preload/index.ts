@@ -66,6 +66,8 @@ const bridge: QuantumBridge = {
   getSceneExample: (request) => ipcRenderer.invoke("quantum:scene-example", request),
   exportSceneExample: (request) => ipcRenderer.invoke("quantum:export-scene-example", request),
   exportRun: (runId, format) => ipcRenderer.invoke("quantum:export-run", runId, format),
+  getFigure: runId => ipcRenderer.invoke("quantum:figure",runId),
+  exportFigure: (runId,format,expectedResultHash) => ipcRenderer.invoke("quantum:export-figure",runId,format,expectedResultHash),
   exportRunBundle: (runId) => ipcRenderer.invoke("quantum:export-run-bundle",runId),
   importRunBundle: () => ipcRenderer.invoke("quantum:import-run-bundle"),
 };

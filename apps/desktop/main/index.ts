@@ -582,6 +582,29 @@ app.whenReady().then(() => {
     await runs.export(runId, kind, selection.filePath);
     return selection.filePath;
   });
+  ipcMain.handle("quantum:figure",async(event,runId:unknown)=>{
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid figure source run ID");
+    return runs.figure(runId);
+  });
+  ipcMain.handle("quantum:export-figure",async(event,runId:unknown,format:unknown,expectedResultHash:unknown)=>{
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId)||
+      (format!=="svg"&&format!=="png")||typeof expectedResultHash!=="string"||!/^[a-f0-9]{64}$/.test(expectedResultHash))
+      throw new Error("Invalid verified figure export request");
+    const choice=await dialog.showOpenDialog({title:`Choose parent folder for ${format.toUpperCase()} scientific figure`,properties:["openDirectory"]});
+    if(choice.canceled||!choice.filePaths[0])return null;
+    const rasterize=async(svg:string)=>{
+      const figureWindow=new BrowserWindow({width:900,height:520,show:false,frame:false,resizable:false,
+        backgroundColor:"#111b24",webPreferences:{nodeIntegration:false,contextIsolation:true,sandbox:true,webSecurity:true,javascript:false}});
+      figureWindow.webContents.setWindowOpenHandler(()=>({action:"deny"}));
+      try{
+        await figureWindow.loadURL(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`);
+        return Uint8Array.from((await figureWindow.webContents.capturePage()).toPNG());
+      }finally{figureWindow.destroy()}
+    };
+    return (await runs.exportFigure(runId,choice.filePaths[0],format,rasterize,expectedResultHash)).directory;
+  });
   ipcMain.handle("quantum:export-run-bundle",async(event,runId:unknown)=>{
     trusted(event);
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid run bundle ID");

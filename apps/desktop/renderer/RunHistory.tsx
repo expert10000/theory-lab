@@ -10,7 +10,7 @@ function evolutionLabel(model:string){return evolutionModels.includes(model as E
 const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
 function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze,onViewScene }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void;onViewScene?:(runId:string,view:SceneView)=>void }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze,onViewScene,onFigure }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void;onViewScene?:(runId:string,view:SceneView)=>void;onFigure?:(runId:string)=>void }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
@@ -151,6 +151,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
             onClick={()=>void openOne(run.runId,"oscillator")}>{opening===run.runId?"Opening…":`Open ${run.operation.replaceAll("_"," ")}`}</button>}
           {(["csv", "svg", "manifest"] as const).map(format =>
           <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}
+          {onFigure&&<button type="button" aria-label={`Figure ${run.runId}`} onClick={()=>onFigure(run.runId)}>Figure</button>}
           <button type="button" aria-label={`Export portable run ${run.runId}`} onClick={()=>void exportBundle(run.runId)}>.qrun</button></div>
         {inspection?.summary.runId===run.runId&&<div className="run-provenance" data-testid="run-provenance">
           <p className="eyebrow">QLAB-UI-7 / HASH-VERIFIED SOURCE RUN</p>

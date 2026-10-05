@@ -587,6 +587,8 @@ export interface QuantumBridge {
   getSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<import("../quantum-scene").ScenePayload>;
   exportSceneExample(request: import("../quantum-scene/examples").SceneExampleRequest): Promise<string | null>;
   exportRun(runId: string, format: import("./workspace").RunExportFormat): Promise<string | null>;
+  getFigure(runId:string):Promise<import("./figure").ScientificFigurePreview>;
+  exportFigure(runId:string,format:import("./figure").FigureFormat,expectedResultHash:string):Promise<string|null>;
   exportRunBundle(runId:string):Promise<string|null>;
   importRunBundle():Promise<import("./workspace").RunSummary|null>;
 }

@@ -58,6 +58,7 @@ import { ANHARMONIC_DEFAULTS } from "../../../packages/models/oscillator-anharmo
 import { PresetPanel } from "./PresetPanel";
 import { PRESETS, type LaboratoryPreset } from "../../../packages/models/presets";
 import { RunHistory } from "./RunHistory";
+import {FigurePanel} from "./FigurePanel";
 import {RunComparisonPanel} from "./RunComparisonPanel";
 import { SceneLab } from "./SceneLab";
 import {availableSceneViews,sceneSampleForSelection,type SceneLaunch,type SceneSample,type SceneView} from "./scene-bridge";
@@ -198,6 +199,7 @@ export function App() {
   const [tab, setTab] = useState<WorkspaceTab>(()=>initialLocation.current?.tab??"spectrum");
   const [activeModel,setActiveModel]=useState<WorkspaceModel>(()=>initialLocation.current?.model??"two_level");
   const [sceneLaunch,setSceneLaunch]=useState<SceneLaunch|null>(null);
+  const [figureRunId,setFigureRunId]=useState<string|null>(null);
   function viewSavedScene(runId:string,view:SceneView="standard",sample?:SceneSample|null){
     setSceneLaunch(current=>({nonce:(current?.nonce??0)+1,runId,view,sample}));
     setTab("scenes");
@@ -556,7 +558,7 @@ export function App() {
             <button type="button" aria-label="Forward" title="Forward" disabled={navigation.index>=navigation.max}
               onClick={()=>window.history.forward()}>→</button>
           </nav>
-          <span className="version">V0.1+ · QVIS-020</span>
+          <span className="version">V0.1+ · QVIS-021</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
@@ -699,6 +701,7 @@ export function App() {
               </p>
             </div>
             <div className="scene-context-actions">
+              {visibleRunId&&<button type="button" data-testid="open-scientific-figure" onClick={()=>setFigureRunId(visibleRunId)}>Figure</button>}
               {sceneResult&&sceneViews?.standard&&<button type="button" data-testid="view-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,sceneSample?.kind==="ssh_band"&&sceneViews.bands?"bands":"standard",sceneSample)}>View in Scenes</button>}
               {sceneResult&&sceneViews?.bands&&<button type="button" data-testid="view-bands-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"bands",sceneSample)}>View bands in Scenes</button>}
               <span className="pill">{tab==="theory"?"MODEL REFERENCE · NO COMPUTE":tab==="ising_quench"?"2–8 SPINS · ℏ=1":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
@@ -746,7 +749,7 @@ export function App() {
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital} onOrbitalContext={collectOrbitalContext} reopenedRun={reopenedOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} onCircuitContext={collectCircuitContext} reopenedCircuit={reopenedCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic} onOscillatorContext={collectOscillatorContext} reopenedRun={reopenedOscillator}/></div>
-          {tab === "theory" ? <TheoryPanel model={activeModel} /> : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} /> : tab === "backend" ? (
+          {tab === "theory" ? <TheoryPanel model={activeModel} /> : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onFigure={setFigureRunId} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
@@ -1203,6 +1206,7 @@ export function App() {
           </button>
         </div>
       </footer>
+      {figureRunId&&<FigurePanel bridge={window.quantum} runId={figureRunId} onClose={()=>setFigureRunId(null)}/>}
     </div>
   );
 }

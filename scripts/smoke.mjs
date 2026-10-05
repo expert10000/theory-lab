@@ -1,7 +1,7 @@
 import { _electron as electron } from "playwright";
 import assert from "node:assert/strict";
 import { mkdir, mkdtemp } from "node:fs/promises";
-import { readFile, writeFile } from "node:fs/promises";
+import { readFile, writeFile, readdir } from "node:fs/promises";
 import { resolve, join } from "node:path";
 import { tmpdir } from "node:os";
 async function expandGroup(page,id){
@@ -54,6 +54,35 @@ try {
     .waitFor();
   assert.equal(await page.getByTestId("energy-low").textContent(), "-0.640312");
   assert.equal(await page.getByTestId("energy-high").textContent(), "0.640312");
+  const initialFigureRun=(await page.evaluate(()=>window.quantum.listRuns())).find(run=>run.operation==="diagonalize")?.runId;
+  assert.ok(initialFigureRun);
+  await page.getByTestId("open-scientific-figure").click();
+  await page.getByTestId("figure-preview").waitFor();
+  assert.match(await page.getByTestId("figure-preview").getAttribute("src"),/^data:image\/svg\+xml/);
+  const figureSource=await page.evaluate(id=>window.quantum.inspectSavedRun(id),initialFigureRun);
+  assert.match(await page.getByTestId("figure-source-hash").innerText(),new RegExp(figureSource.hashes.result));
+  await mkdir("artifacts/exports",{recursive:true});
+  const figureParent=resolve("artifacts/exports");
+  for(const format of ["svg","png"]){
+    await app.evaluate(({dialog},parent)=>{const original=dialog.showOpenDialog.bind(dialog);
+      dialog.showOpenDialog=async()=>{dialog.showOpenDialog=original;return {canceled:false,filePaths:[parent]};};},figureParent);
+    await page.getByTestId(`export-figure-${format}`).click();
+    await page.getByTestId("figure-message").filter({hasText:`${format.toUpperCase()} figure and metadata saved`}).waitFor();
+  }
+  const figureDirs=(await readdir(figureParent)).filter(name=>name.startsWith(`${initialFigureRun}-`)&&name.endsWith(".qfigure"));
+  assert.equal(figureDirs.length,2);
+  const figureMetadata=[];
+  for(const name of figureDirs){
+    const directory=join(figureParent,name),metadata=JSON.parse(await readFile(join(directory,"metadata.json"),"utf8"));
+    const file=await readFile(join(directory,metadata.file));figureMetadata.push(metadata);
+    assert.equal(metadata.schema,"quantum-figure/v1");assert.equal(metadata.source.resultSha256,figureSource.hashes.result);
+    assert.equal(metadata.plottedSamples,2);assert.equal(metadata.samplePolicy,"all recorded samples");
+    assert.equal(metadata.fileSha256,(await import("node:crypto")).createHash("sha256").update(file).digest("hex"));
+    if(metadata.format==="png")assert.deepEqual([...file.subarray(0,8)],[137,80,78,71,13,10,26,10]);
+    else assert.match(file.toString("utf8"),/uncertainty not recorded/);
+  }
+  assert.equal(new Set(figureMetadata.map(item=>item.svgSha256)).size,1,"SVG and PNG share exact vector source");
+  await page.getByRole("button",{name:"Close figure"}).click();
   const workspaceModes=page.getByRole("tablist",{name:/Workspace modes for/});
   const historyBack=page.getByRole("button",{name:"Back",exact:true});
   const historyForward=page.getByRole("button",{name:"Forward",exact:true});
@@ -107,6 +136,7 @@ try {
       "cavity",
       "circuit",
       "evolve",
+      "exportFigure",
       "exportRun",
       "exportRunBundle",
       "exportScene",
@@ -115,6 +145,7 @@ try {
       "getCavityRun",
       "getCircuitRun",
       "getEvolutionRun",
+      "getFigure",
       "getIsingQuench",
       "getIsingState",
       "getIsingStudy",
@@ -689,7 +720,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=20?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=21?/Implemented/:/Planned/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1453,6 +1484,14 @@ try {
   await page.getByTestId("saved-run").first().waitFor();
   const savedRuns = await page.evaluate(() => window.quantum.listRuns());
   assert.ok(savedRuns.length >= 6);
+  const figureAdapters=new Map(savedRuns.map(run=>[`${run.operation}/${run.model}`,run]));
+  for(const run of figureAdapters.values()){
+    const preview=await page.evaluate(id=>window.quantum.getFigure(id),run.runId);
+    assert.equal(preview.metadata.source.runId,run.runId);
+    assert.ok(preview.metadata.plottedSamples>0,`${run.operation}/${run.model} has saved figure positions`);
+    assert.match(preview.svg,/<svg\b/);
+    assert.equal(preview.metadata.uncertainty,"not recorded");
+  }
   const motionRun=savedRuns.find(r=>r.operation==="oscillator_evolve");
   assert.ok(motionRun,"free motion is listed in durable runs");
   preservedMotionRunId=motionRun.runId;
@@ -1462,6 +1501,10 @@ try {
   const pulseRun=savedRuns.find(r=>r.operation==="oscillator_pulse");
   assert.ok(pulseRun,"Gaussian pulses are listed in durable runs");
   preservedPulseRunId=pulseRun.runId;
+  await page.getByRole("button",{name:`Figure ${pulseRun.runId}`}).click();
+  await page.getByTestId("figure-preview").waitFor();
+  assert.match(await page.getByTestId("scientific-figure").innerText(),/oscillator_pulse/);
+  await page.getByRole("button",{name:"Close figure"}).click();
   const latest = savedRuns[0].runId;
   preservedRunId = latest;
   await mkdir("artifacts/exports", { recursive: true });
@@ -1763,7 +1806,6 @@ try {
   await app.evaluate(({dialog},parent)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[parent]});},exampleParent);
   await examplePage.getByTestId("export-scene").click();
   await examplePage.getByRole("status").filter({hasText:"Exported verified scene bundle"}).waitFor();
-  const {readdir}=await import("node:fs/promises");
   const exampleBundle=resolve(exampleParent,(await readdir(exampleParent))[0]);
   await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},exampleBundle);
   await examplePage.getByTestId("import-scene").click();
@@ -1974,6 +2016,10 @@ try {
   assert.equal(await page.getByTestId("many-body-inspector-site").count(),0);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   const pulseExport=resolve("artifacts/exports/oscillator-pulse-restarted.csv");
+  await page.getByRole("button",{name:`Figure ${preservedPulseRunId}`}).click();
+  await page.getByTestId("figure-preview").waitFor();
+  assert.match(await page.getByTestId("scientific-figure").innerText(),/oscillator_pulse/);
+  await page.getByRole("button",{name:"Close figure"}).click();
   await reopened.evaluate(({dialog},output)=>{dialog.showSaveDialog=async()=>({canceled:false,filePath:output});},pulseExport);
   await page.getByRole("button",{name:`Export CSV ${preservedPulseRunId}`}).click();
   await page.getByRole("status").filter({hasText:"Exported CSV"}).waitFor();

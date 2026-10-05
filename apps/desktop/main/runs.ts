@@ -20,6 +20,8 @@ import {makeSceneStream} from "../../../packages/quantum-scene/stream";
 import {scenePreview} from "../../../packages/quantum-scene/lod";
 import {writeStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import {boundedRead} from "../../../packages/quantum-scene/bundle";
+import {figureSemantics} from "../../../packages/models/scientific-figure";
+import type {FigureFormat,ScientificFigureMetadata,ScientificFigurePreview} from "../../../packages/contracts/figure";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const sha = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
@@ -466,6 +468,46 @@ export class RunStore {
     else throw new Error("Unsupported run export format");
     await writeFile(target, output, "utf8");
   }
+  async figure(runId:string):Promise<ScientificFigurePreview>{
+    const {manifest,job,result,data}=await this.load(runId);
+    const semantics=figureSemantics(result);
+    const base=numericalSvg(result,data,true);
+    const metadata:ScientificFigurePreview["metadata"]={schema:"quantum-figure/v1",
+      source:{runId,jobId:job.jobId,operation:result.operation,modelId:result.model.type,
+        jobSha256:manifest.hashes.job,resultSha256:manifest.hashes.result,
+        artifactSha256:"data" in result?result.data.sha256:null},
+      parameters:job.model.parameters as Record<string,unknown>,axes:semantics.axes,series:semantics.series,
+      plottedSamples:semantics.plottedSamples,samplePolicy:"all recorded samples",uncertainty:"not recorded",
+      engine:{name:result.engine.name,version:result.engine.version},
+      worker:{version:result.provenance.workerVersion,pythonVersion:result.provenance.pythonVersion},
+      computedAt:result.provenance.computedAt,svgSha256:""};
+    const title=`${result.model.type} · ${result.operation} · ${runId}`;
+    const description=`Full saved sampling: ${semantics.plottedSamples} positions. Uncertainty not recorded. Result SHA-256 ${manifest.hashes.result}.`;
+    const first=base.indexOf(">")+1,last=base.lastIndexOf("</svg>");
+    if(first<1||last<first)throw new Error("Invalid generated scientific SVG");
+    const svg=base.slice(0,first)+`<title>${xml(title)}</title><desc>${xml(description)}</desc>`+
+      base.slice(first,last)+`<text x="70" y="510" fill="#b8c8cf" font-family="sans-serif" font-size="10">${xml(`${semantics.axes.x.label} (${semantics.axes.x.unit}) · ${semantics.axes.y.label} (${semantics.axes.y.unit}) · ${semantics.plottedSamples} saved samples · uncertainty not recorded · result ${manifest.hashes.result.slice(0,12)}…`)}</text>`+
+      base.slice(last);
+    metadata.svgSha256=sha(svg);
+    return {svg,metadata};
+  }
+  async exportFigure(runId:string,parent:string,format:FigureFormat,
+    rasterize?:(svg:string)=>Promise<Uint8Array>,expectedResultHash?:string):Promise<{directory:string;metadata:ScientificFigureMetadata}>{
+    if(format!=="svg"&&format!=="png")throw new Error("Unsupported scientific figure format");
+    const {svg,metadata:preview}=await this.figure(runId);
+    if(expectedResultHash&&preview.source.resultSha256!==expectedResultHash)
+      throw new Error("Saved figure source changed after preview");
+    const filename=format==="svg"?"figure.svg":"figure.png";
+    const bytes=format==="svg"?Buffer.from(svg,"utf8"):Buffer.from(await (rasterize?.(svg)??Promise.reject(new Error("PNG rasterizer unavailable"))));
+    if(format==="png"&&!bytes.subarray(0,8).equals(Buffer.from([137,80,78,71,13,10,26,10])))
+      throw new Error("Figure rasterizer did not produce PNG data");
+    const figureMetadata:ScientificFigureMetadata={...preview,format,file:filename,fileSha256:sha(bytes),exportedAt:new Date().toISOString()};
+    const directory=join(parent,`${runId}-${randomUUID().slice(0,8)}.qfigure`);
+    await mkdir(directory);
+    await writeFile(join(directory,filename),bytes,{flag:"wx"});
+    await writeFile(join(directory,"metadata.json"),JSON.stringify(figureMetadata,null,2)+"\n",{flag:"wx"});
+    return {directory,metadata:figureMetadata};
+  }
   async scene(runId: string, view: "standard"|"bands" = "standard") {
     if(view!=="standard"&&view!=="bands") throw new Error("Unsupported scene view");
     const { manifest, result, data } = await this.load(runId);
@@ -533,13 +575,14 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
   }
   return [result.data.columns.join(","), ...rows.map(row => row.join(","))].join("\n") + "\n";
 }
-function lineSeries(rows: number[][], col: number, ymin: number, ymax: number) {
-  const step = Math.max(1, Math.ceil(rows.length / 1000));
+function lineSeries(rows: number[][], col: number, ymin: number, ymax: number, fullResolution=false) {
+  const step = fullResolution?1:Math.max(1, Math.ceil(rows.length / 1000));
   const indices = Array.from({ length: Math.ceil(rows.length / step) }, (_, i) => i * step);
   if (indices[indices.length - 1] !== rows.length - 1) indices.push(rows.length - 1);
   return indices.map(i => `${70 + i * 760 / Math.max(1, rows.length - 1)},${440 - (rows[i][col] - ymin) * 350 / (ymax - ymin || 1)}`).join(" ");
 }
-export function numericalSvg(result: QuantumResult, data: Buffer | null): string {
+function xml(value:string){return value.replace(/[&<>"']/g,char=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&apos;"})[char]!);}
+export function numericalSvg(result: QuantumResult, data: Buffer | null, fullResolution=false): string {
   const title = `${result.model.type} · ${result.engine.name} · ${result.runId}`;
   const head = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 520" role="img"><rect width="900" height="520" fill="#111b24"/><text x="70" y="42" fill="#eef7f5" font-family="sans-serif" font-size="20">${title}</text><path d="M70 90 V440 H830" fill="none" stroke="#7d929e"/>`;
   if (result.operation === "orbital") {
@@ -596,7 +639,7 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null): string
   const cols = result.operation === "sweep" ? [0] : result.operation === "oscillator_parametric" ? [3, 4] : result.operation === "evolve" || result.operation === "oscillator_evolve" || result.operation === "oscillator_drive" || result.operation === "oscillator_pulse" || result.operation === "oscillator_damped" ? [1, 2] : result.operation === "cavity" ? [1, 2] : [1, 3];
   let ymin = 0, ymax = 1;
   for (const row of rows) for (const col of cols) { ymin = Math.min(ymin, row[col]); ymax = Math.max(ymax, row[col]); }
-  const lines = cols.map((col, i) => `<polyline points="${lineSeries(rows, col, ymin, ymax)}" fill="none" stroke="${i ? "#f2b36f" : "#79d9c1"}" stroke-width="2.5"/>`).join("");
+  const lines = cols.map((col, i) => `<polyline points="${lineSeries(rows, col, ymin, ymax, fullResolution)}" fill="none" stroke="${i ? "#f2b36f" : "#79d9c1"}" stroke-width="2.5"/>`).join("");
   const names = result.operation === "sweep" ? ["final P₁"] : cols.map(col => result.data.columns[col]);
   const legend = names.map((name, i) => `<text x="${90 + i * 240}" y="80" fill="${i ? "#f2b36f" : "#79d9c1"}" font-family="sans-serif" font-size="13">${name}</text>`).join("");
   const xLabel = result.operation === "sweep" ? result.sweep.x.parameter : "time";
