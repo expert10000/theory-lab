@@ -555,6 +555,17 @@ app.whenReady().then(() => {
     if (selection.canceled || !selection.filePaths[0]) return null;
     return runs.exportScene(runId, selection.filePaths[0],view,format);
   });
+  ipcMain.handle("quantum:prepare-scene-handoff",async(event,runId:unknown,view:unknown,expectedResultHash:unknown)=>{
+    trusted(event);
+    if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid scene run ID");
+    if(view!=="standard"&&view!=="bands")throw new Error("Unsupported scene view");
+    if(typeof expectedResultHash!=="string"||!/^[a-f0-9]{64}$/.test(expectedResultHash))throw new Error("Invalid expected scene source hash");
+    const preview=await runs.scene(runId,view);
+    if(preview.scene.provenance.resultSha256!==expectedResultHash)throw new Error("Saved scene source changed after preview");
+    const selection=await dialog.showOpenDialog({title:"Choose parent folder for a verified external-viewer .qscene handoff",properties:["openDirectory"]});
+    if(selection.canceled||!selection.filePaths[0])return null;
+    return runs.prepareSceneHandoff(runId,selection.filePaths[0],view,expectedResultHash);
+  });
   ipcMain.handle("quantum:import-scene-stream",async(event,...args:unknown[])=>{
     trusted(event);if(args.length)throw new Error("Stream import accepts no renderer paths");
     const selection=await dialog.showOpenDialog({title:"Open a chunked multilevel .qscene folder",properties:["openDirectory"]});if(selection.canceled||!selection.filePaths[0])return null;

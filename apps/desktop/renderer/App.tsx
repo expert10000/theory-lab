@@ -599,7 +599,7 @@ export function App() {
             <button type="button" aria-label="Forward" title="Forward" disabled={navigation.index>=navigation.max}
               onClick={()=>window.history.forward()}>→</button>
           </nav>
-          <span className="version">V0.1+ · QVIS-022</span>
+          <span className="version">V0.1+ · QVIS-023 Lab</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
           {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (

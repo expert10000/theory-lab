@@ -42,7 +42,7 @@ export function PostRoadmapPanel() {
         </p>
       )}
       <h3>QVIS-014–023 · scientific workflow extension</h3>
-      <p>QVIS-014 links exact saved-run selections across current desktop laboratory adapters and the compatible Lab-side Scenes path. It does not add worker physics, missing state vectors or a Math3D importer. The later workflow extensions remain planned; see docs/ROADMAP.md §28.</p>
+      <p>QVIS-014–022 are implemented for their declared desktop adapters. QVIS-023 adds a verified Lab-side portable-scene handoff; the independent Math3D importer and automatic opening remain gated. No missing state vectors or worker physics are inferred. See docs/ROADMAP.md §28.</p>
       {QVIS_WORKFLOW_STEPS.map(entry=><div className="roadmap-row" key={entry.id} data-testid={`qvis-workflow-${entry.id}`} title={entry.detail}><code>{entry.id}</code><span>{entry.title}</span><small>{entry.state}</small></div>)}
       {POST_QVIS.map((entry) => (
         <div

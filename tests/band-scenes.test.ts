@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
@@ -73,6 +73,11 @@ test("real worker bands preserve energies, gap-closure data and offline bundle i
         offline = await readSceneBundle(dir);
       assert.deepEqual(offline.scene, p.scene);
       await verifyScenePayload(offline, digest);
+      const handoffParent=join(root,`${result.runId}-band-handoff`);await mkdir(handoffParent);
+      const handoff=await store.prepareSceneHandoff(result.runId,handoffParent,"bands",p.scene.provenance.resultSha256);
+      assert.equal(handoff.view,"bands");
+      assert.equal(handoff.resultSha256,p.scene.provenance.resultSha256);
+      assert.deepEqual((await readSceneBundle(handoff.directory)).scene,p.scene);
       await writeFile(join(root,"runs",result.runId,"result.json"),"{}\n");
       await assert.rejects(store.topology(result.runId),/integrity check/);
       const python = spawnSync(

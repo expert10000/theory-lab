@@ -203,6 +203,7 @@ try {
       "oscillatorEvolve",
       "oscillatorParametric",
       "oscillatorPulse",
+      "prepareSceneHandoff",
       "readData",
       "readSceneChunk",
       "releaseSceneStream",
@@ -734,7 +735,7 @@ try {
     assert.match(await page.getByTestId(`planned-${id}`).innerText(),/Implemented/);
   for(let number=14;number<=23;number++){
     const id=`QVIS-${String(number).padStart(3,"0")}`;
-    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=22?/Implemented/:/Planned/);
+    assert.match(await page.getByTestId(`qvis-workflow-${id}`).innerText(),number<=22?/Implemented/:/Partial/);
   }
   await page.getByTestId("source-plan-coverage").locator("summary").click();
   assert.match(await page.getByTestId("plan-coverage-QVIS-005").innerText(), /Partial/);
@@ -1636,6 +1637,17 @@ try {
   assert.equal(bundle.provenance.runId, sceneRun.runId);
   assert.equal(bundle.provenance.resultSha256,sceneSource.hashes.result,"portable scene retains verified result source hash");
   assert.ok(bundle.datasets.some(d => d.id === "trajectory"));
+  const handoffParent=resolve("artifacts/exports/scene-handoff");
+  await mkdir(handoffParent,{recursive:true});
+  await app.evaluate(({ dialog },folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},handoffParent);
+  await page.getByTestId("prepare-scene-handoff").click();
+  await page.getByTestId("scene-handoff-receipt").waitFor();
+  const receipt=await page.getByTestId("scene-handoff-receipt").innerText();
+  assert.match(receipt,/Full saved-run scene only/);
+  assert.match(receipt,new RegExp(sceneSource.hashes.result));
+  const handoffScene=JSON.parse(await readFile(resolve(handoffParent,`${sceneRun.runId}.qscene`,"scene.json"),"utf8"));
+  assert.equal(handoffScene.provenance.resultSha256,sceneSource.hashes.result);
+  assert.deepEqual(handoffScene.coordinates.units,bundle.coordinates.units);
   await page.getByTestId("scene-canvas").scrollIntoViewIfNeeded();
   await page.screenshot({ path: "artifacts/desktop-scenes.png", fullPage: true });
   const qwzRuns = savedRuns.filter(r => r.model === "qwz");

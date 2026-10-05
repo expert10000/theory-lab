@@ -53,6 +53,15 @@ test("real saved SSH/QWZ results produce portable verified geometry, not inferre
       }
       const directory = await store.exportScene(result.runId, root);
       assert.deepEqual((await readSceneBundle(directory)).scene, payload.scene);
+      const handoffParent=join(root,`${modelId}-handoff`);await mkdir(handoffParent);
+      await assert.rejects(store.prepareSceneHandoff(result.runId,handoffParent,"standard","0".repeat(64)),/changed after preview/);
+      const handoff=await store.prepareSceneHandoff(result.runId,handoffParent,"standard",payload.scene.provenance.resultSha256);
+      assert.equal(handoff.runId,result.runId);
+      assert.equal(handoff.sceneSchema,"quantum-scene/v1");
+      assert.equal(handoff.selectionTransferred,false);
+      assert.deepEqual(handoff.coordinates,payload.scene.coordinates);
+      assert.deepEqual(handoff.datasets.map(d=>d.sha256),payload.scene.datasets.map(d=>d.sha256));
+      assert.deepEqual((await readSceneBundle(handoff.directory)).scene,payload.scene);
       await assert.rejects(store.exportScene(result.runId, root), /EEXIST/);
       const name = payload.scene.datasets[0].path;
       await writeFile(join(directory, name), Buffer.alloc(payload.scene.datasets[0].bytes));
@@ -129,10 +138,16 @@ test("Bloch adapter preserves every verified evolution row and exports offline",
     await worker.stop();
     assert.deepEqual((await readSceneBundle(directory)).scene, payload.scene);
     assert.deepEqual((await store.scene(result.runId)).scene, payload.scene);
+    const restarted=new RunStore(join(root,"runs"),artifacts);
+    const handoffParent=join(root,"handoff");await mkdir(handoffParent);
+    const handoff=await restarted.prepareSceneHandoff(result.runId,handoffParent,"standard",payload.scene.provenance.resultSha256);
+    assert.equal(handoff.datasets.find(d=>d.id==="time")?.unit,"normalized time (hbar=1)");
+    assert.deepEqual((await readSceneBundle(handoff.directory)).scene,payload.scene);
     const corrupt = new Uint8Array(source); corrupt[12] ^= 1;
     await assert.rejects(sceneFromResult(result, corrupt, payload.scene.provenance.resultSha256, digest), /integrity/);
     await writeFile(join(root, "runs", result.runId, "data.f64"), Buffer.alloc(source.length));
     await assert.rejects(store.scene(result.runId), /integrity/);
+    await assert.rejects(restarted.prepareSceneHandoff(result.runId,join(root,"handoff"),"standard",payload.scene.provenance.resultSha256),/integrity/);
     await writeFile(join(directory, "scene.json"), "{}");
     await assert.rejects(readSceneBundle(directory), /size|integrity/);
   } finally { await worker.stop(); await rm(root, { recursive: true, force: true }); }

@@ -1685,7 +1685,7 @@ That is the architecture I would freeze before writing QLAB-001.
 # 28. Proposed QVIS-014–023 scientific-workflow extension
 
 Status (2026-10-05): **QVIS-014–022 implemented for their declared bounded
-desktop scope; QVIS-023 planned**. This is an
+desktop scope; QVIS-023 Lab-side handoff implemented, cross-app bridge partial**. This is an
 additive continuation after the delivered QVIS-001–013 and QLAB-UI-1–8 work.
 It does not reopen, rename, or downgrade those milestones, replace
 `quantum-scene/v1`, or change historical run semantics. Existing two-level
@@ -2009,6 +2009,17 @@ run-to-Scenes path are already implemented. “Open in Math3D” remains **outsi
 this Lab milestone** until the separate Math3D importer accepts the same
 portable scene, hashes, units and sample semantics. No direct Math3D-to-worker
 or Lab-to-Math3D worker call is introduced.
+
+Delivered Lab-side handoff: from a hash-verified saved run and a specific
+standard/bands view, Scenes can prepare a regular `.qscene` folder for an
+independent consumer. Main checks the exact preview result hash before the
+folder picker and again at export, then reopens the new bundle with strict
+metadata/binary hash verification. The UI reports the exact run/result hash,
+coordinate axes/units and dataset units from that readback. It does not encode
+the local time/site cursor, assert a recipient's identity, or launch Math3D.
+Imported/fixture/chunked scenes cannot claim this run-backed handoff. The
+portable consumer requirements and unresolved Math3D gate are recorded in
+[`SCENE_HANDOFF.md`](SCENE_HANDOFF.md).
 
 ## Shared inspector and contract gate
 

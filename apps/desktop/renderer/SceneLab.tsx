@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { QuantumBridge, RunSummary } from "../../../packages/contracts";
 import type { ScenePayload } from "../../../packages/quantum-scene";
+import type { SceneHandoffReceipt } from "../../../packages/quantum-scene/handoff";
 import { supportsScene } from "../../../packages/quantum-scene/from-result";
 import type {
   LatticeFamily,
@@ -37,6 +38,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
         : savedPayload;
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
+  const [handoff,setHandoff]=useState<SceneHandoffReceipt|null>(null);
   const sequence = useRef(0);
   async function refresh() {
     try {
@@ -65,6 +67,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     const request = ++sequence.current;
     if (source !== "saved") return;
     setPayload(null);
+    setHandoff(null);
     setMessage("");
     if (!runId) {
       setBusy(false);
@@ -121,6 +124,17 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     } finally {
       setBusy(false);
     }
+  }
+  async function prepareHandoff(){
+    if(source!=="saved"||!payload)return;
+    const current=runId,selectedView=savedView,sourceHash=payload.scene.provenance.resultSha256;
+    setHandoff(null);setBusy(true);setMessage("");
+    try{
+      const receipt=await bridge.prepareSceneHandoff(current,selectedView,sourceHash);
+      if(receipt){setHandoff(receipt);setMessage("External-viewer bundle re-opened and verified against this saved run");}
+      else setMessage("External-viewer handoff cancelled");
+    }catch(error){setMessage(error instanceof Error?error.message:String(error));}
+    finally{setBusy(false);}
   }
   async function openExample() {
     setBusy(true);
@@ -182,8 +196,9 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
         <p>
           Preview verified saved Bloch trajectories, SSH sublattices and bonds,
           Ising magnetization, QWZ curvature, supplied SSH/QWZ bands and hydrogenic orbital fields.
-          Export the scene and binary datasets as a new .qscene folder. This Lab
-          has no Math3D connection.
+          Export the scene and binary datasets as a new .qscene folder. A
+          verified external-viewer handoff is available for saved runs; Math3D
+          still needs its own importer before direct opening is enabled.
         </p>
         <div className="scene-run-controls">
           <label>
@@ -230,6 +245,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
           </button>
           <button data-testid="export-scene-stream" disabled={busy||source!=="saved"||!payload} onClick={()=>void exportScene("stream")}>Export chunked LOD bundle</button>
           <button data-testid="import-scene-stream" disabled={busy} onClick={()=>void importStream()}>Open chunked scene bundle</button>
+          <button data-testid="prepare-scene-handoff" disabled={busy||source!=="saved"||!payload} onClick={()=>void prepareHandoff()}>Prepare verified external-viewer bundle</button>
           {source !== "saved" && (
             <button
               type="button"
@@ -307,6 +323,19 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
         <p className="runs-message" role="status">
           {message}
         </p>
+      )}
+      {source==="saved"&&handoff&&payload?.scene.provenance.resultSha256===handoff.resultSha256&&runId===handoff.runId&&savedView===handoff.view&&(
+        <div className="panel scene-provenance" data-testid="scene-handoff-receipt">
+          <p className="eyebrow">QVIS-023 · VERIFIED PORTABLE HANDOFF</p>
+          <h3>Ready for an independent quantum-scene/v1 consumer</h3>
+          <p>Re-opened from disk with metadata and every binary dataset hash checked. This verifies integrity against the saved run, not the identity of a future recipient.</p>
+          <p><strong>Bundle:</strong> {handoff.directory}</p>
+          <p><strong>Source:</strong> {handoff.runId} · {handoff.resultSha256}</p>
+          <p><strong>View:</strong> {handoff.view} · {handoff.bundleSchema} · {handoff.sceneSchema}</p>
+          <p><strong>Coordinates:</strong> {handoff.coordinates.axes.map((axis,i)=>`${axis} [${handoff.coordinates.units[i]}]`).join(" · ")} · {handoff.coordinates.handedness}-handed</p>
+          <p><strong>Datasets:</strong> {handoff.datasets.map(d=>`${d.id}: ${d.count}×${d.components} ${d.unit}`).join(" · ")}</p>
+          <p>Full saved-run scene only. The current lab time/site selection is a local viewer focus and was not transferred. No Math3D import or automatic launch has been verified.</p>
+        </div>
       )}
       {busy && !payload && (
         <p role="status">Checking saved result and numerical artifacts…</p>

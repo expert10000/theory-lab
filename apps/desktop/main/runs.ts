@@ -15,7 +15,7 @@ import { consistentAnharmonicResult } from "../../../packages/models/oscillator-
 import { consistentParametricResult, checkParametricData } from "../../../packages/models/oscillator-parametric";
 import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
 import { bandSceneFromResult } from "../../../packages/quantum-scene/bands";
-import { writeSceneBundle } from "../../../packages/quantum-scene/bundle";
+import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {makeSceneStream} from "../../../packages/quantum-scene/stream";
 import {scenePreview} from "../../../packages/quantum-scene/lod";
 import {writeStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
@@ -519,6 +519,22 @@ export class RunStore {
     const payload=await this.scene(runId,view);
     if(format==="stream"){const digest=async(bytes:Uint8Array)=>sha(bytes),preview=await scenePreview(payload,digest);return writeStreamBundle(await makeSceneStream([{label:"Coarse display subset",payload:preview},{label:"Full supplied samples",payload}],digest),parent);}
     return writeSceneBundle(payload, parent);
+  }
+  async prepareSceneHandoff(runId:string,parent:string,view:"standard"|"bands",expectedResultHash:string):Promise<import("../../../packages/quantum-scene/handoff").SceneHandoffReceipt>{
+    if(!/^[a-f0-9]{64}$/.test(expectedResultHash))throw new Error("Invalid expected scene source hash");
+    const payload=await this.scene(runId,view);
+    if(payload.scene.provenance.resultSha256!==expectedResultHash)throw new Error("Saved scene source changed after preview");
+    const directory=await writeSceneBundle(payload,parent);
+    const reopened=await readSceneBundle(directory);
+    if(JSON.stringify(reopened.scene)!==JSON.stringify(payload.scene)||
+      reopened.scene.provenance.runId!==runId||
+      reopened.scene.provenance.resultSha256!==expectedResultHash)
+      throw new Error("Exported scene differs from the verified saved run");
+    const scene=reopened.scene;
+    return {directory,bundleSchema:"quantum-scene-bundle/v1",sceneSchema:"quantum-scene/v1",sceneId:scene.id,
+      runId,resultSha256:expectedResultHash,view,coordinates:scene.coordinates,
+      datasets:scene.datasets.map(({id,unit,count,components,sha256})=>({id,unit,count,components,sha256})),
+      selectionTransferred:false};
   }
 }
 
