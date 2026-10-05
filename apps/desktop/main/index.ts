@@ -74,6 +74,7 @@ function createWindow() {
 }
 app.whenReady().then(() => {
   let running = false;
+  let importedScene: { directory: string; fingerprint: string } | null = null;
   const artifactDir = join(app.getPath("userData"), "artifacts");
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir);
   const spectrumStudies = new SpectrumStudyStore(join(app.getPath("userData"), "spectrum-studies"), runs);
@@ -600,7 +601,27 @@ app.whenReady().then(() => {
     if (args.length) throw new Error("Scene import accepts no renderer paths or arguments");
     const selection = await dialog.showOpenDialog({ title: "Open a verified .qscene folder", properties: ["openDirectory"] });
     if (selection.canceled || !selection.filePaths[0]) return null;
-    return readSceneBundle(selection.filePaths[0]);
+    const payload = await readSceneBundle(selection.filePaths[0]);
+    importedScene = {
+      directory: selection.filePaths[0],
+      fingerprint: createHash("sha256").update(JSON.stringify(payload.scene)).digest("hex"),
+    };
+    return payload;
+  });
+  ipcMain.handle("quantum:open-imported-in-math3d", async (event, ...args: unknown[]) => {
+    trusted(event);
+    if (args.length) throw new Error("Imported Math3D handoff accepts no renderer paths or arguments");
+    if (!importedScene) throw new Error("Open a verified scene bundle first");
+    const selected = importedScene;
+    const payload = await readSceneBundle(selected.directory);
+    const fingerprint = createHash("sha256").update(JSON.stringify(payload.scene)).digest("hex");
+    if (fingerprint !== selected.fingerprint) throw new Error("Imported scene changed after preview");
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) throw new Error("Scene window is unavailable");
+    const target = await chooseMath3DTarget(win);
+    if (!target) return null;
+    await launchMath3D(target, selected.directory);
+    return selected.directory;
   });
   ipcMain.handle("quantum:export-run", async (event, runId: unknown, format: unknown) => {
     trusted(event);

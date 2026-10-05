@@ -4,8 +4,13 @@ The Theory Lab desktop Scenes page prepares a **regular `.qscene` folder**
 from an exact, hash-verified saved run and selected standard or SSH/QWZ band
 view. **Open in Math3D** creates the same verified bundle under the Lab's
 user-data directory, then starts a local Math3D checkout with its folder path.
-The first use asks for the Math3D checkout folder and remembers it. Existing
-scene export/import paths and `quantum-scene/v1` remain unchanged.
+The first use asks for the Math3D checkout folder and remembers it. After
+**Open scene bundle** verifies a regular `.qscene` folder, the same button
+opens that imported folder directly in Math3D, even when there is no saved
+numerical run. Theory Lab verifies the bundle again and checks that its scene
+and dataset hashes match the preview before launch. Math3D independently
+verifies it on opening. Existing scene export/import paths and
+`quantum-scene/v1` remain unchanged.
 
 The folder contains `bundle.json`, `scene.json`, and the `f64le` binary files
 named by `scene.datasets`. A consumer must verify the bundle manifest's
@@ -24,7 +29,8 @@ shows the verified source, view, coordinates and dataset summary. This is a
 full saved-run scene: a currently selected time sample, lattice site or
 other Lab cursor is **not serialized** in `.qscene`. An independent viewer
 may provide its own selection. Imported scenes, geometry fixtures and
-chunked LOD bundles do not receive a saved-run handoff receipt.
+chunked LOD bundles do not receive a saved-run handoff receipt. An imported
+regular bundle can be opened in Math3D but does not receive that receipt.
 
 Math3D verifies the manifest, schema and every binary dataset independently
 before opening its read-only preview. A changed or damaged bundle is refused.

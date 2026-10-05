@@ -45,7 +45,9 @@ SSH or QWZ runs. Orbit the geometry, inspect Float64 samples, toggle objects and
 export a verified `quantum-scene/v1` bundle to a new `.qscene` folder. For a
 saved run, **Open in Math3D** writes and verifies that bundle, then launches a
 local Math3D checkout; choose its folder once. Math3D checks the bundle again
-before showing a read-only preview. See [the scene contract and usage](docs/QUANTUM_SCENE.md).
+before showing a read-only preview. **Open scene bundle** also enables
+**Open in Math3D** for a verified imported `.qscene`, without a saved run.
+See [the scene contract and usage](docs/QUANTUM_SCENE.md).
 The web client's **Portable scenes** uses the same viewers for authenticated
 saved runs and read-only local `.qscene` folder imports, including fields,
 lattices, reciprocal guides, bands and supplied topology. Imports never upload

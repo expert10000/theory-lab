@@ -137,10 +137,17 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     finally{setBusy(false);}
   }
   async function openInMath3D() {
-    if (source !== "saved" || !payload) return;
+    if ((source !== "saved" && source !== "bundle") || !payload) return;
     const current = runId, selectedView = savedView, sourceHash = payload.scene.provenance.resultSha256;
     setHandoff(null); setBusy(true); setMessage("");
     try {
+      if (source === "bundle") {
+        const directory = await bridge.openImportedInMath3D();
+        setMessage(directory
+          ? "Math3D launched with the verified imported scene; it checks the bundle before displaying it."
+          : "Math3D launch cancelled");
+        return;
+      }
       const receipt = await bridge.openInMath3D(current, selectedView, sourceHash);
       if (receipt) {
         setHandoff(receipt);
@@ -259,7 +266,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
           <button data-testid="export-scene-stream" disabled={busy||source!=="saved"||!payload} onClick={()=>void exportScene("stream")}>Export chunked LOD bundle</button>
           <button data-testid="import-scene-stream" disabled={busy} onClick={()=>void importStream()}>Open chunked scene bundle</button>
           <button data-testid="prepare-scene-handoff" disabled={busy||source!=="saved"||!payload} onClick={()=>void prepareHandoff()}>Prepare verified external-viewer bundle</button>
-          <button data-testid="open-in-math3d" disabled={busy||source!=="saved"||!payload} onClick={()=>void openInMath3D()}>Open in Math3D</button>
+          <button data-testid="open-in-math3d" disabled={busy||!payload||(source!=="saved"&&source!=="bundle")} onClick={()=>void openInMath3D()}>Open in Math3D</button>
           {source !== "saved" && (
             <button
               type="button"
