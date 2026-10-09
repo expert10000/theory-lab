@@ -100,7 +100,7 @@ test("linked-workspace roadmap names completed current-lab adapters and next UI 
 
 test("QVIS-014–022 are complete and QVIS-023 declares its cross-app gate",async()=>{
   assert.deepEqual(QVIS_WORKFLOW_STEPS.map(entry=>[entry.id,entry.state]),
-    Array.from({length:10},(_,index)=>[`QVIS-${String(index+14).padStart(3,"0")}`,index<=8?"Implemented":"Partial · Lab handoff complete"]));
+    Array.from({length:10},(_,index)=>[`QVIS-${String(index+14).padStart(3,"0")}`,index<=8?"Implemented":"Partial · bidirectional local checkout"]));
   assert.equal(DELIVERED_QVIS.length,13);
   const doc=await readFile("docs/ROADMAP.md","utf8");
   assert.match(doc,/QVIS-014–022 implemented for their declared bounded\s+desktop scope/);

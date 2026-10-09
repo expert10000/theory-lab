@@ -2005,10 +2005,13 @@ Use `QuantumResult → quantum-scene/v1 → independent consumers` for genuinely
 spatial data: Bloch trajectories, lattice-site fields, Berry curvature,
 supplied bands, probability densities and orbitals, with future crystal
 models gated separately. The lightweight Lab viewer and QLAB-UI-8 verified
-run-to-Scenes path are already implemented. “Open in Math3D” remains **outside
-this Lab milestone** until the separate Math3D importer accepts the same
-portable scene, hashes, units and sample semantics. No direct Math3D-to-worker
-or Lab-to-Math3D worker call is introduced.
+run-to-Scenes path are already implemented. The bounded local-checkout bridge
+now opens a verified regular `.qscene` in Math3D; its independent importer
+checks the same portable scene, hashes and units. Math3D can explicitly ask a
+selected local Theory Lab checkout to reopen the claimed source run by ID and
+expected result hash. Lab verifies the saved job, result and artifact in one
+read before displaying the matching run. No direct Math3D-to-worker or
+Lab-to-Math3D worker call is introduced.
 
 Delivered Lab-side handoff: from a hash-verified saved run and a specific
 standard/bands view, Scenes can prepare a regular `.qscene` folder for an
@@ -2016,9 +2019,11 @@ independent consumer. Main checks the exact preview result hash before the
 folder picker and again at export, then reopens the new bundle with strict
 metadata/binary hash verification. The UI reports the exact run/result hash,
 coordinate axes/units and dataset units from that readback. It does not encode
-the local time/site cursor, assert a recipient's identity, or launch Math3D.
-Imported/fixture/chunked scenes cannot claim this run-backed handoff. The
-portable consumer requirements and unresolved Math3D gate are recorded in
+the local time/site cursor or assert a recipient's identity. The separate
+Open in Math3D action launches a built checkout; a verified imported regular
+bundle can also open there without claiming a Lab saved-run receipt.
+Geometry fixtures and chunked scenes cannot claim that run-backed receipt.
+The local bridge and remaining packaged-app/active-window gates are recorded in
 [`SCENE_HANDOFF.md`](SCENE_HANDOFF.md).
 
 ## Shared inspector and contract gate

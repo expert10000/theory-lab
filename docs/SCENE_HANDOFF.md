@@ -42,3 +42,17 @@ The current local launcher supports a built Math3D source checkout with its
 Electron dependency installed; packaged application discovery is later work.
 Math3D opens a new window when launched this way. No direct Math3D-to-worker
 or Lab-to-Math3D worker call is part of this path.
+
+For a verified numerical scene, Math3D also offers **Open source run in Theory
+Lab**. The user selects a built local Theory Lab checkout once. Math3D re-reads
+and verifies the complete active `.qscene` immediately before launch, then
+passes only its claimed source run ID and expected result SHA-256 on the Lab
+command line. Theory Lab checks the requested run against its own saved-run
+store in a single verified read (job, result, artifact and exact result hash)
+and displays that same result in the appropriate laboratory. A missing run,
+different hash or corrupted file produces an unavailable message, never a
+substitute run. The launch identity is consumed once and is not a worker job.
+This local-checkout path starts a Theory Lab process; focusing an already-open
+Lab window and packaged-app discovery remain separate work. A matching saved
+run proves its own integrity, not the publisher identity or numerical derivation
+of every value in a third-party `.qscene`.
