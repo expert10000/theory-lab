@@ -480,8 +480,8 @@ export function App() {
     setActiveModel("two_level");setTab("spectrum");
     setWorkspaceMessage(`Verified spectrum reopened · ${saved.runId}`);
   }
-  async function openSavedEvolution(runId:string){
-    const saved=await window.quantum.getEvolutionRun(runId);
+  async function openSavedEvolution(runId:string,verified?:{result:EvolutionResult;data:Uint8Array}){
+    const saved=verified??await window.quantum.getEvolutionRun(runId);
     const model=saved.result.model.type;
     setReopenedEvolution(current=>({epoch:(current?.epoch??0)+1,...saved}));
     setSelectedPreset(null);setEvolutionModel(model);
@@ -510,8 +510,8 @@ export function App() {
     setSelectedPreset(null);setActiveModel("transmon");setTab("circuit");
     setWorkspaceMessage(`Verified Transmon circuit reopened · ${saved.runId}`);
   }
-  async function openSavedManyBody(runId:string){
-    const saved=await window.quantum.getManyBodyRun(runId);
+  async function openSavedManyBody(runId:string,verified?:ManyBodyResult){
+    const saved=verified??await window.quantum.getManyBodyRun(runId);
     setManyBodyContext(null);
     setReopenedManyBody(current=>({epoch:(current?.epoch??0)+1,result:saved}));
     setSelectedPreset(null);setActiveModel("ising_chain");setTab("many_body");
@@ -525,15 +525,15 @@ export function App() {
     setSelectedPreset(null);setActiveModel(model);setTab("sweep");
     setWorkspaceMessage(`Verified ${MODEL_REGISTRY[model].label} final-population sweep reopened · ${saved.result.runId}`);
   }
-  async function openSavedTopology(runId:string){
-    const result=await window.quantum.getTopologyRun(runId);
+  async function openSavedTopology(runId:string,verified?:TopologyResult){
+    const result=verified??await window.quantum.getTopologyRun(runId);
     setTopologyContext(null);
     setReopenedTopology(current=>({epoch:(current?.epoch??0)+1,result}));
     setSelectedPreset(null);setActiveModel("topology");setTab("topology");
     setWorkspaceMessage(`Verified ${result.model.type.toUpperCase()} topology reopened · ${result.runId}`);
   }
-  async function openSavedOrbital(runId:string){
-    const saved=await window.quantum.getOrbitalRun(runId);
+  async function openSavedOrbital(runId:string,verified?:{result:OrbitalResult;data:Uint8Array}){
+    const saved=verified??await window.quantum.getOrbitalRun(runId);
     setOrbitalContext(null);
     setReopenedOrbital(current=>({epoch:(current?.epoch??0)+1,...saved}));
     setSelectedPreset(null);setActiveModel("hydrogenic");setTab("orbital");
@@ -546,6 +546,26 @@ export function App() {
     setSelectedPreset(null);setActiveModel("oscillator");setTab("oscillator");
     setWorkspaceMessage(`Verified ${saved.result.operation.replaceAll("_"," ")} reopened · ${saved.result.runId}`);
   }
+  useEffect(() => {
+    let active = true;
+    void window.quantum.consumeSourceRun().then(async (intent) => {
+      if (!active || !intent) return;
+      if (!intent.ok) { setWorkspaceMessage(`Source run unavailable: ${intent.error}`); return; }
+      try {
+        const { result, data } = intent.saved;
+        if (result.operation === "evolve" && data) await openSavedEvolution(intent.runId, { result, data });
+        else if (result.operation === "topology") await openSavedTopology(intent.runId, result);
+        else if (result.operation === "orbital" && data) await openSavedOrbital(intent.runId, { result, data });
+        else if (result.operation === "many_body") await openSavedManyBody(intent.runId, result);
+        else throw new Error("Verified source run cannot be displayed in this Lab");
+      } catch (error) {
+        if (active) setWorkspaceMessage(`Source run unavailable: ${error instanceof Error ? error.message : String(error)}`);
+      }
+    }).catch(error => {
+      if (active) setWorkspaceMessage(`Source run unavailable: ${error instanceof Error ? error.message : String(error)}`);
+    });
+    return () => { active = false; };
+  }, []);
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
     presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],

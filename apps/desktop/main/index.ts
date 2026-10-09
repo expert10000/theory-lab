@@ -12,6 +12,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { chooseMath3DTarget, launchMath3D } from "./math3d-launch";
+import { resolveSourceRunLaunch, sourceRunLaunchArguments } from "./source-run-launch";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
@@ -45,6 +46,10 @@ function trusted(event: IpcMainInvokeEvent) {
 }
 
 app.setName("Quantum Hamiltonian Lab");
+let sourceRunIntent: ReturnType<typeof sourceRunLaunchArguments> = null;
+let sourceRunArgumentError: string | null = null;
+try { sourceRunIntent = sourceRunLaunchArguments(process.argv); }
+catch (error) { sourceRunArgumentError = error instanceof Error ? error.message : String(error); }
 // Acceptance uses a fresh profile; ordinary launches retain the existing path.
 if(process.env.QLAB_TEST_PROFILE){
   if(!isAbsolute(process.env.QLAB_TEST_PROFILE))throw new Error("Test profile must be an absolute existing directory");
@@ -359,6 +364,16 @@ app.whenReady().then(() => {
   ipcMain.handle("quantum:list-runs", (event) => {
     trusted(event);
     return runs.list();
+  });
+  ipcMain.handle("quantum:consume-source-run", async (event, ...args: unknown[]) => {
+    trusted(event);
+    if (args.length) throw new Error("Source-run launch accepts no renderer identity");
+    const intent = sourceRunIntent, argumentError = sourceRunArgumentError;
+    sourceRunIntent = null; sourceRunArgumentError = null;
+    if (argumentError) return { ok: false, error: argumentError };
+    if (!intent) return null;
+    try { return await resolveSourceRunLaunch(runs, intent); }
+    catch (error) { return { ok: false, error: error instanceof Error ? error.message : String(error) }; }
   });
   ipcMain.handle("quantum:verified-run", (event,runId:unknown) => {
     trusted(event);

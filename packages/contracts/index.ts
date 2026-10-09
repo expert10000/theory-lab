@@ -526,6 +526,10 @@ export interface WorkerResources {
   memory: { totalBytes: number | null };
   job: { activeId: string | null };
 }
+export type SourceRunLaunchResult =
+  | { ok: true; runId: string; resultSha256: string; saved: VerifiedSavedRun }
+  | { ok: false; error: string };
+
 export interface QuantumBridge {
   getStatus(): Promise<WorkerStatus>;
   getCapabilities(): Promise<WorkerCapabilities>;
@@ -554,6 +558,7 @@ export interface QuantumBridge {
   saveWorkspace(snapshot: import("./workspace").WorkspaceSnapshot): Promise<void>;
   loadWorkspace(): Promise<import("./workspace").WorkspaceSnapshot | null>;
   listRuns(): Promise<import("./workspace").RunSummary[]>;
+  consumeSourceRun(): Promise<SourceRunLaunchResult | null>;
   getVerifiedRun(runId:string):Promise<VerifiedSavedRun>;
   inspectSavedRun(runId:string):Promise<SavedRunInspection>;
   rerunSaved(runId:string,fingerprint:string):Promise<import("./workspace").RunSummary>;

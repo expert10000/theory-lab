@@ -13,7 +13,7 @@ import { consistentPulsedOscillatorResult, checkPulsedOscillatorData } from "../
 import { consistentDampedOscillatorResult, checkDampedOscillatorData } from "../../../packages/models/oscillator-damped";
 import { consistentAnharmonicResult } from "../../../packages/models/oscillator-anharmonic";
 import { consistentParametricResult, checkParametricData } from "../../../packages/models/oscillator-parametric";
-import { sceneFromResult } from "../../../packages/quantum-scene/from-result";
+import { sceneFromResult, supportsScene } from "../../../packages/quantum-scene/from-result";
 import { bandSceneFromResult } from "../../../packages/quantum-scene/bands";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {makeSceneStream} from "../../../packages/quantum-scene/stream";
@@ -215,6 +215,15 @@ export class RunStore {
   async verified(runId:string):Promise<VerifiedSavedRun>{
     const {job,result,data}=await this.load(runId);
     return {job,result,data:data?Uint8Array.from(data):null};
+  }
+  async verifiedSource(runId: string, expectedResultHash: string): Promise<VerifiedSavedRun> {
+    if (!/^[a-f0-9]{64}$/.test(expectedResultHash)) throw new Error("Invalid source result hash");
+    const { manifest, job, result, data } = await this.load(runId);
+    if (manifest.hashes.result !== expectedResultHash)
+      throw new Error("Source result hash does not match the verified saved run");
+    if (!supportsScene(result.operation, result.model.type))
+      throw new Error("Source run has no supported scene adapter");
+    return { job, result, data: data ? Uint8Array.from(data) : null };
   }
   async inspect(runId:string){
     const {manifest,job,result}=await this.load(runId);

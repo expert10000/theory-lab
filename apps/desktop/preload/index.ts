@@ -33,6 +33,7 @@ const bridge: QuantumBridge = {
   saveWorkspace: (snapshot) => ipcRenderer.invoke("quantum:save-workspace", snapshot),
   loadWorkspace: () => ipcRenderer.invoke("quantum:load-workspace"),
   listRuns: () => ipcRenderer.invoke("quantum:list-runs"),
+  consumeSourceRun: () => ipcRenderer.invoke("quantum:consume-source-run"),
   getVerifiedRun: (runId) => ipcRenderer.invoke("quantum:verified-run",runId),
   inspectSavedRun: (runId) => ipcRenderer.invoke("quantum:inspect-saved-run",runId),
   rerunSaved: (runId,fingerprint) => ipcRenderer.invoke("quantum:rerun-saved",runId,fingerprint),
