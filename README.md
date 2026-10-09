@@ -11,8 +11,9 @@ An Electron 44 + React/TypeScript desktop laboratory with a supervised Python wo
 The [delivery roadmap](docs/ROADMAP.md) and
 [post-QLAB plan/status map](docs/POST_QLAB_QVIS_M3D_ROADMAP.md) distinguish
 implemented QVIS-001–013 from broader future physics and visualization work.
-The supplied Math3D plan is preserved as a separate
-track; it is not a claim that integration is already implemented.
+Math3D is a separate, read-only consumer of verified portable scenes. Its
+bounded M3D-Q01–Q04 desktop path includes geometry, fields and open 2D/3D
+lattice inspection; native 1D lattice metadata and periodic wraps remain open.
 
 **R1 Atlas reconciliation** pins 68 canonical definitions and maps all entries
 to the existing Lab capabilities. Seven theory-side example references are
@@ -61,12 +62,24 @@ translation vectors. Inspect stable cell/basis identities and export verified
 geometry bundles without creating worker runs. See
 [lattice/reciprocal/band scope](docs/LATTICE_RECIPROCAL_BANDS.md).
 
+To view one of these examples in Math3D, select **Real-space cells**, a family
+and repeats, then **Preview geometry example → Export scene bundle**. In Math3D
+desktop choose **File → Open verified quantum scene** and select the exported
+`.qscene` folder. The example is a geometry fixture, not a saved run, so the
+Lab's direct **Open in Math3D** button is unavailable for it. A compatible saved
+numerical run can use that direct handoff instead. Math3D inspects verified
+basis/cell IDs and can preview a bounded derived open supercell; it does not
+expand bonds or infer chemistry. See the
+[scene handoff guide](docs/SCENE_HANDOFF.md) and
+[Math3D lattice walkthrough](https://github.com/expert10000/Math3D/blob/main/docs/quantum-lattice-usage.md).
+
 **Geometry view → Primitive reciprocal zone** adds explicit dual bases, named
 symmetry points/paths and square, hexagonal or cubic boundaries. For a saved SSH
 or QWZ run, choose **Saved view → SSH / QWZ energy bands** for portable energy
 paths/surfaces, shared sample selection and gap inspection. New QWZ calculations
 include band arrays; older saved QWZ results require a re-run for this view.
-The Roadmap tab marks QVIS-001–013 implemented; no Math3D files are changed.
+The Roadmap tab marks QVIS-001–013 implemented. Math3D integration is tracked
+separately in its own repository.
 
 ## First experiment
 
@@ -144,9 +157,10 @@ single-electron Coulomb fields in Bohr/Hartree units. Explore density, signed
 real/imaginary lobes, phase, threshold surfaces and orthogonal slices. Radial
 normalization and the unrenormalized finite-grid integral are shown separately.
 Saved orbital runs replay in **Scenes** and export verified `.qscene` bundles,
-CSV grids or radial SVGs. The local Math3D handoff opens a read-only preview;
-field rendering is still deferred there. Scientific
-scope, conventions and tests are in [docs/FIELDS_ORBITALS.md](docs/FIELDS_ORBITALS.md).
+CSV grids or radial SVGs. The local Math3D handoff opens a read-only field
+preview with bounded slices, isosurfaces and source-backed Volume inspection.
+Scientific scope, conventions and tests are in
+[docs/FIELDS_ORBITALS.md](docs/FIELDS_ORBITALS.md).
 
 **Scenes → Open scene bundle** reopens a trusted `.qscene` folder as a read-only,
 hash-verified preview, including fields and lattice scenes. It does not change

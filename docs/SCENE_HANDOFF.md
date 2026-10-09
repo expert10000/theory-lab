@@ -43,6 +43,29 @@ Electron dependency installed; packaged application discovery is later work.
 Math3D opens a new window when launched this way. No direct Math3D-to-worker
 or Lab-to-Math3D worker call is part of this path.
 
+## Lattice example walkthrough (M3D-Q04)
+
+For a geometry-only example, open **Scenes → Bounded lattice examples** and
+choose **Real-space cells**, **Square**, **Honeycomb** or **Simple cubic**, and
+1–8 repeats per active axis. Select **Preview geometry example**, then
+**Export scene bundle**. Choose a parent folder; keep the complete new `.qscene` folder.
+In Math3D desktop choose **File → Open verified quantum scene** and select that
+folder. This manual import is required: **Open in Math3D** is available for
+compatible saved runs or verified imported regular bundles, not for a Lab
+geometry fixture. Examples never become numerical saved runs.
+
+Math3D displays source sites, supplied links, cell/basis identities, translation
+vectors and declared coordinates/units. Its **Derived supercell preview**
+re-verifies the bundle, then expands only basis-mapped sites and primitive-cell
+guides within fixed bounds. A picked derived instance reports its basis/cell
+and source-sample match where available. **Return to supplied geometry** restores
+the original view. Derived views do not expand source bonds, infer chemistry,
+or create periodic-wrap bonds. The frozen v1 lattice metadata supports only
+2D/3D open lattices; 1D/SSH scenes are still visible as supplied Geometry but
+have no native v1 lattice metadata. See the
+[Math3D usage guide](https://github.com/expert10000/Math3D/blob/main/docs/quantum-lattice-usage.md)
+for build steps, exact controls, limits and verification.
+
 For a verified numerical scene, Math3D also offers **Open source run in Theory
 Lab**. The user selects a built local Theory Lab checkout once. Math3D re-reads
 and verifies the complete active `.qscene` immediately before launch, then
