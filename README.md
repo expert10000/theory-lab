@@ -78,6 +78,8 @@ symmetry points/paths and square, hexagonal or cubic boundaries. For a saved SSH
 or QWZ run, choose **Saved view → SSH / QWZ energy bands** for portable energy
 paths/surfaces, shared sample selection and gap inspection. New QWZ calculations
 include band arrays; older saved QWZ results require a re-run for this view.
+SSH band exports use the versioned `quantum-scene/v2` 1D reciprocal extension
+for a supplied ±π zone and k-path; QWZ and older scenes remain strict v1.
 The Roadmap tab marks QVIS-001–013 implemented. Math3D integration is tracked
 separately in its own repository.
 

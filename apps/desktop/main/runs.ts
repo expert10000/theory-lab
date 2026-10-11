@@ -540,7 +540,7 @@ export class RunStore {
       reopened.scene.provenance.resultSha256!==expectedResultHash)
       throw new Error("Exported scene differs from the verified saved run");
     const scene=reopened.scene;
-    return {directory,bundleSchema:"quantum-scene-bundle/v1",sceneSchema:"quantum-scene/v1",sceneId:scene.id,
+    return {directory,bundleSchema:"quantum-scene-bundle/v1",sceneSchema:scene.schema,sceneId:scene.id,
       runId,resultSha256:expectedResultHash,view,coordinates:scene.coordinates,
       datasets:scene.datasets.map(({id,unit,count,components,sha256})=>({id,unit,count,components,sha256})),
       selectionTransferred:false};

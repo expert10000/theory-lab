@@ -4,7 +4,7 @@ import type { QuantumScene } from "./index";
 export interface SceneHandoffReceipt {
   directory: string;
   bundleSchema: "quantum-scene-bundle/v1";
-  sceneSchema: "quantum-scene/v1";
+  sceneSchema: QuantumScene["schema"];
   sceneId: string;
   runId: string;
   resultSha256: string;

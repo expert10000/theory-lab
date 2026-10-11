@@ -675,6 +675,13 @@ Use existing Math3D inspection and selection patterns.
 
 ## M3D-Q05
 
+**Implemented for canonical supplied geometry:** Math3D verifies 1D SSH
+(`quantum-scene/v2`), square, honeycomb, simple-cubic and QWZ reciprocal
+scenes, including source-ID selection, restart and tamper refusal. The Lab
+produces SSH's v2 1D zone from its validated saved band result; older v1
+scenes remain valid. This does not complete M3D-Q04's periodic/1D lattice
+metadata, nor introduce unavailable Bloch eigenvectors.
+
 ```text
 feat(math3d-quantum): add reciprocal lattice and Brillouin zones
 ```

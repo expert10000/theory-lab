@@ -115,7 +115,7 @@ class SceneReciprocal(TypedDict):
 
 
 class QuantumScene(TypedDict):
-    schema: Literal["quantum-scene/v1"]
+    schema: Literal["quantum-scene/v1", "quantum-scene/v2"]
     id: str
     title: str
     provenance: Provenance
@@ -131,12 +131,18 @@ class QuantumScene(TypedDict):
     annotations: list[Annotation]
 
 
-_schema = Path(__file__).resolve().parents[3] / "packages/quantum-scene/quantum-scene.v1.json"
-_validator = FiniteValidator(json.loads(_schema.read_text(encoding="utf-8")))
+_schema_root = Path(__file__).resolve().parents[3] / "packages/quantum-scene"
+_validators = {
+    version: FiniteValidator(json.loads((_schema_root / f"quantum-scene.{version}.json").read_text(encoding="utf-8")))
+    for version in ("v1", "v2")
+}
 
 
 def validate_scene(scene: QuantumScene):
-    _validator.validate(scene)
+    version = scene.get("schema", "").removeprefix("quantum-scene/")
+    if version not in _validators:
+        raise ValueError("Unsupported quantum-scene version")
+    _validators[version].validate(scene)
     if not scene["objects"] and not scene.get("fields"):
         raise ValueError("Scene has no objects or fields")
 
@@ -207,6 +213,9 @@ def validate_scene(scene: QuantumScene):
         unique([p["id"] for p in r["points"]]); unique([p["object"] for p in r["paths"]]); unique(r["boundaryObjects"])
         if len(r["basis"]) != len(r["directBasis"]):
             raise ValueError("Reciprocal dimension mismatch")
+        if scene["schema"] == "quantum-scene/v2" and len(r["basis"]) == 1:
+            if len(r["boundaryObjects"]) != 1 or any(abs(v) > 1e-9 for v in r["directBasis"][0][1:]) or any(abs(v) > 1e-9 for v in r["basis"][0][1:]) or any(abs(v) > 1e-9 for p in r["points"] for v in p["position"][1:]):
+                raise ValueError("1D reciprocal geometry must lie on the declared k axis")
         for i,a in enumerate(r["directBasis"]):
             for j,b in enumerate(r["basis"]):
                 if abs(sum(v*w for v,w in zip(a,b))-(2*math.pi if i==j else 0)) > 1e-9:
@@ -219,8 +228,11 @@ def validate_scene(scene: QuantumScene):
             o = objects.get(path["object"])
             if not o or o["kind"] != "polyline" or datasets[o["positions"]]["count"] != len(path["points"]) or any(p not in point_ids for p in path["points"]):
                 raise ValueError("Reciprocal path mismatch")
-        if any(objects.get(o,{}).get("kind") not in ("polyline","segments") for o in r["boundaryObjects"]):
-            raise ValueError("Reciprocal boundary mismatch")
+        one_d = scene["schema"] == "quantum-scene/v2" and len(r["basis"]) == 1
+        for ref in r["boundaryObjects"]:
+            boundary = objects.get(ref)
+            if not boundary or (one_d and (boundary["kind"] != "point-cloud" or datasets[boundary["positions"]]["count"] != 2)) or (not one_d and boundary["kind"] not in ("polyline", "segments")):
+                raise ValueError("Reciprocal boundary mismatch")
     bands = scene.get("bands")
     if bands:
         b = bands
@@ -306,6 +318,24 @@ def verify_scene_artifacts(scene: QuantumScene, artifacts: dict[str, bytes]):
         check_points(r["pointObject"], [p["position"] for p in r["points"]])
         for path in r["paths"]:
             check_points(path["object"], [next(p["position"] for p in r["points"] if p["id"] == id) for id in path["points"]])
+        if scene["schema"] == "quantum-scene/v2" and len(r["basis"]) == 1:
+            basis = r["basis"][0]
+            boundary = arrays[objects[r["boundaryObjects"][0]]["positions"]]
+            for ref in [r["pointObject"], *[p["object"] for p in r["paths"]], *r["boundaryObjects"]]:
+                dataset = next(d for d in scene["datasets"] if d["id"] == objects[ref]["positions"])
+                if dataset["unit"] != r["reciprocalUnit"]:
+                    raise ValueError("1D reciprocal object unit mismatch")
+            bands_for_zone = scene.get("bands")
+            if bands_for_zone:
+                dataset = next(d for d in scene["datasets"] if d["id"] == bands_for_zone["coordinates"])
+                if dataset["unit"] != r["reciprocalUnit"]:
+                    raise ValueError("1D band k-unit mismatch")
+            if any(abs(boundary[axis] + basis[axis]/2) > 1e-9 or abs(boundary[axis+3] - basis[axis]/2) > 1e-9 for axis in range(3)):
+                raise ValueError("1D reciprocal boundary disagrees with supplied basis")
+            if bands_for_zone and bands_for_zone["kind"] == "path":
+                grid = arrays[bands_for_zone["coordinates"]]
+                if abs(grid[0]-boundary[0]) > 1e-9 or abs(grid[-3]-boundary[3]) > 1e-9:
+                    raise ValueError("1D band grid disagrees with reciprocal boundary")
     bands = scene.get("bands")
     if bands:
         b = bands

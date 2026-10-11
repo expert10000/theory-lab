@@ -71,7 +71,7 @@ class SceneTests(unittest.TestCase):
                 scene["datasets"][0]["path"] = fixture["value"]
             else:
                 scene["objects"][0]["kind"] = fixture["value"]
-            with self.assertRaises(ValidationError):
+            with self.assertRaises((ValueError, ValidationError)):
                 validate_scene(scene)
         for parameters in ({"delta": float("nan")}, {"delta": True}, {"unsafe-key": 1}, {}):
             scene = copy.deepcopy(self.fixture["scene"])
@@ -79,7 +79,7 @@ class SceneTests(unittest.TestCase):
             with self.assertRaises(ValidationError):
                 validate_scene(scene)
         mutations = [
-            lambda s: s.update(schema="quantum-scene/v2"),
+            lambda s: s.update(schema="quantum-scene/v3"),
             lambda s: s.update(script="executable"),
             lambda s: s["datasets"][0].update(path="../secret.f64"),
             lambda s: s["datasets"][0].update(bytes=8),

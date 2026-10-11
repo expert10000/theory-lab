@@ -38,7 +38,7 @@ export async function bandSceneFromResult(
   const height = Math.max(1, ...upper.map(Math.abs)),
     unit = "normalized energy (hbar=1)";
   const scene: QuantumScene = {
-    schema: "quantum-scene/v1",
+    schema: surface ? "quantum-scene/v1" : "quantum-scene/v2",
     id: result.runId.length<=94 ? `${result.runId}-bands` : `bands-${resultSha256.slice(0,32)}`,
     title: `${a.kind.toUpperCase()} supplied energy bands`,
     provenance: {
@@ -158,5 +158,28 @@ export async function bandSceneFromResult(
       "lattice constant a=1",
       "rad / lattice constant",
     );
+  else {
+    // The SSH worker samples k in [-π, π] for a unit cell spacing. This
+    // adapter supplies the zone explicitly; consumers never infer it.
+    const pi=Math.PI, kUnit="rad / cell spacing";
+    const points=[
+      {id:"Xminus",label:"−π",position:[-pi,0,0] as [number,number,number]},
+      {id:"Gamma",label:"Γ",position:[0,0,0] as [number,number,number]},
+      {id:"Xplus",label:"+π",position:[pi,0,0] as [number,number,number]},
+    ];
+    const pointObject=await b.data("symmetry-points",points.flatMap(p=>p.position),3,kUnit);
+    b.object("symmetry-points","SSH high-symmetry k-points","point-cloud",pointObject,"#f2b36f");
+    const pathObject=await b.data("symmetry-path",points.flatMap(p=>p.position),3,kUnit);
+    b.object("symmetry-path","SSH supplied zone path","polyline",pathObject,"#f2b36f");
+    const boundaryObject=await b.data("primitive-bz",[-pi,0,0,pi,0,0],3,kUnit);
+    b.object("primitive-bz","SSH Brillouin-zone endpoints","point-cloud",boundaryObject,"#79d9c1");
+    const origin=await b.data("reciprocal-origin-0",[0,0,0],3,kUnit);
+    const basis=await b.data("reciprocal-basis-0",[2*pi,0,0],3,kUnit);
+    b.object("reciprocal-b1","Reciprocal b1 (2π convention)","vectors",origin,"#5995f0",{values:basis});
+    scene.reciprocal={directBasis:[[1,0,0]],basis:[[2*pi,0,0]],directUnit:"cell spacing a=1",
+      reciprocalUnit:kUnit,pointObject:"symmetry-points",points,
+      paths:[{object:"symmetry-path",label:"−π → Γ → +π",points:points.map(p=>p.id)}],
+      boundaryObjects:["primitive-bz"]};
+  }
   return b.finish();
 }

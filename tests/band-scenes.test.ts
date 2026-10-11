@@ -5,7 +5,10 @@ import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { spawnSync } from "node:child_process";
+import Ajv from "ajv";
 import fixture from "../packages/quantum-scene/fixtures/bands-ssh.json";
+import sceneV1 from "../packages/quantum-scene/quantum-scene.v1.json";
+import sceneV2 from "../packages/quantum-scene/quantum-scene.v2.json";
 import { WorkerSupervisor } from "../apps/desktop/main/worker";
 import { RunStore } from "../apps/desktop/main/runs";
 import {
@@ -27,7 +30,18 @@ test("checked-in worker band fixture is reproducible and preserves source hash",
     await digest(Buffer.from(JSON.stringify(fixture.result))),
     digest,
   );
-  assert.deepEqual(payload.scene, fixture.scene);
+  assertScene(fixture.scene); // Frozen v1 fixture remains readable.
+  assert.equal(payload.scene.schema, "quantum-scene/v2");
+  const ajv=new Ajv({strict:true});
+  assert.equal(ajv.compile(sceneV2)(payload.scene),true);
+  assert.equal(ajv.compile(sceneV1)(payload.scene),false);
+  assert.deepEqual(payload.scene.reciprocal?.directBasis, [[1, 0, 0]]);
+  assert.deepEqual(payload.scene.reciprocal?.basis, [[2 * Math.PI, 0, 0]]);
+  assert.deepEqual(payload.scene.provenance, fixture.scene.provenance);
+  assert.deepEqual(payload.scene.bands, fixture.scene.bands);
+  assert.deepEqual(payload.scene, (await bandSceneFromResult(
+    fixture.result, await digest(Buffer.from(JSON.stringify(fixture.result))), digest,
+  )).scene);
 });
 test("real worker bands preserve energies, gap-closure data and offline bundle inspection", async () => {
   const root = await mkdtemp(join(tmpdir(), "qvis-bands-")),
@@ -54,6 +68,24 @@ test("real worker bands preserve energies, gap-closure data and offline bundle i
         arrays = await verifyScenePayload(p, digest),
         b = p.scene.bands!;
       assert.equal(b.kind, modelId === "ssh" ? "path" : "surface");
+      assert.equal(p.scene.schema, modelId === "ssh" ? "quantum-scene/v2" : "quantum-scene/v1");
+      if (modelId === "ssh") {
+        assert.deepEqual(p.scene.reciprocal?.points.map(point => point.id), ["Xminus", "Gamma", "Xplus"]);
+        const legacyShape=structuredClone(p.scene);
+        legacyShape.schema="quantum-scene/v1";
+        assert.throws(()=>assertScene(legacyShape),/scene.reciprocal.directBasis/);
+        const offAxis=structuredClone(p.scene);
+        offAxis.reciprocal!.points[0].position[1]=.1;
+        assert.throws(()=>assertScene(offAxis),/declared k axis/);
+        const wrongUnit=structuredClone(p);
+        wrongUnit.scene.datasets.find(d=>d.id==="symmetry-points")!.unit="wrong unit";
+        await assert.rejects(verifyScenePayload(wrongUnit,digest),/unit mismatch/);
+        const badZone=structuredClone(p);
+        const zone=badZone.scene.datasets.find(d=>d.id==="primitive-bz")!;
+        const view=new DataView(badZone.artifacts[zone.path].buffer);
+        view.setFloat64(0,-2,true);zone.sha256=await digest(badZone.artifacts[zone.path]);
+        await assert.rejects(verifyScenePayload(badZone,digest),/boundary disagrees/);
+      }
       assert.equal(b.bulkGap, result.analysis.bulkGap);
       assert.deepEqual(
         [...arrays.get(b.energies[0])!],

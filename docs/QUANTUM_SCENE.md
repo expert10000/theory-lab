@@ -1,13 +1,17 @@
 # Portable quantum scenes — QVIS-001 / QVIS-002
 
-`quantum-scene/v1` is a Lab-owned, application-independent visualization boundary.
+`quantum-scene/v1` and the narrow `quantum-scene/v2` 1D reciprocal extension
+are Lab-owned, application-independent visualization boundaries.
 The scene is declarative data, not JavaScript, formulas to execute, a worker job,
 or a Math3D document. Math3D now has an independent verified reader and a
 read-only preview for this portable format.
 
 ## Contract
 
-The strict Draft-7 schema is in `packages/quantum-scene/quantum-scene.v1.json`.
+The strict Draft-7 schemas are in `packages/quantum-scene/quantum-scene.v1.json`
+and `quantum-scene.v2.json`. V1 remains unchanged: reciprocal bases need two
+or three vectors. V2 allows one vector and a two-point zone boundary for SSH
+band scenes; it does not relax lattice metadata. Unknown versions fail closed.
 TypeScript and Python representations validate the same schema plus reference,
 shape, identity, camera and memory constraints. The TypeScript reader interprets
 this fixed schema's vocabulary without eval, AJV code generation or Node APIs,
@@ -133,6 +137,11 @@ Trusted `getScene(runId, "bands")` / `exportScene(runId, "bands")` adapt verifie
 saved SSH/QWZ energies; omitted view keeps existing behavior. Unknown views are
 rejected. Original Float64 energies, k coordinates and source hashes survive
 offline bundle import. See [scope, conventions and UI controls](LATTICE_RECIPROCAL_BANDS.md).
+SSH bands now use v2 and explicitly supply the unit-cell basis a=1, reciprocal
+b=2π, the ±π zone endpoints and a −π → Γ → +π path. These are producer-declared
+from the worker's validated k-domain, never constructed by Math3D. QWZ and all
+older v1 scenes remain strict v1; the outer `quantum-scene-bundle/v1` manifest
+is unchanged. Neither result supplies Bloch eigenvectors for a k-state view.
 Older strict consumers must update their schema before accepting these optional
 fields or the `segments` primitive. This does not change worker routing or add
 a live Math3D worker connection.

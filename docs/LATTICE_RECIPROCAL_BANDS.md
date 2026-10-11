@@ -60,6 +60,12 @@ The existing v1 shape without this optional set remains accepted; older QWZ
 band previews request a re-run instead of synthesizing missing energies.
 SSH uses its existing supplied samples including ±π. Closed-gap band scenes
 remain valid, but no invariant or curvature is invented at the closure.
+SSH band exports now carry a `quantum-scene/v2` one-dimensional reciprocal
+block: unit-cell spacing a=1, b=2π, both ±π zone endpoints and named
+−π → Γ → +π guide. The actual sampled k grid stays in `bands.coordinates`;
+Γ is a high-symmetry guide, not a fabricated saved sample for even grids.
+The source has band energies, not Bloch eigenvectors, so no selected k-state is
+claimed. Older `quantum-scene/v1` bundles remain valid and 2D/3D-only.
 Optional `bands` metadata links k coordinates, ordered energies, objects, grid,
 units and reported bulk gap. TS/Python check shapes, ordering, geometry/energy
 agreement and adjacent-cell triangles; surfaces never connect periodic seams.

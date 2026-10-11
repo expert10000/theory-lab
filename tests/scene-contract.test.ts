@@ -19,7 +19,7 @@ test("portable fixture agrees with JSON Schema and verifies little-endian data",
 });
 test("scene rejects unknown versions, executable fields, paths, malformed numbers and references", () => {
   const mutations = [
-    (s: any) => { s.schema = "quantum-scene/v2"; },
+    (s: any) => { s.schema = "quantum-scene/v3"; },
     (s: any) => { s.script = "alert(1)"; },
     (s: any) => { s.datasets[0].path = "../secret.f64"; },
     (s: any) => { s.datasets[0].path = "https://host/data.f64"; },

@@ -348,7 +348,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
       {source==="saved"&&handoff&&payload?.scene.provenance.resultSha256===handoff.resultSha256&&runId===handoff.runId&&savedView===handoff.view&&(
         <div className="panel scene-provenance" data-testid="scene-handoff-receipt">
           <p className="eyebrow">QVIS-023 · VERIFIED PORTABLE HANDOFF</p>
-          <h3>Ready for an independent quantum-scene/v1 consumer</h3>
+          <h3>Ready for an independent verified quantum-scene consumer</h3>
           <p>Re-opened from disk with metadata and every binary dataset hash checked. This verifies integrity against the saved run, not the identity of a future recipient.</p>
           <p><strong>Bundle:</strong> {handoff.directory}</p>
           <p><strong>Source:</strong> {handoff.runId} · {handoff.resultSha256}</p>
@@ -416,7 +416,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
               </p>
             )}
             <p>
-              quantum-scene/v1 · {payload.scene.objects.length} objects ·{" "}
+              {payload.scene.schema} · {payload.scene.objects.length} objects ·{" "}
               {payload.scene.datasets
                 .reduce((n, d) => n + d.bytes, 0)
                 .toLocaleString()}{" "}
