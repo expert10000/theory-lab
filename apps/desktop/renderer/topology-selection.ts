@@ -4,11 +4,13 @@ export type TopologySelection=
   | {kind:"ssh_band";runId:string;index:number}
   | {kind:"ssh_site";runId:string;index:number}
   | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number}
+  | {kind:"bbh_cell";runId:string;index:number}
   | {kind:"bhz_ribbon_state";runId:string;index:number};
 export type TopologySample=
   | {kind:"ssh_band";index:number;k:number;lower:number;upper:number}
   | {kind:"ssh_site";index:number;density:number}
   | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null}
+  | {kind:"bbh_cell";index:number;xIndex:number;yIndex:number;density:number}
   | {kind:"bhz_ribbon_state";index:number;k:number;energy:number;edgeWeight:number;density:number[];spin:number[];amplitudes:[number,number][]};
 export interface TopologyRunContext {
   result:TopologyResult;
@@ -19,6 +21,11 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="bbh"&&analysis.kind==="bbh"&&selection.kind==="bbh_cell"){
+    const index=selection.index,c=analysis.finite.cells;
+    if(!Number.isInteger(index)||index<0||index>=c*c)return null;
+    return {kind:"bbh_cell",index,xIndex:Math.floor(index/c),yIndex:index%c,density:analysis.finite.midgapDensity[index]};
+  }
   if(result.model.type==="ssh"&&analysis.kind==="ssh"){
     if(selection.kind==="ssh_band"&&Number.isInteger(selection.index)&&selection.index>=0&&selection.index<analysis.kValues.length){
       const k=analysis.kValues[selection.index],lower=analysis.lowerBand[selection.index],upper=analysis.upperBand[selection.index];

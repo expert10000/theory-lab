@@ -5,6 +5,7 @@ export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
 export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   modelId: "ssh", t1: "0.6", t2: "1", cells: "16", kPoints: "101", mass: "-1", grid: "21",
   A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
+  gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -31,6 +32,11 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
         edgeCells:numeric(draft.edgeCells??"12",8,16,true),edgeSamples:numeric(draft.edgeSamples??"15",11,21,true),
         continuumExtent:numeric(draft.continuumExtent??"1",.5,2)}}};
   }
+  if (draft.modelId === "bbh") return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",
+    model:{type:"bbh",source,parameters:{gammaX:numeric(draft.gammaX??"0.5",-2,2),
+      lambdaX:numeric(draft.lambdaX??"1",.25,2),gammaY:numeric(draft.gammaY??"0.5",-2,2),
+      lambdaY:numeric(draft.lambdaY??"1",.25,2),grid:numeric(draft.grid,11,21,true),
+      cells:numeric(draft.cells,3,7,true)}}};
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
 }
@@ -39,6 +45,30 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   if (result.jobId !== job.jobId || JSON.stringify(result.model) !== JSON.stringify(job.model) ||
       result.analysis.kind !== job.model.type) return false;
   const a = result.analysis;
+  if(job.model.type==="bbh"&&a.kind==="bbh"){
+    const p=job.model.parameters,g=p.grid,c=p.cells,d=a.finite;
+    if(a.bandKValues.length!==g||a.bandEnergies.length!==4||
+      a.bandEnergies.some(row=>row.length!==g*g||row.some(v=>!Number.isFinite(v)))||
+      d.cells!==c||d.midgapEnergies.length!==4||d.midgapEnergies.some(v=>!Number.isFinite(v))||
+      d.midgapDensity.length!==c*c||d.midgapDensity.some(v=>!Number.isFinite(v)||v<0||v>1.000001)||
+      Math.abs(d.midgapDensity.reduce((sum,v)=>sum+v,0)-1)>1e-6)return false;
+    const corners=[0,c-1,c*(c-1),c*c-1];
+    if(Math.abs(d.cornerWeight-corners.reduce((sum,i)=>sum+d.midgapDensity[i],0))>1e-6)return false;
+    let gap=Infinity;
+    for(let x=0;x<g;x++){
+      const kx=-Math.PI+2*Math.PI*x/g;
+      if(Math.abs(a.bandKValues[x]-kx)>1e-10)return false;
+      for(let y=0;y<g;y++){
+        const ky=-Math.PI+2*Math.PI*y/g;
+        const e=Math.hypot(p.gammaX+p.lambdaX*Math.cos(kx),p.lambdaX*Math.sin(kx),
+          p.gammaY+p.lambdaY*Math.cos(ky),p.lambdaY*Math.sin(ky));
+        gap=Math.min(gap,2*e);
+        if([0,1,2,3].some(j=>Math.abs(a.bandEnergies[j][x*g+y]-(j<2?-e:e))>1e-8))return false;
+      }
+    }
+    return Number.isFinite(a.bulkGap)&&Math.abs(a.bulkGap-gap)<1e-8&&
+      d.midgapEnergies.every((v,i)=>i===0||v>=d.midgapEnergies[i-1]-1e-8);
+  }
   if (job.model.type === "ssh" && a.kind === "ssh") {
     const { t1, t2, cells, kPoints } = job.model.parameters;
     const gap = 2 * Math.abs(Math.abs(t1) - Math.abs(t2));
@@ -189,6 +219,13 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !(a.z2===null||a.z2===0||a.z2===1)||!numericArray(a.bandKValues,grid)||
        !Array.isArray(a.bandEnergies)||a.bandEnergies.length!==4||
        !a.bandEnergies.every((item:unknown)=>numericArray(item,grid*grid)))return false;
+  } else if(job.model.type==="bbh"){
+    const {grid,cells}=job.model.parameters;
+    if(a.kind!=="bbh"||!finite(a.bulkGap)||!numericArray(a.bandKValues,grid)||
+      !Array.isArray(a.bandEnergies)||a.bandEnergies.length!==4||
+      !a.bandEnergies.every(row=>numericArray(row,grid*grid))||!record(a.finite)||
+      a.finite.cells!==cells||!numericArray(a.finite.midgapEnergies,4)||
+      !numericArray(a.finite.midgapDensity,cells*cells)||!finite(a.finite.cornerWeight))return false;
   } else {
     const p=job.model.parameters,g=p.grid,n=4*p.edgeCells,m=p.edgeSamples;
     if(a.kind!=="bhz_general"||!finite(a.bulkGap)||a.bulkGap<0||!finite(a.sampledGap)||a.sampledGap<0||

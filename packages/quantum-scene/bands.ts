@@ -26,7 +26,7 @@ export async function bandSceneFromResult(
     throw new Error("Bands require a verified topology result");
   const a = result.analysis,
     surface = a.kind !== "ssh",
-    values: number[][] = a.kind === "bhz" ? a.bandEnergies : a.kind==="bhz_general"?
+    values: number[][] = a.kind === "bhz" || a.kind==="bbh" ? a.bandEnergies : a.kind==="bhz_general"?
       (domain==="continuum"?a.continuumBandEnergies:a.latticeBandEnergies):[a.lowerBand ?? [], a.upperBand ?? []];
   if (!values.every(v=>v.length>0) || (a.kind === "qwz" && !a.bandKValues))
     throw new Error(
@@ -83,6 +83,7 @@ export async function bandSceneFromResult(
         id: "band-gap",
         text: a.kind==="bhz" ? `Worker sampled bulk gap ${a.sampledGap.toPrecision(7)}; spin-conserved Z2 ${a.z2 ?? (a.gapClosed?"undefined":"unresolved")}. No edge-state inference.` :
           a.kind==="bhz_general"?`Atlas continuum and declared lattice regularization are separate views. Worker lattice Z2 ${a.z2??"unresolved"}; open-ribbon states are supplied only with the lattice view.`:
+          a.kind==="bbh"?`BBH producer sampled bulk gap ${a.bulkGap.toPrecision(7)}. Finite corner density is in a separate saved view; no quadrupole invariant is supplied.`:
           `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
         position: [0, 0, -height],
       },
@@ -126,6 +127,7 @@ export async function bandSceneFromResult(
     ? await b.data("band-triangles", triangles, 3, "vertex index")
     : undefined;
   const labels=a.kind==="bhz"?["Block occupied","Partner occupied","Block empty","Partner empty"]:
+    a.kind==="bbh"?["Occupied 1","Occupied 2","Empty 1","Empty 2"]:
     a.kind==="bhz_general"?["Occupied 1","Occupied 2","Empty 1","Empty 2"]:["Lower band","Upper band"];
   for (const [j, bandValues] of values.entries()) {
     const id = `band-${j}`,
@@ -212,5 +214,27 @@ export async function bandSceneFromResult(
       paths:[{object:"symmetry-path",label:"−π → Γ → +π",points:points.map(p=>p.id)}],
       boundaryObjects:["primitive-bz"]};
   }
+  return b.finish();
+}
+
+/** Exact finite-cell density, kept separate from periodic Bloch coordinates. */
+export async function bbhFiniteSceneFromResult(result:QuantumResult,resultSha256:string,
+  digest:(bytes:Uint8Array)=>Promise<string>){
+  if(result.operation!=="topology"||result.model.type!=="bbh"||result.analysis.kind!=="bbh"||
+    !consistentTopologyResult({schema:"quantum-job/v1",jobId:result.jobId,operation:"topology",engine:"native",model:result.model},result))
+    throw new Error("Finite BBH scene requires a verified source result");
+  const a=result.analysis,c=a.finite.cells,source=result.model.source;
+  const pinned=source?.sourceRepository?.match(/^(https:\/\/github\.com\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)\/tree\/([a-f0-9]{40})$/);
+  const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-bbh-finite`,title:"BBH finite open lattice · midgap density",
+    provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:"bbh",engine:result.engine.name,
+      engineVersion:result.engine.version,computedAt:result.provenance.computedAt,resultSha256,adapter:"qvis/1",
+      parameters:{...result.model.parameters},...(pinned?{source:{repository:pinned[1],revision:pinned[2],entryId:"bbh"}}:{})},
+    coordinates:{handedness:"right",axes:["cell x","cell y","display z"],units:["cell","cell","dimensionless"]},
+    camera:{position:[c+3,-c-3,c+4],target:[(c-1)/2,(c-1)/2,0],up:[0,0,1]},datasets:[],objects:[],
+    annotations:[{id:"finite-status",text:`Four finite midgap energies; mean corner weight ${a.finite.cornerWeight.toPrecision(5)}. Finite-size localization only; no quadrupole invariant computed.`,position:[0,0,0]}]};
+  const b=new SceneBuilder(scene,digest);
+  const positions=await b.data("cell-sites",a.finite.midgapDensity.flatMap((_,i)=>[Math.floor(i/c),i%c,0]),3,"cell");
+  const density=await b.data("midgap-density",a.finite.midgapDensity,1,"probability per cell");
+  b.object("finite-midgap-cells","Mean density of four finite midgap eigenstates","point-cloud",positions,"#f2b36f",{scalars:density});
   return b.finish();
 }

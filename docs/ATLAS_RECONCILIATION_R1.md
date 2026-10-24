@@ -130,6 +130,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `qwz` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `bhz` | packages/models/topology.ts | topology | native | yes | topology | topology / bands |
 | `bhz_general` | packages/models/topology.ts | topology | native | yes | topology | topology / bands |
+| `bbh` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `hydrogenic` | packages/models/orbital.ts | orbital | native | no | — | orbital / standard |
 
 - **anharmonic_oscillator**: D1: bounded m=1 confining quartic oscillator in a truncated harmonic Fock basis; reviewed eigenpairs, no automatic Atlas binding, web/scene/Math3D path or double-well scope.
@@ -151,6 +152,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 - **qwz**: Periodic two-band grid, supplied curvature/bands; unresolved mesh is not verified topology.
 - **bhz**: Bounded spin-conserving square-lattice BHZ with A=B=1 and epsilon=0; supplied four-band bulk grid and mesh-checked Z2 parity. No edge-state or spin-mixing claim.
 - **bhz_general**: Atlas A/B/M continuum bulk with declared C/D dispersion; lattice regularization, optional time-reversal-symmetric mixing and finite open ribbon. Source-attributed states and conditional inversion Z2.
+- **bbh**: Bounded Atlas pi-flux four-band bulk and finite open square lattice. Stored midgap density shows finite-size corner localization only; no nested Wilson loop or quadrupole invariant is computed.
 - **hydrogenic**: Analytic single-electron Coulomb 1s–3d, infinite nuclear mass; no many-electron solver.
 
 ## Source-side programs, not Lab permissions

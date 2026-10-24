@@ -315,7 +315,8 @@ export interface BHZGeneralModel { type: "bhz_general"; parameters: {
   A:number; B:number; C:number; D:number; M:number; R:number; grid:number;
   edgeCells:number; edgeSamples:number; continuumExtent:number;
 }; source?: LayerOneSource }
-export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel }
+export interface BBHModel { type:"bbh"; parameters:{gammaX:number;lambdaX:number;gammaY:number;lambdaY:number;grid:number;cells:number};source?:LayerOneSource }
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
   lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
@@ -345,10 +346,13 @@ export interface BHZGeneralAnalysis {
   edge:{kValues:number[];energies:number[][];weights:number[][];selectedKIndex:number;
     states:[BHZGeneralEdgeState,BHZGeneralEdgeState,BHZGeneralEdgeState,BHZGeneralEdgeState]};
 }
+export interface BBHAnalysis {kind:"bbh";bulkGap:number;bandKValues:number[];
+  bandEnergies:[number[],number[],number[],number[]];
+  finite:{cells:number;midgapEnergies:[number,number,number,number];midgapDensity:number[];cornerWeight:number}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
-  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel;
-  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis;
+  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {

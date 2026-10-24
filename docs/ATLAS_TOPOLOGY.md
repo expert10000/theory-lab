@@ -94,3 +94,25 @@ The original fixed-coefficient `bhz` job remains available for old runs.
 The supervisor bounds JSON-RPC responses at 256 KiB; incoming jobs retain
 their 64 KiB limit. Producer, schema, saved-run, scene and tamper tests cover
 the larger result.
+
+## Bounded BBH bulk and finite corners
+
+The `bbh` native job follows the pinned Atlas four-orbital, π-flux formula.
+Its explicit Hermitian representation uses Γ₁,₂,₃ = −τᵧ ⊗ σₓ,ᵧ,𝓏 and
+Γ₄ = τₓ ⊗ I. Positive λₓ, λᵧ are bounded to 0.25–2, γₓ, γᵧ to ±2,
+the periodic momentum grid to 11–21 points per axis and the finite open
+square to 3–7 unit cells per side. Energies use the normalized Atlas scale.
+
+The worker stores four sampled periodic bands, their minimum sampled direct
+gap, four finite-system midgap energies, and the mean cell density of those
+four normalized eigenstates. Corner weight sums the four exposed corner
+cells. Degenerate eigenvectors can rotate within their subspace, so the
+four-state mean is the stable visualization. Corner localization is a
+finite-size observation. The worker does **not** compute nested Wilson loops,
+edge polarization, or a quadrupole invariant, and the UI makes no phase
+claim from corner weight alone.
+
+Saved runs reopen with result-hash verification. Standard `.qscene` exports
+carry the finite-cell density; the bands view carries exact periodic samples.
+Both cite the same verified result SHA-256 and pinned Atlas source. Math3D
+reads them independently; it does not run a BBH solver.

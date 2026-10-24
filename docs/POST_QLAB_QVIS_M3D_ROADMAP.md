@@ -744,6 +744,14 @@ entry: no arbitrary coefficients, edge states, eigenvectors, spin mixing, or
 inferred band inversion. The historical QWZ/SSH v0.1 set remains unchanged;
 BBH, Kitaev, Weyl, nodal and Landau/Hall still need producer fixtures.
 
+**2026-10-25 BBH producer extension:** Theory Lab now computes a bounded
+four-orbital π-flux BBH periodic bulk and finite open square. Four sampled
+bands and mean density of four finite midgap states are stored in a verified
+run and exported as separate source-linked `.qscene` views. Corner weight is
+only a finite-system observation; no nested Wilson loop or quadrupole
+invariant is calculated. Math3D admission and fixture tests are tracked in
+its own Q08 audit. Kitaev, Weyl, nodal and Landau/Hall remain producer gaps.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

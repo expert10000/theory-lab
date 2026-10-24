@@ -562,7 +562,7 @@ D1 now delivers bounded static/free 1D motion and monochromatic coherent forcing
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `f7b27ecff52b440724d60a6548ba7e143788aae1659d2f818232a26100410444`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `28f7ea26132bb87023062d352d1eef33873c067daade6a02f9ae8062292064f1`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 
@@ -570,8 +570,8 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
-| packages/contracts/schemas/quantum-job.v1.json | `ad9a3fc9887e6eda0912e447ee4c0a9630d8943d98b8b629f54a7050b2c2eef8` |
-| packages/contracts/schemas/quantum-result.v1.json | `0b9f93646d5ec5f1d0026b82abb499e37ed56c15203f5a1395022fa59f2a091a` |
+| packages/contracts/schemas/quantum-job.v1.json | `d7328ed3a0a4277bd1d3c2b0e7a4f67543dd099d31e55f5157abe104d6017675` |
+| packages/contracts/schemas/quantum-result.v1.json | `0987072508559edaf9166b3624b1529a47ac76cb815b78fcaa095887e612ab92` |
 | packages/contracts/schemas/worker-capabilities.v1.json | `ec10c915d539adba626bb7621e9d1ef83ff929e64dfe997325f575dcfc7c3fe1` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
 | packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |

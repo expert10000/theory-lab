@@ -438,7 +438,7 @@ export class RunStore {
   async topology(runId:string):Promise<TopologyResult>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="topology"||result.operation!=="topology"||
-      !["ssh","qwz","bhz","bhz_general"].includes(result.model.type)||data!==null||
+      !["ssh","qwz","bhz","bhz_general","bbh"].includes(result.model.type)||data!==null||
       manifest.operation!=="topology"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!==null||manifest.artifactSha256!==null||
@@ -584,6 +584,10 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       ...a.continuumBandEnergies[0].map((_,i)=>`continuum,${Math.floor(i/a.continuumKValues.length)},${i%a.continuumKValues.length},${a.continuumBandEnergies.map(b=>b[i]).join(",")}`),
       "", "edge_k_index,state_index,energy,edge_weight",
       ...a.edge.energies.flatMap((row,i)=>row.map((value,j)=>`${i},${j},${value},${a.edge.weights[i][j]}`))].join("\n")+"\n";
+    if (a.kind === "bbh") return ["kx_index,ky_index,band_0,band_1,band_2,band_3",
+      ...a.bandEnergies[0].map((_,i)=>`${Math.floor(i/a.bandKValues.length)},${i%a.bandKValues.length},${a.bandEnergies.map(b=>b[i]).join(",")}`),
+      "", "cell_x,cell_y,mean_midgap_density",
+      ...a.finite.midgapDensity.map((v,i)=>`${Math.floor(i/a.finite.cells)},${i%a.finite.cells},${v}`)].join("\n")+"\n";
     const grid = result.model.type === "qwz" ? result.model.parameters.grid : 1;
     return ["kx_index,ky_index,berry_curvature", ...a.berryCurvature.map((v, i) => `${Math.floor(i / grid)},${i % grid},${v}`)].join("\n") + "\n";
   }
@@ -664,6 +668,12 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
       const cells=energy.map((value,i)=>{const x=Math.floor(i/grid),y=i%grid,v=Math.floor(45+195*(value-low)/span);
         return `<rect x="${70+x*350/grid}" y="${90+y*350/grid}" width="${351/grid}" height="${351/grid}" fill="rgb(60,${v},180)"/>`;}).join("");
       return head+cells+`<text x="450" y="480" fill="white" font-family="sans-serif">BHZ Z2 ${a.z2??"unresolved"} · ribbon ${a.edge.kValues.length} k samples · gap ${a.bulkGap.toFixed(6)}</text></svg>\n`;
+    }
+    if (result.analysis.kind === "bbh") {
+      const a=result.analysis,c=a.finite.cells,max=Math.max(1e-9,...a.finite.midgapDensity);
+      const cells=a.finite.midgapDensity.map((value,i)=>{const x=Math.floor(i/c),y=i%c,v=Math.floor(45+195*value/max);
+        return `<rect x="${70+x*350/c}" y="${90+y*350/c}" width="${351/c}" height="${351/c}" fill="rgb(${v},100,170)"/>`;}).join("");
+      return head+cells+`<text x="450" y="480" fill="white" font-family="sans-serif">BBH finite corner weight ${a.finite.cornerWeight.toFixed(4)} · no quadrupole invariant</text></svg>\n`;
     }
     const a = result.analysis, grid = result.model.type === "qwz" ? result.model.parameters.grid : 0;
     const max = Math.max(1e-9, ...a.berryCurvature.map(Math.abs));

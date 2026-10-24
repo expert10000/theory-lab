@@ -165,6 +165,10 @@ export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
     "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["bands"],
     "Atlas A/B/M continuum bulk with declared C/D dispersion; lattice regularization, optional time-reversal-symmetric mixing and finite open ribbon. Source-attributed states and conditional inversion Z2.",
   ),
+  bbh: implementation(
+    "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["standard", "bands"],
+    "Bounded Atlas pi-flux four-band bulk and finite open square lattice. Stored midgap density shows finite-size corner localization only; no nested Wilson loop or quadrupole invariant is computed.",
+  ),
   hydrogenic: implementation(
     "packages/models/orbital.ts",
     ["orbital"],
