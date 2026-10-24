@@ -5,12 +5,13 @@ import { bandSceneFromResult } from "./bands";
 import { assertScene, decodeDataset, verifyScenePayload, type QuantumScene, type SceneObject, type ScenePayload } from "./index";
 
 export function supportsScene(operation: string, model: string): boolean {
-  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz", "bhz"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
+  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz", "bhz", "bhz_general"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
 }
 export async function sceneFromResult(result: QuantumResult, data: Uint8Array | null, resultSha256: string,
   digest: (bytes: Uint8Array) => Promise<string>): Promise<ScenePayload> {
   if (!supportsScene(result.operation, result.model.type)) throw new Error("This result has no QVIS-002 scene adapter");
   if(result.operation==="topology"&&result.model.type==="bhz")return bandSceneFromResult(result,resultSha256,digest);
+  if(result.operation==="topology"&&result.model.type==="bhz_general")return bandSceneFromResult(result,resultSha256,digest,"continuum");
   const scene: QuantumScene = {
     schema: "quantum-scene/v1", id: result.runId, title: `${result.model.type.replaceAll("_", " ")} · ${result.engine.name}`,
     provenance: { runId: result.runId, jobId: result.jobId, model: result.model.type, engine: result.engine.name,

@@ -151,6 +151,145 @@ def bhz_analysis(np, parameters):
             "meshResolved": resolved, **bands}
 
 
+def bhz_general_analysis(np, parameters):
+    """Atlas BHZ continuum plus a declared a=1 lattice/ribbon regularization.
+
+    The optional R term is an inversion- and time-reversal-symmetric extension:
+    R tau_x (sin(kx) s_x + sin(ky) s_y), with spin-major basis
+    (E+, H+, E-, H-). It is zero for the exact block-diagonal Atlas model.
+    """
+    a, b, c, d, mass, mixing = (parameters[key] for key in ("A", "B", "C", "D", "M", "R"))
+    grid, cells, edge_samples = (parameters[key] for key in ("grid", "edgeCells", "edgeSamples"))
+    extent = parameters["continuumExtent"]
+    if abs(mixing) > a / 2:
+        raise ValueError("BHZ spin mixing exceeds the bounded gap-preserving range")
+    tau_x = np.array([[0., 1.], [1., 0.]])
+    spin_z = np.diag([1., 1., -1., -1.])
+    spin_x = np.kron(np.array([[0., 1.], [1., 0.]]), np.eye(2))
+    spin_y = np.kron(np.array([[0., -1j], [1j, 0.]]), np.eye(2))
+
+    def matrix(kx, ky, continuum=False):
+        if continuum:
+            x, y, q2 = kx, ky, kx * kx + ky * ky
+        else:
+            x, y = np.sin(kx), np.sin(ky)
+            q2 = 2 * (2 - np.cos(kx) - np.cos(ky))
+        epsilon, z = c - d * q2, mass - b * q2
+        first = np.array([[epsilon + z, a * (x + 1j * y)],
+                          [a * (x - 1j * y), epsilon - z]], dtype=complex)
+        partner = np.array([[epsilon + z, a * (-x + 1j * y)],
+                            [a * (-x - 1j * y), epsilon - z]], dtype=complex)
+        off = mixing * (x - 1j * y) * tau_x
+        return np.block([[first, off], [off.conj().T, partner]])
+
+    lattice_k = (-np.pi + 2 * np.pi * np.arange(grid) / grid).tolist()
+    continuum_k = np.linspace(-extent, extent, grid).tolist()
+    lattice_bands = [[] for _ in range(4)]
+    continuum_bands = [[] for _ in range(4)]
+    sampled_gap = float("inf")
+    for i, kx in enumerate(lattice_k):
+        for ky in lattice_k:
+            energies = np.linalg.eigvalsh(matrix(kx, ky))
+            sampled_gap = min(sampled_gap, float(energies[2] - energies[1]))
+            for n in range(4):
+                lattice_bands[n].append(float(energies[n]))
+        for ky in continuum_k:
+            energies = np.linalg.eigvalsh(matrix(continuum_k[i], ky, True))
+            for n in range(4):
+                continuum_bands[n].append(float(energies[n]))
+
+    # The inversion eigenvalues at the four TRIM are fixed by M(k). The R term
+    # vanishes there; the two X/Y factors cancel in the Fu-Kane product.
+    masses = [mass, mass - 4 * b, mass - 4 * b, mass - 8 * b]
+    closed = any(abs(value) < 1e-9 for value in masses)
+    fine = -np.pi + 2 * np.pi * np.arange(2 * grid + 1) / (2 * grid + 1)
+    fine_gap = float("inf")
+    for kx in fine:
+        for ky in fine:
+            energies = np.linalg.eigvalsh(matrix(kx, ky))
+            fine_gap = min(fine_gap, float(energies[2] - energies[1]))
+    resolved = not closed and fine_gap > 0.02 and abs(fine_gap - sampled_gap) < 0.18
+    parity = [1 if value > 0 else -1 if value < 0 else 0 for value in masses]
+    z2 = int(np.prod(parity) < 0) if resolved else None
+
+    block_chern = partner_chern = None
+    if mixing == 0 and not closed:
+        block = np.empty((grid, grid, 2, 2), dtype=complex)
+        partner = np.empty_like(block)
+        for i, kx in enumerate(lattice_k):
+            for j, ky in enumerate(lattice_k):
+                h = matrix(kx, ky)
+                block[i, j], partner[i, j] = h[:2, :2], h[2:, 2:]
+        def chern(matrices):
+            _, vec = np.linalg.eigh(matrices)
+            occupied = vec[..., :, 0]
+            ux = np.sum(occupied.conj() * np.roll(occupied, -1, axis=0), axis=-1)
+            uy = np.sum(occupied.conj() * np.roll(occupied, -1, axis=1), axis=-1)
+            if min(float(np.min(abs(ux))), float(np.min(abs(uy)))) < 1e-10:
+                return None
+            ux, uy = ux / abs(ux), uy / abs(uy)
+            return int(round(float(np.sum(np.angle(ux * np.roll(uy, -1, axis=0) *
+                np.conj(np.roll(ux, -1, axis=1)) * np.conj(uy))) / (2 * np.pi))))
+        block_chern, partner_chern = chern(block), chern(partner)
+        if resolved and (block_chern is None or partner_chern != -block_chern or
+                         abs(block_chern) % 2 != z2):
+            resolved, z2 = False, None
+
+    # Store one full set of normalized complex bulk eigenvectors at an explicit
+    # off-TRIM momentum. Degenerate gauge choices are never used as invariants.
+    bulk_index = [min(grid - 1, grid // 2 + 2), min(grid - 1, grid // 2 + 1)]
+    bulk_k = [lattice_k[bulk_index[0]], lattice_k[bulk_index[1]]]
+    bulk_energy, bulk_vectors = np.linalg.eigh(matrix(*bulk_k))
+    def state(energy, vector, edge_weight=None):
+        spin = [float(np.real(np.vdot(vector, (np.kron(np.eye(cells), operator)
+                if edge_weight is not None else operator) @ vector))) for operator in
+                (spin_x, spin_y, spin_z)]
+        out = {"energy": float(energy), "spin": spin,
+               "amplitudes": [[float(v.real), float(v.imag)] for v in vector]}
+        if edge_weight is not None:
+            density = np.sum(abs(vector.reshape(cells, 4)) ** 2, axis=1)
+            out.update({"density": density.tolist(), "edgeWeight": float(edge_weight)})
+        return out
+    bulk_states = [state(energy, bulk_vectors[:, i]) for i, energy in enumerate(bulk_energy)]
+
+    edge_k = np.linspace(-np.pi, np.pi, edge_samples).tolist()
+    edge_energies, edge_weights = [], []
+    selected_edge_states = []
+    selected_index = edge_samples // 2 + 1
+    for index, kx in enumerate(edge_k):
+        zero = matrix(kx, 0.)
+        pi = matrix(kx, np.pi)
+        sine = (matrix(kx, np.pi / 2) - matrix(kx, -np.pi / 2)) / 2
+        onsite = (zero + pi) / 2
+        hopping = ((zero - pi) / 2 - 1j * sine) / 2
+        ribbon = np.zeros((4 * cells, 4 * cells), dtype=complex)
+        for cell in range(cells):
+            sl = slice(4 * cell, 4 * cell + 4)
+            ribbon[sl, sl] = onsite
+            if cell + 1 < cells:
+                nxt = slice(4 * (cell + 1), 4 * (cell + 2))
+                ribbon[sl, nxt], ribbon[nxt, sl] = hopping, hopping.conj().T
+        energies, vectors = np.linalg.eigh(ribbon)
+        weights = (abs(vectors[:8, :]) ** 2).sum(axis=0) + (abs(vectors[-8:, :]) ** 2).sum(axis=0)
+        edge_energies.append(energies.tolist())
+        edge_weights.append(weights.tolist())
+        if index == selected_index:
+            center = 2 * cells
+            selected_edge_states = [state(energies[n], vectors[:, n], weights[n])
+                                    for n in range(center - 2, center + 2)]
+
+    return {"kind": "bhz_general", "bulkGap": 0. if closed else fine_gap,
+            "sampledGap": sampled_gap, "gapClosed": closed, "meshResolved": resolved,
+            "z2": z2, "paritySigns": parity, "blockChern": block_chern,
+            "partnerChern": partner_chern, "latticeKValues": lattice_k,
+            "latticeBandEnergies": lattice_bands, "continuumKValues": continuum_k,
+            "continuumBandEnergies": continuum_bands,
+            "bulkStateK": bulk_k, "bulkStates": bulk_states,
+            "edge": {"kValues": edge_k, "energies": edge_energies,
+                     "weights": edge_weights, "selectedKIndex": selected_index,
+                     "states": selected_edge_states}}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -164,6 +303,8 @@ def solve(job):
         analysis = qwz_analysis(np, model["parameters"])
     elif model["type"] == "bhz":
         analysis = bhz_analysis(np, model["parameters"])
+    elif model["type"] == "bhz_general":
+        analysis = bhz_general_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,

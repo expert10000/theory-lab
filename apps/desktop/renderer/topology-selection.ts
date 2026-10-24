@@ -3,11 +3,13 @@ import type {TopologyResult} from "../../../packages/contracts";
 export type TopologySelection=
   | {kind:"ssh_band";runId:string;index:number}
   | {kind:"ssh_site";runId:string;index:number}
-  | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number};
+  | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number}
+  | {kind:"bhz_ribbon_state";runId:string;index:number};
 export type TopologySample=
   | {kind:"ssh_band";index:number;k:number;lower:number;upper:number}
   | {kind:"ssh_site";index:number;density:number}
-  | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null};
+  | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null}
+  | {kind:"bhz_ribbon_state";index:number;k:number;energy:number;edgeWeight:number;density:number[];spin:number[];amplitudes:[number,number][]};
 export interface TopologyRunContext {
   result:TopologyResult;
   selection:TopologySelection|null;
@@ -34,6 +36,12 @@ export function selectedTopologySample(selection:TopologySelection|null,result:T
     const lower=analysis.lowerBand?.[index]??null,upper=analysis.upperBand?.[index]??null;
     return Number.isFinite(curvature)&&(lower===null||Number.isFinite(lower))&&(upper===null||Number.isFinite(upper))?
       {kind:"qwz_cell",xIndex,yIndex,curvature,lower,upper}:null;
+  }
+  if(result.model.type==="bhz_general"&&analysis.kind==="bhz_general"&&selection.kind==="bhz_ribbon_state"){
+    const index=selection.index,state=analysis.edge.states[index];
+    if(!Number.isInteger(index)||index<0||index>=analysis.edge.states.length||!state)return null;
+    return {kind:"bhz_ribbon_state",index,k:analysis.edge.kValues[analysis.edge.selectedKIndex],
+      energy:state.energy,edgeWeight:state.edgeWeight,density:state.density,spin:state.spin,amplitudes:state.amplitudes};
   }
   return null;
 }

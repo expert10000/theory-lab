@@ -4,6 +4,7 @@ import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../atlas";
 export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
 export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   modelId: "ssh", t1: "0.6", t2: "1", cells: "16", kPoints: "101", mass: "-1", grid: "21",
+  A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -13,7 +14,7 @@ function numeric(raw: string, minimum: number, maximum: number, integer = false)
   return value;
 }
 export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
-  const entry = atlasEntry(draft.modelId)!;
+  const entry = atlasEntry(draft.modelId === "bhz_general" ? "bhz" : draft.modelId)!;
   const source = { sourceRepository: `${ATLAS_SOURCE}/tree/${ATLAS_REVISION}`,
     sourceModule: `data/hamiltonian_atlas/${entry.sourceFile}`, volume: "VIII", exampleId: `Atlas ${draft.modelId}` };
   if (draft.modelId === "ssh") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
@@ -21,6 +22,15 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
       cells: numeric(draft.cells, 4, 40, true), kPoints: numeric(draft.kPoints, 21, 201, true) }, source } };
   if (draft.modelId === "bhz") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "bhz", parameters: { mass: numeric(draft.mass, -2, 10), grid: numeric(draft.grid, 11, 21, true) }, source } };
+  if (draft.modelId === "bhz_general") {
+    const A=numeric(draft.A??"1",.25,2),R=numeric(draft.R??"0",-.5,.5);
+    if(Math.abs(R)>A/2)throw new Error("BHZ spin mixing must satisfy |R| ≤ A/2");
+    return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",model:{type:"bhz_general",source,
+      parameters:{A,B:numeric(draft.B??"1",.25,2),C:numeric(draft.C??"0",-2,2),D:numeric(draft.D??"0",-1,1),
+        M:numeric(draft.mass,-4,16),R,grid:numeric(draft.grid,11,21,true),
+        edgeCells:numeric(draft.edgeCells??"12",8,16,true),edgeSamples:numeric(draft.edgeSamples??"15",11,21,true),
+        continuumExtent:numeric(draft.continuumExtent??"1",.5,2)}}};
+  }
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
 }
@@ -90,6 +100,52 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
       a.meshResolved===(a.blockChern===expected&&a.partnerChern===-a.blockChern)&&
       a.z2===(a.meshResolved?Math.abs(a.blockChern)%2:null);
   }
+  if(job.model.type==="bhz_general"&&a.kind==="bhz_general"){
+    const p=job.model.parameters,g=p.grid,n=4*p.edgeCells,m=p.edgeSamples;
+    if(Math.abs(p.R)>p.A/2||a.latticeKValues.length!==g||a.continuumKValues.length!==g||
+      a.latticeBandEnergies.length!==4||a.continuumBandEnergies.length!==4||
+      [...a.latticeBandEnergies,...a.continuumBandEnergies].some(row=>row.length!==g*g||row.some(v=>!Number.isFinite(v)))||
+      a.edge.kValues.length!==m||a.edge.energies.length!==m||a.edge.weights.length!==m||
+      a.edge.energies.some(row=>row.length!==n||row.some(v=>!Number.isFinite(v)))||
+      a.edge.weights.some(row=>row.length!==n||row.some(v=>!Number.isFinite(v)||v<0||v>1.000001))||
+      a.bulkStates.length!==4||a.edge.states.length!==4)return false;
+    const trim=[p.M,p.M-4*p.B,p.M-4*p.B,p.M-8*p.B],parity=trim.map(v=>v>1e-9?1:v< -1e-9?-1:0),closed=parity.includes(0);
+    if(a.gapClosed!==closed||a.paritySigns.length!==4||a.paritySigns.some((v,i)=>v!==parity[i])||
+      (closed&&(a.bulkGap!==0||a.z2!==null||a.meshResolved))||
+      (!closed&&a.z2!==(a.meshResolved?Number(parity.reduce<number>((v,w)=>v*w,1)<0):null))||
+      (p.R!==0&&(a.blockChern!==null||a.partnerChern!==null))||
+      (p.R===0&&a.blockChern!==null&&a.partnerChern!==-a.blockChern))return false;
+    const stateOk=(state:{energy:number;spin:number[];amplitudes:[number,number][]},length:number)=>
+      Number.isFinite(state.energy)&&state.spin.length===3&&state.spin.every(v=>Number.isFinite(v)&&Math.abs(v)<=1.000001)&&
+      state.amplitudes.length===length&&state.amplitudes.every(pair=>pair.length===2&&pair.every(Number.isFinite))&&
+      Math.abs(state.amplitudes.reduce((sum,[re,im])=>sum+re*re+im*im,0)-1)<1e-6;
+    if(a.bulkStates.some(state=>!stateOk(state,4))||a.edge.states.some(state=>
+      !stateOk(state,n)||state.density.length!==p.edgeCells||state.density.some(v=>!Number.isFinite(v)||v<0)||
+      Math.abs(state.density.reduce((sum,v)=>sum+v,0)-1)>1e-6||
+      Math.abs(state.edgeWeight-state.density.slice(0,2).reduce((sum,v)=>sum+v,0)-
+        state.density.slice(-2).reduce((sum,v)=>sum+v,0))>1e-6))return false;
+    if(a.edge.selectedKIndex!==Math.floor(m/2)+1||
+      a.edge.states.some((state,i)=>Math.abs(state.energy-a.edge.energies[a.edge.selectedKIndex][2*p.edgeCells-2+i])>1e-7))return false;
+    let sampled=Infinity;
+    for(let i=0;i<g;i++)for(let j=0;j<g;j++){
+      const check=(domain:"lattice"|"continuum")=>{
+        const k=domain==="lattice"?a.latticeKValues:a.continuumKValues;
+        const x=domain==="lattice"?Math.sin(k[i]):k[i],y=domain==="lattice"?Math.sin(k[j]):k[j];
+        const q2=domain==="lattice"?2*(2-Math.cos(k[i])-Math.cos(k[j])):k[i]*k[i]+k[j]*k[j];
+        const epsilon=p.C-p.D*q2,energy=Math.hypot(p.M-p.B*q2,Math.hypot(p.A,p.R)*Math.hypot(x,y));
+        const bands=domain==="lattice"?a.latticeBandEnergies:a.continuumBandEnergies;
+        const expected=[epsilon-energy,epsilon-energy,epsilon+energy,epsilon+energy];
+        if(domain==="lattice")sampled=Math.min(sampled,2*energy);
+        return expected.every((value,band)=>Math.abs(bands[band][i*g+j]-value)<1e-8);
+      };
+      if(!check("lattice")||!check("continuum"))return false;
+    }
+    if(Math.abs(a.sampledGap-sampled)>1e-8||!Number.isFinite(a.bulkGap)||a.bulkGap<0||
+      (!closed&&a.bulkGap>a.sampledGap+1e-7))return false;
+    return a.latticeKValues.every((value,i)=>Math.abs(value-(-Math.PI+2*Math.PI*i/g))<1e-10)&&
+      a.continuumKValues.every((value,i)=>Math.abs(value-(-p.continuumExtent+2*p.continuumExtent*i/(g-1)))<1e-10)&&
+      a.edge.kValues.every((value,i)=>Math.abs(value-(-Math.PI+2*Math.PI*i/(m-1)))<1e-10);
+  }
   return false;
 }
 
@@ -124,7 +180,7 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
         typeof a.meshResolved !== "boolean" || !phase(a.chern) || !phase(a.latticeChern) ||
         !phase(a.analyticChern) || !(a.chernIntegral === null || finite(a.chernIntegral)) ||
         !numericArray(a.berryCurvature, a.gapClosed ? 0 : grid * grid)) return false;
-  } else {
+  } else if(job.model.type==="bhz") {
     const {grid}=job.model.parameters;
     const phase=(item:unknown)=>item===null||item===-1||item===0||item===1;
     if(a.kind!=="bhz"||!finite(a.bulkGap)||a.bulkGap<0||!finite(a.sampledGap)||a.sampledGap<0||
@@ -133,6 +189,19 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !(a.z2===null||a.z2===0||a.z2===1)||!numericArray(a.bandKValues,grid)||
        !Array.isArray(a.bandEnergies)||a.bandEnergies.length!==4||
        !a.bandEnergies.every((item:unknown)=>numericArray(item,grid*grid)))return false;
+  } else {
+    const p=job.model.parameters,g=p.grid,n=4*p.edgeCells,m=p.edgeSamples;
+    if(a.kind!=="bhz_general"||!finite(a.bulkGap)||a.bulkGap<0||!finite(a.sampledGap)||a.sampledGap<0||
+       typeof a.gapClosed!=="boolean"||typeof a.meshResolved!=="boolean"||
+       !(a.z2===null||a.z2===0||a.z2===1)||!numericArray(a.paritySigns,4)||
+       !(a.blockChern===null||finite(a.blockChern))||!(a.partnerChern===null||finite(a.partnerChern))||
+       !numericArray(a.latticeKValues,g)||!numericArray(a.continuumKValues,g)||
+       !Array.isArray(a.latticeBandEnergies)||!Array.isArray(a.continuumBandEnergies)||
+       ![...a.latticeBandEnergies,...a.continuumBandEnergies].every(row=>numericArray(row,g*g))||
+       !numericArray(a.bulkStateK,2)||!Array.isArray(a.bulkStates)||a.bulkStates.length!==4||
+       !record(a.edge)||!numericArray(a.edge.kValues,m)||!Array.isArray(a.edge.energies)||
+       !Array.isArray(a.edge.weights)||!a.edge.energies.every(row=>numericArray(row,n))||
+       !a.edge.weights.every(row=>numericArray(row,n))||!Array.isArray(a.edge.states)||a.edge.states.length!==4)return false;
   }
   return consistentTopologyResult(job, value as unknown as TopologyResult);
 }

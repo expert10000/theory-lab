@@ -116,8 +116,8 @@ export class WorkerSupervisor extends EventEmitter {
       while ((end = buffer.indexOf("\n")) >= 0) {
         const line = buffer.slice(0, end);
         buffer = buffer.slice(end + 1);
-        if (line.length > 65536) {
-          this.fail("Worker response exceeded 64 KiB");
+        if (line.length > 262144) {
+          this.fail("Worker response exceeded 256 KiB");
           return;
         }
         try {
@@ -148,7 +148,7 @@ export class WorkerSupervisor extends EventEmitter {
           return;
         }
       }
-      if (buffer.length > 65536) this.fail("Worker response exceeded 64 KiB");
+      if (buffer.length > 262144) this.fail("Worker response exceeded 256 KiB");
     });
     try {
       const hello = (await this.request("hello")) as { protocol: number };

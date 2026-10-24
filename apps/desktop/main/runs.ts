@@ -438,7 +438,7 @@ export class RunStore {
   async topology(runId:string):Promise<TopologyResult>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="topology"||result.operation!=="topology"||
-      !["ssh","qwz","bhz"].includes(result.model.type)||data!==null||
+      !["ssh","qwz","bhz","bhz_general"].includes(result.model.type)||data!==null||
       manifest.operation!=="topology"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!==null||manifest.artifactSha256!==null||
@@ -579,6 +579,11 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       "", "site,midgap_pair_density", ...a.edgeDensity.map((v, i) => `${i},${v}`)].join("\n") + "\n";
     if (a.kind === "bhz") return ["kx_index,ky_index,block_occupied,partner_occupied,block_empty,partner_empty",
       ...a.bandEnergies[0].map((_,i)=>`${Math.floor(i/a.bandKValues.length)},${i%a.bandKValues.length},${a.bandEnergies.map(b=>b[i]).join(",")}`)].join("\n")+"\n";
+    if (a.kind === "bhz_general") return ["domain,kx_index,ky_index,band_0,band_1,band_2,band_3",
+      ...a.latticeBandEnergies[0].map((_,i)=>`lattice,${Math.floor(i/a.latticeKValues.length)},${i%a.latticeKValues.length},${a.latticeBandEnergies.map(b=>b[i]).join(",")}`),
+      ...a.continuumBandEnergies[0].map((_,i)=>`continuum,${Math.floor(i/a.continuumKValues.length)},${i%a.continuumKValues.length},${a.continuumBandEnergies.map(b=>b[i]).join(",")}`),
+      "", "edge_k_index,state_index,energy,edge_weight",
+      ...a.edge.energies.flatMap((row,i)=>row.map((value,j)=>`${i},${j},${value},${a.edge.weights[i][j]}`))].join("\n")+"\n";
     const grid = result.model.type === "qwz" ? result.model.parameters.grid : 1;
     return ["kx_index,ky_index,berry_curvature", ...a.berryCurvature.map((v, i) => `${Math.floor(i / grid)},${i % grid},${v}`)].join("\n") + "\n";
   }
@@ -652,6 +657,13 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
         return `<rect x="${70+x*350/grid}" y="${90+y*350/grid}" width="${351/grid}" height="${351/grid}" fill="rgb(60,${intensity},180)"/>`;
       }).join("");
       return head+cells+`<text x="450" y="480" fill="white" font-family="sans-serif">BHZ spin-conserved Z2 ${a.z2??(a.gapClosed?"undefined":"unresolved")} · sampled gap ${a.sampledGap.toFixed(6)}</text></svg>\n`;
+    }
+    if (result.analysis.kind === "bhz_general") {
+      const a=result.analysis,grid=a.latticeKValues.length,energy=a.latticeBandEnergies[2];
+      const low=Math.min(...energy),high=Math.max(...energy),span=Math.max(1e-9,high-low);
+      const cells=energy.map((value,i)=>{const x=Math.floor(i/grid),y=i%grid,v=Math.floor(45+195*(value-low)/span);
+        return `<rect x="${70+x*350/grid}" y="${90+y*350/grid}" width="${351/grid}" height="${351/grid}" fill="rgb(60,${v},180)"/>`;}).join("");
+      return head+cells+`<text x="450" y="480" fill="white" font-family="sans-serif">BHZ Z2 ${a.z2??"unresolved"} · ribbon ${a.edge.kValues.length} k samples · gap ${a.bulkGap.toFixed(6)}</text></svg>\n`;
     }
     const a = result.analysis, grid = result.model.type === "qwz" ? result.model.parameters.grid : 0;
     const max = Math.max(1e-9, ...a.berryCurvature.map(Math.abs));

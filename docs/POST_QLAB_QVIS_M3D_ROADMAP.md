@@ -744,6 +744,16 @@ entry: no arbitrary coefficients, edge states, eigenvectors, spin mixing, or
 inferred band inversion. The historical QWZ/SSH v0.1 set remains unchanged;
 BBH, Kitaev, Weyl, nodal and Landau/Hall still need producer fixtures.
 
+**Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
+C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
+a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,
+finite-ribbon energies and outer-cell weights, and conditional inversion-parity
+Z₂. Saved runs and two `.qscene` views share one verified result hash. The
+legacy fixed BHZ run and the historical QWZ/SSH v0.1 set remain available.
+The finite ribbon and gauge-dependent eigenvectors are displayed as supplied,
+without claiming a material-specific edge phase or calculating physics in
+Math3D. Other Q08 families still require independent producers and fixtures.
+
 ```text
 feat(math3d-quantum): add topological Hamiltonian visualization
 ```

@@ -56,6 +56,41 @@ grid convergence diagnostic. The bulk gap is `2 min(|m+2|,|m|,|m−2|)`. At
 This is a 2D lattice model, not a 3D Weyl solver. Chapter 62 illustrative
 figure generators are not used as numerical validation. Tests cover SSH
 dimerization, edge splitting and gap closure; QWZ Chern phases, critical
-masses, mesh convergence and the 64 KiB worker protocol limit. Both labs use
+masses, mesh convergence and the then-64 KiB worker response limit. Both labs use
 the existing versioned job/result contracts, Electron supervisor, saved runs,
 CSV/SVG/manifest exports and workspace snapshots.
+
+## Atlas BHZ bulk and finite ribbon
+
+The additive `bhz_general` job evaluates the Atlas four-band continuum form
+`diag[h(k),h*(-k)]`, with `h(k)=(C-Dk²)I+A kx σx-A ky σy+(M-Bk²)σz`.
+It also computes a separately declared square-lattice regularization with
+`sin(k)` replacing linear momentum, `2(2-cos kx-cos ky)` replacing `k²`, and
+lattice spacing `a=1`. `R=0` is the exact block-diagonal Atlas form. The
+optional `R τx(kx sx+ky sy)` continuum term (and its sine-regularized lattice
+counterpart) mixes the time-reversed blocks while preserving inversion and
+time-reversal symmetries. Nonzero R is an explicit extension of the pinned
+block-diagonal Atlas formula.
+
+The bounded job stores four continuum bands, four lattice bands, normalized
+complex bulk eigenvectors at one declared momentum, a finite open-y ribbon's
+full energy/edge-weight samples, and four ribbon eigenvectors at a declared
+momentum. The ribbon is a finite sample, not a semi-infinite material edge.
+Complex eigenvector phases are gauge dependent; degenerate eigenbases must not
+be interpreted as uniquely resolved spin textures. The Fu–Kane inversion
+parity Z₂ is emitted only when the producer's gap and mesh checks resolve it.
+At a gap closure or unresolved mesh the value is null. Block Chern numbers are
+reported only when `R=0`.
+The reported bulk gap is a minimum direct band separation. The inspector also
+derives the indirect lattice energy gap from saved bands; a nonpositive value
+does not establish an insulating Fermi level even when the valence-band Z₂
+remains defined.
+
+Runs reopen by hash and export separate continuum and lattice/ribbon `.qscene`
+bundles with shared source-run SHA-256. The desktop and web accept A/B/C/D/M,
+bounded mixing, momentum grid, ribbon cells and samples. The desktop links a
+selected saved ribbon state to its stored density, spin and complex amplitudes.
+The original fixed-coefficient `bhz` job remains available for old runs.
+The supervisor bounds JSON-RPC responses at 256 KiB; incoming jobs retain
+their 64 KiB limit. Producer, schema, saved-run, scene and tamper tests cover
+the larger result.

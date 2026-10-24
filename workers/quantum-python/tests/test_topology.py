@@ -22,6 +22,14 @@ def bhz_job(mass, grid=21):
             {"mass": mass, "grid": grid}}}
 
 
+def general_bhz_job(mass=2, mixing=0, grid=11, **changes):
+    parameters = {"A": 1, "B": 1, "C": 0, "D": 0, "M": mass, "R": mixing,
+                  "grid": grid, "edgeCells": 8, "edgeSamples": 11, "continuumExtent": 1}
+    parameters.update(changes)
+    return {"schema": "quantum-job/v1", "jobId": "bhz-general-test", "operation": "topology",
+            "engine": "native", "model": {"type": "bhz_general", "parameters": parameters}}
+
+
 class SSHTests(unittest.TestCase):
     def test_topological_and_trivial_phases(self):
         top = solve(job(0.6, 1))["analysis"]
@@ -148,6 +156,74 @@ class BHZTests(unittest.TestCase):
         result["analysis"]["z2"] = 2
         with self.assertRaises(Exception):
             validate("quantum-result", result)
+
+
+class GeneralBHZTests(unittest.TestCase):
+    @staticmethod
+    def independent_matrix(kx, ky, p, continuum=False):
+        import numpy as np
+        sx = np.array([[0, 1], [1, 0]], complex)
+        sy = np.array([[0, -1j], [1j, 0]], complex)
+        sz = np.diag([1, -1]).astype(complex)
+        identity = np.eye(2, dtype=complex)
+        x, y = (kx, ky) if continuum else (np.sin(kx), np.sin(ky))
+        q2 = kx*kx+ky*ky if continuum else 2*(2-np.cos(kx)-np.cos(ky))
+        up = (p["C"]-p["D"]*q2)*identity+p["A"]*x*sx-p["A"]*y*sy+(p["M"]-p["B"]*q2)*sz
+        down = (p["C"]-p["D"]*q2)*identity-p["A"]*x*sx-p["A"]*y*sy+(p["M"]-p["B"]*q2)*sz
+        mix = p["R"]*(x-1j*y)*sx
+        return np.block([[up, mix], [mix.conj().T, down]])
+
+    def test_bulk_spectrum_eigenvectors_symmetries_and_ribbon_residual(self):
+        import numpy as np
+        p = general_bhz_job(mixing=.2, A=1.3, B=.8, C=.3, D=.2)["model"]["parameters"]
+        a = solve(general_bhz_job(mixing=.2, A=1.3, B=.8, C=.3, D=.2))["analysis"]
+        for domain in ("lattice", "continuum"):
+            ks = a[domain + "KValues"]
+            bands = a[domain + "BandEnergies"]
+            for i, j in ((0, 1), (3, 7), (10, 10)):
+                expected = np.linalg.eigvalsh(self.independent_matrix(ks[i], ks[j], p, domain=="continuum"))
+                np.testing.assert_allclose([band[i*len(ks)+j] for band in bands], expected, atol=1e-10)
+        time_reversal = np.kron(np.array([[0, 1], [-1, 0]], complex), np.eye(2))
+        inversion = np.kron(np.eye(2), np.diag([1, -1]))
+        for kx, ky in ((.4, .7), (1.2, -.8)):
+            h = self.independent_matrix(kx, ky, p)
+            np.testing.assert_allclose(h, h.conj().T, atol=1e-12)
+            np.testing.assert_allclose(time_reversal @ h.conj() @ time_reversal.conj().T,
+                                       self.independent_matrix(-kx, -ky, p), atol=1e-12)
+            np.testing.assert_allclose(inversion @ h @ inversion,
+                                       self.independent_matrix(-kx, -ky, p), atol=1e-12)
+        kx = a["edge"]["kValues"][a["edge"]["selectedKIndex"]]
+        h0 = self.independent_matrix(kx, 0, p)
+        hpi = self.independent_matrix(kx, np.pi, p)
+        hp = self.independent_matrix(kx, np.pi/2, p)
+        hm = self.independent_matrix(kx, -np.pi/2, p)
+        onsite = (h0+hpi)/2
+        hopping = (h0-hpi-1j*(hp-hm))/4
+        n = p["edgeCells"]
+        ribbon = np.kron(np.eye(n), onsite)+np.kron(np.diag(np.ones(n-1), 1), hopping)+np.kron(np.diag(np.ones(n-1), -1), hopping.conj().T)
+        for state in a["edge"]["states"]:
+            vector = np.array([complex(*pair) for pair in state["amplitudes"]])
+            self.assertLess(np.linalg.norm(ribbon@vector-state["energy"]*vector), 1e-10)
+            self.assertAlmostEqual(np.linalg.norm(vector), 1, places=10)
+
+    def test_phase_and_closure_and_protocol_limits(self):
+        import json
+        from quantum_worker.contracts import validate
+        for mass, expected in ((-1, 0), (2, 1), (6, 1), (9, 0)):
+            for mixing in (0, .2):
+                with self.subTest(mass=mass, mixing=mixing):
+                    a = solve(general_bhz_job(mass, mixing, 21))["analysis"]
+                    self.assertEqual(a["z2"], expected)
+                    self.assertTrue(a["meshResolved"])
+        for mass in (0, 4, 8):
+            a = solve(general_bhz_job(mass))["analysis"]
+            self.assertTrue(a["gapClosed"])
+            self.assertIsNone(a["z2"])
+        result = solve(general_bhz_job(2, .2, 21, edgeCells=16, edgeSamples=21))
+        self.assertLess(len(json.dumps({"jsonrpc":"2.0","id":"probe","result":result}).encode()), 262144)
+        validate("quantum-result", result)
+        with self.assertRaises(Exception):
+            validate("quantum-job", general_bhz_job(2, .9))
 
 
 if __name__ == "__main__":

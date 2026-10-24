@@ -310,7 +310,12 @@ export interface SSHModel { type: "ssh"; parameters: { t1: number; t2: number; c
 export interface QWZModel { type: "qwz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
 /** Square-lattice, spin-conserving BHZ slice: A=B=1, epsilon=0. */
 export interface BHZModel { type: "bhz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
-export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel }
+/** Atlas continuum BHZ plus an explicit lattice/ribbon regularization and optional TR-symmetric R term. */
+export interface BHZGeneralModel { type: "bhz_general"; parameters: {
+  A:number; B:number; C:number; D:number; M:number; R:number; grid:number;
+  edgeCells:number; edgeSamples:number; continuumExtent:number;
+}; source?: LayerOneSource }
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
   lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
@@ -328,10 +333,22 @@ export interface BHZAnalysis {
   expectedBlockChern: number | null; z2: 0 | 1 | null; meshResolved: boolean;
   bandKValues: number[]; bandEnergies: [number[], number[], number[], number[]];
 }
+export interface BHZGeneralState {energy:number;spin:[number,number,number];amplitudes:[number,number][]}
+export interface BHZGeneralEdgeState extends BHZGeneralState {density:number[];edgeWeight:number}
+export interface BHZGeneralAnalysis {
+  kind:"bhz_general"; bulkGap:number;sampledGap:number;gapClosed:boolean;meshResolved:boolean;
+  z2:0|1|null;paritySigns:[number,number,number,number];
+  blockChern:number|null;partnerChern:number|null;
+  latticeKValues:number[];latticeBandEnergies:[number[],number[],number[],number[]];
+  continuumKValues:number[];continuumBandEnergies:[number[],number[],number[],number[]];
+  bulkStateK:[number,number];bulkStates:[BHZGeneralState,BHZGeneralState,BHZGeneralState,BHZGeneralState];
+  edge:{kValues:number[];energies:number[][];weights:number[][];selectedKIndex:number;
+    states:[BHZGeneralEdgeState,BHZGeneralEdgeState,BHZGeneralEdgeState,BHZGeneralEdgeState]};
+}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
-  operation: "topology"; model: SSHModel | QWZModel | BHZModel;
-  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis;
+  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {

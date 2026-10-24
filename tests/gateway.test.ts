@@ -96,7 +96,7 @@ test("gateway serves verified evolution artifacts and rejects invalid binding", 
   }
 });
 
-test("gateway accepts bounded SSH/QWZ jobs with consistent saved results", async () => {
+test("gateway accepts bounded SSH/QWZ/BHZ jobs with consistent saved results", async () => {
   const dataDir = await mkdtemp(join(tmpdir(), "qlab-gateway-topology-"));
   const gateway = await startGateway({ root: process.cwd(), dataDir, webDir: join(process.cwd(), "dist", "web"), token, port: 0 });
   const endpoint = `${gateway.origin}/api/jobs`;
@@ -123,6 +123,14 @@ test("gateway accepts bounded SSH/QWZ jobs with consistent saved results", async
     const unresolvedResponse = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(unresolved) });
     assert.equal(unresolvedResponse.status, 200);
     assert.equal((await unresolvedResponse.json()).analysis.chern, null);
+    const bhz = topologyJob("web-bhz-general", { ...TOPOLOGY_DEFAULTS, modelId: "bhz_general", mass: "2", R: "0.2", grid: "21", edgeCells: "16", edgeSamples: "21" });
+    const bhzResponse = await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(bhz) });
+    assert.equal(bhzResponse.status, 200);
+    const bhzResult = await bhzResponse.json();
+    assert.equal(bhzResult.analysis.kind, "bhz_general");
+    assert.equal(bhzResult.analysis.z2, 1);
+    assert.equal(bhzResult.analysis.edge.states[0].amplitudes.length, 64);
+    assert.equal(bhzResult.model.source.exampleId, "Atlas bhz_general");
     const oversized = { ...qwz, model: { ...qwz.model, parameters: { mass: -1, grid: 1000 } } };
     assert.equal((await fetch(endpoint, { method: "POST", headers, body: JSON.stringify(oversized) })).status, 400);
     const saved = await fetch(`${gateway.origin}/api/runs`, { headers: { Authorization: `Bearer ${token}` } }).then(response => response.json());

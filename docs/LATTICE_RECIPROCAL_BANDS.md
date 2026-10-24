@@ -70,7 +70,8 @@ Optional `bands` metadata links k coordinates, ordered energies, objects, grid,
 units and reported bulk gap. TS/Python check shapes, ordering, geometry/energy
 agreement and adjacent-cell triangles; surfaces never connect periodic seams.
 Exports retain source hashes/parameters and reopen read-only without a worker.
-Maximum QWZ result sizes remain below the existing 64 KiB worker line budget.
+Maximum QWZ result sizes remain below 64 KiB. The supervisor now permits
+bounded BHZ responses up to 256 KiB; incoming jobs remain capped at 64 KiB.
 
 No new topology inference or periodic seam interpolation. No Math3D code or live
 application connection is part of any of these Lab-only milestones.

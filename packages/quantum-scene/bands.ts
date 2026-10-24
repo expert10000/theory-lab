@@ -8,6 +8,7 @@ export async function bandSceneFromResult(
   result: QuantumResult,
   resultSha256: string,
   digest: (bytes: Uint8Array) => Promise<string>,
+  domain: "lattice"|"continuum" = "lattice",
 ) {
   if (
     result.operation !== "topology" ||
@@ -25,12 +26,14 @@ export async function bandSceneFromResult(
     throw new Error("Bands require a verified topology result");
   const a = result.analysis,
     surface = a.kind !== "ssh",
-    values: number[][] = a.kind === "bhz" ? a.bandEnergies : [a.lowerBand ?? [], a.upperBand ?? []];
+    values: number[][] = a.kind === "bhz" ? a.bandEnergies : a.kind==="bhz_general"?
+      (domain==="continuum"?a.continuumBandEnergies:a.latticeBandEnergies):[a.lowerBand ?? [], a.upperBand ?? []];
   if (!values.every(v=>v.length>0) || (a.kind === "qwz" && !a.bandKValues))
     throw new Error(
       "This older QWZ run has no supplied band arrays. Re-run the QWZ laboratory with the updated worker.",
     );
-  const ks = a.kind === "ssh" ? a.kValues : a.bandKValues!,
+  const ks:number[] = a.kind === "ssh" ? a.kValues : a.kind==="bhz_general"?
+    (domain==="continuum"?a.continuumKValues:a.latticeKValues):a.bandKValues!,
     k = surface
       ? ks.flatMap((x) => ks.flatMap((y) => [x, y, 0]))
       : ks.flatMap((x) => [x, 0, 0]);
@@ -38,8 +41,10 @@ export async function bandSceneFromResult(
     unit = "normalized energy (hbar=1)";
   const scene: QuantumScene = {
     schema: surface ? "quantum-scene/v1" : "quantum-scene/v2",
-    id: result.runId.length<=94 ? `${result.runId}-bands` : `bands-${resultSha256.slice(0,32)}`,
-    title: `${a.kind.toUpperCase()} supplied energy bands`,
+    id: a.kind==="bhz_general"?
+      (result.runId.length<=75?`${result.runId}-${domain}-bands`:`bands-${resultSha256.slice(0,32)}-${domain}`):
+      (result.runId.length<=85?`${result.runId}-bands`:`bands-${resultSha256.slice(0,32)}`),
+    title: a.kind==="bhz_general"?`BHZ supplied ${domain} energy bands`:`${a.kind.toUpperCase()} supplied energy bands`,
     provenance: {
       kind: "numerical-result",
       runId: result.runId,
@@ -56,7 +61,7 @@ export async function bandSceneFromResult(
       handedness: "right",
       axes: surface ? ["kx", "ky", "energy"] : ["k", "energy", "display z"],
       units: surface
-        ? ["rad / lattice constant", "rad / lattice constant", unit]
+        ? [domain==="continuum"?"inverse length (a=1)":"rad / lattice constant",domain==="continuum"?"inverse length (a=1)":"rad / lattice constant",unit]
         : ["rad / cell spacing", unit, "dimensionless"],
     },
     camera: {
@@ -76,7 +81,9 @@ export async function bandSceneFromResult(
       },
       {
         id: "band-gap",
-        text: a.kind==="bhz" ? `Worker sampled bulk gap ${a.sampledGap.toPrecision(7)}; spin-conserved Z2 ${a.z2 ?? (a.gapClosed?"undefined":"unresolved")}. No edge-state inference.` : `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
+        text: a.kind==="bhz" ? `Worker sampled bulk gap ${a.sampledGap.toPrecision(7)}; spin-conserved Z2 ${a.z2 ?? (a.gapClosed?"undefined":"unresolved")}. No edge-state inference.` :
+          a.kind==="bhz_general"?`Atlas continuum and declared lattice regularization are separate views. Worker lattice Z2 ${a.z2??"unresolved"}; open-ribbon states are supplied only with the lattice view.`:
+          `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
         position: [0, 0, -height],
       },
     ],
@@ -97,7 +104,7 @@ export async function bandSceneFromResult(
       "band-k",
       k,
       3,
-      surface ? "rad / lattice constant" : "rad / cell spacing",
+      surface ? (domain==="continuum"?"inverse length (a=1)":"rad / lattice constant") : "rad / cell spacing",
     ),
     energies: string[] = [],
     objects: string[] = [],
@@ -118,7 +125,8 @@ export async function bandSceneFromResult(
   const indices = surface
     ? await b.data("band-triangles", triangles, 3, "vertex index")
     : undefined;
-  const labels=a.kind==="bhz"?["Block occupied","Partner occupied","Block empty","Partner empty"]:["Lower band","Upper band"];
+  const labels=a.kind==="bhz"?["Block occupied","Partner occupied","Block empty","Partner empty"]:
+    a.kind==="bhz_general"?["Occupied 1","Occupied 2","Empty 1","Empty 2"]:["Lower band","Upper band"];
   for (const [j, bandValues] of values.entries()) {
     const id = `band-${j}`,
       e = await b.data(`band-energy-${j}`, bandValues, 1, unit);
@@ -148,7 +156,8 @@ export async function bandSceneFromResult(
     objects,
     labels,
     energyUnit: unit,
-    bulkGap: a.bulkGap,
+    bulkGap: a.kind==="bhz_general"&&domain==="continuum"?
+      Math.min(...values[2].map((value,i)=>value-values[1][i])):a.bulkGap,
     ...(surface ? { grid: [ks.length, ks.length] as [number, number] } : {}),
   };
   if(a.kind==="bhz")scene.topology={quantities:[],invariants:[
@@ -159,14 +168,28 @@ export async function bandSceneFromResult(
     limitations:["Square-lattice regularization A=B=1, epsilon=0; spin blocks conserved.",
       "Only bulk bands and block invariants supplied; no edge states, spin mixing, or generic BHZ phase inference.",
       "Gap shown is the producer grid minimum, except an exact known high-symmetry closure is reported as zero."]};
-  if (surface)
+  if(a.kind==="bhz_general"){
+    scene.topology={quantities:[],invariants:[{id:"z2",label:"Inversion-parity Z2",value:a.z2,
+      status:a.gapClosed?"undefined":a.meshResolved?"verified":"unresolved",
+      method:"Producer Fu-Kane TRIM parity with dense-grid gap check; R term preserves time reversal and inversion"}],
+      limitations:["Continuum bulk and a=1 lattice regularization are separate supplied views.",
+        "Stored eigenvector phases are gauge-dependent; edge weights and spin expectations are producer values.",
+        "A finite open ribbon is not a semi-infinite boundary or a universal material prediction."]};
+    if(domain==="lattice"){
+      const samples=a.edge.kValues.flatMap((kx,i)=>a.edge.energies[i].map((energy,j)=>[kx,energy,a.edge.weights[i][j]]));
+      const edgePositions=await b.data("ribbon-spectrum",samples.flatMap(([kx,energy])=>[kx,0,energy]),3,"mixed k/energy display units");
+      const edgeWeights=await b.data("ribbon-edge-weight",samples.map(([, ,weight])=>weight),1,"probability in outer two cells per edge");
+      b.object("ribbon-states","Producer open-ribbon energies (color = outer-edge weight)","point-cloud",edgePositions,"#f2b36f",{scalars:edgeWeights});
+    }
+  }
+  if (surface&&domain==="lattice")
     await addReciprocalGuides(
       b,
       "square",
       "lattice constant a=1",
       "rad / lattice constant",
     );
-  else {
+  else if (!surface) {
     // The SSH worker samples k in [-π, π] for a unit cell spacing. This
     // adapter supplies the zone explicitly; consumers never infer it.
     const pi=Math.PI, kUnit="rad / cell spacing";

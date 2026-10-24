@@ -161,6 +161,10 @@ export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
     "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["bands"],
     "Bounded spin-conserving square-lattice BHZ with A=B=1 and epsilon=0; supplied four-band bulk grid and mesh-checked Z2 parity. No edge-state or spin-mixing claim.",
   ),
+  bhz_general: implementation(
+    "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["bands"],
+    "Atlas A/B/M continuum bulk with declared C/D dispersion; lattice regularization, optional time-reversal-symmetric mixing and finite open ribbon. Source-attributed states and conditional inversion Z2.",
+  ),
   hydrogenic: implementation(
     "packages/models/orbital.ts",
     ["orbital"],
