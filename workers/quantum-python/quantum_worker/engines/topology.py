@@ -290,6 +290,74 @@ def bhz_general_analysis(np, parameters):
                      "states": selected_edge_states}}
 
 
+def bbh_matrices(np, parameters):
+    """Atlas BBH pi-flux convention, with four anticommuting Hermitian Gamma matrices."""
+    sx = np.array([[0, 1], [1, 0]], dtype=complex)
+    sy = np.array([[0, -1j], [1j, 0]], dtype=complex)
+    sz = np.diag([1, -1]).astype(complex)
+    identity = np.eye(2, dtype=complex)
+    g1, g2, g3 = (-np.kron(sy, s) for s in (sx, sy, sz))
+    g4 = np.kron(sx, identity)
+    onsite = parameters["gammaX"] * g4 + parameters["gammaY"] * g2
+    tx = parameters["lambdaX"] * (g4 - 1j * g3) / 2
+    ty = parameters["lambdaY"] * (g2 - 1j * g1) / 2
+    return onsite, tx, ty
+
+
+def bbh_bulk_matrix(np, parameters, kx, ky):
+    onsite, tx, ty = bbh_matrices(np, parameters)
+    return onsite + np.exp(1j * kx) * tx + np.exp(-1j * kx) * tx.conj().T + \
+        np.exp(1j * ky) * ty + np.exp(-1j * ky) * ty.conj().T
+
+
+def bbh_open_matrix(np, parameters):
+    cells = parameters["cells"]
+    onsite, tx, ty = bbh_matrices(np, parameters)
+    matrix = np.zeros((4 * cells * cells, 4 * cells * cells), dtype=complex)
+    for x in range(cells):
+        for y in range(cells):
+            index = 4 * (x * cells + y)
+            matrix[index:index + 4, index:index + 4] = onsite
+            for dx, dy, hopping in ((1, 0, tx), (0, 1, ty)):
+                if x + dx < cells and y + dy < cells:
+                    other = 4 * ((x + dx) * cells + y + dy)
+                    matrix[other:other + 4, index:index + 4] = hopping
+                    matrix[index:index + 4, other:other + 4] = hopping.conj().T
+    return matrix
+
+
+def bbh_analysis(np, parameters):
+    """Periodic four-band samples and four finite open-lattice midgap states.
+
+    Corner density is an observation of this finite Hamiltonian, not a bulk
+    quadrupole invariant or an inferred phase label.
+    """
+    grid, cells = parameters["grid"], parameters["cells"]
+    k = -np.pi + 2 * np.pi * np.arange(grid) / grid
+    bands = [[] for _ in range(4)]
+    gap = float("inf")
+    for kx in k:
+        for ky in k:
+            energies = np.linalg.eigvalsh(bbh_bulk_matrix(np, parameters, kx, ky))
+            gap = min(gap, float(energies[2] - energies[1]))
+            for index, energy in enumerate(energies):
+                bands[index].append(float(energy))
+    energies, vectors = np.linalg.eigh(bbh_open_matrix(np, parameters))
+    middle = 2 * cells * cells
+    selected = list(range(middle - 2, middle + 2))
+    densities = []
+    for index in selected:
+        density = np.sum(abs(vectors[:, index].reshape(cells * cells, 4)) ** 2, axis=1)
+        densities.append(density)
+    average = np.mean(densities, axis=0)
+    corners = [0, cells - 1, cells * (cells - 1), cells * cells - 1]
+    return {"kind": "bbh", "bulkGap": gap, "bandKValues": k.tolist(),
+            "bandEnergies": bands, "finite": {"cells": cells,
+            "midgapEnergies": [float(energies[index]) for index in selected],
+            "midgapDensity": average.tolist(),
+            "cornerWeight": float(np.sum(average[corners]))}}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -305,6 +373,8 @@ def solve(job):
         analysis = bhz_analysis(np, model["parameters"])
     elif model["type"] == "bhz_general":
         analysis = bhz_general_analysis(np, model["parameters"])
+    elif model["type"] == "bbh":
+        analysis = bbh_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,

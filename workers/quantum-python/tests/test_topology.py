@@ -1,7 +1,44 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix
+
+
+class BBHTests(unittest.TestCase):
+    def test_bulk_clifford_spectrum_and_open_boundary(self):
+        import numpy as np
+        p = {"gammaX": .5, "lambdaX": 1, "gammaY": .5, "lambdaY": 1,
+             "grid": 11, "cells": 4}
+        for kx, ky in ((0, 0), (.37, -1.1), (np.pi, np.pi)):
+            h = bbh_bulk_matrix(np, p, kx, ky)
+            e = np.sqrt(abs(p["gammaX"] + np.exp(1j*kx))**2 +
+                        abs(p["gammaY"] + np.exp(1j*ky))**2)
+            self.assertTrue(np.allclose(h, h.conj().T))
+            self.assertTrue(np.allclose(np.linalg.eigvalsh(h), [-e, -e, e, e]))
+        finite = bbh_open_matrix(np, p)
+        self.assertEqual(finite.shape, (64, 64))
+        self.assertTrue(np.allclose(finite, finite.conj().T))
+        # No wrap hopping across either open boundary.
+        self.assertTrue(np.allclose(finite[:4, 4*12:4*13], 0))
+        self.assertTrue(np.allclose(finite[:4, 4*3:4*4], 0))
+        job = {"schema":"quantum-job/v1","jobId":"bbh-test","operation":"topology",
+               "engine":"native","model":{"type":"bbh","parameters":p}}
+        a = solve(job)["analysis"]
+        self.assertEqual(a["kind"], "bbh")
+        self.assertEqual(len(a["bandEnergies"]), 4)
+        self.assertEqual(len(a["bandEnergies"][0]), 121)
+        self.assertAlmostEqual(sum(a["finite"]["midgapDensity"]), 1)
+        self.assertGreater(a["finite"]["cornerWeight"], .5)
+
+    def test_finite_localization_is_parameter_dependent(self):
+        import numpy as np
+        base = {"gammaX":0,"lambdaX":1,"gammaY":0,"lambdaY":1,"grid":11,"cells":4}
+        corner = bbh_open_matrix(np, base)
+        energies = np.linalg.eigvalsh(corner)
+        self.assertTrue(np.allclose(energies[30:34], 0, atol=1e-10))
+        trivial = dict(base, gammaX=1.5, gammaY=1.5)
+        t = np.linalg.eigvalsh(bbh_open_matrix(np, trivial))
+        self.assertGreater(np.min(np.abs(t)), .1)
 
 
 def job(t1, t2, cells=16):
