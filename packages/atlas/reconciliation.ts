@@ -157,6 +157,10 @@ export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
     ["standard", "bands"],
     "Periodic two-band grid, supplied curvature/bands; unresolved mesh is not verified topology.",
   ),
+  bhz: implementation(
+    "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["bands"],
+    "Bounded spin-conserving square-lattice BHZ with A=B=1 and epsilon=0; supplied four-band bulk grid and mesh-checked Z2 parity. No edge-state or spin-mixing claim.",
+  ),
   hydrogenic: implementation(
     "packages/models/orbital.ts",
     ["orbital"],

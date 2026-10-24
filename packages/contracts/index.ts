@@ -308,7 +308,9 @@ export interface ManyBodyResult {
 }
 export interface SSHModel { type: "ssh"; parameters: { t1: number; t2: number; cells: number; kPoints: number }; source?: LayerOneSource }
 export interface QWZModel { type: "qwz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
-export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel }
+/** Square-lattice, spin-conserving BHZ slice: A=B=1, epsilon=0. */
+export interface BHZModel { type: "bhz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
   lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
@@ -320,10 +322,16 @@ export interface QWZAnalysis {
   chern: number | null; latticeChern: number | null; analyticChern: number | null;
   meshResolved: boolean; chernIntegral: number | null; berryCurvature: number[];
 }
+export interface BHZAnalysis {
+  kind: "bhz"; bulkGap: number; sampledGap: number; gapClosed: boolean;
+  blockChern: number | null; partnerChern: number | null;
+  expectedBlockChern: number | null; z2: 0 | 1 | null; meshResolved: boolean;
+  bandKValues: number[]; bandEnergies: [number[], number[], number[], number[]];
+}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
-  operation: "topology"; model: SSHModel | QWZModel;
-  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis;
+  operation: "topology"; model: SSHModel | QWZModel | BHZModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {

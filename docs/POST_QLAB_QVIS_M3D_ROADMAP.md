@@ -731,6 +731,19 @@ other quantum vector fields
 
 ## M3D-Q08
 
+**2026-10-24 producer-first BHZ extension:** Theory Lab now calculates a
+bounded spin-conserving four-band BHZ lattice slice with fixed `A=B=1` and
+`ε=0`, variable mass and an 11–21 point momentum grid. Independent worker
+tests compare its spectrum and time-reversal pairing with a separately
+assembled four-by-four Hamiltonian, check phase regions and exact closures,
+and reject out-of-bounds jobs. Saved results and verified `.qscene` export
+carry four bulk bands, a sampled gap, block Chern values, and a conditional
+spin-conserved Z₂ parity. Math3D has one pinned real-worker fixture and a
+read-only sample inspector. This is **Partial** toward the broader Atlas BHZ
+entry: no arbitrary coefficients, edge states, eigenvectors, spin mixing, or
+inferred band inversion. The historical QWZ/SSH v0.1 set remains unchanged;
+BBH, Kitaev, Weyl, nodal and Landau/Hall still need producer fixtures.
+
 ```text
 feat(math3d-quantum): add topological Hamiltonian visualization
 ```

@@ -9,7 +9,7 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
   return <div className="evolution-inspector topology-inspector">
     <p className="eyebrow">{result?.model.type.toUpperCase()??"TOPOLOGY"} RUN INSPECTOR</p>
     <h2>Stored topology result</h2>
-    {!result||!analysis?<p className="inspector-intro">Run SSH or QWZ to inspect recorded samples and diagnostics.</p>:<>
+    {!result||!analysis?<p className="inspector-intro">Run SSH, QWZ or BHZ to inspect recorded diagnostics.</p>:<>
       <p className="inspector-intro" data-testid="topology-inspector-state">{context.stale?"Edited draft · showing stored run":"Run inputs match the draft"}</p>
       <div className="inspector-section" data-testid="topology-inspector-inputs">
         <p className="eyebrow">IMMUTABLE RUN INPUTS</p>
@@ -19,7 +19,7 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
       </div>
       <div className="inspector-section" data-testid="topology-inspector-selection">
         <p className="eyebrow">EXACT-RUN SELECTION</p>
-        {!sample?<small>Select a stored band point, edge site or curvature cell; reopening does not invent a selection.</small>:sample.kind==="ssh_band"?<>
+        {!sample?<small>{analysis.kind==="bhz"?"The BHZ lab stores four bulk band grids. Open its verified scene to inspect exact band samples; this lab has no selected sample.":"Select a stored band point, edge site or curvature cell; reopening does not invent a selection."}</small>:sample.kind==="ssh_band"?<>
           <Value label="SSH band sample">{sample.index+1}</Value>
           <Value label="Stored k">{sample.k.toFixed(6)}</Value>
           <Value label="Lower band">{sample.lower.toFixed(6)}</Value>
@@ -43,6 +43,13 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
           <Value label="Edge pair energies">{analysis.edgeEnergies.map(value=>value.toFixed(6)).join(" / ")}</Value>
           <Value label="Exposed-site weight">{analysis.edgeWeight.toFixed(6)}</Value>
           <small>Open-chain edge diagnostics belong to the finite chain; winding belongs to the periodic bulk.</small>
+        </>:analysis.kind==="bhz"?<>
+          <Value label="Sampled gap">{analysis.sampledGap.toFixed(6)}</Value>
+          <Value label="Momentum grid">{analysis.bandKValues.length} × {analysis.bandKValues.length}</Value>
+          <Value label="Block Chern pair">{analysis.blockChern??"undefined"} / {analysis.partnerChern??"undefined"}</Value>
+          <Value label="Mass-sign reference">{analysis.expectedBlockChern??"undefined"}</Value>
+          <Value label="Spin-conserved Z₂">{analysis.z2??(analysis.gapClosed?"undefined":"unresolved")}</Value>
+          <small>Four stored bulk bands; no eigenvectors or edge states. Gap is sampled except known exact closures.</small>
         </>:<>
           <Value label="Sampled gap">{analysis.sampledGap.toFixed(6)}</Value>
           <Value label="Momentum grid">{result.model.type==="qwz"?`${result.model.parameters.grid} × ${result.model.parameters.grid}`:"—"}</Value>

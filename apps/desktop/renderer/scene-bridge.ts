@@ -19,6 +19,7 @@ export type SceneFocus={kind:"object";objectId:string;index:number}|{kind:"voxel
 export function availableSceneViews(result:QuantumResult):{standard:boolean;bands:boolean}{
   if(result.operation==="topology"){
     const analysis=result.analysis;
+    if(analysis.kind==="bhz")return {standard:true,bands:true};
     return {standard:result.model.type==="ssh"||analysis.kind==="qwz"&&!analysis.gapClosed,
       bands:!!analysis.lowerBand&&!!analysis.upperBand&&
         (analysis.kind==="ssh"||!!analysis.bandKValues)};

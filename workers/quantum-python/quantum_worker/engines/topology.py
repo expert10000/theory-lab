@@ -91,6 +91,66 @@ def qwz_analysis(np, parameters):
             "berryCurvature": curvature.ravel().tolist(), **bands}
 
 
+def bhz_analysis(np, parameters):
+    """Spin-conserving square-lattice BHZ regularization, A=B=1, epsilon=0.
+
+    h(k)=sin(kx) sigma_x - sin(ky) sigma_y +
+         [M-2(2-cos(kx)-cos(ky))] sigma_z; H=diag(h(k),h*(-k)).
+    This bounded slice does not model edges, spin mixing, or continuum k outside
+    the Brillouin zone. The Z2 parity is valid only for separated occupied bands.
+    """
+    mass, grid = parameters["mass"], parameters["grid"]
+    k = -np.pi + 2 * np.pi * np.arange(grid) / grid
+    kx, ky = np.meshgrid(k, k, indexing="ij")
+    dx, dy = np.sin(kx), -np.sin(ky)
+    dz = mass - 2 * (2 - np.cos(kx) - np.cos(ky))
+    energy = np.sqrt(dx * dx + dy * dy + dz * dz)
+    sampled_gap = float(2 * np.min(energy))
+    closed = min(abs(mass), abs(mass - 4), abs(mass - 8)) < 1e-10
+    bands = {"bandKValues": k.tolist(),
+             "bandEnergies": [(-energy).ravel().tolist(), (-energy).ravel().tolist(),
+                              energy.ravel().tolist(), energy.ravel().tolist()]}
+    if closed:
+        return {"kind": "bhz", "bulkGap": 0.0, "sampledGap": sampled_gap,
+                "gapClosed": True, "blockChern": None, "partnerChern": None,
+                "expectedBlockChern": None, "z2": None, "meshResolved": False, **bands}
+    block = np.empty((grid, grid, 2, 2), dtype=np.complex128)
+    block[..., 0, 0], block[..., 1, 1] = dz, -dz
+    block[..., 0, 1], block[..., 1, 0] = dx - 1j * dy, dx + 1j * dy
+    partner = np.empty_like(block)
+    partner[..., 0, 0], partner[..., 1, 1] = dz, -dz
+    # h*(-k) evaluated on the same mesh (do not infer the partner Chern by sign).
+    partner[..., 0, 1] = -dx - 1j * dy
+    partner[..., 1, 0] = -dx + 1j * dy
+    for matrix in (block, partner):
+        if not np.allclose(matrix, np.swapaxes(np.conj(matrix), -1, -2)):
+            raise ValueError("BHZ block is not Hermitian")
+
+    def lattice_chern(matrix):
+        _, vectors = np.linalg.eigh(matrix)
+        occupied = vectors[..., :, 0]
+        ux = np.sum(np.conj(occupied) * np.roll(occupied, -1, axis=0), axis=-1)
+        uy = np.sum(np.conj(occupied) * np.roll(occupied, -1, axis=1), axis=-1)
+        if min(float(np.min(abs(ux))), float(np.min(abs(uy)))) < 1e-10:
+            raise ValueError("BHZ momentum mesh crosses a singular link; refine the grid")
+        ux, uy = ux / abs(ux), uy / abs(uy)
+        plaquette = ux * np.roll(uy, -1, axis=0) * np.conj(np.roll(ux, -1, axis=1)) * np.conj(uy)
+        raw = float(np.sum(np.angle(plaquette)) / (2 * np.pi))
+        integer = int(round(raw))
+        if abs(raw - integer) > 1e-6:
+            raise ValueError("Nonintegral BHZ block Chern number")
+        return integer
+
+    first, second = lattice_chern(block), lattice_chern(partner)
+    # Independent Dirac-mass phase check: signs at Gamma, X/Y, and M.
+    expected = 1 if 0 < mass < 4 else -1 if 4 < mass < 8 else 0
+    resolved = first == expected and second == -first
+    return {"kind": "bhz", "bulkGap": sampled_gap, "sampledGap": sampled_gap,
+            "gapClosed": False, "blockChern": first, "partnerChern": second,
+            "expectedBlockChern": expected, "z2": abs(first) % 2 if resolved else None,
+            "meshResolved": resolved, **bands}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -102,6 +162,8 @@ def solve(job):
         analysis = ssh_analysis(np, model["parameters"])
     elif model["type"] == "qwz":
         analysis = qwz_analysis(np, model["parameters"])
+    elif model["type"] == "bhz":
+        analysis = bhz_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,

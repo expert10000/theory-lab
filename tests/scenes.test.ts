@@ -42,7 +42,7 @@ test("real saved SSH/QWZ results produce portable verified geometry, not inferre
         assert.equal(arrays.get("t2-bond-vertices")!.length / 12, result.model.type === "ssh" ? result.model.parameters.cells - 1 : 0);
         assert.equal(payload.scene.objects.find(o => o.id === "chain")!.visible, false);
         assert.deepEqual([...arrays.get("sublattice-A")!].filter((_, i) => i % 3 === 0), Array.from({length: aCellCount(result)}, (_, i) => 2 * i));
-      } else {
+      } else if(result.analysis.kind==="qwz") {
         assert.deepEqual([...arrays.get("curvature")!], result.analysis.berryCurvature);
         assert.equal(arrays.get("curvature-grid")![2], result.analysis.berryCurvature[0]);
         assert.ok(Math.abs(arrays.get("curvature-grid")![0] - (-Math.PI + Math.PI / 21)) < 1e-12);

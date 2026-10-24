@@ -128,6 +128,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `transmon` | packages/models/circuit.ts | circuit | native, scqubits | no | circuit | — |
 | `ssh` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `qwz` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
+| `bhz` | packages/models/topology.ts | topology | native | yes | topology | topology / bands |
 | `hydrogenic` | packages/models/orbital.ts | orbital | native | no | — | orbital / standard |
 
 - **anharmonic_oscillator**: D1: bounded m=1 confining quartic oscillator in a truncated harmonic Fock basis; reviewed eigenpairs, no automatic Atlas binding, web/scene/Math3D path or double-well scope.
@@ -147,6 +148,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 - **transmon**: Finite charge-basis spectrum with optional scqubits; no current Atlas binding or web compute form.
 - **ssh**: Finite open chain and supplied two-band path; gap closure gives undefined winding.
 - **qwz**: Periodic two-band grid, supplied curvature/bands; unresolved mesh is not verified topology.
+- **bhz**: Bounded spin-conserving square-lattice BHZ with A=B=1 and epsilon=0; supplied four-band bulk grid and mesh-checked Z2 parity. No edge-state or spin-mixing claim.
 - **hydrogenic**: Analytic single-electron Coulomb 1s–3d, infinite nuclear mass; no many-electron solver.
 
 ## Source-side programs, not Lab permissions

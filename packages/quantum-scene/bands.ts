@@ -22,12 +22,11 @@ export async function bandSceneFromResult(
       result,
     )
   )
-    throw new Error("Bands require a verified SSH/QWZ topology result");
+    throw new Error("Bands require a verified topology result");
   const a = result.analysis,
-    surface = a.kind === "qwz",
-    lower = a.lowerBand,
-    upper = a.upperBand;
-  if (!lower || !upper || (a.kind === "qwz" && !a.bandKValues))
+    surface = a.kind !== "ssh",
+    values: number[][] = a.kind === "bhz" ? a.bandEnergies : [a.lowerBand ?? [], a.upperBand ?? []];
+  if (!values.every(v=>v.length>0) || (a.kind === "qwz" && !a.bandKValues))
     throw new Error(
       "This older QWZ run has no supplied band arrays. Re-run the QWZ laboratory with the updated worker.",
     );
@@ -35,7 +34,7 @@ export async function bandSceneFromResult(
     k = surface
       ? ks.flatMap((x) => ks.flatMap((y) => [x, y, 0]))
       : ks.flatMap((x) => [x, 0, 0]);
-  const height = Math.max(1, ...upper.map(Math.abs)),
+  const height = Math.max(1, ...values[values.length-1].map(Math.abs)),
     unit = "normalized energy (hbar=1)";
   const scene: QuantumScene = {
     schema: surface ? "quantum-scene/v1" : "quantum-scene/v2",
@@ -77,7 +76,7 @@ export async function bandSceneFromResult(
       },
       {
         id: "band-gap",
-        text: `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
+        text: a.kind==="bhz" ? `Worker sampled bulk gap ${a.sampledGap.toPrecision(7)}; spin-conserved Z2 ${a.z2 ?? (a.gapClosed?"undefined":"unresolved")}. No edge-state inference.` : `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
         position: [0, 0, -height],
       },
     ],
@@ -119,12 +118,13 @@ export async function bandSceneFromResult(
   const indices = surface
     ? await b.data("band-triangles", triangles, 3, "vertex index")
     : undefined;
-  for (const [j, values] of [lower, upper].entries()) {
+  const labels=a.kind==="bhz"?["Block occupied","Partner occupied","Block empty","Partner empty"]:["Lower band","Upper band"];
+  for (const [j, bandValues] of values.entries()) {
     const id = `band-${j}`,
-      e = await b.data(`band-energy-${j}`, values, 1, unit);
+      e = await b.data(`band-energy-${j}`, bandValues, 1, unit);
     const positions = await b.data(
       `band-positions-${j}`,
-      values.flatMap((v, i) =>
+      bandValues.flatMap((v, i) =>
         surface ? [k[i * 3], k[i * 3 + 1], v] : [k[i * 3], v, 0],
       ),
       3,
@@ -132,10 +132,10 @@ export async function bandSceneFromResult(
     );
     b.object(
       id,
-      j === 0 ? "Lower band" : "Upper band",
+      labels[j],
       surface ? "mesh" : "polyline",
       positions,
-      j === 0 ? "#f2b36f" : "#79d9c1",
+      ["#f2b36f","#c994d7","#79d9c1","#7fa8ee"][j],
       { scalars: e, ...(indices ? { indices } : {}) },
     );
     energies.push(e);
@@ -146,11 +146,19 @@ export async function bandSceneFromResult(
     coordinates,
     energies,
     objects,
-    labels: ["Lower band", "Upper band"],
+    labels,
     energyUnit: unit,
     bulkGap: a.bulkGap,
     ...(surface ? { grid: [ks.length, ks.length] as [number, number] } : {}),
   };
+  if(a.kind==="bhz")scene.topology={quantities:[],invariants:[
+    {id:"spin-z2",label:"Spin-conserved Z2 parity",value:a.z2,status:a.gapClosed?"undefined":a.meshResolved?"verified":"unresolved",
+      method:"FHS occupied-block Chern parity, paired-block cancellation and independent Dirac-mass phase check"},
+    {id:"block-chern",label:"Occupied first-block Chern",value:a.blockChern,status:a.gapClosed?"undefined":"supplied",
+      method:"FHS lattice links on producer momentum mesh"}],
+    limitations:["Square-lattice regularization A=B=1, epsilon=0; spin blocks conserved.",
+      "Only bulk bands and block invariants supplied; no edge states, spin mixing, or generic BHZ phase inference.",
+      "Gap shown is the producer grid minimum, except an exact known high-symmetry closure is reported as zero."]};
   if (surface)
     await addReciprocalGuides(
       b,

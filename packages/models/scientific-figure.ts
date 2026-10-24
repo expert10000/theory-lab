@@ -24,11 +24,14 @@ export function figureSemantics(result:QuantumResult):Semantics{
   }
   if(result.operation==="orbital")return {axes:{x:axis("Radius","a₀"),y:axis("Radial probability density","a₀⁻¹")},
     series:series(["r²|R(r)|²"],"a₀⁻¹"),plottedSamples:result.analysis.radialRadii.length};
+  if(result.operation==="topology"&&result.analysis.kind==="bhz")return {
+    axes:{x:axis("kₓ","rad / lattice constant"),y:axis("kᵧ","rad / lattice constant")},
+    series:series(["BHZ supplied bulk bands"],"normalized"),plottedSamples:result.analysis.bandEnergies[0].length};
   if(result.operation==="topology")return result.analysis.kind==="ssh"?
     {axes:{x:axis("Crystal momentum k","radian"),y:axis("Band energy","normalized")},
       series:series(["Lower band","Upper band"],"normalized"),plottedSamples:result.analysis.kValues.length}:
     {axes:{x:axis("kₓ","radian"),y:axis("kᵧ","radian")},
-      series:series(["Berry curvature"],"dimensionless"),plottedSamples:result.analysis.berryCurvature.length};
+      series:series(["Berry curvature"],"dimensionless"),plottedSamples:result.analysis.kind==="qwz"?result.analysis.berryCurvature.length:0};
   if(result.operation==="sweep"){
     const x=result.sweep.x,y=result.sweep.y;
     return {axes:{x:axis(x.parameter,"normalized"),y:axis(y?y.parameter:"Final P₁",y?"normalized":"probability")},

@@ -38,7 +38,7 @@ export interface WorkspaceSnapshot {
     boundary: "open" | "periodic"; engine: ManyBodyWorkspaceEngine };
   circuit?: { EJ: string; EC: string; ng: string; ncut: string; levels: string;
     engine: CircuitWorkspaceEngine };
-  topology?: { modelId: "ssh" | "qwz"; t1: string; t2: string; cells: string; kPoints: string; mass: string; grid: string };
+  topology?: { modelId: "ssh" | "qwz" | "bhz"; t1: string; t2: string; cells: string; kPoints: string; mass: string; grid: string };
   orbital?: { n: string; l: string; m: string; basis: "complex" | "real_cos" | "real_sin"; Z: string; radius: string; grid: string };
   oscillator?: import("../models/oscillator").OscillatorDraft;
   oscillatorDynamics?: import("../models/oscillator-dynamics").OscillatorDynamicsDraft;
@@ -123,7 +123,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
     engine: { enum: ["scqubits", "native", "compare"] },
   }),
   topology: block(["modelId", "t1", "t2", "cells", "kPoints", "mass", "grid"], {
-    modelId: { enum: ["ssh", "qwz"] }, t1: shortText, t2: shortText,
+    modelId: { enum: ["ssh", "qwz", "bhz"] }, t1: shortText, t2: shortText,
     cells: shortText, kPoints: shortText, mass: shortText, grid: shortText,
   }),
   orbital: block(["n", "l", "m", "basis", "Z", "radius", "grid"], {
