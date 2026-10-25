@@ -116,3 +116,27 @@ Saved runs reopen with result-hash verification. Standard `.qscene` exports
 carry the finite-cell density; the bands view carries exact periodic samples.
 Both cite the same verified result SHA-256 and pinned Atlas source. Math3D
 reads them independently; it does not run a BBH solver.
+
+## Bounded Kitaev BdG bulk and finite open chain
+
+The `kitaev_chain` native job uses the pinned Atlas spinless nearest-neighbor
+model with real pairing. It computes the periodic two-band BdG Hamiltonian in
+the `(cₖ, c†₋ₖ)` Nambu basis and diagonalizes a separate finite open chain.
+The bounded inputs are chemical potential μ in −4…4, hopping t in 0.25…2,
+pairing Δ in 0.1…2, 8–40 open sites and 21–201 momentum samples. Energies
+use the same normalized scale; no superconducting material parameters are
+inferred.
+
+The result stores both sampled bands, the exact minimum bulk BdG gap on the
+continuous one-dimensional Brillouin zone, the sampled gap, and the two
+finite eigenenergies closest to zero. Site density averages the particle and
+hole probabilities of that finite pair. End weight sums the two exposed
+sites. The average avoids assigning a physical distinction to arbitrary
+rotations of a degenerate near-zero pair. End localization is a finite-size
+observation. The worker does **not** compute a winding or Z₂ invariant,
+Majorana operator, or protected phase label.
+
+Saved runs reopen with result-hash verification. Standard `.qscene` exports
+contain exact finite-site density; the bands view contains exact periodic
+momentum and energy samples. Both cite the same verified result SHA-256 and
+pinned Atlas source. Math3D displays them read-only and runs no BdG solver.

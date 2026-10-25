@@ -169,6 +169,10 @@ export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
     "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["standard", "bands"],
     "Bounded Atlas pi-flux four-band bulk and finite open square lattice. Stored midgap density shows finite-size corner localization only; no nested Wilson loop or quadrupole invariant is computed.",
   ),
+  kitaev_chain: implementation(
+    "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["standard", "bands"],
+    "Bounded real-pairing spinless nearest-neighbor BdG bands and finite open-chain near-zero pair density. End localization is a finite-chain observation; no topological invariant or Majorana classification is computed.",
+  ),
   hydrogenic: implementation(
     "packages/models/orbital.ts",
     ["orbital"],

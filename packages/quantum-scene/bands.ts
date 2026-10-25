@@ -25,14 +25,14 @@ export async function bandSceneFromResult(
   )
     throw new Error("Bands require a verified topology result");
   const a = result.analysis,
-    surface = a.kind !== "ssh",
+    surface = a.kind !== "ssh" && a.kind !== "kitaev_chain",
     values: number[][] = a.kind === "bhz" || a.kind==="bbh" ? a.bandEnergies : a.kind==="bhz_general"?
       (domain==="continuum"?a.continuumBandEnergies:a.latticeBandEnergies):[a.lowerBand ?? [], a.upperBand ?? []];
   if (!values.every(v=>v.length>0) || (a.kind === "qwz" && !a.bandKValues))
     throw new Error(
       "This older QWZ run has no supplied band arrays. Re-run the QWZ laboratory with the updated worker.",
     );
-  const ks:number[] = a.kind === "ssh" ? a.kValues : a.kind==="bhz_general"?
+  const ks:number[] = a.kind === "ssh" || a.kind === "kitaev_chain" ? a.kValues : a.kind==="bhz_general"?
     (domain==="continuum"?a.continuumKValues:a.latticeKValues):a.bandKValues!,
     k = surface
       ? ks.flatMap((x) => ks.flatMap((y) => [x, y, 0]))
@@ -84,6 +84,7 @@ export async function bandSceneFromResult(
         text: a.kind==="bhz" ? `Worker sampled bulk gap ${a.sampledGap.toPrecision(7)}; spin-conserved Z2 ${a.z2 ?? (a.gapClosed?"undefined":"unresolved")}. No edge-state inference.` :
           a.kind==="bhz_general"?`Atlas continuum and declared lattice regularization are separate views. Worker lattice Z2 ${a.z2??"unresolved"}; open-ribbon states are supplied only with the lattice view.`:
           a.kind==="bbh"?`BBH producer sampled bulk gap ${a.bulkGap.toPrecision(7)}. Finite corner density is in a separate saved view; no quadrupole invariant is supplied.`:
+          a.kind==="kitaev_chain"?`Kitaev producer bulk gap ${a.bulkGap.toPrecision(7)} (${a.gapClosed?"closed":"open"}); finite end-site density is a separate observation. No topological invariant is supplied.`:
           `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
         position: [0, 0, -height],
       },
@@ -201,9 +202,9 @@ export async function bandSceneFromResult(
       {id:"Xplus",label:"+π",position:[pi,0,0] as [number,number,number]},
     ];
     const pointObject=await b.data("symmetry-points",points.flatMap(p=>p.position),3,kUnit);
-    b.object("symmetry-points","SSH high-symmetry k-points","point-cloud",pointObject,"#f2b36f");
+    b.object("symmetry-points",`${a.kind.toUpperCase()} high-symmetry k-points`,"point-cloud",pointObject,"#f2b36f");
     const pathObject=await b.data("symmetry-path",points.flatMap(p=>p.position),3,kUnit);
-    b.object("symmetry-path","SSH supplied zone path","polyline",pathObject,"#f2b36f");
+    b.object("symmetry-path",`${a.kind.toUpperCase()} supplied zone path`,"polyline",pathObject,"#f2b36f");
     const boundaryObject=await b.data("primitive-bz",[-pi,0,0,pi,0,0],3,kUnit);
     b.object("primitive-bz","SSH Brillouin-zone endpoints","point-cloud",boundaryObject,"#79d9c1");
     const origin=await b.data("reciprocal-origin-0",[0,0,0],3,kUnit);
@@ -214,6 +215,29 @@ export async function bandSceneFromResult(
       paths:[{object:"symmetry-path",label:"−π → Γ → +π",points:points.map(p=>p.id)}],
       boundaryObjects:["primitive-bz"]};
   }
+  return b.finish();
+}
+
+/** Site-resolved average of the finite open-chain particle-hole pair. */
+export async function kitaevFiniteSceneFromResult(result:QuantumResult,resultSha256:string,
+  digest:(bytes:Uint8Array)=>Promise<string>){
+  if(result.operation!=="topology"||result.model.type!=="kitaev_chain"||result.analysis.kind!=="kitaev_chain"||
+    !consistentTopologyResult({schema:"quantum-job/v1",jobId:result.jobId,operation:"topology",engine:"native",model:result.model},result))
+    throw new Error("Finite Kitaev scene requires a verified source result");
+  const a=result.analysis,n=a.finite.cells,source=result.model.source;
+  const pinned=source?.sourceRepository?.match(/^(https:\/\/github\.com\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)\/tree\/([a-f0-9]{40})$/);
+  const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-kitaev-finite`,
+    title:"Kitaev finite open chain · near-zero pair site density",
+    provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:"kitaev_chain",engine:result.engine.name,
+      engineVersion:result.engine.version,computedAt:result.provenance.computedAt,resultSha256,adapter:"qvis/1",
+      parameters:{...result.model.parameters},...(pinned?{source:{repository:pinned[1],revision:pinned[2],entryId:"kitaev_chain"}}:{})},
+    coordinates:{handedness:"right",axes:["site index","display y","display z"],units:["site","dimensionless","dimensionless"]},
+    camera:{position:[(n-1)/2,-n*.45,n*.3],target:[(n-1)/2,0,0],up:[0,0,1]},datasets:[],objects:[],
+    annotations:[{id:"finite-status",text:`Mean end-site weight ${a.finite.endWeight.toPrecision(5)} from a finite open chain. Localization is an observation; no topological invariant computed.`,position:[0,0,0]}]};
+  const b=new SceneBuilder(scene,digest);
+  const positions=await b.data("chain-sites",a.finite.siteDensity.flatMap((_,i)=>[i,0,0]),3,"site");
+  const density=await b.data("near-zero-density",a.finite.siteDensity,1,"probability per site");
+  b.object("finite-end-sites","Mean particle-hole pair density per finite site","point-cloud",positions,"#f2b36f",{scalars:density});
   return b.finish();
 }
 

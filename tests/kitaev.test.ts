@@ -1,0 +1,57 @@
+import assert from "node:assert/strict";
+import {createHash} from "node:crypto";
+import {mkdtemp,rm,writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+import {test} from "node:test";
+import {WorkerSupervisor} from "../apps/desktop/main/worker";
+import {RunStore} from "../apps/desktop/main/runs";
+import {isQuantumResult} from "../packages/contracts";
+import {TOPOLOGY_DEFAULTS,isTopologyResponse,topologyJob} from "../packages/models/topology";
+import {readSceneBundle} from "../packages/quantum-scene/bundle";
+import {verifyScenePayload} from "../packages/quantum-scene";
+import {selectedTopologySample} from "../apps/desktop/renderer/topology-selection";
+
+const digest=async(bytes:Uint8Array)=>createHash("sha256").update(bytes).digest("hex");
+
+test("Kitaev saved bulk and finite scenes retain one verified source",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-kitaev-"));
+  const worker=new WorkerSupervisor(process.cwd());
+  const store=new RunStore(join(root,"runs"),join(root,"artifacts"));
+  try{
+    await worker.start();
+    const job=topologyJob("kitaev-source",{...TOPOLOGY_DEFAULTS,modelId:"kitaev_chain",cells:"16",kPoints:"101"});
+    const response=await worker.request("quantum.run",job);
+    assert.ok(isQuantumResult(response)&&response.operation==="topology"&&response.analysis.kind==="kitaev_chain");
+    assert.ok(isTopologyResponse(response,job));
+    assert.ok(response.analysis.finite.endWeight>.5);
+    const selection={kind:"kitaev_site" as const,runId:response.runId,index:0};
+    assert.equal(selectedTopologySample(selection,response)?.kind,"kitaev_site");
+    assert.equal(selectedTopologySample({...selection,runId:"run-other"},response),null);
+    await store.record(job,response);
+    assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),response);
+    const finite=await store.scene(response.runId,"standard"),bands=await store.scene(response.runId,"bands");
+    await verifyScenePayload(finite,digest);await verifyScenePayload(bands,digest);
+    assert.equal(finite.scene.provenance.resultSha256,bands.scene.provenance.resultSha256);
+    assert.equal(finite.scene.provenance.source?.entryId,"kitaev_chain");
+    assert.equal(finite.scene.objects[0].scalars,"near-zero-density");
+    assert.equal(bands.scene.bands?.kind,"path");
+    assert.equal(bands.scene.bands?.energies.length,2);
+    assert.ok(finite.scene.annotations[0].text.includes("no topological invariant"));
+    for(const view of ["standard","bands"] as const){
+      const dir=await store.exportScene(response.runId,root,view);
+      const opened=await readSceneBundle(dir);
+      assert.equal(opened.scene.provenance.resultSha256,finite.scene.provenance.resultSha256);
+    }
+    const corrupt=structuredClone(response);
+    if(corrupt.analysis.kind!=="kitaev_chain")throw new Error("Wrong analysis");
+    corrupt.analysis.finite.siteDensity[0]+=.1;
+    assert.equal(isTopologyResponse(corrupt,job),false);
+    const falseBand=structuredClone(response);
+    if(falseBand.analysis.kind!=="kitaev_chain")throw new Error("Wrong analysis");
+    falseBand.analysis.upperBand[20]+=.01;
+    assert.equal(isTopologyResponse(falseBand,job),false);
+    await writeFile(join(root,"runs",response.runId,"result.json"),"{}\n");
+    await assert.rejects(store.topology(response.runId),/integrity check/);
+  }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
+});

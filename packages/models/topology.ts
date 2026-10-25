@@ -6,6 +6,7 @@ export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   modelId: "ssh", t1: "0.6", t2: "1", cells: "16", kPoints: "101", mass: "-1", grid: "21",
   A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
   gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
+  mu:"0",hopping:"1",pairing:"0.8",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -37,6 +38,10 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
       lambdaX:numeric(draft.lambdaX??"1",.25,2),gammaY:numeric(draft.gammaY??"0.5",-2,2),
       lambdaY:numeric(draft.lambdaY??"1",.25,2),grid:numeric(draft.grid,11,21,true),
       cells:numeric(draft.cells,3,7,true)}}};
+  if (draft.modelId === "kitaev_chain") return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",
+    model:{type:"kitaev_chain",source,parameters:{mu:numeric(draft.mu??"0",-4,4),
+      hopping:numeric(draft.hopping??"1",.25,2),pairing:numeric(draft.pairing??"0.8",.1,2),
+      cells:numeric(draft.cells,8,40,true),kPoints:numeric(draft.kPoints,21,201,true)}}};
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
 }
@@ -45,6 +50,28 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   if (result.jobId !== job.jobId || JSON.stringify(result.model) !== JSON.stringify(job.model) ||
       result.analysis.kind !== job.model.type) return false;
   const a = result.analysis;
+  if(job.model.type==="kitaev_chain"&&a.kind==="kitaev_chain"){
+    const p=job.model.parameters,n=p.kPoints,d=a.finite;
+    if(a.kValues.length!==n||a.lowerBand.length!==n||a.upperBand.length!==n||
+      d.cells!==p.cells||d.nearZeroEnergies.length!==2||d.nearZeroEnergies.some(v=>!Number.isFinite(v))||
+      d.siteDensity.length!==p.cells||d.siteDensity.some(v=>!Number.isFinite(v)||v<0||v>1.000001)||
+      Math.abs(d.siteDensity.reduce((s,v)=>s+v,0)-1)>1e-6||
+      Math.abs(d.endWeight-d.siteDensity[0]-d.siteDensity[d.siteDensity.length-1])>1e-6||
+      Math.abs(d.nearZeroEnergies[0]+d.nearZeroEnergies[1])>1e-7)return false;
+    let sampled=Infinity;
+    for(let i=0;i<n;i++){
+      const k=-Math.PI+2*Math.PI*i/(n-1),e=Math.hypot(p.mu+2*p.hopping*Math.cos(k),2*p.pairing*Math.sin(k));
+      sampled=Math.min(sampled,2*e);
+      if(Math.abs(a.kValues[i]-k)>1e-10||Math.abs(a.lowerBand[i]+e)>1e-8||
+        Math.abs(a.upperBand[i]-e)>1e-8)return false;
+    }
+    const curvature=p.hopping*p.hopping-p.pairing*p.pairing;
+    const candidates=[-1,1];
+    if(curvature>0)candidates.push(Math.max(-1,Math.min(1,-p.mu*p.hopping/(2*curvature))));
+    const gap=2*Math.min(...candidates.map(x=>Math.hypot(p.mu+2*p.hopping*x,2*p.pairing*Math.sqrt(1-x*x))));
+    return Math.abs(a.bulkGap-gap)<1e-8&&Math.abs(a.sampledGap-sampled)<1e-8&&
+      a.gapClosed===(gap<1e-10);
+  }
   if(job.model.type==="bbh"&&a.kind==="bbh"){
     const p=job.model.parameters,g=p.grid,c=p.cells,d=a.finite;
     if(a.bandKValues.length!==g||a.bandEnergies.length!==4||
@@ -219,6 +246,13 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !(a.z2===null||a.z2===0||a.z2===1)||!numericArray(a.bandKValues,grid)||
        !Array.isArray(a.bandEnergies)||a.bandEnergies.length!==4||
        !a.bandEnergies.every((item:unknown)=>numericArray(item,grid*grid)))return false;
+  } else if(job.model.type==="kitaev_chain"){
+    const {cells,kPoints}=job.model.parameters;
+    if(a.kind!=="kitaev_chain"||!finite(a.bulkGap)||!finite(a.sampledGap)||
+      typeof a.gapClosed!=="boolean"||!numericArray(a.kValues,kPoints)||
+      !numericArray(a.lowerBand,kPoints)||!numericArray(a.upperBand,kPoints)||
+      !record(a.finite)||a.finite.cells!==cells||!numericArray(a.finite.nearZeroEnergies,2)||
+      !numericArray(a.finite.siteDensity,cells)||!finite(a.finite.endWeight))return false;
   } else if(job.model.type==="bbh"){
     const {grid,cells}=job.model.parameters;
     if(a.kind!=="bbh"||!finite(a.bulkGap)||!numericArray(a.bandKValues,grid)||

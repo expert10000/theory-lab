@@ -752,6 +752,16 @@ only a finite-system observation; no nested Wilson loop or quadrupole
 invariant is calculated. Math3D admission and fixture tests are tracked in
 its own Q08 audit. Kitaev, Weyl, nodal and Landau/Hall remain producer gaps.
 
+**2026-10-25 Kitaev producer extension:** The bounded spinless,
+real-pairing `kitaev_chain` job now saves periodic BdG bands and the
+normalized mean site density of a finite open-chain near-zero pair. Separate
+source-linked `.qscene` views share one verified result hash. The continuous
+bulk gap is checked separately from finite end weight. End localization is
+reported only as a finite-chain observation; no Z₂/winding invariant or
+Majorana classification is computed. Math3D consumer acceptance is tracked
+in its own Q08 audit. Weyl, nodal and Landau/Hall remain producer gaps; a
+validated BBH quadrupole invariant remains a separate milestone.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

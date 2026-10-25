@@ -9,7 +9,7 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
   return <div className="evolution-inspector topology-inspector">
     <p className="eyebrow">{result?.model.type.toUpperCase()??"TOPOLOGY"} RUN INSPECTOR</p>
     <h2>Stored topology result</h2>
-    {!result||!analysis?<p className="inspector-intro">Run SSH, QWZ, BHZ or BBH to inspect recorded diagnostics.</p>:<>
+    {!result||!analysis?<p className="inspector-intro">Run SSH, QWZ, BHZ, BBH or Kitaev to inspect recorded diagnostics.</p>:<>
       <p className="inspector-intro" data-testid="topology-inspector-state">{context.stale?"Edited draft · showing stored run":"Run inputs match the draft"}</p>
       <div className="inspector-section" data-testid="topology-inspector-inputs">
         <p className="eyebrow">IMMUTABLE RUN INPUTS</p>
@@ -19,7 +19,12 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
       </div>
       <div className="inspector-section" data-testid="topology-inspector-selection">
         <p className="eyebrow">EXACT-RUN SELECTION</p>
-        {!sample?<small>{analysis.kind==="bbh"?"Select a finite cell to inspect its stored mean midgap density.":analysis.kind==="bhz_general"?"Select one of the four stored ribbon eigenstates below. Reopening does not invent a selection.":analysis.kind==="bhz"?"Open the verified BHZ scene to inspect exact bulk samples.":"Select a stored band point, edge site or curvature cell; reopening does not invent a selection."}</small>:sample.kind==="ssh_band"?<>
+        {!sample?<small>{analysis.kind==="kitaev_chain"?"Select a saved momentum sample or finite site; reopening does not invent a selection.":analysis.kind==="bbh"?"Select a finite cell to inspect its stored mean midgap density.":analysis.kind==="bhz_general"?"Select one of the four stored ribbon eigenstates below. Reopening does not invent a selection.":analysis.kind==="bhz"?"Open the verified BHZ scene to inspect exact bulk samples.":"Select a stored band point, edge site or curvature cell; reopening does not invent a selection."}</small>:sample.kind==="kitaev_band"?<>
+          <Value label="BdG momentum sample">{sample.index+1}</Value><Value label="Stored k">{sample.k.toFixed(6)}</Value>
+          <Value label="Particle-hole bands">{sample.lower.toFixed(6)} / {sample.upper.toFixed(6)}</Value>
+        </>:sample.kind==="kitaev_site"?<>
+          <Value label="Finite site">{sample.index+1}</Value><Value label="Near-zero pair density"><span data-testid="topology-selected-value">{sample.density.toFixed(6)}</span></Value>
+        </>:sample.kind==="ssh_band"?<>
           <Value label="SSH band sample">{sample.index+1}</Value>
           <Value label="Stored k">{sample.k.toFixed(6)}</Value>
           <Value label="Lower band">{sample.lower.toFixed(6)}</Value>
@@ -60,6 +65,14 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
           <Value label="Mass-sign reference">{analysis.expectedBlockChern??"undefined"}</Value>
           <Value label="Spin-conserved Z₂">{analysis.z2??(analysis.gapClosed?"undefined":"unresolved")}</Value>
           <small>Four stored bulk bands; no eigenvectors or edge states. Gap is sampled except known exact closures.</small>
+        </>:analysis.kind==="kitaev_chain"?<>
+          <Value label="Sampled gap">{analysis.sampledGap.toFixed(6)}</Value>
+          <Value label="Bulk closure">{analysis.gapClosed?"yes":"no"}</Value>
+          <Value label="Band samples">{analysis.kValues.length}</Value>
+          <Value label="Open sites">{analysis.finite.cells}</Value>
+          <Value label="Finite pair energies">{analysis.finite.nearZeroEnergies.map(v=>v.toFixed(6)).join(" / ")}</Value>
+          <Value label="Mean end-site weight">{analysis.finite.endWeight.toFixed(6)}</Value>
+          <small>Finite-chain localization is an observation. No topological invariant or Majorana classification is stored.</small>
         </>:analysis.kind==="bbh"?<>
           <Value label="Periodic sampled gap">{analysis.bulkGap.toFixed(6)}</Value>
           <Value label="Bulk momentum grid">{analysis.bandKValues.length} × {analysis.bandKValues.length}</Value>
