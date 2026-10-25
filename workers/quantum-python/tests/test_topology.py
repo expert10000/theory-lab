@@ -1,7 +1,7 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, kitaev_bulk_matrix, kitaev_open_matrix
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix
 
 
 class KitaevChainTests(unittest.TestCase):
@@ -52,6 +52,55 @@ class KitaevChainTests(unittest.TestCase):
 
 
 class BBHTests(unittest.TestCase):
+    def test_nested_wilson_known_phases_and_grid_convergence(self):
+        import numpy as np
+        p = {"lambdaX": 1., "lambdaY": 1., "cells": 4, "grid": 11}
+        for gamma, expected in ((0., .5), (.5, .5), (1.5, 0.)):
+            values = []
+            for grid in (11, 21):
+                a = bbh_wilson_diagnostics(np, dict(p, gammaX=gamma, gammaY=gamma, grid=grid))
+                self.assertTrue(a["defined"])
+                self.assertGreater(a["bulkGapExact"], .1)
+                self.assertGreater(a["wannierGapX"], .01)
+                self.assertGreater(a["wannierGapY"], .01)
+                self.assertEqual(len(a["wannierX"][0]), grid)
+                for direction in ("nestedX", "nestedY"):
+                    np.testing.assert_allclose(a[direction], [expected, expected], atol=1e-8)
+                values.append(a["nestedX"][0])
+            self.assertAlmostEqual(values[0], values[1], places=7)
+
+    def test_local_occupied_u2_gauge_does_not_change_wilson_or_nested_values(self):
+        import numpy as np
+        p = {"gammaX": .5, "lambdaX": 1., "gammaY": .5, "lambdaY": 1.,
+             "cells": 4, "grid": 11}
+        def gauge(ix, iy):
+            angle = .19 * ix + .23 * iy
+            c, s = np.cos(angle), np.sin(angle)
+            rotation = np.array([[c, s], [-s, c]], dtype=complex)
+            return rotation @ np.diag(np.exp(1j * np.array([.31 * ix + .13 * iy,
+                                                             -.17 * ix + .29 * iy])))
+        reference = bbh_wilson_diagnostics(np, p)
+        changed = bbh_wilson_diagnostics(np, p, gauge)
+        for key in ("wannierX", "wannierY", "nestedX", "nestedY"):
+            np.testing.assert_allclose(changed[key], reference[key], atol=1e-10)
+        self.assertAlmostEqual(changed["wannierGapX"], reference["wannierGapX"], places=10)
+        self.assertAlmostEqual(changed["wannierGapY"], reference["wannierGapY"], places=10)
+
+    def test_closed_bulk_or_wannier_gap_has_no_sector_polarization(self):
+        import numpy as np
+        p = {"gammaX": 1., "lambdaX": 1., "gammaY": 1., "lambdaY": 1.,
+             "cells": 4, "grid": 11}
+        bulk = bbh_wilson_diagnostics(np, p)
+        self.assertAlmostEqual(bulk["bulkGapExact"], 0)
+        self.assertFalse(bulk["defined"])
+        self.assertEqual(bulk["nestedX"], [None, None])
+        p["gammaY"] = .5
+        wannier = bbh_wilson_diagnostics(np, p)
+        self.assertGreater(wannier["bulkGapExact"], .1)
+        self.assertLess(wannier["wannierGapY"], 1e-8)
+        self.assertFalse(wannier["defined"])
+        self.assertEqual(wannier["nestedY"], [None, None])
+
     def test_bulk_clifford_spectrum_and_open_boundary(self):
         import numpy as np
         p = {"gammaX": .5, "lambdaX": 1, "gammaY": .5, "lambdaY": 1,

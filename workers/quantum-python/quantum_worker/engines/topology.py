@@ -326,6 +326,80 @@ def bbh_open_matrix(np, parameters):
     return matrix
 
 
+def bbh_wilson_diagnostics(np, parameters, occupied_gauge=None):
+    """Two occupied-band Wilson loops and nested one-band sector polarizations.
+
+    The polar-decomposed overlap is unitary and covariant under an arbitrary
+    local U(2) rotation of the occupied frame. The periodic seam is included.
+    Sector labels use the signed Wilson eigenphase; an unresolved Wannier
+    gap suppresses polarization rather than assigning an arbitrary sector.
+    """
+    grid = parameters["grid"]
+    momenta = -np.pi + 2 * np.pi * np.arange(grid) / grid
+    occupied = {}
+    for ix, kx in enumerate(momenta):
+        for iy, ky in enumerate(momenta):
+            frame = np.linalg.eigh(bbh_bulk_matrix(np, parameters, kx, ky))[1][:, :2]
+            if occupied_gauge is not None:
+                frame = frame @ occupied_gauge(ix, iy)
+            occupied[ix, iy] = frame
+
+    weakest_link = 1.
+    def unitary_overlap(left, right):
+        nonlocal weakest_link
+        u, singular, vh = np.linalg.svd(left.conj().T @ right)
+        weakest_link = min(weakest_link, float(min(singular)))
+        return u @ vh
+
+    def direction(axis):
+        sectors = [[], []]
+        phases = [[], []]
+        separation = float("inf")
+        for transverse in range(grid):
+            frames = [occupied[step, transverse] if axis == "x" else occupied[transverse, step]
+                      for step in range(grid)]
+            loop = np.eye(2, dtype=complex)
+            for step in range(grid):
+                loop = loop @ unitary_overlap(frames[step], frames[(step + 1) % grid])
+            values, vectors = np.linalg.eig(loop)
+            centers = np.angle(values) / (2 * np.pi)
+            order = np.argsort(centers)
+            centers = centers[order]
+            delta = abs(centers[1] - centers[0])
+            separation = min(separation, float(min(delta, 1 - delta)))
+            for sector, column in enumerate(order):
+                phases[sector].append(float(centers[sector]))
+                sectors[sector].append(frames[0] @ vectors[:, column])
+        return phases, sectors, separation
+
+    x_phases, x_states, x_gap = direction("x")
+    y_phases, y_states, y_gap = direction("y")
+    exact_gap = 2 * np.hypot(abs(parameters["gammaX"]) - parameters["lambdaX"],
+                             abs(parameters["gammaY"]) - parameters["lambdaY"])
+    defined = bool(exact_gap > 1e-8 and min(x_gap, y_gap, weakest_link) > 1e-6)
+
+    def nested(states):
+        loop = 1 + 0j
+        for index in range(grid):
+            overlap = np.vdot(states[index], states[(index + 1) % grid])
+            if abs(overlap) < 1e-10:
+                return None
+            loop *= overlap / abs(overlap)
+        value = float((-np.angle(loop) / (2 * np.pi)) % 1)
+        return 0. if min(value, 1 - value) < 1e-9 else value
+
+    x_nested = [nested(states) if defined else None for states in x_states]
+    y_nested = [nested(states) if defined else None for states in y_states]
+    defined = defined and all(value is not None for value in x_nested + y_nested)
+    if not defined:
+        x_nested, y_nested = [None, None], [None, None]
+    return {"bulkGapExact": float(exact_gap),
+            "wannierGapX": float(x_gap), "wannierGapY": float(y_gap),
+            "minOccupiedLinkSingular": weakest_link,
+            "wannierX": x_phases, "wannierY": y_phases,
+            "nestedX": x_nested, "nestedY": y_nested, "defined": defined}
+
+
 def bbh_analysis(np, parameters):
     """Periodic four-band samples and four finite open-lattice midgap states.
 
