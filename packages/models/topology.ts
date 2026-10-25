@@ -65,6 +65,27 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
       if(Math.abs(a.kValues[i]-k)>1e-10||Math.abs(a.lowerBand[i]+e)>1e-8||
         Math.abs(a.upperBand[i]-e)>1e-8)return false;
     }
+    if(a.invariant){
+      const w=a.invariant,signs=[Math.sign(-p.mu-2*p.hopping),Math.sign(-p.mu+2*p.hopping)];
+      if(w.method!=="Pfaffian signs at k=0,pi; chiral q winding on sampled periodic mesh"||
+        w.curveX.length!==n||w.curveY.length!==n||w.pfaffianSigns[0]!==signs[0]||
+        w.pfaffianSigns[1]!==signs[1])return false;
+      let turns=0,maxStep=0;
+      for(let i=0;i<n;i++){
+        const x=-p.mu-2*p.hopping*Math.cos(a.kValues[i]),y=-2*p.pairing*Math.sin(a.kValues[i]);
+        if(Math.abs(w.curveX[i]-x)>1e-8||Math.abs(w.curveY[i]-y)>1e-8)return false;
+        if(i>0){const step=Math.atan2(y*w.curveX[i-1]-x*w.curveY[i-1],x*w.curveX[i-1]+y*w.curveY[i-1]);
+          turns+=step;maxStep=Math.max(maxStep,Math.abs(step));}
+      }
+      const closed=Math.abs(Math.abs(p.mu)-2*p.hopping)<1e-10;
+      if(closed){if(w.status!=="bulk-gap-closed"||w.parity!==null||w.winding!==null||w.maxPhaseStep!==null)return false;}
+      else {const parity=Number(signs[0]!==signs[1]),candidate=Math.round(turns/(2*Math.PI));
+        const resolved=Math.abs(turns/(2*Math.PI)-candidate)<1e-8&&maxStep<Math.PI/2&&
+          (candidate===0||candidate===1)&&candidate%2===parity;
+        if(w.parity!==parity||w.winding!==(resolved?candidate:null)||
+          w.status!==(resolved?"defined":"mesh-unresolved")||
+          w.maxPhaseStep===null||Math.abs(w.maxPhaseStep-maxStep)>1e-8)return false;}
+    }
     const curvature=p.hopping*p.hopping-p.pairing*p.pairing;
     const candidates=[-1,1];
     if(curvature>0)candidates.push(Math.max(-1,Math.min(1,-p.mu*p.hopping/(2*curvature))));
@@ -286,6 +307,13 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
       !numericArray(a.lowerBand,kPoints)||!numericArray(a.upperBand,kPoints)||
       !record(a.finite)||a.finite.cells!==cells||!numericArray(a.finite.nearZeroEnergies,2)||
       !numericArray(a.finite.siteDensity,cells)||!finite(a.finite.endWeight))return false;
+    if(a.invariant!==undefined){const w=a.invariant;
+      if(!record(w)||w.method!=="Pfaffian signs at k=0,pi; chiral q winding on sampled periodic mesh"||
+        !numericArray(w.pfaffianSigns,2)||!(w.parity===null||w.parity===0||w.parity===1)||
+        !(w.winding===null||w.winding===0||w.winding===1)||
+        !(typeof w.status==="string"&&["defined","bulk-gap-closed","mesh-unresolved"].includes(w.status))||
+        !(w.maxPhaseStep===null||finite(w.maxPhaseStep))||
+        !numericArray(w.curveX,kPoints)||!numericArray(w.curveY,kPoints))return false;}
   } else if(job.model.type==="bbh"){
     const {grid,cells}=job.model.parameters;
     if(a.kind!=="bbh"||!finite(a.bulkGap)||!numericArray(a.bandKValues,grid)||

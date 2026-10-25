@@ -14,7 +14,7 @@ import { consistentDampedOscillatorResult, checkDampedOscillatorData } from "../
 import { consistentAnharmonicResult } from "../../../packages/models/oscillator-anharmonic";
 import { consistentParametricResult, checkParametricData } from "../../../packages/models/oscillator-parametric";
 import { sceneFromResult, supportsScene } from "../../../packages/quantum-scene/from-result";
-import { bandSceneFromResult, bbhWilsonSceneFromResult } from "../../../packages/quantum-scene/bands";
+import { bandSceneFromResult, bbhWilsonSceneFromResult, kitaevInvariantSceneFromResult } from "../../../packages/quantum-scene/bands";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {makeSceneStream} from "../../../packages/quantum-scene/stream";
 import {scenePreview} from "../../../packages/quantum-scene/lod";
@@ -517,20 +517,21 @@ export class RunStore {
     await writeFile(join(directory,"metadata.json"),JSON.stringify(figureMetadata,null,2)+"\n",{flag:"wx"});
     return {directory,metadata:figureMetadata};
   }
-  async scene(runId: string, view: "standard"|"bands"|"wilson" = "standard") {
-    if(view!=="standard"&&view!=="bands"&&view!=="wilson") throw new Error("Unsupported scene view");
+  async scene(runId: string, view: "standard"|"bands"|"wilson"|"invariant" = "standard") {
+    if(view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant") throw new Error("Unsupported scene view");
     const { manifest, result, data } = await this.load(runId);
     if(view==="wilson") return bbhWilsonSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));
+    if(view==="invariant") return kitaevInvariantSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));
     if(view==="bands") return bandSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));
     return sceneFromResult(result, data, manifest.hashes.result, async bytes => sha(bytes));
   }
-  async exportScene(runId: string, parent: string, view?: "standard"|"bands"|"wilson",format:"regular"|"stream"="regular") {
+  async exportScene(runId: string, parent: string, view?: "standard"|"bands"|"wilson"|"invariant",format:"regular"|"stream"="regular") {
     if(format!=="regular"&&format!=="stream")throw new Error("Unsupported scene bundle format");
     const payload=await this.scene(runId,view);
     if(format==="stream"){const digest=async(bytes:Uint8Array)=>sha(bytes),preview=await scenePreview(payload,digest);return writeStreamBundle(await makeSceneStream([{label:"Coarse display subset",payload:preview},{label:"Full supplied samples",payload}],digest),parent);}
     return writeSceneBundle(payload, parent);
   }
-  async prepareSceneHandoff(runId:string,parent:string,view:"standard"|"bands"|"wilson",expectedResultHash:string):Promise<import("../../../packages/quantum-scene/handoff").SceneHandoffReceipt>{
+  async prepareSceneHandoff(runId:string,parent:string,view:"standard"|"bands"|"wilson"|"invariant",expectedResultHash:string):Promise<import("../../../packages/quantum-scene/handoff").SceneHandoffReceipt>{
     if(!/^[a-f0-9]{64}$/.test(expectedResultHash))throw new Error("Invalid expected scene source hash");
     const payload=await this.scene(runId,view);
     if(payload.scene.provenance.resultSha256!==expectedResultHash)throw new Error("Saved scene source changed after preview");

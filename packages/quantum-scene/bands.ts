@@ -84,7 +84,7 @@ export async function bandSceneFromResult(
         text: a.kind==="bhz" ? `Worker sampled bulk gap ${a.sampledGap.toPrecision(7)}; spin-conserved Z2 ${a.z2 ?? (a.gapClosed?"undefined":"unresolved")}. No edge-state inference.` :
           a.kind==="bhz_general"?`Atlas continuum and declared lattice regularization are separate views. Worker lattice Z2 ${a.z2??"unresolved"}; open-ribbon states are supplied only with the lattice view.`:
           a.kind==="bbh"?`BBH producer sampled bulk gap ${a.bulkGap.toPrecision(7)}. Finite corner density and occupied-Wilson diagnostics are separate saved views${a.wilson?`; quadrupole ${a.wilson.quadrupole??"undefined"} (${a.wilson.status})`:"; this older result has no Wilson data"}.`:
-          a.kind==="kitaev_chain"?`Kitaev producer bulk gap ${a.bulkGap.toPrecision(7)} (${a.gapClosed?"closed":"open"}); finite end-site density is a separate observation. No topological invariant is supplied.`:
+          a.kind==="kitaev_chain"?`Kitaev producer bulk gap ${a.bulkGap.toPrecision(7)} (${a.gapClosed?"closed":"open"}); finite end-site density is a separate observation. ${a.invariant?`Bulk Pfaffian parity ${a.invariant.parity??"undefined"}; winding ${a.invariant.winding??"undefined"} (${a.invariant.status}) in a separate diagnostic view.`:"This older result has no bulk invariant."}`:
           `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
         position: [0, 0, -height],
       },
@@ -233,11 +233,43 @@ export async function kitaevFiniteSceneFromResult(result:QuantumResult,resultSha
       parameters:{...result.model.parameters},...(pinned?{source:{repository:pinned[1],revision:pinned[2],entryId:"kitaev_chain"}}:{})},
     coordinates:{handedness:"right",axes:["site index","display y","display z"],units:["site","dimensionless","dimensionless"]},
     camera:{position:[(n-1)/2,-n*.45,n*.3],target:[(n-1)/2,0,0],up:[0,0,1]},datasets:[],objects:[],
-    annotations:[{id:"finite-status",text:`Mean end-site weight ${a.finite.endWeight.toPrecision(5)} from a finite open chain. Localization is an observation; no topological invariant computed.`,position:[0,0,0]}]};
+    annotations:[{id:"finite-status",text:`Mean end-site weight ${a.finite.endWeight.toPrecision(5)} from a finite open chain. Localization is a separate observation; ${a.invariant?"bulk invariant available in a separate diagnostic view":"this older result has no bulk invariant"}.`,position:[0,0,0]}]};
   const b=new SceneBuilder(scene,digest);
   const positions=await b.data("chain-sites",a.finite.siteDensity.flatMap((_,i)=>[i,0,0]),3,"site");
   const density=await b.data("near-zero-density",a.finite.siteDensity,1,"probability per site");
   b.object("finite-end-sites","Mean particle-hole pair density per finite site","point-cloud",positions,"#f2b36f",{scalars:density});
+  return b.finish();
+}
+
+/** Producer-supplied periodic BdG chiral curve and conditional invariant. */
+export async function kitaevInvariantSceneFromResult(result:QuantumResult,resultSha256:string,
+  digest:(bytes:Uint8Array)=>Promise<string>){
+  if(result.operation!=="topology"||result.model.type!=="kitaev_chain"||result.analysis.kind!=="kitaev_chain"||
+    !result.analysis.invariant||
+    !consistentTopologyResult({schema:"quantum-job/v1",jobId:result.jobId,operation:"topology",engine:"native",model:result.model},result))
+    throw new Error("Kitaev invariant scene requires a verified run with bulk invariant data");
+  const a=result.analysis,w=a.invariant,source=result.model.source;
+  if(!w)throw new Error("Kitaev invariant data unavailable in this saved run");
+  const pinned=source?.sourceRepository?.match(/^(https:\/\/github\.com\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)\/tree\/([a-f0-9]{40})$/);
+  const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-kitaev-invariant`,
+    title:"Kitaev bulk Pfaffian and real-pairing winding diagnostics",
+    provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:"kitaev_chain",engine:result.engine.name,
+      engineVersion:result.engine.version,computedAt:result.provenance.computedAt,resultSha256,adapter:"qvis/1",
+      parameters:{...result.model.parameters},...(pinned?{source:{repository:pinned[1],revision:pinned[2],entryId:"kitaev_chain"}}:{})},
+    coordinates:{handedness:"right",axes:["BdG xi","BdG pairing d_y","display z"],
+      units:["normalized energy (hbar=1)","normalized energy (hbar=1)","dimensionless"]},
+    camera:{position:[0,0,Math.max(6,4*result.model.parameters.hopping)],target:[0,0,0],up:[0,1,0]},datasets:[],objects:[],
+    annotations:[{id:"bulk-status",text:`Producer Pfaffian signs (${w.pfaffianSigns.join(", ")}); parity ${w.parity??"undefined"}; winding ${w.winding??"undefined"} (${w.status}). Exact bulk gap ${a.bulkGap.toPrecision(7)}. Finite end-site density is a separate observation.`,position:[0,0,0]}],
+    topology:{quantities:[],invariants:[
+      {id:"kitaev-pfaffian-parity",label:"Bulk Pfaffian parity",value:w.parity,status:w.parity===null?"undefined":"verified",method:"Producer signs of antisymmetric BdG matrix at k=0 and pi"},
+      {id:"kitaev-winding",label:"Real-pairing chiral winding",value:w.winding,status:w.status==="defined"?"verified":w.status==="mesh-unresolved"?"unresolved":"undefined",method:w.method}],
+      limitations:["Both bulk claims are undefined at a bulk gap closure; winding also requires a resolved mesh.",
+        "The curve joins producer samples for display; Math3D does not calculate the invariant.",
+        "Finite end localization is a separate saved observation, not an invariant input."]}};
+  const b=new SceneBuilder(scene,digest);
+  const positions=await b.data("bdg-chiral-curve",w.curveX.flatMap((x,i)=>[x,w.curveY[i],0]),3,"normalized energy (hbar=1)");
+  const momenta=await b.data("momentum-samples",a.kValues,1,"rad / cell spacing");
+  b.object("kitaev-bdg-curve","Supplied periodic BdG chiral curve","polyline",positions,"#79d9c1",{scalars:momenta});
   return b.finish();
 }
 

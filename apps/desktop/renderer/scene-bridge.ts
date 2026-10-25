@@ -3,7 +3,7 @@ import {supportsScene} from "../../../packages/quantum-scene/from-result";
 import type {ScenePayload} from "../../../packages/quantum-scene";
 import type {ScientificSelectionReference} from "./selection-reference";
 
-export type SceneView="standard"|"bands"|"wilson";
+export type SceneView="standard"|"bands"|"wilson"|"invariant";
 export type SceneSample=
   | {kind:"evolution_time";index:number}
   | {kind:"ssh_site";index:number}
@@ -16,15 +16,15 @@ export interface SceneLaunch {nonce:number;runId:string;view:SceneView;sample?:S
 export type SceneFocus={kind:"object";objectId:string;index:number}|{kind:"voxel";grid:[number,number,number]};
 
 /** UI capability only; main still verifies the saved result and generated scene. */
-export function availableSceneViews(result:QuantumResult):{standard:boolean;bands:boolean}{
+export function availableSceneViews(result:QuantumResult):{standard:boolean;bands:boolean;invariant:boolean}{
   if(result.operation==="topology"){
     const analysis=result.analysis;
-    if(analysis.kind==="bhz"||analysis.kind==="bhz_general"||analysis.kind==="bbh"||analysis.kind==="kitaev_chain")return {standard:true,bands:true};
+    if(analysis.kind==="bhz"||analysis.kind==="bhz_general"||analysis.kind==="bbh"||analysis.kind==="kitaev_chain")return {standard:true,bands:true,invariant:analysis.kind==="kitaev_chain"&&!!analysis.invariant};
     return {standard:result.model.type==="ssh"||analysis.kind==="qwz"&&!analysis.gapClosed,
       bands:!!analysis.lowerBand&&!!analysis.upperBand&&
-        (analysis.kind==="ssh"||!!analysis.bandKValues)};
+        (analysis.kind==="ssh"||!!analysis.bandKValues),invariant:false};
   }
-  return {standard:supportsScene(result.operation,result.model.type),bands:false};
+  return {standard:supportsScene(result.operation,result.model.type),bands:false,invariant:false};
 }
 
 /** Translate the common reference only for an exact compatible saved scene. */

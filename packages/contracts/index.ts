@@ -357,6 +357,10 @@ export interface BBHAnalysis {kind:"bbh";bulkGap:number;bandKValues:number[];
   finite:{cells:number;midgapEnergies:[number,number,number,number];midgapDensity:number[];cornerWeight:number}}
 export interface KitaevChainAnalysis {kind:"kitaev_chain";bulkGap:number;sampledGap:number;gapClosed:boolean;
   kValues:number[];lowerBand:number[];upperBand:number[];
+  invariant?:{method:"Pfaffian signs at k=0,pi; chiral q winding on sampled periodic mesh";
+    pfaffianSigns:[-1|0|1,-1|0|1];parity:0|1|null;winding:0|1|null;
+    status:"defined"|"bulk-gap-closed"|"mesh-unresolved";maxPhaseStep:number|null;
+    curveX:number[];curveY:number[]};
   finite:{cells:number;nearZeroEnergies:[number,number];siteDensity:number[];endWeight:number}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
@@ -621,10 +625,10 @@ export interface QuantumBridge {
   saveIsingStudy(result:import("./ising-study").IsingStudyResult):Promise<import("./ising-study").IsingStudyResult>;
   getIsingStudy(studyId:string):Promise<import("./ising-study").IsingStudyResult>;
   listIsingStudies():Promise<import("./ising-study").IsingStudySummary[]>;
-  getScene(runId: string, view?: "standard" | "bands" | "wilson"): Promise<import("../quantum-scene").ScenePayload>;
-  exportScene(runId: string, view?: "standard" | "bands" | "wilson", format?: "regular"|"stream"): Promise<string | null>;
-  prepareSceneHandoff(runId: string, view: "standard" | "bands" | "wilson", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
-  openInMath3D(runId: string, view: "standard" | "bands" | "wilson", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
+  getScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant"): Promise<import("../quantum-scene").ScenePayload>;
+  exportScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant", format?: "regular"|"stream"): Promise<string | null>;
+  prepareSceneHandoff(runId: string, view: "standard" | "bands" | "wilson" | "invariant", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
+  openInMath3D(runId: string, view: "standard" | "bands" | "wilson" | "invariant", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
   openImportedInMath3D(): Promise<string | null>;
   importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;
   readSceneChunk(id:string,path:string): Promise<Uint8Array>;

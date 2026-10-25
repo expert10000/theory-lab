@@ -222,6 +222,7 @@ export function WebSceneLab({
             <option value="standard">Standard scene</option>
             <option value="bands">Supplied energy bands</option>
             <option value="wilson">BBH Wilson diagnostics</option>
+            <option value="invariant">Kitaev bulk invariant</option>
           </select>
         </label>
         <button disabled={busy || !token} onClick={() => void load(false)}>

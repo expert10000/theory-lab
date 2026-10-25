@@ -69,10 +69,18 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
           <Value label="Sampled gap">{analysis.sampledGap.toFixed(6)}</Value>
           <Value label="Bulk closure">{analysis.gapClosed?"yes":"no"}</Value>
           <Value label="Band samples">{analysis.kValues.length}</Value>
+          {analysis.invariant?<div data-testid="kitaev-bulk-invariant">
+            <Value label="Pfaffian signs at 0 / π">{analysis.invariant.pfaffianSigns.join(" / ")}</Value>
+            <Value label="Bulk parity"><span data-testid="kitaev-parity">{analysis.invariant.parity??"undefined"}</span></Value>
+            <Value label="Real-pairing winding"><span data-testid="kitaev-winding">{analysis.invariant.winding??"undefined"}</span></Value>
+            <Value label="Invariant status">{analysis.invariant.status}</Value>
+            <Value label="Largest mesh phase step">{analysis.invariant.maxPhaseStep===null?"undefined":analysis.invariant.maxPhaseStep.toFixed(6)} rad</Value>
+            <small>{analysis.invariant.method}. The bulk gap and mesh conditions control whether a claim is made.</small>
+          </div>:<small>This earlier saved run has no bulk invariant data.</small>}
           <Value label="Open sites">{analysis.finite.cells}</Value>
           <Value label="Finite pair energies">{analysis.finite.nearZeroEnergies.map(v=>v.toFixed(6)).join(" / ")}</Value>
           <Value label="Mean end-site weight">{analysis.finite.endWeight.toFixed(6)}</Value>
-          <small>Finite-chain localization is an observation. No topological invariant or Majorana classification is stored.</small>
+          <small>Finite-chain localization is a separate observation; no finite-state classification is inferred from it.</small>
         </>:analysis.kind==="bbh"?<>
           <Value label="Periodic sampled gap">{analysis.bulkGap.toFixed(6)}</Value>
           <Value label="Bulk momentum grid">{analysis.bandKValues.length} × {analysis.bandKValues.length}</Value>

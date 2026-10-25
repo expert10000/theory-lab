@@ -760,10 +760,11 @@ real-pairing `kitaev_chain` job now saves periodic BdG bands and the
 normalized mean site density of a finite open-chain near-zero pair. Separate
 source-linked `.qscene` views share one verified result hash. The continuous
 bulk gap is checked separately from finite end weight. End localization is
-reported only as a finite-chain observation; no Z₂/winding invariant or
-Majorana classification is computed. Math3D consumer acceptance is tracked
-in its own Q08 audit. Weyl, nodal and Landau/Hall remain producer gaps; a
-the validated BBH quadrupole invariant is documented below.
+reported only as a finite-chain observation. The later bulk-invariant
+extension below adds a conditional claim without inferring it from end weight.
+Math3D consumer acceptance is tracked in its own Q08 audit. Weyl, nodal and
+Landau/Hall remain producer gaps; the validated BBH quadrupole invariant is
+documented below.
 
 **2026-10-25 BBH nested-Wilson validation:** The worker now calculates both
 occupied-band Wilson spectra and nested polarizations for the two isolated
@@ -773,6 +774,16 @@ closure yields `undefined`. The immutable BBH result saves the four branches,
 sector polarizations and validity diagnostics. A third source-linked `.qscene`
 view lets Math3D inspect exact supplied samples; the older bands/corner
 fixtures remain frozen. Finite corner density is still a separate observation.
+
+**2026-10-25 Kitaev bulk-invariant validation:** In the existing spinless
+real-pairing convention, the worker saves Pfaffian signs at k=0 and π, their
+Z₂ parity, the independently sampled chiral winding, the largest phase step,
+and the exact bulk gap. Both invariants are `undefined` at gap closure;
+winding is withheld on an unresolved mesh. Old immutable runs remain readable
+without the optional diagnostic. A third, source-linked `.qscene` carries the
+exact producer BdG curve and conditional values for read-only Math3D inspection.
+The finite end-site density remains a separate observation. Weyl is the next
+new producer family.
 
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,

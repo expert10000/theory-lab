@@ -765,6 +765,7 @@ export function App() {
               {visibleRunId&&<button type="button" data-testid="open-scientific-figure" onClick={()=>setFigureRunId(visibleRunId)}>Figure</button>}
               {sceneResult&&sceneViews?.standard&&<button type="button" data-testid="view-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,sceneSample?.kind==="ssh_band"&&sceneViews.bands?"bands":"standard",sceneSample)}>View in Scenes</button>}
               {sceneResult&&sceneViews?.bands&&<button type="button" data-testid="view-bands-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"bands",sceneSample)}>View bands in Scenes</button>}
+              {sceneResult&&sceneViews?.invariant&&<button type="button" data-testid="view-kitaev-invariant-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"invariant")}>View bulk invariant in Scenes</button>}
               <span className="pill">{tab==="theory"?"MODEL REFERENCE · NO COMPUTE":tab==="ising_quench"?"2–8 SPINS · ℏ=1":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
             </div>
           </div>

@@ -24,21 +24,27 @@ test("Kitaev saved bulk and finite scenes retain one verified source",async()=>{
     const response=await worker.request("quantum.run",job);
     assert.ok(isQuantumResult(response)&&response.operation==="topology"&&response.analysis.kind==="kitaev_chain");
     assert.ok(isTopologyResponse(response,job));
+    assert.equal(response.analysis.invariant?.parity,1);
+    assert.equal(response.analysis.invariant?.winding,1);
+    assert.equal(response.analysis.invariant?.status,"defined");
     assert.ok(response.analysis.finite.endWeight>.5);
     const selection={kind:"kitaev_site" as const,runId:response.runId,index:0};
     assert.equal(selectedTopologySample(selection,response)?.kind,"kitaev_site");
     assert.equal(selectedTopologySample({...selection,runId:"run-other"},response),null);
     await store.record(job,response);
     assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),response);
-    const finite=await store.scene(response.runId,"standard"),bands=await store.scene(response.runId,"bands");
-    await verifyScenePayload(finite,digest);await verifyScenePayload(bands,digest);
+    const finite=await store.scene(response.runId,"standard"),bands=await store.scene(response.runId,"bands"),invariant=await store.scene(response.runId,"invariant");
+    await verifyScenePayload(finite,digest);await verifyScenePayload(bands,digest);await verifyScenePayload(invariant,digest);
     assert.equal(finite.scene.provenance.resultSha256,bands.scene.provenance.resultSha256);
     assert.equal(finite.scene.provenance.source?.entryId,"kitaev_chain");
     assert.equal(finite.scene.objects[0].scalars,"near-zero-density");
     assert.equal(bands.scene.bands?.kind,"path");
     assert.equal(bands.scene.bands?.energies.length,2);
-    assert.ok(finite.scene.annotations[0].text.includes("no topological invariant"));
-    for(const view of ["standard","bands"] as const){
+    assert.equal(invariant.scene.topology?.invariants[0].value,1);
+    assert.equal(invariant.scene.topology?.invariants[1].value,1);
+    assert.equal(invariant.scene.objects[0].scalars,"momentum-samples");
+    assert.ok(finite.scene.annotations[0].text.includes("separate observation"));
+    for(const view of ["standard","bands","invariant"] as const){
       const dir=await store.exportScene(response.runId,root,view);
       const opened=await readSceneBundle(dir);
       assert.equal(opened.scene.provenance.resultSha256,finite.scene.provenance.resultSha256);
@@ -51,6 +57,25 @@ test("Kitaev saved bulk and finite scenes retain one verified source",async()=>{
     if(falseBand.analysis.kind!=="kitaev_chain")throw new Error("Wrong analysis");
     falseBand.analysis.upperBand[20]+=.01;
     assert.equal(isTopologyResponse(falseBand,job),false);
+    const falseInvariant=structuredClone(response);
+    if(falseInvariant.analysis.kind!=="kitaev_chain"||!falseInvariant.analysis.invariant)throw new Error("Missing invariant");
+    falseInvariant.analysis.invariant.parity=0;
+    assert.equal(isTopologyResponse(falseInvariant,job),false);
+    const legacy=structuredClone(response);
+    if(legacy.analysis.kind!=="kitaev_chain")throw new Error("Wrong analysis");
+    delete legacy.analysis.invariant;
+    assert.equal(isTopologyResponse(legacy,job),true);
+    const criticalJob=topologyJob("kitaev-closure",{...TOPOLOGY_DEFAULTS,modelId:"kitaev_chain",mu:"2",cells:"8",kPoints:"101"});
+    const critical=await worker.request("quantum.run",criticalJob);
+    assert.ok(isQuantumResult(critical)&&critical.operation==="topology"&&critical.analysis.kind==="kitaev_chain");
+    assert.ok(isTopologyResponse(critical,criticalJob));
+    assert.equal(critical.analysis.invariant?.status,"bulk-gap-closed");
+    assert.equal(critical.analysis.invariant?.parity,null);
+    assert.equal(critical.analysis.invariant?.winding,null);
+    await store.record(criticalJob,critical);
+    const undefinedScene=await store.scene(critical.runId,"invariant");
+    assert.equal(undefinedScene.scene.topology?.invariants[0].status,"undefined");
+    await verifyScenePayload(undefinedScene,digest);
     await writeFile(join(root,"runs",response.runId,"result.json"),"{}\n");
     await assert.rejects(store.topology(response.runId),/integrity check/);
   }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
