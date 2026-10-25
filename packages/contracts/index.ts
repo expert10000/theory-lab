@@ -316,7 +316,9 @@ export interface BHZGeneralModel { type: "bhz_general"; parameters: {
   edgeCells:number; edgeSamples:number; continuumExtent:number;
 }; source?: LayerOneSource }
 export interface BBHModel { type:"bbh"; parameters:{gammaX:number;lambdaX:number;gammaY:number;lambdaY:number;grid:number;cells:number};source?:LayerOneSource }
-export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel }
+/** Real-pairing, spinless nearest-neighbor BdG chain with open finite boundary. */
+export interface KitaevChainModel { type:"kitaev_chain"; parameters:{mu:number;hopping:number;pairing:number;cells:number;kPoints:number};source?:LayerOneSource }
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
   lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
@@ -349,10 +351,13 @@ export interface BHZGeneralAnalysis {
 export interface BBHAnalysis {kind:"bbh";bulkGap:number;bandKValues:number[];
   bandEnergies:[number[],number[],number[],number[]];
   finite:{cells:number;midgapEnergies:[number,number,number,number];midgapDensity:number[];cornerWeight:number}}
+export interface KitaevChainAnalysis {kind:"kitaev_chain";bulkGap:number;sampledGap:number;gapClosed:boolean;
+  kValues:number[];lowerBand:number[];upperBand:number[];
+  finite:{cells:number;nearZeroEnergies:[number,number];siteDensity:number[];endWeight:number}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
-  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel;
-  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis;
+  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis | KitaevChainAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {

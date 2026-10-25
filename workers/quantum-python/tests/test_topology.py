@@ -1,7 +1,54 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, kitaev_bulk_matrix, kitaev_open_matrix
+
+
+class KitaevChainTests(unittest.TestCase):
+    def test_independent_bulk_spectrum_and_particle_hole(self):
+        import numpy as np
+        p = {"mu": .7, "hopping": 1., "pairing": .6, "cells": 16, "kPoints": 101}
+        tau_x = np.array([[0, 1], [1, 0]])
+        for k in (-np.pi, -.6, 0, .83, np.pi):
+            h = kitaev_bulk_matrix(np, p, k)
+            expected = np.hypot(-p["mu"] - 2*p["hopping"]*np.cos(k),
+                                2*p["pairing"]*np.sin(k))
+            np.testing.assert_allclose(np.linalg.eigvalsh(h), [-expected, expected])
+            np.testing.assert_allclose(tau_x @ h.conj() @ tau_x,
+                                       -kitaev_bulk_matrix(np, p, -k))
+        self.assertTrue(np.allclose(h, h.conj().T))
+
+    def test_open_boundary_particle_hole_and_finite_density(self):
+        import numpy as np
+        p = {"mu": 0., "hopping": 1., "pairing": 1., "cells": 12, "kPoints": 101}
+        h = kitaev_open_matrix(np, p)
+        n = p["cells"]
+        swap = np.block([[np.zeros((n,n)), np.eye(n)], [np.eye(n), np.zeros((n,n))]])
+        np.testing.assert_allclose(h, h.conj().T)
+        np.testing.assert_allclose(swap @ h.conj() @ swap, -h)
+        self.assertEqual(h[0,n-1], 0)
+        self.assertEqual(h[0,2*n-1], 0)
+        self.assertEqual(h[n-1,n], 0)
+        job = {"schema":"quantum-job/v1","jobId":"kitaev-test","operation":"topology",
+               "engine":"native","model":{"type":"kitaev_chain","parameters":p}}
+        a = solve(job)["analysis"]
+        self.assertEqual(a["kind"], "kitaev_chain")
+        self.assertAlmostEqual(sum(a["finite"]["siteDensity"]), 1)
+        self.assertGreater(a["finite"]["endWeight"], .9)
+        self.assertEqual(len(a["kValues"]), 101)
+
+    def test_bulk_closing_is_separate_from_finite_observation(self):
+        p = {"mu": 2., "hopping": 1., "pairing": .8, "cells": 12, "kPoints": 101}
+        job = {"schema":"quantum-job/v1","jobId":"kitaev-critical","operation":"topology",
+               "engine":"native","model":{"type":"kitaev_chain","parameters":p}}
+        critical = solve(job)["analysis"]
+        self.assertTrue(critical["gapClosed"])
+        self.assertAlmostEqual(critical["bulkGap"], 0)
+        self.assertEqual(len(critical["finite"]["nearZeroEnergies"]), 2)
+        job["model"]["parameters"]["mu"] = 0.
+        gapped = solve(job)["analysis"]
+        self.assertFalse(gapped["gapClosed"])
+        self.assertGreater(gapped["bulkGap"], 1)
 
 
 class BBHTests(unittest.TestCase):

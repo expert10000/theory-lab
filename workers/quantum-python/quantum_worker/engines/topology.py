@@ -358,6 +358,50 @@ def bbh_analysis(np, parameters):
             "cornerWeight": float(np.sum(average[corners]))}}
 
 
+def kitaev_bulk_matrix(np, parameters, k):
+    """Spinless nearest-neighbor BdG matrix in the (c_k, c†_-k) basis."""
+    xi = -parameters["mu"] - 2 * parameters["hopping"] * np.cos(k)
+    pair = 2j * parameters["pairing"] * np.sin(k)
+    return np.array([[xi, pair], [np.conj(pair), -xi]], dtype=complex)
+
+
+def kitaev_open_matrix(np, parameters):
+    """Open chain; no bond joins the first and last sites."""
+    cells = parameters["cells"]
+    normal = np.diag(np.full(cells, -parameters["mu"]))
+    pairing = np.zeros((cells, cells))
+    for site in range(cells - 1):
+        normal[site, site + 1] = normal[site + 1, site] = -parameters["hopping"]
+        pairing[site, site + 1] = parameters["pairing"]
+        pairing[site + 1, site] = -parameters["pairing"]
+    return np.block([[normal, pairing], [-pairing, -normal.T]])
+
+
+def kitaev_analysis(np, parameters):
+    """Periodic bands and finite open-chain density, without a phase invariant."""
+    cells, points = parameters["cells"], parameters["kPoints"]
+    k = np.linspace(-np.pi, np.pi, points)
+    bands = np.array([np.linalg.eigvalsh(kitaev_bulk_matrix(np, parameters, value)) for value in k])
+    energies, vectors = np.linalg.eigh(kitaev_open_matrix(np, parameters))
+    selected = (cells - 1, cells)
+    density = np.mean([abs(vectors[:cells, index]) ** 2 + abs(vectors[cells:, index]) ** 2
+                       for index in selected], axis=0)
+    # Minimize E²=(mu+2t cos k)²+4 Delta²(1-cos² k) on [-1,1].
+    mu, hopping, pairing = (parameters[key] for key in ("mu", "hopping", "pairing"))
+    candidates = [-1., 1.]
+    curvature = hopping * hopping - pairing * pairing
+    if curvature > 0:
+        candidates.append(float(np.clip(-mu * hopping / (2 * curvature), -1., 1.)))
+    exact_gap = 2 * min(np.sqrt((mu + 2 * hopping * x) ** 2 +
+                                 4 * pairing * pairing * (1 - x * x)) for x in candidates)
+    return {"kind": "kitaev_chain", "bulkGap": float(exact_gap),
+            "sampledGap": float(np.min(bands[:, 1] - bands[:, 0])),
+            "gapClosed": bool(exact_gap < 1e-10), "kValues": k.tolist(),
+            "lowerBand": bands[:, 0].tolist(), "upperBand": bands[:, 1].tolist(),
+            "finite": {"cells": cells, "nearZeroEnergies": [float(energies[i]) for i in selected],
+                       "siteDensity": density.tolist(), "endWeight": float(density[0] + density[-1])}}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -375,6 +419,8 @@ def solve(job):
         analysis = bhz_general_analysis(np, model["parameters"])
     elif model["type"] == "bbh":
         analysis = bbh_analysis(np, model["parameters"])
+    elif model["type"] == "kitaev_chain":
+        analysis = kitaev_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,
