@@ -7,6 +7,7 @@ export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
   gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
   mu:"0",hopping:"1",pairing:"0.8",
+  velocity:"1",chirality:"1",radius:"1",subdivisions:"1",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -42,6 +43,13 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
     model:{type:"kitaev_chain",source,parameters:{mu:numeric(draft.mu??"0",-4,4),
       hopping:numeric(draft.hopping??"1",.25,2),pairing:numeric(draft.pairing??"0.8",.1,2),
       cells:numeric(draft.cells,8,40,true),kPoints:numeric(draft.kPoints,21,201,true)}}};
+  if (draft.modelId === "weyl_minimal") {
+    const chirality=numeric(draft.chirality??"1",-1,1,true);
+    if(chirality!==-1&&chirality!==1)throw new Error("Weyl chirality must be -1 or +1");
+    return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",
+      model:{type:"weyl_minimal",source,parameters:{velocity:numeric(draft.velocity??"1",.25,2),
+        chirality,radius:numeric(draft.radius??"1",.25,2),subdivisions:numeric(draft.subdivisions??"1",0,2,true) as 0|1|2}}};
+  }
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
 }
@@ -50,6 +58,36 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   if (result.jobId !== job.jobId || JSON.stringify(result.model) !== JSON.stringify(job.model) ||
       result.analysis.kind !== job.model.type) return false;
   const a = result.analysis;
+  if(job.model.type==="weyl_minimal"&&a.kind==="weyl_minimal"){
+    const p=job.model.parameters,n=10*4**p.subdivisions+2,f=20*4**p.subdivisions;
+    if(a.positions.length!==n||a.triangles.length!==f||a.lowerBand.length!==n||a.upperBand.length!==n||
+      a.berryCurvature.length!==n||a.faceFlux.length!==f||a.node.some(v=>Math.abs(v)>1e-12)||
+      a.chirality!==p.chirality||Math.abs(a.sphereGap-2*p.velocity*p.radius)>1e-8)return false;
+    for(let i=0;i<n;i++){
+      const q=a.positions[i],b=a.berryCurvature[i],r=Math.hypot(...q);
+      if(q.length!==3||b.length!==3||!q.every(Number.isFinite)||!b.every(Number.isFinite)||
+        Math.abs(r-p.radius)>1e-8||Math.abs(a.lowerBand[i]+p.velocity*p.radius)>1e-8||
+        Math.abs(a.upperBand[i]-p.velocity*p.radius)>1e-8||
+        b.some((v,j)=>Math.abs(v+p.chirality*q[j]/(2*r**3))>1e-8))return false;
+    }
+    const dot=(x:number[],y:number[])=>x[0]*y[0]+x[1]*y[1]+x[2]*y[2];
+    const cross=(x:number[],y:number[])=>[x[1]*y[2]-x[2]*y[1],x[2]*y[0]-x[0]*y[2],x[0]*y[1]-x[1]*y[0]];
+    let flux=0,minLink=1;
+    for(let i=0;i<f;i++){
+      const ids=a.triangles[i];
+      if(ids.length!==3||ids.some(id=>!Number.isInteger(id)||id<0||id>=n)||new Set(ids).size!==3)return false;
+      const [u,v,w]=ids.map(id=>a.positions[id].map(x=>x/p.radius));
+      const uv=dot(u,v),vw=dot(v,w),wu=dot(w,u);
+      const orient=dot(u,cross(v,w));
+      if(orient<=0)return false;
+      const solid=2*Math.atan2(orient,1+uv+vw+wu),expected=-p.chirality*solid/2;
+      if(Math.abs(a.faceFlux[i]-expected)>1e-8)return false;
+      flux+=a.faceFlux[i];minLink=Math.min(minLink,Math.sqrt((1+uv)/2),Math.sqrt((1+vw)/2),Math.sqrt((1+wu)/2));
+    }
+    const resolved=minLink>.01&&Math.abs(flux/(2*Math.PI)+p.chirality)<.01;
+    return Math.abs(a.flux-flux)<1e-8&&Math.abs(a.minimumLink-minLink)<1e-8&&
+      a.meshResolved===resolved&&a.lowerChern===(resolved?-p.chirality:null);
+  }
   if(job.model.type==="kitaev_chain"&&a.kind==="kitaev_chain"){
     const p=job.model.parameters,n=p.kPoints,d=a.finite;
     if(a.kValues.length!==n||a.lowerBand.length!==n||a.upperBand.length!==n||
@@ -300,6 +338,15 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !(a.z2===null||a.z2===0||a.z2===1)||!numericArray(a.bandKValues,grid)||
        !Array.isArray(a.bandEnergies)||a.bandEnergies.length!==4||
        !a.bandEnergies.every((item:unknown)=>numericArray(item,grid*grid)))return false;
+  } else if(job.model.type==="weyl_minimal"){
+    const n=10*4**job.model.parameters.subdivisions+2,f=20*4**job.model.parameters.subdivisions;
+    const vectors=(item:unknown,size:number)=>Array.isArray(item)&&item.length===size&&item.every(row=>numericArray(row,3));
+    const faces=(item:unknown)=>Array.isArray(item)&&item.length===f&&item.every(row=>Array.isArray(row)&&row.length===3&&row.every((v:unknown)=>Number.isInteger(v)));
+    if(a.kind!=="weyl_minimal"||!numericArray(a.node,3)||!finite(a.flux)||!finite(a.minimumLink)||
+      !finite(a.sphereGap)||typeof a.meshResolved!=="boolean"||a.chirality!==job.model.parameters.chirality||
+      !(a.lowerChern===null||a.lowerChern===-1||a.lowerChern===1)||!vectors(a.positions,n)||
+      !vectors(a.berryCurvature,n)||!faces(a.triangles)||!numericArray(a.lowerBand,n)||
+      !numericArray(a.upperBand,n)||!numericArray(a.faceFlux,f))return false;
   } else if(job.model.type==="kitaev_chain"){
     const {cells,kPoints}=job.model.parameters;
     if(a.kind!=="kitaev_chain"||!finite(a.bulkGap)||!finite(a.sampledGap)||

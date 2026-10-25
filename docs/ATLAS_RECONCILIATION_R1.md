@@ -131,6 +131,8 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `bhz` | packages/models/topology.ts | topology | native | yes | topology | topology / bands |
 | `bhz_general` | packages/models/topology.ts | topology | native | yes | topology | topology / bands |
 | `bbh` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
+| `kitaev_chain` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
+| `weyl_minimal` | packages/models/topology.ts | topology | native | yes | topology | topology / standard |
 | `hydrogenic` | packages/models/orbital.ts | orbital | native | no | — | orbital / standard |
 
 - **anharmonic_oscillator**: D1: bounded m=1 confining quartic oscillator in a truncated harmonic Fock basis; reviewed eigenpairs, no automatic Atlas binding, web/scene/Math3D path or double-well scope.
@@ -153,6 +155,8 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 - **bhz**: Bounded spin-conserving square-lattice BHZ with A=B=1 and epsilon=0; supplied four-band bulk grid and mesh-checked Z2 parity. No edge-state or spin-mixing claim.
 - **bhz_general**: Atlas A/B/M continuum bulk with declared C/D dispersion; lattice regularization, optional time-reversal-symmetric mixing and finite open ribbon. Source-attributed states and conditional inversion Z2.
 - **bbh**: Bounded Atlas pi-flux four-band bulk and finite open square lattice. Stored midgap density shows finite-size corner localization only; no nested Wilson loop or quadrupole invariant is computed.
+- **kitaev_chain**: Bounded real-pairing spinless nearest-neighbor BdG bands and finite open-chain near-zero pair density. End localization is a finite-chain observation; no topological invariant or Majorana classification is computed.
+- **weyl_minimal**: Bounded Atlas linearized local Weyl cone. Occupied-band Berry flux on an enclosing sphere verifies local chirality; no lattice partner, surface arc, or global phase is inferred.
 - **hydrogenic**: Analytic single-electron Coulomb 1s–3d, infinite nuclear mass; no many-electron solver.
 
 ## Source-side programs, not Lab permissions

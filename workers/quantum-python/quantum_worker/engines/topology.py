@@ -577,7 +577,9 @@ def weyl_analysis(np, parameters):
     measured = flux / (2*np.pi)
     resolved = bool(minimum_link > .01 and abs(measured + chirality) < .01)
     # The lower-band Berry field is -chi*q/(2|q|^3); the upper has opposite sign.
-    curvature = (-chirality * directions / (2*radius*radius)).tolist()
+    curvature_array = -chirality * directions / (2*radius*radius)
+    curvature_array[np.abs(curvature_array) < 1e-15] = 0.0
+    curvature = curvature_array.tolist()
     return {"kind": "weyl_minimal", "node": [0., 0., 0.],
             "chirality": int(chirality), "lowerChern": int(-chirality) if resolved else None,
             "flux": flux, "meshResolved": resolved, "minimumLink": float(minimum_link),

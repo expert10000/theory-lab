@@ -2,14 +2,16 @@ import type { QuantumResult } from "../contracts";
 import { SceneBuilder } from "./builder";
 import { addReciprocalGuides } from "./reciprocal";
 import { bandSceneFromResult, bbhFiniteSceneFromResult, kitaevFiniteSceneFromResult } from "./bands";
+import { weylSceneFromResult } from "./weyl";
 import { assertScene, decodeDataset, verifyScenePayload, type QuantumScene, type SceneObject, type ScenePayload } from "./index";
 
 export function supportsScene(operation: string, model: string): boolean {
-  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
+  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain", "weyl_minimal"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
 }
 export async function sceneFromResult(result: QuantumResult, data: Uint8Array | null, resultSha256: string,
   digest: (bytes: Uint8Array) => Promise<string>): Promise<ScenePayload> {
   if (!supportsScene(result.operation, result.model.type)) throw new Error("This result has no QVIS-002 scene adapter");
+  if(result.operation==="topology"&&result.model.type==="weyl_minimal")return weylSceneFromResult(result,resultSha256,digest);
   if(result.operation==="topology"&&result.model.type==="bhz")return bandSceneFromResult(result,resultSha256,digest);
   if(result.operation==="topology"&&result.model.type==="bhz_general")return bandSceneFromResult(result,resultSha256,digest,"continuum");
   if(result.operation==="topology"&&result.model.type==="bbh")return bbhFiniteSceneFromResult(result,resultSha256,digest);

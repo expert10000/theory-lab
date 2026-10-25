@@ -19,6 +19,7 @@ export type SceneFocus={kind:"object";objectId:string;index:number}|{kind:"voxel
 export function availableSceneViews(result:QuantumResult):{standard:boolean;bands:boolean;invariant:boolean}{
   if(result.operation==="topology"){
     const analysis=result.analysis;
+    if(analysis.kind==="weyl_minimal")return {standard:true,bands:false,invariant:false};
     if(analysis.kind==="bhz"||analysis.kind==="bhz_general"||analysis.kind==="bbh"||analysis.kind==="kitaev_chain")return {standard:true,bands:true,invariant:analysis.kind==="kitaev_chain"&&!!analysis.invariant};
     return {standard:result.model.type==="ssh"||analysis.kind==="qwz"&&!analysis.gapClosed,
       bands:!!analysis.lowerBand&&!!analysis.upperBand&&

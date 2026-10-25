@@ -9,7 +9,7 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
   return <div className="evolution-inspector topology-inspector">
     <p className="eyebrow">{result?.model.type.toUpperCase()??"TOPOLOGY"} RUN INSPECTOR</p>
     <h2>Stored topology result</h2>
-    {!result||!analysis?<p className="inspector-intro">Run SSH, QWZ, BHZ, BBH or Kitaev to inspect recorded diagnostics.</p>:<>
+    {!result||!analysis?<p className="inspector-intro">Run SSH, QWZ, BHZ, BBH, Kitaev or Weyl to inspect recorded diagnostics.</p>:<>
       <p className="inspector-intro" data-testid="topology-inspector-state">{context.stale?"Edited draft · showing stored run":"Run inputs match the draft"}</p>
       <div className="inspector-section" data-testid="topology-inspector-inputs">
         <p className="eyebrow">IMMUTABLE RUN INPUTS</p>
@@ -19,7 +19,10 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
       </div>
       <div className="inspector-section" data-testid="topology-inspector-selection">
         <p className="eyebrow">EXACT-RUN SELECTION</p>
-        {!sample?<small>{analysis.kind==="kitaev_chain"?"Select a saved momentum sample or finite site; reopening does not invent a selection.":analysis.kind==="bbh"?"Select a finite cell to inspect its stored mean midgap density.":analysis.kind==="bhz_general"?"Select one of the four stored ribbon eigenstates below. Reopening does not invent a selection.":analysis.kind==="bhz"?"Open the verified BHZ scene to inspect exact bulk samples.":"Select a stored band point, edge site or curvature cell; reopening does not invent a selection."}</small>:sample.kind==="kitaev_band"?<>
+        {!sample?<small>{analysis.kind==="weyl_minimal"?"Select a stored sphere sample; reopening does not invent a selection.":analysis.kind==="kitaev_chain"?"Select a saved momentum sample or finite site; reopening does not invent a selection.":analysis.kind==="bbh"?"Select a finite cell to inspect its stored mean midgap density.":analysis.kind==="bhz_general"?"Select one of the four stored ribbon eigenstates below. Reopening does not invent a selection.":analysis.kind==="bhz"?"Open the verified BHZ scene to inspect exact bulk samples.":"Select a stored band point, edge site or curvature cell; reopening does not invent a selection."}</small>:sample.kind==="weyl_sphere_sample"?<>
+          <Value label="Sphere sample">{sample.index+1}</Value><Value label="Stored q">{sample.q.map(v=>v.toFixed(6)).join(" / ")}</Value>
+          <Value label="Bands">{sample.lower.toFixed(6)} / {sample.upper.toFixed(6)}</Value><Value label="Berry curvature">{sample.berry.map(v=>v.toFixed(6)).join(" / ")}</Value>
+        </>:sample.kind==="kitaev_band"?<>
           <Value label="BdG momentum sample">{sample.index+1}</Value><Value label="Stored k">{sample.k.toFixed(6)}</Value>
           <Value label="Particle-hole bands">{sample.lower.toFixed(6)} / {sample.upper.toFixed(6)}</Value>
         </>:sample.kind==="kitaev_site"?<>
@@ -51,8 +54,8 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
       </div>
       <div className="inspector-section" data-testid="topology-inspector-diagnostics">
         <p className="eyebrow">STORED DIAGNOSTICS</p>
-        <Value label="Bulk gap">{analysis.bulkGap.toFixed(6)}</Value>
-        {analysis.kind==="ssh"?<>
+        <Value label={analysis.kind==="weyl_minimal"?"Enclosing-sphere gap":"Bulk gap"}>{(analysis.kind==="weyl_minimal"?analysis.sphereGap:analysis.bulkGap).toFixed(6)}</Value>
+        {analysis.kind==="weyl_minimal"?<><Value label="Local chirality">{analysis.chirality}</Value><Value label="Occupied Chern">{analysis.lowerChern??"unresolved"}</Value><Value label="Enclosing flux">{analysis.flux.toFixed(6)}</Value><Value label="Minimum Wilson link">{analysis.minimumLink.toFixed(6)}</Value><Value label="Sphere mesh">{analysis.positions.length} samples / {analysis.triangles.length} faces</Value><small>Local linearization only; no lattice, arc or surface state is supplied.</small></>:analysis.kind==="ssh"?<>
           <Value label="Winding">{analysis.winding??"undefined at gap closure"}</Value>
           <Value label="Band samples">{analysis.kValues.length}</Value>
           <Value label="Edge pair energies">{analysis.edgeEnergies.map(value=>value.toFixed(6)).join(" / ")}</Value>

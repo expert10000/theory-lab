@@ -86,8 +86,8 @@ test("real worker bands preserve energies, gap-closure data and offline bundle i
         view.setFloat64(0,-2,true);zone.sha256=await digest(badZone.artifacts[zone.path]);
         await assert.rejects(verifyScenePayload(badZone,digest),/boundary disagrees/);
       }
+      if(result.analysis.kind==="bhz"||result.analysis.kind==="bhz_general"||result.analysis.kind==="bbh"||result.analysis.kind==="weyl_minimal")throw new Error("Legacy SSH/QWZ fixture loop selected another model");
       assert.equal(b.bulkGap, result.analysis.bulkGap);
-      if(result.analysis.kind==="bhz"||result.analysis.kind==="bhz_general"||result.analysis.kind==="bbh")throw new Error("Legacy SSH/QWZ fixture loop selected another model");
       assert.deepEqual(
         [...arrays.get(b.energies[0])!],
         result.analysis.lowerBand,

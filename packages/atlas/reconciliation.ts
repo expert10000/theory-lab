@@ -173,6 +173,10 @@ export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
     "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["standard", "bands"],
     "Bounded real-pairing spinless nearest-neighbor BdG bands and finite open-chain near-zero pair density. End localization is a finite-chain observation; no topological invariant or Majorana classification is computed.",
   ),
+  weyl_minimal: implementation(
+    "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["standard"],
+    "Bounded Atlas linearized local Weyl cone. Occupied-band Berry flux on an enclosing sphere verifies local chirality; no lattice partner, surface arc, or global phase is inferred.",
+  ),
   hydrogenic: implementation(
     "packages/models/orbital.ts",
     ["orbital"],

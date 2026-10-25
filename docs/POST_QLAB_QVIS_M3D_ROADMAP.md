@@ -785,6 +785,16 @@ exact producer BdG curve and conditional values for read-only Math3D inspection.
 The finite end-site density remains a separate observation. Weyl is the next
 new producer family.
 
+**2026-10-25 local Weyl producer extension:** The pinned Atlas
+`weyl_minimal` linearization is now a bounded native topology job. It saves
+the exact two-band spectrum, occupied Berry vectors and Wilson face flux on
+an enclosing sphere. Host verification checks the supplied flux against an
+independent solid-angle construction. The source-linked `.qscene` presents
+the supplied sphere, Berry vectors, local chirality and conditional occupied
+Chern in Math3D. The model contains no periodic lattice, partner node,
+surface band or Fermi arc; those remain separate producer work. Nodal and
+Landau/Hall are still pending.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

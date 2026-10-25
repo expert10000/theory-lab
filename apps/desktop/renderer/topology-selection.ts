@@ -7,6 +7,7 @@ export type TopologySelection=
   | {kind:"bbh_cell";runId:string;index:number}
   | {kind:"kitaev_band";runId:string;index:number}
   | {kind:"kitaev_site";runId:string;index:number}
+  | {kind:"weyl_sphere_sample";runId:string;index:number}
   | {kind:"bhz_ribbon_state";runId:string;index:number};
 export type TopologySample=
   | {kind:"ssh_band";index:number;k:number;lower:number;upper:number}
@@ -15,6 +16,7 @@ export type TopologySample=
   | {kind:"bbh_cell";index:number;xIndex:number;yIndex:number;density:number}
   | {kind:"kitaev_band";index:number;k:number;lower:number;upper:number}
   | {kind:"kitaev_site";index:number;density:number}
+  | {kind:"weyl_sphere_sample";index:number;q:[number,number,number];lower:number;upper:number;berry:[number,number,number]}
   | {kind:"bhz_ribbon_state";index:number;k:number;energy:number;edgeWeight:number;density:number[];spin:number[];amplitudes:[number,number][]};
 export interface TopologyRunContext {
   result:TopologyResult;
@@ -25,6 +27,12 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="weyl_minimal"&&analysis.kind==="weyl_minimal"&&selection.kind==="weyl_sphere_sample"){
+    const index=selection.index;
+    if(!Number.isInteger(index)||index<0||index>=analysis.positions.length)return null;
+    return {kind:"weyl_sphere_sample",index,q:analysis.positions[index],lower:analysis.lowerBand[index],
+      upper:analysis.upperBand[index],berry:analysis.berryCurvature[index]};
+  }
   if(result.model.type==="kitaev_chain"&&analysis.kind==="kitaev_chain"){
     if(selection.kind==="kitaev_band"&&Number.isInteger(selection.index)&&selection.index>=0&&selection.index<analysis.kValues.length){
       const index=selection.index;
