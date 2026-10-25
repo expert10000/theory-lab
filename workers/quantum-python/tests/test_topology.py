@@ -1,7 +1,48 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis
+
+
+class NodalRingTests(unittest.TestCase):
+    def test_atlas_ring_spectra_and_linking_phase(self):
+        import numpy as np
+        for count in (32, 64, 128):
+            p={"mass":1., "curvature":1., "velocity":1.2,
+               "loopCenter":1., "loopRadius":.25, "samples":count}
+            a=nodal_analysis(np,p)
+            self.assertEqual(a["status"],"defined")
+            self.assertAlmostEqual(a["ringRadius"],1.)
+            self.assertEqual(len(a["ringPositions"]),64)
+            self.assertEqual(len(a["loopPositions"]),count)
+            self.assertAlmostEqual(a["berryPhase"],np.pi,places=10)
+            self.assertEqual(abs(a["winding"]),1)
+            self.assertLess(a["convergenceError"],1e-9)
+            for index in (0,count//4,count//2):
+                q=a["loopPositions"][index]
+                expected=np.hypot(1-q[0]**2,1.2*q[2])
+                np.testing.assert_allclose([a["lowerBand"][index],a["upperBand"][index]],[-expected,expected])
+                np.testing.assert_allclose(np.linalg.eigvalsh(nodal_matrix(np,1,1,1.2,q)),[-expected,expected])
+        np.testing.assert_allclose(nodal_matrix(np,1,1,1,[1,0,0]),np.zeros((2,2)))
+
+    def test_unlinked_and_touching_paths_do_not_claim_ring_phase(self):
+        import numpy as np
+        base={"mass":1., "curvature":1., "velocity":1.,
+              "loopCenter":0., "loopRadius":.2, "samples":64}
+        unlinked=nodal_analysis(np,base)
+        self.assertEqual(unlinked["status"],"defined")
+        self.assertAlmostEqual(unlinked["berryPhase"],0.,places=10)
+        self.assertEqual(unlinked["winding"],0)
+        absent=nodal_analysis(np,{**base,"mass":-1.,"loopCenter":1.})
+        self.assertIsNone(absent["ringRadius"])
+        self.assertEqual(absent["ringPositions"],[])
+        self.assertAlmostEqual(absent["berryPhase"],0.,places=10)
+        for center,radius in ((1.,0.),(.75,.25),(1.25,.25)):
+            closed=nodal_analysis(np,{**base,"loopCenter":center,"loopRadius":radius})
+            self.assertEqual(closed["status"],"gap-closed")
+            self.assertIsNone(closed["berryPhase"])
+            self.assertIsNone(closed["winding"])
+            self.assertEqual(closed["loopGap"],0.)
 
 
 class WeylConeTests(unittest.TestCase):

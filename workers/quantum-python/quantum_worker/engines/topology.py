@@ -588,6 +588,58 @@ def weyl_analysis(np, parameters):
             "berryCurvature": curvature, "faceFlux": face_flux}
 
 
+def nodal_matrix(np, mass, curvature, velocity, q):
+    """Atlas continuum H=[m-B(kx²+ky²)]sigma_x+v*kz*sigma_z."""
+    x, y, z = q
+    radial = mass-curvature*(x*x+y*y)
+    return np.array([[velocity*z, radial], [radial, -velocity*z]], complex)
+
+
+def nodal_analysis(np, parameters):
+    mass, curvature, velocity = (parameters[key] for key in ("mass", "curvature", "velocity"))
+    center, radius, samples = (parameters[key] for key in ("loopCenter", "loopRadius", "samples"))
+    ring_radius = float(np.sqrt(mass/curvature)) if mass > 0 else None
+    ring = [[ring_radius*float(np.cos(t)), ring_radius*float(np.sin(t)), 0.]
+            for t in np.linspace(0, 2*np.pi, 64, endpoint=False)] if ring_radius is not None else []
+    ring = [[0. if abs(v) < 1e-15 else v for v in q] for q in ring]
+    def sampled(count):
+        angles = np.linspace(0, 2*np.pi, count, endpoint=False)
+        points = [[float(center+radius*np.cos(t)), 0., float(radius*np.sin(t))] for t in angles]
+        energies = [np.linalg.eigh(nodal_matrix(np, mass, curvature, velocity, q)) for q in points]
+        lower = [float(e[0][0]) for e in energies]
+        upper = [float(e[0][1]) for e in energies]
+        return points, lower, upper, [e[1][:, 0] for e in energies]
+    points, lower, upper, occupied = sampled(samples)
+    # An exact path/node intersection cannot have an occupied-band Berry phase.
+    node_radius = ring_radius if ring_radius is not None else (0. if mass == 0 else None)
+    gap_closed = node_radius is not None and any(
+        abs(abs(center+sign*radius)-node_radius) < 1e-9 for sign in (-1, 1))
+    gap = float(min(u-l for u, l in zip(upper, lower)))
+    if gap_closed:
+        return {"kind":"nodal_line_two_band", "ringRadius":ring_radius, "ringPositions":ring,
+                "loopPositions":points, "lowerBand":lower, "upperBand":upper,
+                "loopGap":0., "berryPhase":None, "winding":None,
+                "minimumLink":None, "convergenceError":None, "status":"gap-closed"}
+    def wilson(vectors):
+        links = [np.vdot(vectors[i], vectors[(i+1)%len(vectors)]) for i in range(len(vectors))]
+        return float(abs(np.angle(np.prod([link/abs(link) for link in links])))), float(min(map(abs, links)))
+    phase, minimum_link = wilson(occupied)
+    _, _, _, fine_vectors = sampled(2*samples)
+    fine_phase, _ = wilson(fine_vectors)
+    # Independent analytic map of the loop into the real (sigma_x,sigma_z) plane.
+    angle = [np.arctan2(velocity*q[2], mass-curvature*q[0]*q[0]) for q in points]
+    angle.append(angle[0])
+    winding = int(round(float(np.diff(np.unwrap(angle)).sum()/(2*np.pi))))
+    expected = np.pi*(abs(winding)%2)
+    error = float(abs(phase-fine_phase))
+    resolved = minimum_link > .01 and abs(phase-expected) < .01 and error < .01
+    return {"kind":"nodal_line_two_band", "ringRadius":ring_radius, "ringPositions":ring,
+            "loopPositions":points, "lowerBand":lower, "upperBand":upper,
+            "loopGap":gap, "berryPhase":phase if resolved else None,
+            "winding":winding if resolved else None, "minimumLink":minimum_link,
+            "convergenceError":error, "status":"defined" if resolved else "mesh-unresolved"}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -609,6 +661,8 @@ def solve(job):
         analysis = kitaev_analysis(np, model["parameters"])
     elif model["type"] == "weyl_minimal":
         analysis = weyl_analysis(np, model["parameters"])
+    elif model["type"] == "nodal_line_two_band":
+        analysis = nodal_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,
