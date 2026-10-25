@@ -1,10 +1,40 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis
 
 
 class KitaevChainTests(unittest.TestCase):
+    def test_independent_pfaffian_and_winding_phases(self):
+        import numpy as np
+        for mu, expected in ((-3., 0), (-1., 1), (0., 1), (1., 1), (3., 0)):
+            for count in (21, 101, 201):
+                p = {"mu": mu, "hopping": 1., "pairing": .8,
+                     "cells": 8, "kPoints": count}
+                a = kitaev_analysis(np, p)
+                inv = a["invariant"]
+                # At particle-hole momenta, antisymmetric H*tau_x has
+                # Pfaffian xi(k); this independent sign product is the Z2 bit.
+                pf0, pfpi = -mu-2, -mu+2
+                self.assertEqual(inv["pfaffianSigns"], [int(np.sign(pf0)), int(np.sign(pfpi))])
+                self.assertEqual(inv["parity"], int(pf0*pfpi < 0))
+                self.assertEqual(inv["winding"], expected)
+                self.assertEqual(inv["status"], "defined")
+                q = np.asarray(inv["curveX"]) + 1j*np.asarray(inv["curveY"])
+                independently_unwrapped = np.unwrap(np.angle(q))
+                self.assertAlmostEqual((independently_unwrapped[-1]-independently_unwrapped[0])/(2*np.pi), expected)
+
+    def test_gap_closure_withholds_both_claims(self):
+        import numpy as np
+        for mu in (-2., 2.):
+            a = kitaev_analysis(np, {"mu": mu, "hopping": 1., "pairing": .8,
+                                     "cells": 8, "kPoints": 101})
+            self.assertTrue(a["gapClosed"])
+            self.assertEqual(a["invariant"]["status"], "bulk-gap-closed")
+            self.assertIsNone(a["invariant"]["parity"])
+            self.assertIsNone(a["invariant"]["winding"])
+            self.assertIsNone(a["invariant"]["maxPhaseStep"])
+
     def test_independent_bulk_spectrum_and_particle_hole(self):
         import numpy as np
         p = {"mu": .7, "hopping": 1., "pairing": .6, "cells": 16, "kPoints": 101}

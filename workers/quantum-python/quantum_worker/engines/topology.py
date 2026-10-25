@@ -468,7 +468,7 @@ def kitaev_open_matrix(np, parameters):
 
 
 def kitaev_analysis(np, parameters):
-    """Periodic bands and finite open-chain density, without a phase invariant."""
+    """Periodic BdG bands and independent bulk invariant plus finite density."""
     cells, points = parameters["cells"], parameters["kPoints"]
     k = np.linspace(-np.pi, np.pi, points)
     bands = np.array([np.linalg.eigvalsh(kitaev_bulk_matrix(np, parameters, value)) for value in k])
@@ -484,10 +484,36 @@ def kitaev_analysis(np, parameters):
         candidates.append(float(np.clip(-mu * hopping / (2 * curvature), -1., 1.)))
     exact_gap = 2 * min(np.sqrt((mu + 2 * hopping * x) ** 2 +
                                  4 * pairing * pairing * (1 - x * x)) for x in candidates)
+    # In the stated Nambu basis H=xi*tau_z-2*Delta*sin(k)*tau_y.
+    # The real-pairing chiral curve q=xi-2i*Delta*sin(k) winds anticlockwise
+    # once as k grows from -pi to pi in the nontrivial phase (Delta>0).
+    xi = -mu - 2 * hopping * np.cos(k)
+    dy = -2 * pairing * np.sin(k)
+    q = xi + 1j * dy
+    pfaffian_signs = [int(np.sign(-mu-2*hopping)), int(np.sign(-mu+2*hopping))]
+    closed = bool(exact_gap < 1e-10)
+    if closed:
+        parity, winding, max_step, status = None, None, None, "bulk-gap-closed"
+    else:
+        parity = int(pfaffian_signs[0] != pfaffian_signs[1])
+        steps = np.angle(q[1:] / q[:-1])
+        turns = float(np.sum(steps) / (2*np.pi))
+        max_step = float(np.max(np.abs(steps)))
+        candidate = int(round(turns))
+        resolved = (abs(turns-candidate) < 1e-8 and
+                    max_step < np.pi/2 and candidate in (0, 1) and
+                    candidate % 2 == parity)
+        winding = candidate if resolved else None
+        status = "defined" if resolved else "mesh-unresolved"
+    invariant = {"method": "Pfaffian signs at k=0,pi; chiral q winding on sampled periodic mesh",
+                 "pfaffianSigns": pfaffian_signs, "parity": parity,
+                 "winding": winding, "status": status, "maxPhaseStep": max_step,
+                 "curveX": xi.tolist(), "curveY": dy.tolist()}
     return {"kind": "kitaev_chain", "bulkGap": float(exact_gap),
             "sampledGap": float(np.min(bands[:, 1] - bands[:, 0])),
             "gapClosed": bool(exact_gap < 1e-10), "kValues": k.tolist(),
             "lowerBand": bands[:, 0].tolist(), "upperBand": bands[:, 1].tolist(),
+            "invariant": invariant,
             "finite": {"cells": cells, "nearZeroEnergies": [float(energies[i]) for i in selected],
                        "siteDensity": density.tolist(), "endWeight": float(density[0] + density[-1])}}
 
