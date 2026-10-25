@@ -1,7 +1,43 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis
+
+
+class WeylConeTests(unittest.TestCase):
+    def test_node_spectrum_chirality_and_enclosing_flux(self):
+        import numpy as np
+        for chi in (-1, 1):
+            for level in (0, 1, 2):
+                p={"velocity": 1.3, "chirality": chi, "radius": .7, "subdivisions": level}
+                a=weyl_analysis(np,p)
+                self.assertEqual(a["node"],[0.,0.,0.])
+                self.assertEqual(a["chirality"],chi)
+                self.assertEqual(a["lowerChern"],-chi)
+                self.assertTrue(a["meshResolved"])
+                self.assertAlmostEqual(a["flux"]/(2*np.pi),-chi,places=10)
+                self.assertEqual(len(a["positions"]),10*4**level+2)
+                self.assertEqual(len(a["triangles"]),20*4**level)
+                self.assertAlmostEqual(a["sphereGap"],2*1.3*.7)
+                for index in (0,len(a["positions"])//2):
+                    q=np.array(a["positions"][index])
+                    expected=1.3*np.linalg.norm(q)
+                    np.testing.assert_allclose(np.linalg.eigvalsh(weyl_matrix(np,1.3,chi,q)),[-expected,expected])
+                    np.testing.assert_allclose(a["berryCurvature"][index],-chi*q/(2*np.linalg.norm(q)**3))
+        np.testing.assert_allclose(weyl_matrix(np,1.,1,[0,0,0]),np.zeros((2,2)))
+
+    def test_local_eigenvector_gauge_and_radius_do_not_change_charge(self):
+        import numpy as np
+        directions,faces=weyl_sphere(np,2)
+        vectors=[np.linalg.eigh(weyl_matrix(np,1.,1,q))[1][:,0] for q in directions]
+        original,_=weyl_link_flux(np,vectors,faces)
+        phased=[vector*np.exp(1j*(.17*i+.003*i*i)) for i,vector in enumerate(vectors)]
+        changed,_=weyl_link_flux(np,phased,faces)
+        np.testing.assert_allclose(changed,original,atol=1e-12)
+        for radius in (.25, 1., 2.):
+            a=weyl_analysis(np,{"velocity":.5,"chirality":-1,"radius":radius,"subdivisions":2})
+            self.assertEqual(a["lowerChern"],1)
+            self.assertAlmostEqual(a["flux"],2*np.pi,places=10)
 
 
 class KitaevChainTests(unittest.TestCase):

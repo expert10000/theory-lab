@@ -518,6 +518,74 @@ def kitaev_analysis(np, parameters):
                        "siteDensity": density.tolist(), "endWeight": float(density[0] + density[-1])}}
 
 
+def weyl_matrix(np, velocity, chirality, q):
+    """Atlas linearized H_chi(q)=chi*v*q.sigma, not a periodic lattice."""
+    x, y, z = q
+    return chirality * velocity * np.array([[z, x - 1j*y], [x + 1j*y, -z]], complex)
+
+
+def weyl_sphere(np, subdivisions):
+    """Deterministic outward icosphere; no periodic seam or lattice inferred."""
+    from scipy.spatial import ConvexHull
+    golden = (1 + np.sqrt(5)) / 2
+    vertices = np.array([(0, y, z*golden) for y in (-1, 1) for z in (-1, 1)] +
+                        [(x, y*golden, 0) for x in (-1, 1) for y in (-1, 1)] +
+                        [(x*golden, 0, z) for x in (-1, 1) for z in (-1, 1)], float)
+    vertices /= np.linalg.norm(vertices, axis=1)[:, None]
+    faces = ConvexHull(vertices).simplices.tolist()
+    faces = [face if np.dot(np.cross(vertices[face[1]]-vertices[face[0]],
+                                    vertices[face[2]]-vertices[face[0]]),
+                                np.mean(vertices[face], axis=0)) > 0
+             else [face[0], face[2], face[1]] for face in faces]
+    points = vertices.tolist()
+    for _ in range(subdivisions):
+        midpoints, refined = {}, []
+        def midpoint(a, b):
+            edge = tuple(sorted((a, b)))
+            if edge not in midpoints:
+                p = np.array(points[a]) + np.array(points[b])
+                midpoints[edge] = len(points)
+                points.append((p / np.linalg.norm(p)).tolist())
+            return midpoints[edge]
+        for a, b, c in faces:
+            ab, bc, ca = midpoint(a, b), midpoint(b, c), midpoint(c, a)
+            refined.extend([[a, ab, ca], [b, bc, ab], [c, ca, bc], [ab, bc, ca]])
+        faces = refined
+    return np.array(points), faces
+
+
+def weyl_link_flux(np, eigenvectors, faces):
+    """Gauge-invariant occupied-band Wilson triangles on an oriented sphere."""
+    fluxes, minimum_link = [], 1.
+    for a, b, c in faces:
+        links = [np.vdot(eigenvectors[i], eigenvectors[j]) for i, j in ((a,b),(b,c),(c,a))]
+        minimum_link = min(minimum_link, *(abs(link) for link in links))
+        fluxes.append(float(np.angle(links[0]*links[1]*links[2])))
+    return fluxes, minimum_link
+
+
+def weyl_analysis(np, parameters):
+    velocity, chirality, radius = (parameters[key] for key in ("velocity", "chirality", "radius"))
+    directions, faces = weyl_sphere(np, parameters["subdivisions"])
+    points = radius * directions
+    eigensystems = [np.linalg.eigh(weyl_matrix(np, velocity, chirality, q)) for q in points]
+    lower = [float(energies[0]) for energies, _ in eigensystems]
+    upper = [float(energies[1]) for energies, _ in eigensystems]
+    occupied = [vectors[:, 0] for _, vectors in eigensystems]
+    face_flux, minimum_link = weyl_link_flux(np, occupied, faces)
+    flux = float(sum(face_flux))
+    measured = flux / (2*np.pi)
+    resolved = bool(minimum_link > .01 and abs(measured + chirality) < .01)
+    # The lower-band Berry field is -chi*q/(2|q|^3); the upper has opposite sign.
+    curvature = (-chirality * directions / (2*radius*radius)).tolist()
+    return {"kind": "weyl_minimal", "node": [0., 0., 0.],
+            "chirality": int(chirality), "lowerChern": int(-chirality) if resolved else None,
+            "flux": flux, "meshResolved": resolved, "minimumLink": float(minimum_link),
+            "sphereGap": float(2*velocity*radius), "positions": points.tolist(),
+            "triangles": faces, "lowerBand": lower, "upperBand": upper,
+            "berryCurvature": curvature, "faceFlux": face_flux}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -537,6 +605,8 @@ def solve(job):
         analysis = bbh_analysis(np, model["parameters"])
     elif model["type"] == "kitaev_chain":
         analysis = kitaev_analysis(np, model["parameters"])
+    elif model["type"] == "weyl_minimal":
+        analysis = weyl_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,
