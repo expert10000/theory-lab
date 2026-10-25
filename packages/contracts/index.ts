@@ -320,7 +320,9 @@ export interface BBHModel { type:"bbh"; parameters:{gammaX:number;lambdaX:number
 export interface KitaevChainModel { type:"kitaev_chain"; parameters:{mu:number;hopping:number;pairing:number;cells:number;kPoints:number};source?:LayerOneSource }
 /** Atlas local continuum cone. A single node is meaningful only inside this linearized patch. */
 export interface WeylMinimalModel {type:"weyl_minimal";parameters:{velocity:number;chirality:-1|1;radius:number;subdivisions:0|1|2};source?:LayerOneSource}
-export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel }
+/** Atlas continuum nodal ring. The loop is radial-z and is not a surface calculation. */
+export interface NodalLineModel {type:"nodal_line_two_band";parameters:{mass:number;curvature:number;velocity:number;loopCenter:number;loopRadius:number;samples:number};source?:LayerOneSource}
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
   lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
@@ -368,10 +370,14 @@ export interface WeylMinimalAnalysis {kind:"weyl_minimal";node:[number,number,nu
   lowerChern:-1|1|null;flux:number;meshResolved:boolean;minimumLink:number;sphereGap:number;
   positions:[number,number,number][];triangles:[number,number,number][];
   lowerBand:number[];upperBand:number[];berryCurvature:[number,number,number][];faceFlux:number[]}
+export interface NodalLineAnalysis {kind:"nodal_line_two_band";ringRadius:number|null;ringPositions:[number,number,number][];
+  loopPositions:[number,number,number][];lowerBand:number[];upperBand:number[];loopGap:number;
+  berryPhase:number|null;winding:number|null;minimumLink:number|null;convergenceError:number|null;
+  status:"defined"|"gap-closed"|"mesh-unresolved"}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
-  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel;
-  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis | KitaevChainAnalysis | WeylMinimalAnalysis;
+  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis | KitaevChainAnalysis | WeylMinimalAnalysis | NodalLineAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {

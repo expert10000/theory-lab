@@ -168,6 +168,7 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
     topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "bbh", grid: "11", cells: "4" }),
     topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "kitaev_chain" }),
     topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "weyl_minimal" }),
+    topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "nodal_line_two_band" }),
     orbitalJob("r1", ORBITAL_DEFAULTS),
     oscillatorJob("d1", OSCILLATOR_DEFAULTS, "native"),
     oscillatorEvolutionJob("d1-motion", OSCILLATOR_DYNAMICS_DEFAULTS, "native"),
@@ -177,7 +178,7 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
     parametricOscillatorJob("d1-parametric", PARAMETRIC_DEFAULTS, "native"),
     anharmonicJob("d1-anharmonic", ANHARMONIC_DEFAULTS, "native"),
   ];
-  assert.equal(jobs.length, 25);
+  assert.equal(jobs.length, 26);
   assert.deepEqual(
     new Set(jobs.map((j) => j.model.type)),
     new Set(Object.keys(LAB_IMPLEMENTATIONS)),

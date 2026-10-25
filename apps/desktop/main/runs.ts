@@ -438,7 +438,7 @@ export class RunStore {
   async topology(runId:string):Promise<TopologyResult>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="topology"||result.operation!=="topology"||
-      !["ssh","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal"].includes(result.model.type)||data!==null||
+      !["ssh","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band"].includes(result.model.type)||data!==null||
       manifest.operation!=="topology"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!==null||manifest.artifactSha256!==null||
@@ -577,6 +577,9 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       `cutoff_drift_e01,0,${result.spectrum.cutoffDriftE01},GHz`].join("\n") + "\n";
   if (result.operation === "topology") {
     const a = result.analysis;
+    if(a.kind==="nodal_line_two_band")return ["sample,kx,ky,kz,lower_band,upper_band",
+      ...a.loopPositions.map((q,i)=>[i,...q,a.lowerBand[i],a.upperBand[i]].join(",")),
+      "","ring_sample,kx,ky,kz",...a.ringPositions.map((q,i)=>[i,...q].join(","))].join("\n")+"\n";
     if(a.kind==="weyl_minimal")return ["sample,qx,qy,qz,lower_band,upper_band,berry_x,berry_y,berry_z",
       ...a.positions.map((q,i)=>[i,...q,a.lowerBand[i],a.upperBand[i],...a.berryCurvature[i]].join(",")),
       "","face,i,j,k,occupied_flux",...a.triangles.map((face,i)=>[i,...face,a.faceFlux[i]].join(","))].join("\n")+"\n";
@@ -669,6 +672,10 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
     if (result.analysis.kind === "weyl_minimal") {
       const a=result.analysis;
       return head+`<text x="70" y="150" fill="white" font-family="sans-serif" font-size="28">Weyl local cone</text><text x="70" y="220" fill="#79d9c1" font-family="sans-serif">Node chirality ${a.chirality}; occupied Chern ${a.lowerChern??"unresolved"}</text><text x="70" y="270" fill="white" font-family="sans-serif">Enclosing flux ${a.flux.toFixed(6)} · gap ${a.sphereGap.toFixed(6)}</text></svg>\n`;
+    }
+    if(result.analysis.kind==="nodal_line_two_band"){
+      const a=result.analysis;
+      return head+`<text x="70" y="150" fill="white" font-family="sans-serif" font-size="28">Atlas continuum nodal ring</text><text x="70" y="220" fill="#79d9c1" font-family="sans-serif">Loop Berry phase ${a.berryPhase?.toFixed(6)??"undefined"} · ${a.status}</text><text x="70" y="270" fill="white" font-family="sans-serif">Ring radius ${a.ringRadius?.toFixed(6)??"absent"} · loop gap ${a.loopGap.toFixed(6)}</text></svg>\n`;
     }
     if (result.analysis.kind === "bhz") {
       const a=result.analysis,grid=a.bandKValues.length,energy=a.bandEnergies[2];

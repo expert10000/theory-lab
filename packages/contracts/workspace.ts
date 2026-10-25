@@ -38,10 +38,10 @@ export interface WorkspaceSnapshot {
     boundary: "open" | "periodic"; engine: ManyBodyWorkspaceEngine };
   circuit?: { EJ: string; EC: string; ng: string; ncut: string; levels: string;
     engine: CircuitWorkspaceEngine };
-  topology?: { modelId: "ssh" | "qwz" | "bhz" | "bhz_general" | "bbh" | "kitaev_chain" | "weyl_minimal"; t1: string; t2: string; cells: string; kPoints: string; mass: string; grid: string;
+  topology?: { modelId: "ssh" | "qwz" | "bhz" | "bhz_general" | "bbh" | "kitaev_chain" | "weyl_minimal" | "nodal_line_two_band"; t1: string; t2: string; cells: string; kPoints: string; mass: string; grid: string;
     A?:string;B?:string;C?:string;D?:string;R?:string;edgeCells?:string;edgeSamples?:string;continuumExtent?:string;
     gammaX?:string;lambdaX?:string;gammaY?:string;lambdaY?:string;mu?:string;hopping?:string;pairing?:string;
-    velocity?:string;chirality?:string;radius?:string;subdivisions?:string };
+    velocity?:string;chirality?:string;radius?:string;subdivisions?:string;curvature?:string;loopCenter?:string;loopRadius?:string;loopSamples?:string };
   orbital?: { n: string; l: string; m: string; basis: "complex" | "real_cos" | "real_sin"; Z: string; radius: string; grid: string };
   oscillator?: import("../models/oscillator").OscillatorDraft;
   oscillatorDynamics?: import("../models/oscillator-dynamics").OscillatorDynamicsDraft;
@@ -126,12 +126,13 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
     engine: { enum: ["scqubits", "native", "compare"] },
   }),
   topology: block(["modelId", "t1", "t2", "cells", "kPoints", "mass", "grid"], {
-      modelId: { enum: ["ssh", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain", "weyl_minimal"] }, t1: shortText, t2: shortText,
+      modelId: { enum: ["ssh", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain", "weyl_minimal", "nodal_line_two_band"] }, t1: shortText, t2: shortText,
       cells: shortText, kPoints: shortText, mass: shortText, grid: shortText,
       A:shortText,B:shortText,C:shortText,D:shortText,R:shortText,edgeCells:shortText,
       edgeSamples:shortText,continuumExtent:shortText,gammaX:shortText,lambdaX:shortText,gammaY:shortText,lambdaY:shortText,
       mu:shortText,hopping:shortText,pairing:shortText,
       velocity:shortText,chirality:shortText,radius:shortText,subdivisions:shortText,
+      curvature:shortText,loopCenter:shortText,loopRadius:shortText,loopSamples:shortText,
   }),
   orbital: block(["n", "l", "m", "basis", "Z", "radius", "grid"], {
     n: shortText, l: shortText, m: shortText, basis: { enum: ["complex", "real_cos", "real_sin"] },

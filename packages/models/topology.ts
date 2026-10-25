@@ -8,6 +8,7 @@ export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
   mu:"0",hopping:"1",pairing:"0.8",
   velocity:"1",chirality:"1",radius:"1",subdivisions:"1",
+  curvature:"1",loopCenter:"1",loopRadius:"0.25",loopSamples:"64",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -50,6 +51,11 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
       model:{type:"weyl_minimal",source,parameters:{velocity:numeric(draft.velocity??"1",.25,2),
         chirality,radius:numeric(draft.radius??"1",.25,2),subdivisions:numeric(draft.subdivisions??"1",0,2,true) as 0|1|2}}};
   }
+  if(draft.modelId==="nodal_line_two_band")return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",
+    model:{type:"nodal_line_two_band",source,parameters:{mass:numeric(draft.mass,-2,2),
+      curvature:numeric(draft.curvature??"1",.25,2),velocity:numeric(draft.velocity??"1",.25,2),
+      loopCenter:numeric(draft.loopCenter??"1",0,3),loopRadius:numeric(draft.loopRadius??"0.25",0,.75),
+      samples:numeric(draft.loopSamples??"64",32,128,true)}}};
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
 }
@@ -58,6 +64,41 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   if (result.jobId !== job.jobId || JSON.stringify(result.model) !== JSON.stringify(job.model) ||
       result.analysis.kind !== job.model.type) return false;
   const a = result.analysis;
+  if(job.model.type==="nodal_line_two_band"&&a.kind==="nodal_line_two_band"){
+    const p=job.model.parameters,n=p.samples,r=p.mass>0?Math.sqrt(p.mass/p.curvature):null;
+    if(a.ringRadius!==null&&(!Number.isFinite(a.ringRadius)||r===null||Math.abs(a.ringRadius-r)>1e-9)||
+      (a.ringRadius===null)!==(r===null)||a.ringPositions.length!==(r===null?0:64)||
+      a.loopPositions.length!==n||a.lowerBand.length!==n||a.upperBand.length!==n)return false;
+    for(let i=0;i<a.ringPositions.length;i++){
+      const t=2*Math.PI*i/64,q=a.ringPositions[i];
+      if(q.length!==3||Math.abs(q[0]-r!*Math.cos(t))>1e-9||
+        Math.abs(q[1]-r!*Math.sin(t))>1e-9||Math.abs(q[2])>1e-9)return false;
+    }
+    const angles:number[]=[];let gap=Infinity,minLink=1;
+    for(let i=0;i<n;i++){
+      const t=2*Math.PI*i/n,q=a.loopPositions[i],x=p.loopCenter+p.loopRadius*Math.cos(t),z=p.loopRadius*Math.sin(t);
+      if(q.length!==3||!q.every(Number.isFinite)||Math.abs(q[0]-x)>1e-9||Math.abs(q[1])>1e-9||Math.abs(q[2]-z)>1e-9)return false;
+      const dx=p.mass-p.curvature*x*x,dz=p.velocity*z,e=Math.hypot(dx,dz);
+      if(Math.abs(a.lowerBand[i]+e)>1e-8||Math.abs(a.upperBand[i]-e)>1e-8)return false;
+      angles.push(Math.atan2(dz,dx));gap=Math.min(gap,2*e);
+    }
+    const nodeRadius=r??(p.mass===0?0:null),closed=nodeRadius!==null&&
+      [-1,1].some(sign=>Math.abs(Math.abs(p.loopCenter+sign*p.loopRadius)-nodeRadius)<1e-9);
+    if(closed)return a.status==="gap-closed"&&a.berryPhase===null&&a.winding===null&&
+      a.minimumLink===null&&a.convergenceError===null&&a.loopGap===0;
+    if(Math.abs(a.loopGap-gap)>1e-8||a.minimumLink===null||!Number.isFinite(a.minimumLink)||
+      a.convergenceError===null||!Number.isFinite(a.convergenceError))return false;
+    let turns=0;
+    for(let i=0;i<n;i++){
+      const step=Math.atan2(Math.sin(angles[(i+1)%n]-angles[i]),Math.cos(angles[(i+1)%n]-angles[i]));
+      turns+=step;minLink=Math.min(minLink,Math.abs(Math.cos(step/2)));
+    }
+    const winding=Math.round(turns/(2*Math.PI)),expected=Math.PI*(Math.abs(winding)%2);
+    if(Math.abs(a.minimumLink-minLink)>1e-8||a.convergenceError<0||a.convergenceError>Math.PI)return false;
+    const resolved=minLink>.01&&a.convergenceError<.01;
+    return resolved?a.status==="defined"&&a.winding===winding&&a.berryPhase!==null&&
+      Math.abs(a.berryPhase-expected)<.01: a.status==="mesh-unresolved"&&a.winding===null&&a.berryPhase===null;
+  }
   if(job.model.type==="weyl_minimal"&&a.kind==="weyl_minimal"){
     const p=job.model.parameters,n=10*4**p.subdivisions+2,f=20*4**p.subdivisions;
     if(a.positions.length!==n||a.triangles.length!==f||a.lowerBand.length!==n||a.upperBand.length!==n||
@@ -338,6 +379,15 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !(a.z2===null||a.z2===0||a.z2===1)||!numericArray(a.bandKValues,grid)||
        !Array.isArray(a.bandEnergies)||a.bandEnergies.length!==4||
        !a.bandEnergies.every((item:unknown)=>numericArray(item,grid*grid)))return false;
+  } else if(job.model.type==="nodal_line_two_band"){
+    const n=job.model.parameters.samples;
+    const vectors=(item:unknown,size:number)=>Array.isArray(item)&&item.length===size&&item.every(row=>numericArray(row,3));
+    if(a.kind!=="nodal_line_two_band"||!(a.ringRadius===null||finite(a.ringRadius))||
+      !vectors(a.ringPositions,a.ringRadius===null?0:64)||!vectors(a.loopPositions,n)||
+      !numericArray(a.lowerBand,n)||!numericArray(a.upperBand,n)||!finite(a.loopGap)||
+      !(a.berryPhase===null||finite(a.berryPhase))||!(a.winding===null||Number.isInteger(a.winding))||
+      !(a.minimumLink===null||finite(a.minimumLink))||!(a.convergenceError===null||finite(a.convergenceError))||
+      !(typeof a.status==="string"&&["defined","gap-closed","mesh-unresolved"].includes(a.status)))return false;
   } else if(job.model.type==="weyl_minimal"){
     const n=10*4**job.model.parameters.subdivisions+2,f=20*4**job.model.parameters.subdivisions;
     const vectors=(item:unknown,size:number)=>Array.isArray(item)&&item.length===size&&item.every(row=>numericArray(row,3));

@@ -606,8 +606,8 @@ def nodal_analysis(np, parameters):
         angles = np.linspace(0, 2*np.pi, count, endpoint=False)
         points = [[float(center+radius*np.cos(t)), 0., float(radius*np.sin(t))] for t in angles]
         energies = [np.linalg.eigh(nodal_matrix(np, mass, curvature, velocity, q)) for q in points]
-        lower = [float(e[0][0]) for e in energies]
-        upper = [float(e[0][1]) for e in energies]
+        lower = [0. if abs(e[0][0]) < 1e-15 else float(e[0][0]) for e in energies]
+        upper = [0. if abs(e[0][1]) < 1e-15 else float(e[0][1]) for e in energies]
         return points, lower, upper, [e[1][:, 0] for e in energies]
     points, lower, upper, occupied = sampled(samples)
     # An exact path/node intersection cannot have an occupied-band Berry phase.

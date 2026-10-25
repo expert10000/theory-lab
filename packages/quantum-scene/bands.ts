@@ -25,6 +25,7 @@ export async function bandSceneFromResult(
   )
     throw new Error("Bands require a verified topology result");
   if(result.analysis.kind==="weyl_minimal")throw new Error("Weyl local cone has a spherical diagnostic scene, not a periodic band scene");
+  if(result.analysis.kind==="nodal_line_two_band")throw new Error("Nodal continuum ring has a loop diagnostic scene, not periodic bands");
   const a = result.analysis,
     surface = a.kind !== "ssh" && a.kind !== "kitaev_chain",
     values: number[][] = a.kind === "bhz" || a.kind==="bbh" ? a.bandEnergies : a.kind==="bhz_general"?

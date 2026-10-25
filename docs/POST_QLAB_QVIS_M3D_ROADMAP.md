@@ -795,6 +795,17 @@ Chern in Math3D. The model contains no periodic lattice, partner node,
 surface band or Fermi arc; those remain separate producer work. Nodal and
 Landau/Hall are still pending.
 
+**2026-10-25 continuum nodal-ring producer extension:** The pinned Atlas
+`nodal_line_two_band` Hamiltonian now has a bounded native topology job. It
+saves sampled ring coordinates, a radial-z loop and both energies, with the
+occupied-band Wilson-loop Berry phase checked against independent d-vector
+winding and doubled-sample convergence. A loop touching the degeneracy reports
+the phase as `undefined`. The immutable run exports one source-linked
+`.qscene` containing exact producer positions and energies for read-only
+Math3D inspection. The continuum calculation supplies no boundary spectrum
+or drumhead state. Landau/Hall remains a separate producer family; it is not
+the existing Landau–Zener dynamics lab.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

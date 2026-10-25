@@ -177,6 +177,10 @@ export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
     "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["standard"],
     "Bounded Atlas linearized local Weyl cone. Occupied-band Berry flux on an enclosing sphere verifies local chirality; no lattice partner, surface arc, or global phase is inferred.",
   ),
+  nodal_line_two_band: implementation(
+    "packages/models/topology.ts", ["topology"], ["native"], true, ["topology"], ["standard"],
+    "Bounded Atlas continuum nodal ring and radial-z Berry loop. Linking phase is conditional on a nonzero loop gap and resolved Wilson links; no lattice surface or drumhead state is inferred.",
+  ),
   hydrogenic: implementation(
     "packages/models/orbital.ts",
     ["orbital"],
