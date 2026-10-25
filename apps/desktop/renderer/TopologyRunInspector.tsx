@@ -79,7 +79,16 @@ export function TopologyRunInspector({context}:{context:TopologyRunContext|null}
           <Value label="Open cells">{analysis.finite.cells} × {analysis.finite.cells}</Value>
           <Value label="Finite midgap energies">{analysis.finite.midgapEnergies.map(v=>v.toFixed(6)).join(" / ")}</Value>
           <Value label="Mean corner weight">{analysis.finite.cornerWeight.toFixed(6)}</Value>
-          <small>Corner localization is a finite-system observation. No nested Wilson loop or quadrupole invariant was computed.</small>
+          {analysis.wilson?<div data-testid="bbh-wilson-diagnostics">
+            <Value label="Exact periodic gap">{analysis.wilson.bulkGapExact.toFixed(6)}</Value>
+            <Value label="Wannier gaps x / y">{analysis.wilson.wannierGapX.toFixed(6)} / {analysis.wilson.wannierGapY.toFixed(6)}</Value>
+            <Value label="Occupied link minimum">{analysis.wilson.minOccupiedLinkSingular.toFixed(6)}</Value>
+            <Value label="Nested x-sector polarizations">{analysis.wilson.nestedX.map(v=>v===null?"undefined":v.toFixed(6)).join(" / ")}</Value>
+            <Value label="Nested y-sector polarizations">{analysis.wilson.nestedY.map(v=>v===null?"undefined":v.toFixed(6)).join(" / ")}</Value>
+            <Value label="Quadrupole invariant"><span data-testid="bbh-quadrupole">{analysis.wilson.quadrupole??"undefined"}</span></Value>
+            <Value label="Invariant status">{analysis.wilson.status}</Value>
+          </div>:<small>This earlier saved run has no Wilson-loop arrays or quadrupole calculation.</small>}
+          <small>Periodic nested Wilson loops diagnose the bulk. Corner localization is a separate finite-system observation; a gap closure leaves the invariant undefined.</small>
         </>:analysis.kind==="bhz_general"?<>
           <Value label="Continuum/lattice grid">{analysis.latticeKValues.length} × {analysis.latticeKValues.length}</Value>
           <Value label="Indirect lattice energy gap">{(Math.min(...analysis.latticeBandEnergies[2])-Math.max(...analysis.latticeBandEnergies[1])).toFixed(6)}</Value>

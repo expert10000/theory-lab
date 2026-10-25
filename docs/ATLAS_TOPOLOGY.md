@@ -108,9 +108,16 @@ gap, four finite-system midgap energies, and the mean cell density of those
 four normalized eigenstates. Corner weight sums the four exposed corner
 cells. Degenerate eigenvectors can rotate within their subspace, so the
 four-state mean is the stable visualization. Corner localization is a
-finite-size observation. The worker does **not** compute nested Wilson loops,
-edge polarization, or a quadrupole invariant, and the UI makes no phase
-claim from corner weight alone.
+finite-size observation. New runs separately compute occupied-band Wilson
+loops in both directions and nested polarizations of their gapped Wannier
+sectors. Polar-decomposed links and the periodic seam keep the result
+invariant under local occupied-frame rotations. The result stores signed
+Wannier phase paths, minimum Wannier separations, the weakest occupied link,
+and the analytic bulk gap. It reports the bounded π-flux quadrupole value 0
+or 1/2 only when the bulk and Wannier gaps resolve and both sector
+polarizations agree on a quantized value. Otherwise the value is undefined
+with an explicit status. Finite corner weight never determines that value.
+Earlier saved BBH runs remain readable without Wilson data.
 
 Saved runs reopen with result-hash verification. Standard `.qscene` exports
 carry the finite-cell density; the bands view carries exact periodic samples.

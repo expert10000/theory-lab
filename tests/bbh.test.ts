@@ -25,24 +25,49 @@ test("BBH saved bulk and finite corner scenes retain one verified source",async(
     assert.ok(isQuantumResult(response)&&response.operation==="topology"&&response.analysis.kind==="bbh");
     assert.ok(isTopologyResponse(response,job));
     assert.ok(response.analysis.finite.cornerWeight>.5);
+    assert.equal(response.analysis.wilson?.quadrupole,.5);
+    assert.equal(response.analysis.wilson?.status,"defined");
+    assert.ok(response.analysis.wilson!.bulkGapExact>1);
+    assert.ok(response.analysis.wilson!.wannierGapX>0);
+    assert.ok(response.analysis.wilson!.wannierGapY>0);
+    const older=structuredClone(response);
+    if(older.analysis.kind!=="bbh")throw new Error("Wrong analysis");
+    delete older.analysis.wilson;
+    assert.ok(isTopologyResponse(older,job),"Earlier saved BBH result remains readable without invariant data");
     const selection={kind:"bbh_cell" as const,runId:response.runId,index:0};
     const sample=selectedTopologySample(selection,response);
     assert.equal(sample?.kind,"bbh_cell");
     assert.equal(selectedTopologySample({...selection,runId:"run-other"},response),null);
     await store.record(job,response);
     assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),response);
-    const finite=await store.scene(response.runId,"standard"),bands=await store.scene(response.runId,"bands");
-    await verifyScenePayload(finite,digest);await verifyScenePayload(bands,digest);
+    const finite=await store.scene(response.runId,"standard"),bands=await store.scene(response.runId,"bands"),wilson=await store.scene(response.runId,"wilson");
+    await verifyScenePayload(finite,digest);await verifyScenePayload(bands,digest);const arrays=await verifyScenePayload(wilson,digest);
     assert.equal(finite.scene.provenance.resultSha256,bands.scene.provenance.resultSha256);
     assert.equal(finite.scene.provenance.source?.entryId,"bbh");
     assert.equal(finite.scene.objects[0].scalars,"midgap-density");
     assert.equal(bands.scene.bands?.energies.length,4);
-    assert.ok(finite.scene.annotations[0].text.includes("no quadrupole invariant"));
-    for(const view of ["standard","bands"] as const){
+    assert.equal(wilson.scene.provenance.resultSha256,finite.scene.provenance.resultSha256);
+    assert.equal(wilson.scene.topology?.invariants[0].value,.5);
+    assert.deepEqual([...arrays.get("wilson-x-negative-centers")!],response.analysis.wilson!.wannierX[0]);
+    assert.ok(finite.scene.annotations[0].text.includes("separate saved view"));
+    for(const view of ["standard","bands","wilson"] as const){
       const dir=await store.exportScene(response.runId,root,view);
       const opened=await readSceneBundle(dir);
       assert.equal(opened.scene.provenance.resultSha256,finite.scene.provenance.resultSha256);
     }
+    const oldJob=topologyJob("bbh-old",{...TOPOLOGY_DEFAULTS,modelId:"bbh",grid:"11",cells:"4"});
+    const oldResult=structuredClone(older);oldResult.jobId=oldJob.jobId;oldResult.runId="run-bbh-older";
+    await store.record(oldJob,oldResult);
+    await assert.rejects(store.scene(oldResult.runId,"wilson"),/Wilson/);
+    const closedJob=topologyJob("bbh-gap-closure",{...TOPOLOGY_DEFAULTS,modelId:"bbh",gammaX:"1",gammaY:"1",grid:"11",cells:"4"});
+    const closed=await worker.request("quantum.run",closedJob);
+    assert.ok(isQuantumResult(closed)&&closed.operation==="topology"&&closed.analysis.kind==="bbh");
+    assert.ok(isTopologyResponse(closed,closedJob));
+    assert.equal(closed.analysis.wilson?.quadrupole,null);
+    await store.record(closedJob,closed);
+    const undefinedScene=await store.scene(closed.runId,"wilson");
+    assert.equal(undefinedScene.scene.topology?.invariants[0].value,null);
+    assert.equal(undefinedScene.scene.topology?.invariants[0].status,"undefined");
     const corrupt=structuredClone(response);
     if(corrupt.analysis.kind!=="bbh")throw new Error("Wrong analysis");
     corrupt.analysis.finite.midgapDensity[0]+=.1;
@@ -51,6 +76,14 @@ test("BBH saved bulk and finite corner scenes retain one verified source",async(
     if(falseBand.analysis.kind!=="bbh")throw new Error("Wrong analysis");
     falseBand.analysis.bandEnergies[0][20]+=.01;
     assert.equal(isTopologyResponse(falseBand,job),false);
+    const falseInvariant=structuredClone(response);
+    if(falseInvariant.analysis.kind!=="bbh"||!falseInvariant.analysis.wilson)throw new Error("Missing Wilson result");
+    falseInvariant.analysis.wilson.quadrupole=0;
+    assert.equal(isTopologyResponse(falseInvariant,job),false);
+    const falseGap=structuredClone(response);
+    if(falseGap.analysis.kind!=="bbh"||!falseGap.analysis.wilson)throw new Error("Missing Wilson result");
+    falseGap.analysis.wilson.bulkGapExact=0;
+    assert.equal(isTopologyResponse(falseGap,job),false);
     await writeFile(join(root,"runs",response.runId,"result.json"),"{}\n");
     await assert.rejects(store.topology(response.runId),/integrity check/);
   }finally{await worker.stop();await rm(root,{recursive:true,force:true});}

@@ -741,16 +741,19 @@ carry four bulk bands, a sampled gap, block Chern values, and a conditional
 spin-conserved Z₂ parity. Math3D has one pinned real-worker fixture and a
 read-only sample inspector. This is **Partial** toward the broader Atlas BHZ
 entry: no arbitrary coefficients, edge states, eigenvectors, spin mixing, or
-inferred band inversion. The historical QWZ/SSH v0.1 set remains unchanged;
-BBH, Kitaev, Weyl, nodal and Landau/Hall still need producer fixtures.
+inferred band inversion. The historical QWZ/SSH v0.1 set remains unchanged.
+BBH and Kitaev gained bounded producer fixtures afterward; Weyl, nodal and
+Landau/Hall still need producer fixtures.
 
 **2026-10-25 BBH producer extension:** Theory Lab now computes a bounded
 four-orbital π-flux BBH periodic bulk and finite open square. Four sampled
 bands and mean density of four finite midgap states are stored in a verified
 run and exported as separate source-linked `.qscene` views. Corner weight is
 only a finite-system observation; no nested Wilson loop or quadrupole
-invariant is calculated. Math3D admission and fixture tests are tracked in
-its own Q08 audit. Kitaev, Weyl, nodal and Landau/Hall remain producer gaps.
+invariant was calculated in this original fixture. Math3D admission and
+fixture tests are tracked in its own Q08 audit. A later BBH Wilson run adds
+the separately validated invariant; Kitaev also has a bounded fixture now.
+Weyl, nodal and Landau/Hall remain producer gaps.
 
 **2026-10-25 Kitaev producer extension:** The bounded spinless,
 real-pairing `kitaev_chain` job now saves periodic BdG bands and the
@@ -760,7 +763,16 @@ bulk gap is checked separately from finite end weight. End localization is
 reported only as a finite-chain observation; no Z₂/winding invariant or
 Majorana classification is computed. Math3D consumer acceptance is tracked
 in its own Q08 audit. Weyl, nodal and Landau/Hall remain producer gaps; a
-validated BBH quadrupole invariant remains a separate milestone.
+the validated BBH quadrupole invariant is documented below.
+
+**2026-10-25 BBH nested-Wilson validation:** The worker now calculates both
+occupied-band Wilson spectra and nested polarizations for the two isolated
+Wannier sectors. Independent gauge, grid-convergence, trivial/nontrivial and
+gap-closing tests gate a conditional 0 or 1/2 quadrupole. Bulk or Wannier gap
+closure yields `undefined`. The immutable BBH result saves the four branches,
+sector polarizations and validity diagnostics. A third source-linked `.qscene`
+view lets Math3D inspect exact supplied samples; the older bands/corner
+fixtures remain frozen. Finite corner density is still a separate observation.
 
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,

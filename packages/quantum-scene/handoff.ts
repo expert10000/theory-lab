@@ -8,7 +8,7 @@ export interface SceneHandoffReceipt {
   sceneId: string;
   runId: string;
   resultSha256: string;
-  view: "standard" | "bands";
+  view: "standard" | "bands" | "wilson";
   coordinates: QuantumScene["coordinates"];
   datasets: Pick<QuantumScene["datasets"][number], "id" | "unit" | "count" | "components" | "sha256">[];
   selectionTransferred: false;

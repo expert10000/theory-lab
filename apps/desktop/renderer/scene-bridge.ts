@@ -3,7 +3,7 @@ import {supportsScene} from "../../../packages/quantum-scene/from-result";
 import type {ScenePayload} from "../../../packages/quantum-scene";
 import type {ScientificSelectionReference} from "./selection-reference";
 
-export type SceneView="standard"|"bands";
+export type SceneView="standard"|"bands"|"wilson";
 export type SceneSample=
   | {kind:"evolution_time";index:number}
   | {kind:"ssh_site";index:number}

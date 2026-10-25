@@ -220,7 +220,8 @@ export function WebSceneLab({
             onChange={(e) => setView(e.target.value)}
           >
             <option value="standard">Standard scene</option>
-            <option value="bands">SSH / QWZ bands</option>
+            <option value="bands">Supplied energy bands</option>
+            <option value="wilson">BBH Wilson diagnostics</option>
           </select>
         </label>
         <button disabled={busy || !token} onClick={() => void load(false)}>

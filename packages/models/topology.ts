@@ -93,6 +93,39 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
         if([0,1,2,3].some(j=>Math.abs(a.bandEnergies[j][x*g+y]-(j<2?-e:e))>1e-8))return false;
       }
     }
+    if(a.wilson){
+      const w=a.wilson;
+      const exact=2*Math.hypot(Math.abs(p.gammaX)-p.lambdaX,Math.abs(p.gammaY)-p.lambdaY);
+      const phaseGap=(rows:[number[],number[]])=>Math.min(...rows[0].map((value,i)=>{
+        const delta=Math.abs(value-rows[1][i]);return Math.min(delta,1-delta);
+      }));
+      const validPhases=(rows:[number[],number[]])=>rows.length===2&&rows.every(row=>row.length===g&&
+        row.every(v=>Number.isFinite(v)&&v>=-.500001&&v<=.500001));
+      if(!validPhases(w.wannierX)||!validPhases(w.wannierY)||
+        !Number.isFinite(w.minOccupiedLinkSingular)||w.minOccupiedLinkSingular<0||w.minOccupiedLinkSingular>1.000001||
+        Math.abs(w.bulkGapExact-exact)>1e-8||
+        Math.abs(w.wannierGapX-phaseGap(w.wannierX))>1e-8||
+        Math.abs(w.wannierGapY-phaseGap(w.wannierY))>1e-8)return false;
+      const pair=(values:[number|null,number|null])=>values.length===2&&values.every(v=>v===null||
+        Number.isFinite(v)&&v>=0&&v<=1);
+      if(!pair(w.nestedX)||!pair(w.nestedY))return false;
+      const quantized=(values:[number|null,number|null]):0|0.5|null=>{
+        if(values.some(v=>v===null))return null;
+        if(values.every(v=>Math.min(v!,1-v!)<1e-3))return 0;
+        if(values.every(v=>Math.abs(v!-.5)<1e-3))return .5;
+        return null;
+      };
+      const px=quantized(w.nestedY),py=quantized(w.nestedX);
+      const q=px!==null&&px===py?px:null;
+      const loopsDefined=exact>1e-8&&Math.min(w.wannierGapX,w.wannierGapY,w.minOccupiedLinkSingular)>1e-6&&
+        w.nestedX.every(v=>v!==null)&&w.nestedY.every(v=>v!==null);
+      const status=q!==null?"defined":exact<=1e-8?"bulk-gap-closed":
+        Math.min(w.wannierGapX,w.wannierGapY)<=1e-6?"wannier-gap-closed":"unresolved";
+      if(w.defined!==loopsDefined||w.quadrupole!==q||w.status!==status||
+        (status==="defined"&&Math.min(w.wannierGapX,w.wannierGapY,w.minOccupiedLinkSingular)<=1e-6)||
+        (status!=="defined"&&w.nestedX.some(v=>v!==null)&&
+          (status==="bulk-gap-closed"||status==="wannier-gap-closed")))return false;
+    }
     return Number.isFinite(a.bulkGap)&&Math.abs(a.bulkGap-gap)<1e-8&&
       d.midgapEnergies.every((v,i)=>i===0||v>=d.midgapEnergies[i-1]-1e-8);
   }

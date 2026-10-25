@@ -403,8 +403,8 @@ def bbh_wilson_diagnostics(np, parameters, occupied_gauge=None):
 def bbh_analysis(np, parameters):
     """Periodic four-band samples and four finite open-lattice midgap states.
 
-    Corner density is an observation of this finite Hamiltonian, not a bulk
-    quadrupole invariant or an inferred phase label.
+    Nested Wilson loops diagnose the periodic bulk independently of the
+    finite corner density. Unresolved bulk/Wannier gaps withhold the invariant.
     """
     grid, cells = parameters["grid"], parameters["cells"]
     k = -np.pi + 2 * np.pi * np.arange(grid) / grid
@@ -425,8 +425,24 @@ def bbh_analysis(np, parameters):
         densities.append(density)
     average = np.mean(densities, axis=0)
     corners = [0, cells - 1, cells * (cells - 1), cells * cells - 1]
+    wilson = bbh_wilson_diagnostics(np, parameters)
+    def quantized(pair):
+        if any(value is None for value in pair):
+            return None
+        if all(min(value, 1 - value) < 1e-3 for value in pair):
+            return 0.
+        if all(abs(value - .5) < 1e-3 for value in pair):
+            return .5
+        return None
+    px, py = quantized(wilson["nestedY"]), quantized(wilson["nestedX"])
+    quadrupole = px if px is not None and px == py else None
+    wilson["quadrupole"] = quadrupole
+    wilson["status"] = ("defined" if quadrupole is not None else
+                        "bulk-gap-closed" if wilson["bulkGapExact"] <= 1e-8 else
+                        "wannier-gap-closed" if min(wilson["wannierGapX"], wilson["wannierGapY"]) <= 1e-6 else
+                        "unresolved")
     return {"kind": "bbh", "bulkGap": gap, "bandKValues": k.tolist(),
-            "bandEnergies": bands, "finite": {"cells": cells,
+            "bandEnergies": bands, "wilson": wilson, "finite": {"cells": cells,
             "midgapEnergies": [float(energies[index]) for index in selected],
             "midgapDensity": average.tolist(),
             "cornerWeight": float(np.sum(average[corners]))}}

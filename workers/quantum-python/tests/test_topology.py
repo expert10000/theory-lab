@@ -101,6 +101,21 @@ class BBHTests(unittest.TestCase):
         self.assertFalse(wannier["defined"])
         self.assertEqual(wannier["nestedY"], [None, None])
 
+    def test_saved_invariant_status_is_separate_from_finite_corner_weight(self):
+        base = {"lambdaX": 1., "lambdaY": 1., "cells": 4, "grid": 11}
+        job = {"schema": "quantum-job/v1", "jobId": "bbh-wilson",
+               "operation": "topology", "engine": "native",
+               "model": {"type": "bbh", "parameters": base}}
+        for gx, gy, invariant, status in ((.5, .5, .5, "defined"),
+                                           (1.5, 1.5, 0., "defined"),
+                                           (1., 1., None, "bulk-gap-closed"),
+                                           (1., .5, None, "wannier-gap-closed")):
+            job["model"]["parameters"] = dict(base, gammaX=gx, gammaY=gy)
+            a = solve(job)["analysis"]
+            self.assertEqual(a["wilson"]["quadrupole"], invariant)
+            self.assertEqual(a["wilson"]["status"], status)
+            self.assertEqual(len(a["finite"]["midgapDensity"]), 16)
+
     def test_bulk_clifford_spectrum_and_open_boundary(self):
         import numpy as np
         p = {"gammaX": .5, "lambdaX": 1, "gammaY": .5, "lambdaY": 1,

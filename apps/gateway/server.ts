@@ -137,18 +137,18 @@ export async function startGateway(options: GatewayOptions) {
     const sceneMatch=/^\/api\/scenes\/([A-Za-z0-9_-]{1,100})(?:\/(stream|datasets\/[A-Za-z0-9_-]{1,100}|chunks\/chunk-[a-f0-9]{64}\.f64))?$/.exec(path);
     if(method==="GET"&&sceneMatch){
       const query=new URL(request.url!,allowedOrigin).searchParams,view=query.get("view")??"standard";
-      if([...query.keys()].some(k=>k!=="view")||query.getAll("view").length>1||!["standard","bands"].includes(view)){json(response,400,{error:"Invalid scene view query"});return;}
+      if([...query.keys()].some(k=>k!=="view")||query.getAll("view").length>1||!["standard","bands","wilson"].includes(view)){json(response,400,{error:"Invalid scene view query"});return;}
       const key=`${sceneMatch[1]}/${view}`,kind=sceneMatch[2]??"metadata";
       if(sceneMaterializing){json(response,409,{error:"Another scene is being materialized"});return;}sceneMaterializing=true;
       try{
         if(kind==="stream"||kind.startsWith("chunks/")){
           let value=streamCache?.key===key?streamCache.value:undefined;
-          if(kind==="stream"||!value){const payload=await runs.scene(sceneMatch[1],view as "standard"|"bands");value=await makeSceneStream([{label:"Coarse display subset",payload:await scenePreview(payload,sceneDigest)},{label:"Full supplied samples",payload}],sceneDigest);streamCache={key,value};}
+          if(kind==="stream"||!value){const payload=await runs.scene(sceneMatch[1],view as "standard"|"bands"|"wilson");value=await makeSceneStream([{label:"Coarse display subset",payload:await scenePreview(payload,sceneDigest)},{label:"Full supplied samples",payload}],sceneDigest);streamCache={key,value};}
           if(kind==="stream"){json(response,200,value.manifest);return;}
           const bytes=value.chunks[kind.slice(7)];if(!bytes){json(response,404,{error:"Unknown scene chunk"});return;}
           response.writeHead(200,{"Content-Type":"application/octet-stream","Content-Length":bytes.length,"Cache-Control":"no-store"});response.end(bytes);return;
         }
-        let payload=sceneCache?.key===key?sceneCache.payload:undefined;if(kind==="metadata"||!payload){payload=await runs.scene(sceneMatch[1],view as "standard"|"bands");sceneCache={key,payload};}
+        let payload=sceneCache?.key===key?sceneCache.payload:undefined;if(kind==="metadata"||!payload){payload=await runs.scene(sceneMatch[1],view as "standard"|"bands"|"wilson");sceneCache={key,payload};}
         if(kind==="metadata"){json(response,200,payload.scene);return;}
         const d=payload.scene.datasets.find(d=>d.id===kind.slice(9));if(!d){json(response,404,{error:"Unknown scene dataset"});return;}
         const bytes=payload.artifacts[d.path];response.writeHead(200,{"Content-Type":"application/octet-stream","Content-Length":bytes.length,"Cache-Control":"no-store"});response.end(bytes);
