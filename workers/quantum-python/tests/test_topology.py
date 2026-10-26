@@ -72,6 +72,14 @@ class HofstadterTests(unittest.TestCase):
                 tracked = analysis["strip"]["continuation"]
                 self.assertEqual(tracked["ambiguousCandidates"], 0)
                 self.assertEqual(len(tracked["crossings"]), 2)
+                seam = tracked["seam"]
+                self.assertEqual(seam["ambiguousStates"], 0)
+                self.assertGreater(seam["minimumOverlap"], 1-1e-12)
+                self.assertGreater(seam["minimumMargin"], 1-1e-12)
+                self.assertLess(seam["maximumEnergyDrift"], 1e-12)
+                np.testing.assert_allclose(
+                    hofstadter_strip_matrix(np, 1., p, 5, -np.pi, cells),
+                    hofstadter_strip_matrix(np, 1., p, 5, np.pi, cells), atol=1e-13)
                 for crossing in tracked["crossings"]:
                     interval = crossing["interval"]
                     ky = analysis["strip"]["kyValues"]

@@ -402,7 +402,9 @@ export interface HofstadterAnalysis {kind:"hofstadter";flux:number;kxValues:numb
       minimumOverlap:number;minimumMargin:number;ambiguousCandidates:number;
       crossings:{side:"left"|"right";stateIndex:number;targetStateIndex:number;
         interval:number;ky:number;direction:-1|1;minimumWeight:number;
-        overlap:number;margin:number}[]}};
+        overlap:number;margin:number}[];
+      seam?:{method:"periodic-eigenvector-overlap/v1";minimumOverlap:number;
+        minimumMargin:number;maximumEnergyDrift:number;ambiguousStates:number}}};
   units:{flux:"flux quanta per plaquette";momentum:"rad / lattice constant";energy:"hopping energy"}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";

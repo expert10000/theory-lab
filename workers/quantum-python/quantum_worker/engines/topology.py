@@ -720,11 +720,15 @@ def hofstadter_strip_analysis(np, p, q, hopping, cells, samples, fermi=None):
     residual = 0.
     norm_error = 0.
     previous = None
+    first_values = None
+    first_vectors = None
     tracked = []
     ambiguous = 0
     for interval, ky in enumerate(ky_values):
         matrix = hofstadter_strip_matrix(np, hopping, p, q, ky, cells)
         values, vectors = np.linalg.eigh(matrix)
+        if interval == 0:
+            first_values, first_vectors = values, vectors
         residual = max(residual, float(np.max(np.linalg.norm(
             matrix @ vectors - vectors * values, axis=0))))
         norm_error = max(norm_error, float(np.max(np.abs(
@@ -770,9 +774,25 @@ def hofstadter_strip_analysis(np, p, q, hopping, cells, samples, fermi=None):
             "edgeSites": 2, "boundary": "open-x / periodic-y", "maxResidual": residual,
             "maxNormError": norm_error}
     if fermi is not None:
+        from scipy.optimize import linear_sum_assignment
+        last_values, last_vectors = previous[:2]
+        seam_overlap = np.abs(last_vectors.conj().T @ first_vectors)**2
+        seam_rows, seam_columns = linear_sum_assignment(-seam_overlap)
+        strengths = [float(seam_overlap[source, target])
+                     for source, target in zip(seam_rows, seam_columns)]
+        margins = [float(seam_overlap[source, target] -
+                         np.max(np.delete(seam_overlap[source], target)))
+                   for source, target in zip(seam_rows, seam_columns)]
+        seam = {"method": "periodic-eigenvector-overlap/v1",
+                "minimumOverlap": min(strengths), "minimumMargin": min(margins),
+                "maximumEnergyDrift": max(float(abs(last_values[source]-first_values[target]))
+                                          for source, target in zip(seam_rows, seam_columns)),
+                "ambiguousStates": sum(strength < .5 or margin < .02
+                                       for strength, margin in zip(strengths, margins))}
         result["continuation"] = {"method": "maximum-eigenvector-overlap/hungarian-v1",
                                    "minimumOverlap": .5, "minimumMargin": .02,
-                                   "ambiguousCandidates": ambiguous, "crossings": tracked}
+                                   "ambiguousCandidates": ambiguous, "crossings": tracked,
+                                   "seam": seam}
     return result
 
 

@@ -528,6 +528,16 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
          !finite(strip.maxResidual)||!finite(strip.maxNormError))return false;
       if(strip.continuation!==undefined){
         const track=strip.continuation;
+        if(!record(track))return false;
+        if(track.seam!==undefined){
+          const seam=track.seam;
+          if(!record(seam)||seam.method!=="periodic-eigenvector-overlap/v1"||
+            !finite(seam.minimumOverlap)||Number(seam.minimumOverlap)<0||Number(seam.minimumOverlap)>1.000001||
+            !finite(seam.minimumMargin)||Number(seam.minimumMargin)<-1||Number(seam.minimumMargin)>1.000001||
+            !finite(seam.maximumEnergyDrift)||Number(seam.maximumEnergyDrift)<0||Number(seam.maximumEnergyDrift)>1e-6||
+            !Number.isInteger(seam.ambiguousStates)||Number(seam.ambiguousStates)<0||
+            Number(seam.ambiguousStates)>c)return false;
+        }
         if(!record(track)||track.method!=="maximum-eigenvector-overlap/hungarian-v1"||
           track.minimumOverlap!==.5||track.minimumMargin!==.02||
           !Number.isInteger(track.ambiguousCandidates)||Number(track.ambiguousCandidates)<0||
