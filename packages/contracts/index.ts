@@ -384,6 +384,10 @@ export interface LandauAnalysis {kind:"landau_continuum";fieldValues:number[];le
 export interface HofstadterAnalysis {kind:"hofstadter";flux:number;kxValues:number[];kyValues:number[];
   bandIndices:number[];bandEnergies:number[][];coarseBounds:[number,number][];fineBounds:[number,number][];
   extremaDrift:number[];converged:boolean;
+    /** Optional for legacy spectrum-only runs. The new producer always supplies it. */
+    chernGaps?:{occupiedBands:number;coarseGap:number;fineGap:number;coarseChern:number|null;
+      fineChern:number|null;chern:number|null;minimumLink:number|null;
+      status:"defined"|"gap-closed"|"mesh-unresolved";mesh:number;plaquetteFlux:number[]}[];
   units:{flux:"flux quanta per plaquette";momentum:"rad / lattice constant";energy:"hopping energy"}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";

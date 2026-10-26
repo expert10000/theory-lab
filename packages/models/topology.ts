@@ -102,6 +102,25 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
          !near(coarse[1],Math.max(...values))||fine.some(v=>!Number.isFinite(v))||
          !near(a.extremaDrift[band],Math.max(Math.abs(coarse[0]-fine[0]),Math.abs(coarse[1]-fine[1]))))return false;
     }
+    if(a.chernGaps!==undefined){
+      if(a.chernGaps.length!==q-1)return false;
+      for(let index=0;index<a.chernGaps.length;index++){
+        const item=a.chernGaps[index],defined=item.status==="defined";
+        if(item.occupiedBands!==index+1||item.mesh!==2*(g-1)||
+           !Number.isFinite(item.coarseGap)||!Number.isFinite(item.fineGap)||
+           item.coarseGap<0||item.fineGap<0||
+           (item.coarseChern!==null&&!Number.isFinite(item.coarseChern))||
+           (item.fineChern!==null&&!Number.isFinite(item.fineChern))||
+           (item.minimumLink!==null&&(!Number.isFinite(item.minimumLink)||item.minimumLink<0||item.minimumLink>1.000001))||
+           defined!==(item.chern!==null)||
+           (defined&&(item.plaquetteFlux.length!==item.mesh**2||item.minimumLink===null||
+             item.coarseChern===null||item.fineChern===null||
+             Math.abs(item.coarseChern-item.chern!)>1e-6||Math.abs(item.fineChern-item.chern!)>1e-6||
+             Math.abs(item.plaquetteFlux.reduce((sum,value)=>sum+value,0)/(2*Math.PI)-item.chern!)>1e-6))||
+           (!defined&&item.plaquetteFlux.length!==0)||
+           (item.status==="gap-closed"&&Math.min(item.coarseGap,item.fineGap)>1e-6*p.hopping))return false;
+      }
+    }
     return a.converged===(Math.max(...a.extremaDrift)<=.05*p.hopping);
   }
   if(job.model.type==="landau_continuum"&&a.kind==="landau_continuum"){
@@ -443,6 +462,16 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !a.bandEnergies.every(row=>numericArray(row,grid*grid))||!pairs(a.coarseBounds)||
        !pairs(a.fineBounds)||!numericArray(a.extremaDrift,q)||
        typeof a.converged!=="boolean"||!record(a.units))return false;
+    if(a.chernGaps!==undefined&&(!Array.isArray(a.chernGaps)||a.chernGaps.length!==q-1||
+      !a.chernGaps.every((item:unknown)=>record(item)&&Number.isInteger(item.occupiedBands)&&
+        finite(item.coarseGap)&&finite(item.fineGap)&&
+        (item.coarseChern===null||finite(item.coarseChern))&&
+        (item.fineChern===null||finite(item.fineChern))&&
+        (item.chern===null||Number.isInteger(item.chern))&&
+        (item.minimumLink===null||finite(item.minimumLink))&&
+        ["defined","gap-closed","mesh-unresolved"].includes(String(item.status))&&
+        Number.isInteger(item.mesh)&&numericArray(item.plaquetteFlux,
+          item.status==="defined"?Number(item.mesh)**2:0))))return false;
   } else if(job.model.type==="landau_continuum"){
     const p=job.model.parameters,n=p.fieldSamples,l=p.levels;
     if(a.kind!=="landau_continuum"||!numericArray(a.fieldValues,n)||!numericArray(a.levelIndices,l)||

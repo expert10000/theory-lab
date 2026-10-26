@@ -27,6 +27,14 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       assert.equal(isTopologyResponse(response,job),true);
       assert.equal(response.analysis.bandIndices.length,Number(q));
       assert.equal(response.analysis.bandEnergies[0].length,81);
+      assert.equal(response.analysis.chernGaps?.length,Number(q)-1);
+      if(p==="1")assert.deepEqual(response.analysis.chernGaps?.map(gap=>gap.chern),[-1,null,1]);
+      if(p==="-1")assert.deepEqual(response.analysis.chernGaps?.map(gap=>gap.chern),[1,null,-1]);
+      if(q==="1")assert.deepEqual(response.analysis.chernGaps,[]);
+      for(const gap of response.analysis.chernGaps??[]){
+        assert.equal(gap.status==="defined",gap.chern!==null);
+        assert.equal(gap.plaquetteFlux.length,gap.status==="defined"?gap.mesh**2:0);
+      }
       const selection={kind:"hofstadter_band_sample" as const,runId:response.runId,band:0,xIndex:2,yIndex:3};
       const sample=selectedTopologySample(selection,response);
       assert.equal(sample?.kind,"hofstadter_band_sample");
@@ -42,12 +50,25 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       assert.equal(payload.scene.provenance.source?.entryId,"hofstadter");
       assert.equal(payload.scene.bands?.energies.length,Number(q)===1?undefined:Number(q));
       assert.deepEqual([...arrays.get("band-0-energy")!],response.analysis.bandEnergies[0]);
+      assert.deepEqual(payload.scene.topology?.invariants.map(item=>item.value)??[],
+        response.analysis.chernGaps?.map(gap=>gap.chern)??[]);
+      for(const gap of response.analysis.chernGaps??[]){
+        const dataset=`occupied-${gap.occupiedBands}-plaquette-flux`;
+        assert.deepEqual([...arrays.get(dataset)??[]],gap.plaquetteFlux);
+        assert.equal(payload.scene.topology?.quantities.some(item=>item.dataset===dataset),gap.status==="defined");
+      }
       const folder=await store.exportScene(response.runId,root,"standard");
       assert.equal((await readSceneBundle(folder)).scene.provenance.resultSha256,payload.scene.provenance.resultSha256);
       const bad=structuredClone(response);
       if(bad.analysis.kind!=="hofstadter")throw new Error("Wrong result");
       bad.analysis.coarseBounds[0][0]+=.01;
       assert.equal(isTopologyResponse(bad,job),false);
+      if(response.analysis.chernGaps?.length){
+        const altered=structuredClone(response);
+        if(altered.analysis.kind!=="hofstadter"||!altered.analysis.chernGaps)throw new Error("Wrong result");
+        altered.analysis.chernGaps[0].chern=7;
+        assert.equal(isTopologyResponse(altered,job),false);
+      }
       await writeFile(join(root,"runs",response.runId,"result.json"),"{}\n");
       await assert.rejects(new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),/integrity check/);
     }

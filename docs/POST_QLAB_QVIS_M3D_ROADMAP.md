@@ -826,6 +826,16 @@ read-only Math3D inspection. This is a finite sampled periodic spectrum;
 Atlas Chern numbers and edge spectra remain future producer goals. A flux
 sweep or full butterfly diagram is likewise future work.
 
+**2026-10-26 occupied-gap Chern extension:** The same bounded Harper job now
+records gauge-invariant determinant-link flux on a half-open magnetic torus
+for each occupied subspace, with coarse/fine grid checks, the sampled direct
+gap, minimum link and a status. A touching gap reports `undefined`, as does
+an unresolved mesh; historical spectrum-only runs remain readable. The
+periodic bulk calculation supplies no open-boundary edge spectrum or filled
+Fermi level, so Hall response is still a separate future calculation. The
+source-linked `.qscene` supplies exact FHS plaquette phases and conditional
+invariants for a read-only consumer.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

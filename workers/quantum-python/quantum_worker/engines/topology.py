@@ -773,7 +773,7 @@ def hofstadter_chern_diagnostics(np, p, q, hopping, grid):
 
 
 def hofstadter_analysis(np, parameters):
-    """Only the bounded periodic spectrum and sampled extrema; no filled-band claim."""
+    """Bounded periodic spectrum and conditional occupied-gap Chern diagnostics."""
     from math import gcd
     p, q, hopping, grid = (parameters[key] for key in ("p", "q", "hopping", "grid"))
     if (not isinstance(p, int) or not isinstance(q, int) or not isinstance(grid, int)
@@ -800,6 +800,7 @@ def hofstadter_analysis(np, parameters):
             "bandIndices": list(range(q)), "bandEnergies": bands,
             "coarseBounds": coarse_bounds, "fineBounds": fine_bounds,
             "extremaDrift": drift, "converged": bool(max(drift) <= .05 * hopping),
+            "chernGaps": hofstadter_chern_diagnostics(np, p, q, hopping, grid),
             "units": {"flux": "flux quanta per plaquette", "momentum": "rad / lattice constant",
                       "energy": "hopping energy"}}
 

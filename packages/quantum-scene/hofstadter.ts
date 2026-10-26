@@ -24,7 +24,7 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
       units:[a.units.momentum,a.units.momentum,a.units.energy]},
     camera:{position:[3*Math.PI/p.q,-7,span*2],target:[0,0,0],up:[0,0,1]},
     datasets:[],objects:[],annotations:[
-      {id:"scope",text:`Square-lattice Harper spectrum · flux ${p.p}/${p.q} · ${p.q} magnetic bands · no Chern numbers or edge spectra`,position:[0,0,span*1.2]},
+      {id:"scope",text:`Square-lattice Harper spectrum · flux ${p.p}/${p.q} · ${p.q} magnetic bands · ${a.chernGaps?"conditional occupied-gap Chern diagnostics":"legacy spectrum only"} · no edge spectra`,position:[0,0,span*1.2]},
       {id:"sampling",text:`${g}×${g} saved k grid; coarse/fine extrema drift ${Math.max(...a.extremaDrift).toPrecision(4)} ${a.units.energy} (${a.converged?"within":"outside"} sampling target)`,position:[0,0,-span*1.2]}]};
   const builder=new SceneBuilder(scene,digest);
   const coordinates=await builder.data("magnetic-k",a.kxValues.flatMap(kx=>a.kyValues.flatMap(ky=>[kx,ky,0])),3,a.units.momentum);
@@ -45,5 +45,33 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
   // The existing band contract requires at least two bands. Zero flux has one
   // ordinary Bloch band, so retain its exact mesh without inventing a partner.
   if(p.q>1)scene.bands={kind:"surface",coordinates,energies,objects,labels,energyUnit:a.units.energy,bulkGap:directGap,grid:[g,g]};
+  if(a.chernGaps?.length){
+    scene.topology={quantities:[],invariants:[],limitations:[
+      "Chern numbers belong to the producer's gapped occupied subspaces; a touching or unresolved gap is undefined.",
+      "FHS plaquette flux is an exact supplied scalar on a separate half-open periodic mesh. Its z=0 position is a display plane, not an energy sample.",
+      "No open-boundary spectrum, Fermi filling or Hall response is supplied. Math3D does not calculate Berry flux or Chern numbers."]};
+    for(const gap of a.chernGaps){
+      const id=`occupied-${gap.occupiedBands}`;
+      scene.topology.invariants.push({id:`${id}-chern`,label:`Occupied ${gap.occupiedBands} Chern`,
+        value:gap.chern,status:gap.status==="defined"?"verified":gap.status==="gap-closed"?"undefined":"unresolved",
+        method:`Producer FHS determinant links; coarse/fine ${g-1}/${gap.mesh} periodic meshes; fine direct gap ${gap.fineGap.toPrecision(5)} ${a.units.energy}; minimum link ${gap.minimumLink?.toPrecision(5)??"undefined"}`});
+      if(gap.status!=="defined")continue;
+      const n=gap.mesh,stepX=2*Math.PI/(p.q*n),stepY=2*Math.PI/n;
+      const positions=await builder.data(`${id}-flux-positions`,gap.plaquetteFlux.flatMap((_,index)=>{
+        const x=Math.floor(index/n),y=index%n;
+        return [-Math.PI/p.q+(x+.5)*stepX,-Math.PI+(y+.5)*stepY,0];
+      }),3,"kx, ky, z=0 display plane");
+      const scalar=await builder.data(`${id}-plaquette-flux`,gap.plaquetteFlux,1,"rad per plaquette");
+      const triangles:number[]=[];
+      for(let x=0;x<n-1;x++)for(let y=0;y<n-1;y++){
+        const i=x*n+y;triangles.push(i,i+n,i+1,i+1,i+n,i+n+1);
+      }
+      builder.object(`${id}-flux`,`Occupied ${gap.occupiedBands} FHS plaquette flux`,"mesh",positions,"#79d9c1",
+        {indices:await builder.data(`${id}-flux-triangles`,triangles,3,"vertex index"),scalars:scalar});
+      scene.topology.quantities.push({id:`${id}-berry-flux`,label:`Occupied ${gap.occupiedBands} FHS plaquette flux`,
+        kind:"berry-curvature",object:`${id}-flux`,dataset:scalar,
+        convention:"Signed FHS plaquette phase in radians; half-open magnetic zone, x-major/y-fastest; no area division"});
+    }
+  }
   return builder.finish();
 }
