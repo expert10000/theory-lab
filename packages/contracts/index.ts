@@ -666,6 +666,10 @@ export interface QuantumBridge {
   getHofstadterFluxStudy(studyId:string):Promise<import("./hofstadter-flux-study").HofstadterFluxStudy>;
   listHofstadterFluxStudies():Promise<{studyId:string;computedAt:string;count:number;status:string}[]>;
   exportHofstadterButterfly(studyId:string):Promise<string|null>;
+  saveHofstadterEdgeStudy(result:import("./hofstadter-edge-study").HofstadterEdgeStudy):Promise<import("./hofstadter-edge-study").HofstadterEdgeStudy>;
+  getHofstadterEdgeStudy(studyId:string):Promise<import("./hofstadter-edge-study").HofstadterEdgeStudy>;
+  listHofstadterEdgeStudies():Promise<{studyId:string;computedAt:string;status:string}[]>;
+  exportHofstadterEdgeScene(studyId:string):Promise<string|null>;
   getScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant" | "strip"): Promise<import("../quantum-scene").ScenePayload>;
   exportScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant" | "strip", format?: "regular"|"stream"): Promise<string | null>;
   prepareSceneHandoff(runId: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;

@@ -158,6 +158,7 @@ try {
       "evolve",
       "exportFigure",
       "exportHofstadterButterfly",
+      "exportHofstadterEdgeScene",
       "exportRun",
       "exportRunBundle",
       "exportScene",
@@ -167,6 +168,7 @@ try {
       "getCircuitRun",
       "getEvolutionRun",
       "getFigure",
+      "getHofstadterEdgeStudy",
       "getHofstadterFluxStudy",
       "getIsingQuench",
       "getIsingState",
@@ -191,6 +193,7 @@ try {
       "importSceneStream",
       "inspectSavedRun",
       "lindblad",
+      "listHofstadterEdgeStudies",
       "listHofstadterFluxStudies",
       "listIsingStudies",
       "listRuns",
@@ -216,6 +219,7 @@ try {
       "rerunSaved",
       "restart",
       "run",
+      "saveHofstadterEdgeStudy",
       "saveHofstadterFluxStudy",
       "saveIsingStudy",
       "saveSpectrumStudy",
@@ -868,6 +872,15 @@ try {
   assert.equal(await page.getByTestId("topology-selected-cell").count(),0);
   assert.equal(await page.getByTestId("topology-selected-value").count(),0);
   assert.match(await page.getByTestId("topology-inspector-diagnostics").innerText(),/undefined at gap closure/);
+  await page.getByRole("tab",{name:"Sweeps",exact:true}).click();
+  await page.getByTestId("hofstadter-edge-lab").getByRole("button",{name:"Run verified bulk-edge comparison"}).click();
+  await page.getByTestId("hofstadter-edge-result").filter({hasText:"Bulk–edge status: consistent"}).waitFor({timeout:45000});
+  const edgeStudies=await page.evaluate(()=>window.quantum.listHofstadterEdgeStudies());
+  assert.equal(edgeStudies[0].status,"consistent");
+  const edgeStudy=await page.evaluate(id=>window.quantum.getHofstadterEdgeStudy(id),edgeStudies[0].studyId);
+  assert.equal(edgeStudy.sources.length,3);
+  assert.equal(edgeStudy.widths[0].leftFlow,-edgeStudy.bulk.hall);
+  await page.getByRole("tab",{name:"Explore",exact:true}).click();
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   await page.getByRole("button",{name:`Open SSH topology ${preservedTopologyRunIds.ssh}`}).click();
   await page.getByTestId("workspace-run-id").filter({hasText:preservedTopologyRunIds.ssh}).waitFor();

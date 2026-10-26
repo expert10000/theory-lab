@@ -669,6 +669,15 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
   if (result.operation === "topology") {
     if(result.analysis.kind==="hofstadter"){
       const a=result.analysis,g=a.kxValues.length,values=a.bandEnergies;
+      if(a.strip){
+        const strip=a.strip,span=Math.max(1e-9,...strip.energies.flat().map(Math.abs));
+        const points=strip.energies.map((band,state)=>band.map((energy,k)=>{
+          const left=strip.leftWeights[state][k],right=strip.rightWeights[state][k];
+          const x=70+k*760/(strip.kyValues.length-1),y=250-energy*160/span;
+          return `<circle cx="${x}" cy="${y}" r="1.6" fill="${left>=right?"#79d9c1":"#f2b36f"}" opacity="${Math.max(.25,Math.min(.9,Math.max(left,right)))}"/>`;
+        }).join("")).join("");
+        return head+points+`<text x="70" y="480" fill="white" font-family="sans-serif">Harper strip · flux ${a.flux} · ${strip.cells} open sites · sorted energies, no tracked branches</text></svg>\n`;
+      }
       const span=Math.max(1e-9,...values.flat().map(Math.abs));
       const lines=values.map((band,i)=>`<polyline points="${a.kxValues.map((_,x)=>`${70+x*760/(g-1)},${250-band[x*g+Math.floor(g/2)]*160/span}`).join(" ")}" fill="none" stroke="${i%2?"#f2b36f":"#79d9c1"}" stroke-width="2"/>`).join("");
       return head+lines+`<text x="70" y="480" fill="white" font-family="sans-serif">Harper bands · flux ${a.flux} · ky center slice · no Chern or edges</text></svg>\n`;

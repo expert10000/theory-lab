@@ -27,6 +27,7 @@ import {TwoLevelStateView} from "./TwoLevelStateView";
 import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {IsingStudyLab,ISING_STUDY_DEFAULTS} from "./IsingStudyLab";
 import {HofstadterFluxLab} from "./HofstadterFluxLab";
+import {HofstadterEdgeLab} from "./HofstadterEdgeLab";
 import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
@@ -806,7 +807,10 @@ export function App() {
           <div hidden={tab!=="sweep"||activeModel!=="ising_chain"}><IsingStudyLab bridge={window.quantum} status={status}
             restored={restored?.snapshot.isingStudy} restoreEpoch={restored?.epoch} onSnapshot={collectIsingStudy}
             onOpenPoint={openSavedManyBody}/></div>
-          <div hidden={tab!=="sweep"||activeModel!=="topology"}><HofstadterFluxLab bridge={window.quantum} status={status} onOpenRun={openSavedTopology}/></div>
+          <div hidden={tab!=="sweep"||activeModel!=="topology"}>
+            <HofstadterFluxLab bridge={window.quantum} status={status} onOpenRun={openSavedTopology}/>
+            <HofstadterEdgeLab bridge={window.quantum} status={status} onOpenRun={openSavedTopology}/>
+          </div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} onManyBodyContext={collectManyBodyContext} reopenedManyBody={reopenedManyBody} /></div>
           <div hidden={tab!=="ising_quench"}><IsingQuenchLab bridge={window.quantum} status={status} preferredRunId={manyBodyContext?.result.runId??null}
             restored={restored?.snapshot.isingQuench} restoreEpoch={restored?.epoch} onSnapshot={collectIsingQuench}/></div>
@@ -1069,7 +1073,7 @@ export function App() {
         <aside className="inspector">
           <SelectionReferenceCard reference={selectionReference} result={selectionResult}/>
           <ObservableWorkspace view={observableView}/>
-          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="ising_quench"?<div><p className="eyebrow">QVIS-020 / DYNAMICS</p><h2>Finite-chain quench</h2><p>Choose a verified saved Ising run in the main workspace. The time cursor then selects only its quench artifact's recorded site magnetizations, norm and target energy.</p><p>No evolving state vector is persisted.</p></div>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel==="ising_chain"?<div><p className="eyebrow">ISING STUDY</p><h2>Saved point runs</h2><p>Select any plotted point to inspect its recorded values. Open it to see the verified Ising-run inspector and provenance.</p><p>Mean magnetization is derived only from saved site values. Fidelity and full state vectors are unavailable.</p></div>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
+          {tab==="dynamics"?<EvolutionRunInspector context={evolutionContext} modelId={evolutionModel}/>:tab==="ising_quench"?<div><p className="eyebrow">QVIS-020 / DYNAMICS</p><h2>Finite-chain quench</h2><p>Choose a verified saved Ising run in the main workspace. The time cursor then selects only its quench artifact's recorded site magnetizations, norm and target energy.</p><p>No evolving state vector is persisted.</p></div>:tab==="cavity"?<CavityRunInspector context={cavityContext} modelId={cavityModel}/>:tab==="open"?<LindbladRunInspector context={lindbladContext}/>:tab==="circuit"?<CircuitRunInspector context={circuitContext}/>:tab==="many_body"?<ManyBodyRunInspector context={manyBodyContext}/>:tab==="sweep"&&activeModel==="ising_chain"?<div><p className="eyebrow">ISING STUDY</p><h2>Saved point runs</h2><p>Select any plotted point to inspect its recorded values. Open it to see the verified Ising-run inspector and provenance.</p><p>Mean magnetization is derived only from saved site values. Fidelity and full state vectors are unavailable.</p></div>:tab==="sweep"&&activeModel==="topology"?<div><p className="eyebrow">HOFSTADTER STUDIES</p><h2>Verified bulk and strip runs</h2><p>The flux sweep and bulk–edge study in the main workspace use immutable source runs. Open an individual run to inspect its stored samples.</p><p>Sampled strip crossings are finite-width evidence; unresolved comparisons are marked undefined.</p></div>:tab==="sweep"&&activeModel!=="two_level"?<SweepRunInspector context={sweepContext} modelId={activeModel as EvolutionModelId}/>:tab==="topology"?<TopologyRunInspector context={topologyContext}/>:tab==="orbital"?<OrbitalRunInspector context={orbitalContext}/>:tab==="oscillator"?<OscillatorRunInspector context={oscillatorContext}/>:<>
           <p className="eyebrow">MODEL INSPECTOR</p>
           <h2>{inspectorTab==="parameters"?"Parameters":inspectorTab==="observables"?"Observables":"Provenance"}</h2>
           <nav className="inspector-tabs" aria-label="Model inspector views">

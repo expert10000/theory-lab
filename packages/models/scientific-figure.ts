@@ -27,6 +27,15 @@ export function figureSemantics(result:QuantumResult):Semantics{
   if(result.operation==="topology"&&result.analysis.kind==="bhz")return {
     axes:{x:axis("kₓ","rad / lattice constant"),y:axis("kᵧ","rad / lattice constant")},
     series:series(["BHZ supplied bulk bands"],"normalized"),plottedSamples:result.analysis.bandEnergies[0].length};
+  if(result.operation==="topology"&&result.analysis.kind==="hofstadter"){
+    const strip=result.analysis.strip;
+    return strip?{axes:{x:axis("kᵧ","rad / lattice constant"),y:axis("Strip energy","hopping energy")},
+      series:series(["Sorted finite-strip eigenenergies"],"hopping energy"),
+      plottedSamples:strip.cells*strip.kyValues.length}:
+      {axes:{x:axis("kₓ","rad / lattice constant"),y:axis("Bulk energy at central kᵧ","hopping energy")},
+        series:series(result.analysis.bandEnergies.map((_,i)=>`Bulk band ${i}`),"hopping energy"),
+        plottedSamples:result.analysis.bandEnergies.length*result.analysis.kxValues.length};
+  }
   if(result.operation==="topology")return result.analysis.kind==="ssh"?
     {axes:{x:axis("Crystal momentum k","radian"),y:axis("Band energy","normalized")},
       series:series(["Lower band","Upper band"],"normalized"),plottedSamples:result.analysis.kValues.length}:

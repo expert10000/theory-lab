@@ -2069,3 +2069,14 @@ resolve; atomic cancel/resume checkpoints; source-linked butterfly `.qscene`;
 read-only Math3D exact-sample inspection and tamper refusal. See
 [`HOFSTADTER_FLUX_SWEEP.md`](HOFSTADTER_FLUX_SWEEP.md). Experimental Hall
 plateaus and finite-strip edge-channel classification remain future work.
+
+## Bounded Hofstadter bulk–edge comparison extension
+
+**Implemented:** one verified periodic bulk source and independently saved
+18- and 24-site finite-strip sources at the same reduced flux and filling;
+explicit global-gap, edge-localization, signed sampled-crossing and
+strip-width checks; immutable paired-run study with undefined status when
+the evidence does not resolve; exact source-linked read-only Math3D scene.
+See [`HOFSTADTER_BULK_EDGE_COMPARISON.md`](HOFSTADTER_BULK_EDGE_COMPARISON.md).
+Tracked eigenstate branches, experimental transport and Hall plateaus are
+separate future work.
