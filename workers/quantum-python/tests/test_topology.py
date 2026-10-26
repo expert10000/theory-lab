@@ -1,10 +1,65 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis, landau_analysis, hofstadter_matrix, hofstadter_analysis, hofstadter_chern_diagnostics, occupied_chern_links
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis, landau_analysis, hofstadter_matrix, hofstadter_analysis, hofstadter_chern_diagnostics, hofstadter_strip_matrix, hofstadter_strip_analysis, occupied_chern_links
 
 
 class HofstadterTests(unittest.TestCase):
+    def test_open_strip_independent_matrix_flux_reversal_and_width_limit(self):
+        import numpy as np
+        p, q, hopping, cells, ky = 1, 3, 1.2, 18, -.5 * np.pi
+        matrix = hofstadter_strip_matrix(np, hopping, p, q, ky, cells)
+        independent = np.zeros((cells, cells), complex)
+        for x in range(cells):
+            independent[x, x] = -hopping * (np.exp(1j * (ky + 2*np.pi*p*x/q)) +
+                                              np.exp(-1j * (ky + 2*np.pi*p*x/q)))
+            if x + 1 < cells:
+                independent[x, x+1] = independent[x+1, x] = -hopping
+        np.testing.assert_allclose(matrix, independent, atol=1e-13)
+        self.assertEqual(matrix[0, -1], 0)  # no x seam
+        for momentum in (-2.3, -.4, .7):
+            positive = hofstadter_strip_matrix(np, hopping, p, q, momentum, cells)
+            reversed_field = hofstadter_strip_matrix(np, hopping, -p, q, -momentum, cells)
+            np.testing.assert_allclose(positive, reversed_field.conj(), atol=1e-13)
+            np.testing.assert_allclose(positive, positive.conj().T, atol=1e-13)
+        np.testing.assert_allclose(matrix, hofstadter_strip_matrix(
+            np, hopping, p, q, ky + 2*np.pi, cells), atol=1e-13)
+
+        # An independently diagonalized left-localized branch at fixed ky
+        # stabilizes as the open boundaries separate; levels are never
+        # compared by sorted index across different strip widths.
+        edge_energies = []
+        for width in (12, 18, 24):
+            h = hofstadter_strip_matrix(np, 1., 1, 3, -np.pi/2, width)
+            values, vectors = np.linalg.eigh(h)
+            candidates = [(float(values[i]), float(np.sum(abs(vectors[:2, i])**2)))
+                          for i in range(width) if .3 < values[i] < .6]
+            edge_energies.append(max(candidates, key=lambda item: item[1])[0])
+        self.assertLess(abs(edge_energies[2] - edge_energies[1]),
+                        abs(edge_energies[1] - edge_energies[0]))
+        self.assertLess(abs(edge_energies[2] - edge_energies[1]), 1e-3)
+
+    def test_strip_saved_values_are_exact_eigenpairs_and_boundary_weights(self):
+        import numpy as np
+        result = hofstadter_strip_analysis(np, 1, 4, 1., 16, 15)
+        self.assertEqual(result["boundary"], "open-x / periodic-y")
+        self.assertEqual(result["edgeSites"], 2)
+        self.assertEqual(len(result["energies"]), 16)
+        self.assertEqual(len(result["kyValues"]), 15)
+        self.assertLess(result["maxResidual"], 1e-11)
+        self.assertLess(result["maxNormError"], 1e-12)
+        for index in (0, 7, 14):
+            ky = result["kyValues"][index]
+            expected, vectors = np.linalg.eigh(hofstadter_strip_matrix(np, 1., 1, 4, ky, 16))
+            for state in (0, 3, 8, 15):
+                self.assertAlmostEqual(result["energies"][state][index], expected[state])
+                self.assertAlmostEqual(result["leftWeights"][state][index],
+                                       float(np.sum(abs(vectors[:2, state])**2)))
+                self.assertAlmostEqual(result["rightWeights"][state][index],
+                                       float(np.sum(abs(vectors[-2:, state])**2)))
+                self.assertLessEqual(result["leftWeights"][state][index] +
+                                     result["rightWeights"][state][index], 1.0000001)
+
     def test_occupied_chern_diophantine_sign_reversal_and_touching_gap(self):
         import numpy as np
         # Independently, r = p*C (mod q) for square-lattice gap r. With our

@@ -698,6 +698,44 @@ def hofstadter_matrix(np, hopping, p, q, kx, ky):
     return matrix
 
 
+def hofstadter_strip_matrix(np, hopping, p, q, ky, cells):
+    """Landau-gauge Harper strip, open along x and Bloch-periodic along y."""
+    sites = np.arange(cells)
+    onsite = -2 * hopping * np.cos(ky + 2 * np.pi * p * sites / q)
+    matrix = np.diag(onsite).astype(complex)
+    offdiagonal = np.full(cells - 1, -hopping)
+    matrix += np.diag(offdiagonal, 1) + np.diag(offdiagonal, -1)
+    return matrix
+
+
+def hofstadter_strip_analysis(np, p, q, hopping, cells, samples):
+    """Exact finite-strip eigenvalues and separately measured boundary weights."""
+    if not (isinstance(cells, int) and 12 <= cells <= 32 and
+            isinstance(samples, int) and 11 <= samples <= 31 and samples % 2 == 1):
+        raise ValueError("Hofstadter strip requires 12..32 open sites and 11..31 odd ky samples")
+    ky_values = np.linspace(-np.pi, np.pi, samples)
+    energies = [[] for _ in range(cells)]
+    left = [[] for _ in range(cells)]
+    right = [[] for _ in range(cells)]
+    residual = 0.
+    norm_error = 0.
+    for ky in ky_values:
+        matrix = hofstadter_strip_matrix(np, hopping, p, q, ky, cells)
+        values, vectors = np.linalg.eigh(matrix)
+        residual = max(residual, float(np.max(np.linalg.norm(
+            matrix @ vectors - vectors * values, axis=0))))
+        norm_error = max(norm_error, float(np.max(np.abs(
+            np.sum(np.abs(vectors)**2, axis=0) - 1))))
+        for state in range(cells):
+            energies[state].append(float(values[state]))
+            left[state].append(float(np.sum(np.abs(vectors[:2, state])**2)))
+            right[state].append(float(np.sum(np.abs(vectors[-2:, state])**2)))
+    return {"cells": cells, "kyValues": ky_values.tolist(), "stateIndices": list(range(cells)),
+            "energies": energies, "leftWeights": left, "rightWeights": right,
+            "edgeSites": 2, "boundary": "open-x / periodic-y", "maxResidual": residual,
+            "maxNormError": norm_error}
+
+
 def occupied_chern_links(np, frames):
     """FHS determinant links on a half-open torus (x then y orientation).
 
