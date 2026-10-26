@@ -322,7 +322,9 @@ export interface KitaevChainModel { type:"kitaev_chain"; parameters:{mu:number;h
 export interface WeylMinimalModel {type:"weyl_minimal";parameters:{velocity:number;chirality:-1|1;radius:number;subdivisions:0|1|2};source?:LayerOneSource}
 /** Atlas continuum nodal ring. The loop is radial-z and is not a surface calculation. */
 export interface NodalLineModel {type:"nodal_line_two_band";parameters:{mass:number;curvature:number;velocity:number;loopCenter:number;loopRadius:number;samples:number};source?:LayerOneSource}
-export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel }
+/** Uniform 2D continuum field; only nonzero same-sign field fans are admitted. */
+export interface LandauModel {type:"landau_continuum";parameters:{mass:number;charge:-1|1;fieldStart:number;fieldStop:number;fieldSamples:number;levels:number;grid:number};source?:LayerOneSource}
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
   lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
@@ -374,10 +376,13 @@ export interface NodalLineAnalysis {kind:"nodal_line_two_band";ringRadius:number
   loopPositions:[number,number,number][];lowerBand:number[];upperBand:number[];loopGap:number;
   berryPhase:number|null;winding:number|null;minimumLink:number|null;convergenceError:number|null;
   status:"defined"|"gap-closed"|"mesh-unresolved"}
+export interface LandauAnalysis {kind:"landau_continuum";fieldValues:number[];levelIndices:number[];energies:number[][];
+  cyclotronFrequencies:number[];coarseMaxErrors:number[];fineMaxErrors:number[];converged:boolean;
+  units:{field:"normalized magnetic field";energy:"normalized energy";hbar:"1";mass:"normalized mass";charge:"elementary charge"}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
-  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel;
-  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis | KitaevChainAnalysis | WeylMinimalAnalysis | NodalLineAnalysis;
+  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis | KitaevChainAnalysis | WeylMinimalAnalysis | NodalLineAnalysis | LandauAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {

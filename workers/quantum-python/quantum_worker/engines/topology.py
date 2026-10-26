@@ -703,6 +703,8 @@ def solve(job):
         analysis = weyl_analysis(np, model["parameters"])
     elif model["type"] == "nodal_line_two_band":
         analysis = nodal_analysis(np, model["parameters"])
+    elif model["type"] == "landau_continuum":
+        analysis = landau_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,

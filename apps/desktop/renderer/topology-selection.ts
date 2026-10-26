@@ -9,6 +9,7 @@ export type TopologySelection=
   | {kind:"kitaev_site";runId:string;index:number}
   | {kind:"weyl_sphere_sample";runId:string;index:number}
   | {kind:"nodal_loop_sample";runId:string;index:number}
+  | {kind:"landau_level_sample";runId:string;fieldIndex:number;level:number}
   | {kind:"bhz_ribbon_state";runId:string;index:number};
 export type TopologySample=
   | {kind:"ssh_band";index:number;k:number;lower:number;upper:number}
@@ -19,6 +20,7 @@ export type TopologySample=
   | {kind:"kitaev_site";index:number;density:number}
   | {kind:"weyl_sphere_sample";index:number;q:[number,number,number];lower:number;upper:number;berry:[number,number,number]}
   | {kind:"nodal_loop_sample";index:number;q:[number,number,number];lower:number;upper:number}
+  | {kind:"landau_level_sample";fieldIndex:number;level:number;field:number;energy:number;frequency:number;coarseError:number;fineError:number}
   | {kind:"bhz_ribbon_state";index:number;k:number;energy:number;edgeWeight:number;density:number[];spin:number[];amplitudes:[number,number][]};
 export interface TopologyRunContext {
   result:TopologyResult;
@@ -29,6 +31,14 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="landau_continuum"&&analysis.kind==="landau_continuum"&&selection.kind==="landau_level_sample"){
+    const {fieldIndex,level}=selection;
+    if(!Number.isInteger(fieldIndex)||!Number.isInteger(level)||fieldIndex<0||level<0||
+      fieldIndex>=analysis.fieldValues.length||level>=analysis.levelIndices.length)return null;
+    return {kind:"landau_level_sample",fieldIndex,level,field:analysis.fieldValues[fieldIndex],
+      energy:analysis.energies[fieldIndex][level],frequency:analysis.cyclotronFrequencies[fieldIndex],
+      coarseError:analysis.coarseMaxErrors[fieldIndex],fineError:analysis.fineMaxErrors[fieldIndex]};
+  }
   if(result.model.type==="nodal_line_two_band"&&analysis.kind==="nodal_line_two_band"&&selection.kind==="nodal_loop_sample"){
     const index=selection.index;
     if(!Number.isInteger(index)||index<0||index>=analysis.loopPositions.length)return null;

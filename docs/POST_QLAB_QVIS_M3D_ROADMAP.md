@@ -806,6 +806,16 @@ Math3D inspection. The continuum calculation supplies no boundary spectrum
 or drumhead state. Landau/Hall remains a separate producer family; it is not
 the existing Landau–Zener dynamics lab.
 
+**2026-10-26 bounded Landau-level producer extension:** `landau_continuum`
+now has an executable 2D uniform-field native job. It records exact signed
+field samples, discrete level energies, normalized units (ħ=1), and per-field
+coarse/fine Landau-gauge finite-difference errors in immutable runs. A
+source-linked `.qscene` carries the exact saved level fan to read-only
+consumers. The calculation excludes zero and sign-crossing fields. This
+establishes neither filled-level Hall conductivity, edge channels, nor a
+plateau. `integer_qh_effective` and `hofstadter` remain distinct future
+producer models; the existing Landau–Zener lab remains separate.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

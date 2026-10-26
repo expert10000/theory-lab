@@ -9,6 +9,7 @@ export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   mu:"0",hopping:"1",pairing:"0.8",
   velocity:"1",chirality:"1",radius:"1",subdivisions:"1",
   curvature:"1",loopCenter:"1",loopRadius:"0.25",loopSamples:"64",
+  charge:"-1",fieldStart:"0.5",fieldStop:"2",fieldSamples:"7",levels:"5",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -56,6 +57,16 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
       curvature:numeric(draft.curvature??"1",.25,2),velocity:numeric(draft.velocity??"1",.25,2),
       loopCenter:numeric(draft.loopCenter??"1",0,3),loopRadius:numeric(draft.loopRadius??"0.25",0,.75),
       samples:numeric(draft.loopSamples??"64",32,128,true)}}};
+  if(draft.modelId==="landau_continuum"){
+    const fieldStart=numeric(draft.fieldStart??"0.5",-2,2),fieldStop=numeric(draft.fieldStop??"2",-2,2);
+    if(fieldStart*fieldStop<=0)throw new Error("Landau field endpoints must have the same nonzero sign");
+    const charge=numeric(draft.charge??"-1",-1,1,true);
+    if(charge!==-1&&charge!==1)throw new Error("Landau charge must be -1 or +1");
+    return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",
+      model:{type:"landau_continuum",source,parameters:{mass:numeric(draft.mass,.5,2),charge,
+        fieldStart,fieldStop,fieldSamples:numeric(draft.fieldSamples??"7",3,11,true),
+        levels:numeric(draft.levels??"5",2,6,true),grid:numeric(draft.grid,48,80,true)}}};
+  }
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
 }
@@ -64,6 +75,21 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   if (result.jobId !== job.jobId || JSON.stringify(result.model) !== JSON.stringify(job.model) ||
       result.analysis.kind !== job.model.type) return false;
   const a = result.analysis;
+  if(job.model.type==="landau_continuum"&&a.kind==="landau_continuum"){
+    const p=job.model.parameters,n=p.fieldSamples,levels=p.levels;
+    if(a.fieldValues.length!==n||a.energies.length!==n||a.cyclotronFrequencies.length!==n||
+       a.coarseMaxErrors.length!==n||a.fineMaxErrors.length!==n||
+       a.levelIndices.length!==levels||a.levelIndices.some((value,i)=>value!==i)||
+       JSON.stringify(a.units)!==JSON.stringify({field:"normalized magnetic field",energy:"normalized energy",hbar:"1",mass:"normalized mass",charge:"elementary charge"}))return false;
+    for(let i=0;i<n;i++){
+      const field=p.fieldStart+(p.fieldStop-p.fieldStart)*i/(n-1),omega=Math.abs(p.charge*field)/p.mass;
+      if(Math.abs(a.fieldValues[i]-field)>1e-10||Math.abs(a.cyclotronFrequencies[i]-omega)>1e-10||
+         a.energies[i].length!==levels||a.energies[i].some((value,j)=>Math.abs(value-omega*(j+.5))>1e-10)||
+         !Number.isFinite(a.coarseMaxErrors[i])||!Number.isFinite(a.fineMaxErrors[i])||
+         a.coarseMaxErrors[i]<0||a.fineMaxErrors[i]<0)return false;
+    }
+    return a.converged===a.fineMaxErrors.every((fine,i)=>fine<a.coarseMaxErrors[i]&&fine<.05);
+  }
   if(job.model.type==="nodal_line_two_band"&&a.kind==="nodal_line_two_band"){
     const p=job.model.parameters,n=p.samples,r=p.mass>0?Math.sqrt(p.mass/p.curvature):null;
     if(a.ringRadius!==null&&(!Number.isFinite(a.ringRadius)||r===null||Math.abs(a.ringRadius-r)>1e-9)||
@@ -379,6 +405,12 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !(a.z2===null||a.z2===0||a.z2===1)||!numericArray(a.bandKValues,grid)||
        !Array.isArray(a.bandEnergies)||a.bandEnergies.length!==4||
        !a.bandEnergies.every((item:unknown)=>numericArray(item,grid*grid)))return false;
+  } else if(job.model.type==="landau_continuum"){
+    const p=job.model.parameters,n=p.fieldSamples,l=p.levels;
+    if(a.kind!=="landau_continuum"||!numericArray(a.fieldValues,n)||!numericArray(a.levelIndices,l)||
+      !Array.isArray(a.energies)||a.energies.length!==n||!a.energies.every(row=>numericArray(row,l))||
+      !numericArray(a.cyclotronFrequencies,n)||!numericArray(a.coarseMaxErrors,n)||
+      !numericArray(a.fineMaxErrors,n)||typeof a.converged!=="boolean"||!record(a.units))return false;
   } else if(job.model.type==="nodal_line_two_band"){
     const n=job.model.parameters.samples;
     const vectors=(item:unknown,size:number)=>Array.isArray(item)&&item.length===size&&item.every(row=>numericArray(row,3));

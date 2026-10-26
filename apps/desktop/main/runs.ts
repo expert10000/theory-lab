@@ -438,7 +438,7 @@ export class RunStore {
   async topology(runId:string):Promise<TopologyResult>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="topology"||result.operation!=="topology"||
-      !["ssh","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band"].includes(result.model.type)||data!==null||
+      !["ssh","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band","landau_continuum"].includes(result.model.type)||data!==null||
       manifest.operation!=="topology"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!==null||manifest.artifactSha256!==null||
@@ -577,6 +577,9 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       `cutoff_drift_e01,0,${result.spectrum.cutoffDriftE01},GHz`].join("\n") + "\n";
   if (result.operation === "topology") {
     const a = result.analysis;
+    if(a.kind==="landau_continuum")return ["field_sample,field_B,level_n,energy,coarse_error,fine_error",
+      ...a.fieldValues.flatMap((field,i)=>a.levelIndices.map(level=>
+        [i,field,level,a.energies[i][level],a.coarseMaxErrors[i],a.fineMaxErrors[i]].join(",")))].join("\n")+"\n";
     if(a.kind==="nodal_line_two_band")return ["sample,kx,ky,kz,lower_band,upper_band",
       ...a.loopPositions.map((q,i)=>[i,...q,a.lowerBand[i],a.upperBand[i]].join(",")),
       "","ring_sample,kx,ky,kz",...a.ringPositions.map((q,i)=>[i,...q].join(","))].join("\n")+"\n";
@@ -659,6 +662,11 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
     }).join("") + `</svg>\n`;
   }
   if (result.operation === "topology") {
+    if(result.analysis.kind==="landau_continuum"){
+      const a=result.analysis,max=Math.max(...a.energies.flat()),span=Math.max(1e-9,max);
+      const lines=a.levelIndices.map(level=>`<polyline points="${a.fieldValues.map((_,i)=>`${70+i*760/(a.fieldValues.length-1)},${420-a.energies[i][level]*330/span}`).join(" ")}" fill="none" stroke="#79d9c1" stroke-width="2"/>`).join("");
+      return head+lines+`<text x="70" y="480" fill="white" font-family="sans-serif">2D continuum Landau levels · ħ=1 · no Hall response · ${a.converged?"converged":"unresolved"}</text></svg>\n`;
+    }
     if (result.analysis.kind === "ssh") {
       const a = result.analysis, scale = Math.max(1e-9, ...a.upperBand);
       const line = (values: number[]) => values.map((v, i) => `${70 + i * 760 / (values.length - 1)},${265 - v * 150 / scale}`).join(" ");

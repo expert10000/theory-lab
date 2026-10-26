@@ -39,6 +39,8 @@ const implementation = (
 
 /** Existing code inventory, not a new execution registry. Engine availability is runtime-reported. */
 export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
+  landau_continuum: implementation("packages/models/topology.ts", ["topology"], ["native"], true,
+    ["topology"], ["standard"], "Bounded 2D uniform-field Landau levels; exact field and level samples, finite-difference convergence, and source-linked level fan. No filling, Hall conductivity, edge channel or plateau."),
   anharmonic_oscillator: implementation("packages/models/oscillator-anharmonic.ts", ["oscillator_anharmonic"], ["native", "qutip"], false, [], [],
     "D1: bounded m=1 confining quartic oscillator in a truncated harmonic Fock basis; reviewed eigenpairs, no automatic Atlas binding, web/scene/Math3D path or double-well scope."),
   parametric_oscillator: implementation("packages/models/oscillator-parametric.ts", ["oscillator_parametric"], ["native", "qutip"], false, [], [],
