@@ -37,8 +37,8 @@ export interface HofstadterEdgeStudy {
     grids:[17,31];
     widths:{cells:number;coarseAmbiguous:number;fineAmbiguous:number;
       coarseCrossings:TrackedEdgeCrossing[];fineCrossings:TrackedEdgeCrossing[];
-      coarseSeam:{minimumOverlap:number;minimumMargin:number;maximumEnergyDrift:number;ambiguousStates:number};
-      fineSeam:{minimumOverlap:number;minimumMargin:number;maximumEnergyDrift:number;ambiguousStates:number};
+      coarseSeam:{minimumOverlap:number;minimumMargin:number;maximumEnergyDrift:number;ambiguousStates:number}|null;
+      fineSeam:{minimumOverlap:number;minimumMargin:number;maximumEnergyDrift:number;ambiguousStates:number}|null;
       maximumKyDrift:number|null}[];
     status:"consistent"|"undefined";reason:string;maximumKyDrift:number|null};
   comparison:{status:"consistent"|"undefined";reason:string;maximumKyDrift:number|null};
@@ -116,7 +116,7 @@ export function assertHofstadterEdgeStudy(value:unknown):asserts value is Hofsta
       c.widths.length!==2||c.widths.some((w,i)=>w.cells!==s.plan.widths[i]||
         !Number.isInteger(w.coarseAmbiguous)||!Number.isInteger(w.fineAmbiguous)||
         !Array.isArray(w.coarseCrossings)||!Array.isArray(w.fineCrossings)||
-        ![w.coarseSeam,w.fineSeam].every(seam=>seam&&Number.isFinite(seam.minimumOverlap)&&
+        ![w.coarseSeam,w.fineSeam].every(seam=>seam===null||Number.isFinite(seam.minimumOverlap)&&
           Number.isFinite(seam.minimumMargin)&&Number.isFinite(seam.maximumEnergyDrift)&&
           Number.isInteger(seam.ambiguousStates))||
         !(w.maximumKyDrift===null||Number.isFinite(w.maximumKyDrift)))||

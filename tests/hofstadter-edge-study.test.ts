@@ -45,3 +45,54 @@ test("paired source hashes, exact scene arrays, restart and tamper refusal",asyn
     await assert.rejects(store.get(plan.studyId),/integrity|verification/i);
   }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
 });
+
+test("matched terminations and two-grid seam evidence survive restart and reject tampering",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-edge-grid-")),worker=new WorkerSupervisor(process.cwd());
+  const runs=new RunStore(join(root,"runs"),join(root,"artifacts"));
+  const store=new HofstadterEdgeStudyStore(join(root,"studies"),runs);
+  const plan:HofstadterEdgePlan={schema:"quantum-hofstadter-edge-plan/v1",studyId:"edge-grid-proof",
+    p:1,q:5,hopping:1,grid:9,occupiedBands:1,stripSamples:31,widths:[18,23],convergenceSamples:17};
+  try{
+    await worker.start();const results=[] as TopologyResult[];
+    for(const job of hofstadterEdgeJobs(plan)){
+      const result=await worker.request("quantum.run",job);
+      assert.ok(isQuantumResult(result)&&result.operation==="topology");
+      await runs.record(job,result);results.push(result as TopologyResult);
+    }
+    const study=await deriveHofstadterEdgeStudy(plan,results);
+    assert.equal(study.sources.length,5);assert.equal(study.convergence?.status,"consistent");
+    assert.deepEqual(study.convergence?.terminations.map(v=>v.rightPhase),[2,2]);
+    assert.ok((study.convergence?.maximumKyDrift??1)<Math.PI/30);
+    await store.save(study);
+    assert.deepEqual(await new HofstadterEdgeStudyStore(join(root,"studies"),runs).get(plan.studyId),study);
+    const scene=await store.scene(plan.studyId),arrays=await verifyScenePayload(scene,async b=>createHash("sha256").update(b).digest("hex"));
+    assert.ok(arrays.has("grid-17-18-overlap"));assert.ok(arrays.has("grid-31-23-overlap"));
+    assert.ok(scene.scene.annotations.some(note=>note.id==="convergence"&&note.text.includes("consistent")));
+    const folder=await writeSceneBundle(scene,root);await readSceneBundle(folder);
+    const forged=structuredClone(study);forged.convergence!.widths[0].coarseSeam!.ambiguousStates=1;
+    await assert.rejects(store.save(forged),/verification/);
+    await writeFile(join(root,"runs",study.sources[4].runId,"result.json"),"{}\n");
+    await assert.rejects(store.get(plan.studyId),/integrity|verification/i);
+  }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
+});
+
+test("closed bulk gap stores an undefined two-grid study without inventing seam evidence",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-edge-closed-")),worker=new WorkerSupervisor(process.cwd());
+  const runs=new RunStore(join(root,"runs"),join(root,"artifacts"));
+  const store=new HofstadterEdgeStudyStore(join(root,"studies"),runs);
+  const plan:HofstadterEdgePlan={schema:"quantum-hofstadter-edge-plan/v1",studyId:"edge-closed-proof",
+    p:1,q:4,hopping:1,grid:9,occupiedBands:2,stripSamples:31,widths:[18,22],convergenceSamples:17};
+  try{await worker.start();const results=[] as TopologyResult[];
+    for(const job of hofstadterEdgeJobs(plan)){
+      const result=await worker.request("quantum.run",job);
+      assert.ok(isQuantumResult(result)&&result.operation==="topology");
+      await runs.record(job,result);results.push(result as TopologyResult);
+    }
+    const study=await deriveHofstadterEdgeStudy(plan,results);assert.equal(study.convergence?.status,"undefined");
+    assert.equal(study.convergence!.widths[0].coarseSeam,null);
+    await store.save(study);
+    assert.equal((await new HofstadterEdgeStudyStore(join(root,"studies"),runs).get(plan.studyId)).convergence?.status,"undefined");
+    const scene=await store.scene(plan.studyId);
+    assert.ok(scene.scene.annotations.some(note=>note.id==="seam-17-18"&&note.text.includes("unavailable")));
+  }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
+});

@@ -16,7 +16,7 @@ export class HofstadterEdgeStudyStore{
   private async verified(study:HofstadterEdgeStudy){
     assertHofstadterEdgeStudy(study);
     const expected=hofstadterEdgeJobs(study.plan),results=[] as TopologyResult[];
-    for(let i=0;i<3;i++){
+    for(let i=0;i<expected.length;i++){
       const saved=await this.runs.verified(study.sources[i].runId);
       if(saved.job.operation!=="topology"||saved.result.operation!=="topology"||
         JSON.stringify(saved.job)!==JSON.stringify(expected[i])||
@@ -24,10 +24,10 @@ export class HofstadterEdgeStudyStore{
         throw new Error("Bulk/strip source failed run verification");
       results.push(saved.result);
     }
-    const derived=await deriveHofstadterEdgeStudy(study.plan,results as [TopologyResult,TopologyResult,TopologyResult]);
-    for(const key of ["sources","bulk","widths","comparison","tracking"] as const)
+    const derived=await deriveHofstadterEdgeStudy(study.plan,results);
+    for(const key of ["sources","bulk","widths","comparison","tracking","convergence"] as const)
       if(JSON.stringify(study[key])!==JSON.stringify(derived[key]))throw new Error("Bulk-edge evidence failed source verification");
-    return results as [TopologyResult,TopologyResult,TopologyResult];
+    return results;
   }
   async save(value:unknown):Promise<HofstadterEdgeStudy>{
     assertHofstadterEdgeStudy(value);await this.verified(value);await mkdir(this.root,{recursive:true});
@@ -118,6 +118,38 @@ export class HofstadterEdgeStudyStore{
         const scalar=await builder.data(`tracked-${width.cells}-overlap`,overlaps,1,"squared eigenvector overlap");
         builder.object(`tracked-${width.cells}`,`${width.cells} sites · validated crossings`,"point-cloud",location,
           "#f5e68a",{scalars:scalar,style:{color:"#f5e68a",opacity:1,size:.12}});
+      }
+    }
+    if(study.convergence){
+      const evidence=study.convergence;
+      scene.annotations.push({id:"convergence",position:[0,6.4,0],
+        text:`${evidence.method} · ${evidence.status} · grids 17/31 · seam checked · drift ${evidence.maximumKyDrift??"undefined"} rad`});
+      for(let i=0;i<2;i++){
+        const width=evidence.widths[i],termination=evidence.terminations[i];
+        scene.annotations.push({id:`termination-${width.cells}`,position:[0,6.4,0],
+          text:`${width.cells} sites · origin ${termination.origin} · left phase ${termination.leftPhase} · right phase ${termination.rightPhase} (mod ${study.plan.q})`});
+        for(const [grid,stripIndex,crossings] of [[17,i+3,width.coarseCrossings],
+          [31,i+1,width.fineCrossings]] as const){
+          const strip=(results[stripIndex].analysis as HofstadterAnalysis).strip!;
+          const positions=[] as number[],overlaps=[] as number[];
+          for(const [index,crossing] of crossings.entries()){
+            const lane=6.8+i*.8+(grid===31?.35:0);
+            positions.push(crossing.ky,lane,study.bulk.fermiEnergy??0);overlaps.push(crossing.overlap);
+            scene.annotations.push({id:`grid-${grid}-${width.cells}-${index}`,
+              position:[crossing.ky,lane,study.bulk.fermiEnergy??0],
+              text:`${grid} k samples · ${width.cells} sites · ${crossing.side} · interval ${crossing.interval} · kᵧ ${crossing.ky} · overlap ${crossing.overlap} · source ${study.sources[stripIndex].role}`});
+          }
+          if(positions.length){
+            const key=`grid-${grid}-${width.cells}`;
+            const location=await builder.data(`${key}-position`,positions,3,"rad, display lane, hopping energy");
+            const scalar=await builder.data(`${key}-overlap`,overlaps,1,"squared eigenvector overlap");
+            builder.object(key,`${width.cells} sites · ${grid}-point tracked crossings`,"point-cloud",location,
+              grid===17?"#e9a3f5":"#f5e68a",{scalars:scalar,
+                style:{color:grid===17?"#e9a3f5":"#f5e68a",opacity:1,size:.14}});
+          }
+          scene.annotations.push({id:`seam-${grid}-${width.cells}`,position:[0,6.4,0],
+            text:`${grid} k samples · ${width.cells} sites · periodic seam · minimum overlap ${(grid===17?width.coarseSeam:width.fineSeam)?.minimumOverlap??"unavailable"} · ambiguous states ${(grid===17?width.coarseSeam:width.fineSeam)?.ambiguousStates??"unavailable"} · ${strip.kyValues[0]} to ${strip.kyValues.at(-1)}`});
+        }
       }
     }
     scene.annotations.push({id:"comparison",position:[0,5.7,0],text:`${study.comparison.status}: ${study.comparison.reason}`});

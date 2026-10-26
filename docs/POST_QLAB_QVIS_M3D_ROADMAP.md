@@ -877,6 +877,16 @@ reopenable. The pinned `p/q=1/6` `.qscene` supplies exact crossing markers,
 overlap values and strip source hashes to Math3D. This does not establish a
 unique physical transport channel or an experimental Hall plateau.
 
+**2026-10-27 edge-flow convergence extension:** New immutable five-run studies
+pair one periodic bulk run with 18- and (18+q)-site strips, each sampled at 17
+and 31 momenta. The widths share the same fixed x-origin and right-boundary
+magnetic phase. The producer verifies periodic-seam eigenvector assignments,
+signed crossings, and circular crossing-position drift. Inconsistent or
+ambiguous evidence is explicitly `undefined`; the pinned `p/q=1/5` case is a
+resolved source-linked example. Earlier three-run studies remain readable.
+Math3D inspects only the supplied two-grid markers and diagnostics. This is
+finite Harper-strip evidence, not transport or a unique edge-channel claim.
+
 ```text
 feat(math3d-quantum): add topological Hamiltonian visualization
 ```

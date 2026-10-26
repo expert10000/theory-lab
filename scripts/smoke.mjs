@@ -878,8 +878,11 @@ try {
   const edgeStudies=await page.evaluate(()=>window.quantum.listHofstadterEdgeStudies());
   assert.equal(edgeStudies[0].status,"consistent");
   const edgeStudy=await page.evaluate(id=>window.quantum.getHofstadterEdgeStudy(id),edgeStudies[0].studyId);
-  assert.equal(edgeStudy.sources.length,3);
+  assert.equal(edgeStudy.sources.length,5);
   assert.equal(edgeStudy.tracking.widths[0].leftFlow,-edgeStudy.bulk.hall);
+  assert.equal(edgeStudy.convergence.status,"consistent");
+  assert.deepEqual(edgeStudy.convergence.terminations.map(item=>item.rightPhase),[5,5]);
+  assert.match(await page.getByTestId("hofstadter-edge-convergence").innerText(),/17 and 31 momentum points/);
   await page.getByRole("tab",{name:"Explore",exact:true}).click();
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   await page.getByRole("button",{name:`Open SSH topology ${preservedTopologyRunIds.ssh}`}).click();

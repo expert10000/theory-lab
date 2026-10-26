@@ -37,9 +37,29 @@ test("bounded bulk-edge evidence, reversal, gap closure and sampling refusal",as
     const mismatchedTermination=await calculate(1,5,1);
     assert.equal(mismatchedTermination.study.comparison.status,"undefined");
     assert.equal(mismatchedTermination.study.tracking?.widths[0].ambiguousCandidates,0);
+    const ambiguousPlan:HofstadterEdgePlan={schema:"quantum-hofstadter-edge-plan/v1",studyId:"edge-grid-ambiguous",
+      p:1,q:3,hopping:1,grid:9,occupiedBands:1,stripSamples:31,widths:[18,21],convergenceSamples:17};
+    const ambiguousGridRuns=[] as TopologyResult[];
+    for(const job of hofstadterEdgeJobs(ambiguousPlan)){
+      const value=await worker.request("quantum.run",job);
+      assert.ok(isQuantumResult(value)&&value.operation==="topology");ambiguousGridRuns.push(value as TopologyResult);
+    }
+    const ambiguousGrid=await deriveHofstadterEdgeStudy(ambiguousPlan,ambiguousGridRuns);
+    assert.equal(ambiguousGrid.convergence?.status,"undefined");
+    assert.ok(ambiguousGrid.convergence?.widths.some(w=>w.fineAmbiguous>0));
     const coarse=await calculate(1,3,1,17);assert.equal(coarse.study.comparison.status,"undefined");
     const touching=await calculate(1,4,2);assert.equal(touching.study.bulk.gapStatus,"gap-closed");
     assert.equal(touching.study.bulk.hall,null);assert.equal(touching.study.comparison.status,"undefined");
+    const closedPlan:HofstadterEdgePlan={schema:"quantum-hofstadter-edge-plan/v1",studyId:"edge-grid-closed",
+      p:1,q:4,hopping:1,grid:9,occupiedBands:2,stripSamples:31,widths:[18,22],convergenceSamples:17};
+    const closedRuns=[] as TopologyResult[];
+    for(const job of hofstadterEdgeJobs(closedPlan)){
+      const value=await worker.request("quantum.run",job);
+      assert.ok(isQuantumResult(value)&&value.operation==="topology");closedRuns.push(value as TopologyResult);
+    }
+    const closed=await deriveHofstadterEdgeStudy(closedPlan,closedRuns);
+    assert.equal(closed.convergence?.status,"undefined");
+    assert.equal(closed.convergence?.widths[0].coarseSeam,null);
     await assert.rejects(deriveHofstadterEdgeStudy(forward.plan,[forward.results[0],reversed.results[1],forward.results[2]]),/Mismatched/);
   }finally{await worker.stop();}
 });
