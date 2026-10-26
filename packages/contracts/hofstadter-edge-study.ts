@@ -1,0 +1,62 @@
+/** A bounded comparison of one periodic Harper run and two finite strips. */
+export interface HofstadterEdgePlan {
+  schema:"quantum-hofstadter-edge-plan/v1";studyId:string;p:number;q:number;
+  hopping:number;grid:7|9|11;occupiedBands:number;stripSamples:17|31;
+  widths:[18,24];
+}
+export interface EdgeSource {role:"bulk"|"strip-18"|"strip-24";runId:string;resultSha256:string}
+export interface EdgeCrossing {
+  side:"left"|"right";stateIndex:number;interval:number;ky:number;direction:-1|1;
+  minimumWeight:number;
+}
+export interface EdgeWidthEvidence {
+  cells:18|24;crossings:EdgeCrossing[];leftFlow:number;rightFlow:number;
+}
+export interface HofstadterEdgeStudy {
+  schema:"quantum-hofstadter-edge-study/v1";studyId:string;plan:HofstadterEdgePlan;
+  sources:[EdgeSource,EdgeSource,EdgeSource];
+  bulk:{gapStatus:"open"|"gap-closed"|"mesh-unresolved";globalGap:number;
+    fermiEnergy:number|null;hall:number|null;samplingConverged:boolean};
+  widths:[EdgeWidthEvidence,EdgeWidthEvidence];
+  comparison:{status:"consistent"|"undefined";reason:string;maximumKyDrift:number|null};
+  computedAt:string;
+}
+const id=/^[A-Za-z0-9_-]{1,80}$/;
+const gcd=(a:number,b:number):number=>b?gcd(b,a%b):a;
+export function assertHofstadterEdgePlan(value:unknown):asserts value is HofstadterEdgePlan {
+  const p=value as HofstadterEdgePlan;
+  if(!p||typeof p!=="object"||p.schema!=="quantum-hofstadter-edge-plan/v1"||
+    typeof p.studyId!=="string"||!id.test(p.studyId)||!Number.isInteger(p.p)||
+    !Number.isInteger(p.q)||p.q<3||p.q>7||p.p===0||Math.abs(p.p)>=p.q||gcd(Math.abs(p.p),p.q)!==1||
+    !Number.isFinite(p.hopping)||p.hopping<.25||p.hopping>2||![7,9,11].includes(p.grid)||
+    !Number.isInteger(p.occupiedBands)||p.occupiedBands<1||p.occupiedBands>=p.q||
+    ![17,31].includes(p.stripSamples)||!Array.isArray(p.widths)||p.widths.length!==2||
+    p.widths[0]!==18||p.widths[1]!==24)throw new Error("Invalid bounded Hofstadter edge plan");
+}
+export function assertHofstadterEdgeStudy(value:unknown):asserts value is HofstadterEdgeStudy {
+  const s=value as HofstadterEdgeStudy;
+  if(!s||typeof s!=="object")throw new Error("Invalid Hofstadter edge study");
+  assertHofstadterEdgePlan(s.plan);
+  if(s.schema!=="quantum-hofstadter-edge-study/v1"||s.studyId!==s.plan.studyId||
+    !Number.isFinite(Date.parse(s.computedAt))||!Array.isArray(s.sources)||s.sources.length!==3||
+    s.sources.some((v,i)=>v.role!==(["bulk","strip-18","strip-24"] as const)[i]||
+      typeof v.runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(v.runId)||
+      typeof v.resultSha256!=="string"||!/^[a-f0-9]{64}$/.test(v.resultSha256))||
+    !s.bulk||!Number.isFinite(s.bulk.globalGap)||
+    !(s.bulk.fermiEnergy===null||Number.isFinite(s.bulk.fermiEnergy))||
+    !(s.bulk.hall===null||Number.isInteger(s.bulk.hall))||
+    !["open","gap-closed","mesh-unresolved"].includes(s.bulk.gapStatus)||
+    typeof s.bulk.samplingConverged!=="boolean"||
+    !Array.isArray(s.widths)||s.widths.length!==2||
+    s.widths.some((w,i)=>w.cells!==s.plan.widths[i]||!Number.isInteger(w.leftFlow)||
+      !Number.isInteger(w.rightFlow)||!Array.isArray(w.crossings)||w.crossings.length>2*w.cells*s.plan.stripSamples||
+      w.crossings.some(c=>!["left","right"].includes(c.side)||
+        !Number.isInteger(c.stateIndex)||c.stateIndex<0||c.stateIndex>=w.cells||
+        !Number.isInteger(c.interval)||c.interval<0||c.interval>=s.plan.stripSamples-1||
+        !Number.isFinite(c.ky)||![-1,1].includes(c.direction)||
+        !Number.isFinite(c.minimumWeight)||c.minimumWeight<0||c.minimumWeight>1))||
+    !s.comparison||!["consistent","undefined"].includes(s.comparison.status)||
+    typeof s.comparison.reason!=="string"||s.comparison.reason.length>160||
+    !(s.comparison.maximumKyDrift===null||Number.isFinite(s.comparison.maximumKyDrift)))
+    throw new Error("Invalid Hofstadter edge study");
+}
