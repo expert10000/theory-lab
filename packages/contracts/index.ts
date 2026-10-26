@@ -325,7 +325,7 @@ export interface NodalLineModel {type:"nodal_line_two_band";parameters:{mass:num
 /** Uniform 2D continuum field; only nonzero same-sign field fans are admitted. */
 export interface LandauModel {type:"landau_continuum";parameters:{mass:number;charge:-1|1;fieldStart:number;fieldStop:number;fieldSamples:number;levels:number;grid:number};source?:LayerOneSource}
 /** Rational flux p/q in lowest terms; p=0,q=1 is the zero-flux reference. */
-export interface HofstadterModel {type:"hofstadter";parameters:{p:number;q:number;hopping:number;grid:number;stripCells?:number;stripSamples?:number};source?:LayerOneSource}
+export interface HofstadterModel {type:"hofstadter";parameters:{p:number;q:number;hopping:number;grid:number;stripCells?:number;stripSamples?:number;occupiedBands?:number};source?:LayerOneSource}
 export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel | HofstadterModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
@@ -384,6 +384,12 @@ export interface LandauAnalysis {kind:"landau_continuum";fieldValues:number[];le
 export interface HofstadterAnalysis {kind:"hofstadter";flux:number;kxValues:number[];kyValues:number[];
   bandIndices:number[];bandEnergies:number[][];coarseBounds:[number,number][];fineBounds:[number,number][];
   extremaDrift:number[];converged:boolean;
+  /** Optional for historical runs without an explicitly selected filling. */
+  filling?:{occupiedBands:number;coarseGlobalGap:number;fineGlobalGap:number;fermiEnergy:number|null;
+    gapStatus:"open"|"gap-closed"|"mesh-unresolved";
+    chern?:number|null;conductance?:number|null;conductanceUnit?:"e^2/h";
+    method?:"TKNN from FHS occupied Chern; kx-ky orientation";
+    status?:"defined"|"gap-closed"|"mesh-unresolved";diophantineResidual?:number|null};
     /** Optional for legacy spectrum-only runs. The new producer always supplies it. */
     chernGaps?:{occupiedBands:number;coarseGap:number;fineGap:number;coarseChern:number|null;
       fineChern:number|null;chern:number|null;minimumLink:number|null;

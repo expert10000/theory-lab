@@ -42,7 +42,7 @@ export interface WorkspaceSnapshot {
     A?:string;B?:string;C?:string;D?:string;R?:string;edgeCells?:string;edgeSamples?:string;continuumExtent?:string;
     gammaX?:string;lambdaX?:string;gammaY?:string;lambdaY?:string;mu?:string;hopping?:string;pairing?:string;
     velocity?:string;chirality?:string;radius?:string;subdivisions?:string;curvature?:string;loopCenter?:string;loopRadius?:string;loopSamples?:string;
-    charge?:string;fieldStart?:string;fieldStop?:string;fieldSamples?:string;levels?:string;p?:string;q?:string };
+    charge?:string;fieldStart?:string;fieldStop?:string;fieldSamples?:string;levels?:string;p?:string;q?:string;occupiedBands?:string };
   orbital?: { n: string; l: string; m: string; basis: "complex" | "real_cos" | "real_sin"; Z: string; radius: string; grid: string };
   oscillator?: import("../models/oscillator").OscillatorDraft;
   oscillatorDynamics?: import("../models/oscillator-dynamics").OscillatorDynamicsDraft;
@@ -134,7 +134,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
       mu:shortText,hopping:shortText,pairing:shortText,
       velocity:shortText,chirality:shortText,radius:shortText,subdivisions:shortText,
       curvature:shortText,loopCenter:shortText,loopRadius:shortText,loopSamples:shortText,
-      charge:shortText,fieldStart:shortText,fieldStop:shortText,fieldSamples:shortText,levels:shortText,p:shortText,q:shortText,
+      charge:shortText,fieldStart:shortText,fieldStop:shortText,fieldSamples:shortText,levels:shortText,p:shortText,q:shortText,occupiedBands:shortText,
   }),
   orbital: block(["n", "l", "m", "basis", "Z", "radius", "grid"], {
     n: shortText, l: shortText, m: shortText, basis: { enum: ["complex", "real_cos", "real_sin"] },

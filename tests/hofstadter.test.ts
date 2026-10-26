@@ -29,7 +29,7 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       assert.equal(response.analysis.bandEnergies[0].length,81);
       const strip=response.analysis.strip;
       assert.ok(strip);
-      assert.equal(strip.cells,Number(job.model.parameters.stripCells));
+      assert.equal(strip.cells,job.model.type==="hofstadter"?job.model.parameters.stripCells:undefined);
       assert.equal(strip.boundary,"open-x / periodic-y");
       assert.ok(strip.maxResidual<1e-8);
       const stripSelection={kind:"hofstadter_strip_sample" as const,runId:response.runId,state:3,kIndex:5};
@@ -46,6 +46,13 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       if(p==="1")assert.deepEqual(response.analysis.chernGaps?.map(gap=>gap.chern),[-1,null,1]);
       if(p==="-1")assert.deepEqual(response.analysis.chernGaps?.map(gap=>gap.chern),[1,null,-1]);
       if(q==="1")assert.deepEqual(response.analysis.chernGaps,[]);
+      if(q==="4"){
+        assert.equal(response.analysis.filling?.occupiedBands,1);
+        assert.equal(response.analysis.filling?.gapStatus,"open");
+        assert.ok((response.analysis.filling?.fineGlobalGap??0)>1.5);
+        assert.equal(response.analysis.filling?.fineGlobalGap,
+          response.analysis.fineBounds[1][0]-response.analysis.fineBounds[0][1]);
+      }else assert.equal(response.analysis.filling,undefined);
       for(const gap of response.analysis.chernGaps??[]){
         assert.equal(gap.status==="defined",gap.chern!==null);
         assert.equal(gap.plaquetteFlux.length,gap.status==="defined"?gap.mesh**2:0);
@@ -102,6 +109,16 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       await assert.rejects(new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),/integrity check/);
       await assert.rejects(new RunStore(join(root,"runs"),join(root,"artifacts")).scene(response.runId,"strip"),/integrity check/);
     }
+    const touching=topologyJob("harper-touching-filling",{...TOPOLOGY_DEFAULTS,
+      modelId:"hofstadter",p:"1",q:"4",hopping:"1",grid:"9",occupiedBands:"2"});
+    const touchingResponse=await worker.request("quantum.run",touching);
+    assert.ok(isQuantumResult(touchingResponse)&&touchingResponse.operation==="topology"&&
+      touchingResponse.analysis.kind==="hofstadter");
+    assert.equal(touchingResponse.analysis.filling?.gapStatus,"gap-closed");
+    assert.equal(touchingResponse.analysis.filling?.fermiEnergy,null);
+    assert.equal(isTopologyResponse(touchingResponse,touching),true);
+    assert.throws(()=>topologyJob("bad-filling",{...TOPOLOGY_DEFAULTS,
+      modelId:"hofstadter",q:"4",occupiedBands:"4"}),/integer/);
     assert.throws(()=>topologyJob("invalid",{...TOPOLOGY_DEFAULTS,modelId:"hofstadter",p:"2",q:"4",grid:"9"}),/reduced/);
   }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
 });

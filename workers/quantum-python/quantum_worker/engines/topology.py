@@ -834,6 +834,25 @@ def hofstadter_analysis(np, parameters):
     _, _, _, fine_bounds = sampled(2 * grid - 1)
     drift = [max(abs(coarse[side] - fine[side]) for side in (0, 1))
              for coarse, fine in zip(coarse_bounds, fine_bounds)]
+    occupied = parameters.get("occupiedBands")
+    if occupied is not None and (not isinstance(occupied, int) or isinstance(occupied, bool)
+                                 or occupied < 1 or occupied >= q):
+        raise ValueError("Hofstadter filling must occupy 1..q-1 magnetic bands")
+    chern_gaps = hofstadter_chern_diagnostics(np, p, q, hopping, grid)
+    filling = None
+    if occupied is not None:
+        # A direct gap at each k does not guarantee a common Fermi energy.
+        # Compare the highest occupied energy with the lowest empty energy.
+        coarse_gap = coarse_bounds[occupied][0] - coarse_bounds[occupied - 1][1]
+        fine_gap = fine_bounds[occupied][0] - fine_bounds[occupied - 1][1]
+        tolerance = 1e-6 * hopping
+        gap_status = ("gap-closed" if min(coarse_gap, fine_gap) <= tolerance else
+                      "mesh-unresolved" if max(drift) > .05 * hopping else "open")
+        filling = {"occupiedBands": occupied, "coarseGlobalGap": coarse_gap,
+                   "fineGlobalGap": fine_gap,
+                   "fermiEnergy": ((fine_bounds[occupied][0] + fine_bounds[occupied - 1][1]) / 2
+                                   if gap_status == "open" else None),
+                   "gapStatus": gap_status}
     if ("stripCells" in parameters) != ("stripSamples" in parameters):
         raise ValueError("Hofstadter strip width and momentum samples must be supplied together")
     strip = (hofstadter_strip_analysis(np, p, q, hopping, parameters["stripCells"],
@@ -843,7 +862,8 @@ def hofstadter_analysis(np, parameters):
             "bandIndices": list(range(q)), "bandEnergies": bands,
             "coarseBounds": coarse_bounds, "fineBounds": fine_bounds,
             "extremaDrift": drift, "converged": bool(max(drift) <= .05 * hopping),
-            "chernGaps": hofstadter_chern_diagnostics(np, p, q, hopping, grid),
+            "chernGaps": chern_gaps,
+            **({"filling": filling} if filling is not None else {}),
             **({"strip": strip} if strip is not None else {}),
             "units": {"flux": "flux quanta per plaquette", "momentum": "rad / lattice constant",
                       "energy": "hopping energy"}}

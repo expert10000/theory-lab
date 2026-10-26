@@ -10,7 +10,7 @@ export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   velocity:"1",chirality:"1",radius:"1",subdivisions:"1",
   curvature:"1",loopCenter:"1",loopRadius:"0.25",loopSamples:"64",
   charge:"-1",fieldStart:"0.5",fieldStop:"2",fieldSamples:"7",levels:"5",
-    p:"1",q:"4",
+    p:"1",q:"4",occupiedBands:"1",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -70,12 +70,14 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
   }
   if(draft.modelId==="hofstadter"){
     const p=numeric(draft.p??"1",-6,6,true),q=numeric(draft.q??"4",1,7,true),grid=numeric(draft.grid,7,15,true);
+    const occupiedBands=q===1?undefined:numeric(draft.occupiedBands??"1",1,q-1,true);
     const stripCells=numeric(draft.edgeCells??"18",12,32,true),stripSamples=numeric(draft.edgeSamples??"17",11,31,true);
     const gcd=(a:number,b:number):number=>b===0?a:gcd(b,a%b);
     if(grid%2!==1||stripSamples%2!==1||q===1&&p!==0||q>1&&(p===0||Math.abs(p)>=q||gcd(Math.abs(p),q)!==1))
       throw new Error("Hofstadter requires reduced p/q (or zero flux 0/1) and an odd momentum grid");
     return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",
-      model:{type:"hofstadter",source,parameters:{p,q,hopping:numeric(draft.hopping??"1",.25,2),grid,stripCells,stripSamples}}};
+      model:{type:"hofstadter",source,parameters:{p,q,hopping:numeric(draft.hopping??"1",.25,2),grid,stripCells,stripSamples,
+        ...(occupiedBands===undefined?{}:{occupiedBands})}}};
   }
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
@@ -122,6 +124,17 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
            (item.status==="gap-closed"&&Math.min(item.coarseGap,item.fineGap)>1e-6*p.hopping))return false;
       }
     }
+    if(p.occupiedBands!==undefined){
+      const f=a.filling,r=p.occupiedBands;
+      if(!f||f.occupiedBands!==r||r<1||r>=q||
+         !near(f.coarseGlobalGap,a.coarseBounds[r][0]-a.coarseBounds[r-1][1])||
+         !near(f.fineGlobalGap,a.fineBounds[r][0]-a.fineBounds[r-1][1]))return false;
+      const status=Math.min(f.coarseGlobalGap,f.fineGlobalGap)<=1e-6*p.hopping?"gap-closed":
+        Math.max(...a.extremaDrift)>.05*p.hopping?"mesh-unresolved":"open";
+      if(f.gapStatus!==status||
+         (status==="open"?!near(f.fermiEnergy!,
+           (a.fineBounds[r][0]+a.fineBounds[r-1][1])/2):f.fermiEnergy!==null))return false;
+    }else if(a.filling!==undefined)return false;
     if(a.strip!==undefined){
       const strip=a.strip,c=p.stripCells,s=p.stripSamples;
       if(c===undefined||s===undefined||strip.cells!==c||strip.edgeSites!==2||
