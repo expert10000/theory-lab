@@ -640,6 +640,46 @@ def nodal_analysis(np, parameters):
             "convergenceError":error, "status":"defined" if resolved else "mesh-unresolved"}
 
 
+def landau_finite_difference(np, mass, charge, field, levels, grid):
+    """Independent Landau-gauge, k_y=0 oscillator on a bounded Dirichlet grid."""
+    from scipy.linalg import eigh_tridiagonal
+    magnetic_length = 1 / np.sqrt(abs(charge * field))
+    extent = np.sqrt(2 * (levels + 6)) * magnetic_length
+    spacing = 2 * extent / (grid + 1)
+    x = np.linspace(-extent + spacing, extent - spacing, grid)
+    diagonal = 1 / (mass * spacing**2) + (charge * field * x)**2 / (2 * mass)
+    adjacent = np.full(grid - 1, -1 / (2 * mass * spacing**2))
+    return eigh_tridiagonal(diagonal, adjacent, select="i", select_range=(0, levels - 1),
+                            eigvals_only=True)
+
+
+def landau_analysis(np, parameters):
+    """Uniform 2D continuum field, hbar=1; no filling, boundary, or Hall response."""
+    mass, charge = parameters["mass"], parameters["charge"]
+    start, stop = parameters["fieldStart"], parameters["fieldStop"]
+    count, levels, grid = (parameters[key] for key in ("fieldSamples", "levels", "grid"))
+    if mass <= 0 or charge not in (-1, 1) or start * stop <= 0:
+        raise ValueError("Landau field must remain nonzero with a fixed sign")
+    fields = np.linspace(start, stop, count)
+    energies, frequencies, coarse_errors, fine_errors = [], [], [], []
+    for field in fields:
+        frequency = abs(charge * field) / mass
+        exact = frequency * (np.arange(levels) + .5)
+        coarse = landau_finite_difference(np, mass, charge, field, levels, grid)
+        fine = landau_finite_difference(np, mass, charge, field, levels, 2 * grid)
+        frequencies.append(float(frequency))
+        energies.append(exact.tolist())
+        coarse_errors.append(float(np.max(np.abs(coarse - exact))))
+        fine_errors.append(float(np.max(np.abs(fine - exact))))
+    return {"kind": "landau_continuum", "fieldValues": fields.tolist(),
+            "levelIndices": list(range(levels)), "energies": energies,
+            "cyclotronFrequencies": frequencies, "coarseMaxErrors": coarse_errors,
+            "fineMaxErrors": fine_errors, "converged": bool(all(
+                fine < coarse and fine < .05 for coarse, fine in zip(coarse_errors, fine_errors))),
+            "units": {"field": "normalized magnetic field", "energy": "normalized energy",
+                      "hbar": "1", "mass": "normalized mass", "charge": "elementary charge"}}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":

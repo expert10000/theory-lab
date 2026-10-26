@@ -1,7 +1,41 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis, landau_analysis
+
+
+class LandauContinuumTests(unittest.TestCase):
+    def test_independent_oscillator_signs_and_grid_convergence(self):
+        import numpy as np
+        base = {"mass": 1.25, "charge": -1, "fieldStart": .5,
+                "fieldStop": 1.5, "fieldSamples": 5, "levels": 4, "grid": 48}
+        result = landau_analysis(np, base)
+        self.assertTrue(result["converged"])
+        self.assertEqual(result["levelIndices"], [0, 1, 2, 3])
+        for i, field in enumerate(result["fieldValues"]):
+            # Independent ladder construction from [a,a†]=1, not the producer formula.
+            omega = abs(base["charge"] * field) / base["mass"]
+            lowering = np.diag(np.sqrt(np.arange(1, 5)), 1)
+            ladder = omega * (lowering.T @ lowering + np.eye(5) / 2)
+            np.testing.assert_allclose(result["energies"][i], np.linalg.eigvalsh(ladder)[:4])
+            self.assertLess(result["fineMaxErrors"][i], result["coarseMaxErrors"][i])
+            self.assertLess(result["fineMaxErrors"][i], .05)
+        for charge, start, stop in ((1, .5, 1.5), (-1, -.5, -1.5), (1, -.5, -1.5)):
+            other = landau_analysis(np, {**base, "charge": charge,
+                                         "fieldStart": start, "fieldStop": stop})
+            np.testing.assert_allclose(other["energies"], result["energies"])
+            np.testing.assert_allclose(other["fineMaxErrors"], result["fineMaxErrors"])
+        finer = landau_analysis(np, {**base, "grid": 80})
+        self.assertLess(max(finer["fineMaxErrors"]), max(result["fineMaxErrors"]))
+
+    def test_zero_or_sign_crossing_refused(self):
+        import numpy as np
+        base = {"mass": 1, "charge": -1, "fieldStart": -.5,
+                "fieldStop": .5, "fieldSamples": 5, "levels": 3, "grid": 48}
+        with self.assertRaises(ValueError):
+            landau_analysis(np, base)
+        with self.assertRaises(ValueError):
+            landau_analysis(np, {**base, "fieldStart": 0})
 
 
 class NodalRingTests(unittest.TestCase):
