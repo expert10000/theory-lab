@@ -39,6 +39,8 @@ const implementation = (
 
 /** Existing code inventory, not a new execution registry. Engine availability is runtime-reported. */
 export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
+  hofstadter: implementation("packages/models/topology.ts", ["topology"], ["native"], true,
+    ["topology"], ["standard"], "Reduced rational square-lattice Harper spectrum with exact magnetic bands and sampled-extrema refinement. Chern numbers and edge spectra remain future producer goals."),
   landau_continuum: implementation("packages/models/topology.ts", ["topology"], ["native"], true,
     ["topology"], ["standard"], "Bounded 2D uniform-field Landau levels; exact field and level samples, finite-difference convergence, and source-linked level fan. No filling, Hall conductivity, edge channel or plateau."),
   anharmonic_oscillator: implementation("packages/models/oscillator-anharmonic.ts", ["oscillator_anharmonic"], ["native", "qutip"], false, [], [],

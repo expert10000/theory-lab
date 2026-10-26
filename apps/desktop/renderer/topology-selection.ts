@@ -10,6 +10,7 @@ export type TopologySelection=
   | {kind:"weyl_sphere_sample";runId:string;index:number}
   | {kind:"nodal_loop_sample";runId:string;index:number}
   | {kind:"landau_level_sample";runId:string;fieldIndex:number;level:number}
+  | {kind:"hofstadter_band_sample";runId:string;band:number;xIndex:number;yIndex:number}
   | {kind:"bhz_ribbon_state";runId:string;index:number};
 export type TopologySample=
   | {kind:"ssh_band";index:number;k:number;lower:number;upper:number}
@@ -21,6 +22,7 @@ export type TopologySample=
   | {kind:"weyl_sphere_sample";index:number;q:[number,number,number];lower:number;upper:number;berry:[number,number,number]}
   | {kind:"nodal_loop_sample";index:number;q:[number,number,number];lower:number;upper:number}
   | {kind:"landau_level_sample";fieldIndex:number;level:number;field:number;energy:number;frequency:number;coarseError:number;fineError:number}
+  | {kind:"hofstadter_band_sample";band:number;xIndex:number;yIndex:number;kx:number;ky:number;energy:number}
   | {kind:"bhz_ribbon_state";index:number;k:number;energy:number;edgeWeight:number;density:number[];spin:number[];amplitudes:[number,number][]};
 export interface TopologyRunContext {
   result:TopologyResult;
@@ -31,6 +33,13 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="hofstadter"&&analysis.kind==="hofstadter"&&selection.kind==="hofstadter_band_sample"){
+    const {band,xIndex,yIndex}=selection,g=analysis.kxValues.length;
+    if(![band,xIndex,yIndex].every(Number.isInteger)||band<0||band>=analysis.bandIndices.length||
+       xIndex<0||xIndex>=g||yIndex<0||yIndex>=analysis.kyValues.length)return null;
+    return {kind:"hofstadter_band_sample",band,xIndex,yIndex,kx:analysis.kxValues[xIndex],
+      ky:analysis.kyValues[yIndex],energy:analysis.bandEnergies[band][xIndex*g+yIndex]};
+  }
   if(result.model.type==="landau_continuum"&&analysis.kind==="landau_continuum"&&selection.kind==="landau_level_sample"){
     const {fieldIndex,level}=selection;
     if(!Number.isInteger(fieldIndex)||!Number.isInteger(level)||fieldIndex<0||level<0||

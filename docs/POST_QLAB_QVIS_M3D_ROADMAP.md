@@ -816,6 +816,16 @@ establishes neither filled-level Hall conductivity, edge channels, nor a
 plateau. `integer_qh_effective` and `hofstadter` remain distinct future
 producer models; the existing Landau–Zener lab remains separate.
 
+**2026-10-26 bounded Hofstadter spectrum extension:** The reduced rational
+square-lattice Harper job now saves one exact magnetic-zone grid and `q`
+ordered bands for flux `p/q`, including the `0/1` zero-field case. The worker
+checks Hermiticity, flux reversal, analytic zero/π-flux cases, and sampled
+extrema on a finer grid. An immutable result records `p`, `q`, `t`, all k and
+energy samples, units, extrema drift, and a source-linked `.qscene` for
+read-only Math3D inspection. This is a finite sampled periodic spectrum;
+Atlas Chern numbers and edge spectra remain future producer goals. A flux
+sweep or full butterfly diagram is likewise future work.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

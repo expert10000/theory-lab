@@ -86,7 +86,7 @@ test("real worker bands preserve energies, gap-closure data and offline bundle i
         view.setFloat64(0,-2,true);zone.sha256=await digest(badZone.artifacts[zone.path]);
         await assert.rejects(verifyScenePayload(badZone,digest),/boundary disagrees/);
       }
-      if(result.analysis.kind==="bhz"||result.analysis.kind==="bhz_general"||result.analysis.kind==="bbh"||result.analysis.kind==="weyl_minimal"||result.analysis.kind==="nodal_line_two_band"||result.analysis.kind==="landau_continuum")throw new Error("Legacy SSH/QWZ fixture loop selected another model");
+      if(result.analysis.kind==="bhz"||result.analysis.kind==="bhz_general"||result.analysis.kind==="bbh"||result.analysis.kind==="weyl_minimal"||result.analysis.kind==="nodal_line_two_band"||result.analysis.kind==="landau_continuum"||result.analysis.kind==="hofstadter")throw new Error("Legacy SSH/QWZ fixture loop selected another model");
       assert.equal(b.bulkGap, result.analysis.bulkGap);
       assert.deepEqual(
         [...arrays.get(b.energies[0])!],
@@ -146,7 +146,7 @@ test("real worker bands preserve energies, gap-closure data and offline bundle i
       d.sha256 = await digest(data);
       await assert.rejects(verifyScenePayload(forged, digest), /Band geometry/);
       const corrupt = structuredClone(result);
-      if(corrupt.analysis.kind==="bhz"||corrupt.analysis.kind==="bhz_general"||corrupt.analysis.kind==="bbh"||corrupt.analysis.kind==="landau_continuum")throw new Error("Legacy SSH/QWZ fixture loop selected another model");
+      if(corrupt.analysis.kind==="bhz"||corrupt.analysis.kind==="bhz_general"||corrupt.analysis.kind==="bbh"||corrupt.analysis.kind==="landau_continuum"||corrupt.analysis.kind==="hofstadter")throw new Error("Legacy SSH/QWZ fixture loop selected another model");
       corrupt.analysis.upperBand![10] += 1;
       assert.equal(consistentTopologyResult(job, corrupt), false);
       assert.equal(isTopologyResponse(corrupt, job), false);

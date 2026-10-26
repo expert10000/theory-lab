@@ -111,6 +111,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 
 | Lab model | Existing module | Operations | Engines (runtime availability required) | Web compute form | Gateway operations | Scene operation / views |
 | --- | --- | --- | --- | --- | --- | --- |
+| `hofstadter` | packages/models/topology.ts | topology | native | yes | topology | topology / standard |
 | `landau_continuum` | packages/models/topology.ts | topology | native | yes | topology | topology / standard |
 | `anharmonic_oscillator` | packages/models/oscillator-anharmonic.ts | oscillator_anharmonic | native, qutip | no | — | — |
 | `parametric_oscillator` | packages/models/oscillator-parametric.ts | oscillator_parametric | native, qutip | no | — | — |
@@ -137,6 +138,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `nodal_line_two_band` | packages/models/topology.ts | topology | native | yes | topology | topology / standard |
 | `hydrogenic` | packages/models/orbital.ts | orbital | native | no | — | orbital / standard |
 
+- **hofstadter**: Reduced rational square-lattice Harper spectrum with exact magnetic bands and sampled-extrema refinement. Chern numbers and edge spectra remain future producer goals.
 - **landau_continuum**: Bounded 2D uniform-field Landau levels; exact field and level samples, finite-difference convergence, and source-linked level fan. No filling, Hall conductivity, edge channel or plateau.
 - **anharmonic_oscillator**: D1: bounded m=1 confining quartic oscillator in a truncated harmonic Fock basis; reviewed eigenpairs, no automatic Atlas binding, web/scene/Math3D path or double-well scope.
 - **parametric_oscillator**: D1: bounded stable quadratic coupling, vacuum input and finite Fock spectrum/dynamics with squeezing diagnostics. Atlas default remains reference-only until mapping review; no web/scene/Math3D coupling.

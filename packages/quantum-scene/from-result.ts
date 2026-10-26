@@ -5,10 +5,11 @@ import { bandSceneFromResult, bbhFiniteSceneFromResult, kitaevFiniteSceneFromRes
 import { weylSceneFromResult } from "./weyl";
 import { nodalSceneFromResult } from "./nodal";
 import { landauSceneFromResult } from "./landau";
+import { hofstadterSceneFromResult } from "./hofstadter";
 import { assertScene, decodeDataset, verifyScenePayload, type QuantumScene, type SceneObject, type ScenePayload } from "./index";
 
 export function supportsScene(operation: string, model: string): boolean {
-  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain", "weyl_minimal", "nodal_line_two_band", "landau_continuum"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
+  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain", "weyl_minimal", "nodal_line_two_band", "landau_continuum", "hofstadter"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
 }
 export async function sceneFromResult(result: QuantumResult, data: Uint8Array | null, resultSha256: string,
   digest: (bytes: Uint8Array) => Promise<string>): Promise<ScenePayload> {
@@ -16,6 +17,7 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
   if(result.operation==="topology"&&result.model.type==="weyl_minimal")return weylSceneFromResult(result,resultSha256,digest);
   if(result.operation==="topology"&&result.model.type==="nodal_line_two_band")return nodalSceneFromResult(result,resultSha256,digest);
   if(result.operation==="topology"&&result.model.type==="landau_continuum")return landauSceneFromResult(result,resultSha256,digest);
+  if(result.operation==="topology"&&result.model.type==="hofstadter")return hofstadterSceneFromResult(result,resultSha256,digest);
   if(result.operation==="topology"&&result.model.type==="bhz")return bandSceneFromResult(result,resultSha256,digest);
   if(result.operation==="topology"&&result.model.type==="bhz_general")return bandSceneFromResult(result,resultSha256,digest,"continuum");
   if(result.operation==="topology"&&result.model.type==="bbh")return bbhFiniteSceneFromResult(result,resultSha256,digest);

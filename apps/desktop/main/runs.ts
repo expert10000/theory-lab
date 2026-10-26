@@ -438,7 +438,7 @@ export class RunStore {
   async topology(runId:string):Promise<TopologyResult>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="topology"||result.operation!=="topology"||
-      !["ssh","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band","landau_continuum"].includes(result.model.type)||data!==null||
+      !["ssh","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band","landau_continuum","hofstadter"].includes(result.model.type)||data!==null||
       manifest.operation!=="topology"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!==null||manifest.artifactSha256!==null||
@@ -577,6 +577,9 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       `cutoff_drift_e01,0,${result.spectrum.cutoffDriftE01},GHz`].join("\n") + "\n";
   if (result.operation === "topology") {
     const a = result.analysis;
+    if(a.kind==="hofstadter")return ["band,kx_index,ky_index,kx_rad_per_a,ky_rad_per_a,energy_hopping",
+      ...a.bandIndices.flatMap(band=>a.bandEnergies[band].map((energy,i)=>
+        [band,Math.floor(i/a.kyValues.length),i%a.kyValues.length,a.kxValues[Math.floor(i/a.kyValues.length)],a.kyValues[i%a.kyValues.length],energy].join(",")))].join("\n")+"\n";
     if(a.kind==="landau_continuum")return ["field_sample,field_B,level_n,energy,coarse_error,fine_error",
       ...a.fieldValues.flatMap((field,i)=>a.levelIndices.map(level=>
         [i,field,level,a.energies[i][level],a.coarseMaxErrors[i],a.fineMaxErrors[i]].join(",")))].join("\n")+"\n";
@@ -662,6 +665,12 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
     }).join("") + `</svg>\n`;
   }
   if (result.operation === "topology") {
+    if(result.analysis.kind==="hofstadter"){
+      const a=result.analysis,g=a.kxValues.length,values=a.bandEnergies;
+      const span=Math.max(1e-9,...values.flat().map(Math.abs));
+      const lines=values.map((band,i)=>`<polyline points="${a.kxValues.map((_,x)=>`${70+x*760/(g-1)},${250-band[x*g+Math.floor(g/2)]*160/span}`).join(" ")}" fill="none" stroke="${i%2?"#f2b36f":"#79d9c1"}" stroke-width="2"/>`).join("");
+      return head+lines+`<text x="70" y="480" fill="white" font-family="sans-serif">Harper bands · flux ${a.flux} · ky center slice · no Chern or edges</text></svg>\n`;
+    }
     if(result.analysis.kind==="landau_continuum"){
       const a=result.analysis,max=Math.max(...a.energies.flat()),span=Math.max(1e-9,max);
       const lines=a.levelIndices.map(level=>`<polyline points="${a.fieldValues.map((_,i)=>`${70+i*760/(a.fieldValues.length-1)},${420-a.energies[i][level]*330/span}`).join(" ")}" fill="none" stroke="#79d9c1" stroke-width="2"/>`).join("");
