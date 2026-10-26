@@ -853,6 +853,19 @@ def hofstadter_analysis(np, parameters):
                    "fermiEnergy": ((fine_bounds[occupied][0] + fine_bounds[occupied - 1][1]) / 2
                                    if gap_status == "open" else None),
                    "gapStatus": gap_status}
+        chern_item = chern_gaps[occupied - 1]
+        chern = chern_item["chern"] if chern_item["status"] == "defined" else None
+        # The magnetic translation (TKNN) Diophantine equation is an
+        # independent integer/sign check on the FHS kx-ky orientation.
+        residual = (occupied + p * chern) % q if chern is not None else None
+        status = ("gap-closed" if gap_status == "gap-closed" else
+                  "defined" if gap_status == "open" and chern is not None and residual == 0
+                  else "mesh-unresolved")
+        filling.update({"chern": chern if status == "defined" else None,
+                        "conductance": chern if status == "defined" else None,
+                        "conductanceUnit": "e^2/h",
+                        "method": "TKNN from FHS occupied Chern; kx-ky orientation",
+                        "status": status, "diophantineResidual": residual})
     if ("stripCells" in parameters) != ("stripSamples" in parameters):
         raise ValueError("Hofstadter strip width and momentum samples must be supplied together")
     strip = (hofstadter_strip_analysis(np, p, q, hopping, parameters["stripCells"],

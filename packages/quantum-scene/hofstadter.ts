@@ -24,7 +24,7 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
       units:[a.units.momentum,a.units.momentum,a.units.energy]},
     camera:{position:[3*Math.PI/p.q,-7,span*2],target:[0,0,0],up:[0,0,1]},
     datasets:[],objects:[],annotations:[
-      {id:"scope",text:`Square-lattice periodic Harper spectrum · flux ${p.p}/${p.q} · ${p.q} magnetic bands · ${a.chernGaps?"conditional occupied-gap Chern diagnostics":"legacy spectrum only"}${a.strip?" · finite strip in a separate scene":""}`,position:[0,0,span*1.2]},
+      {id:"scope",text:`Square-lattice periodic Harper spectrum · flux ${p.p}/${p.q} · ${p.q} magnetic bands · ${a.chernGaps?"conditional occupied-gap Chern diagnostics":"legacy spectrum only"}${a.filling?` · filling ${a.filling.occupiedBands} with ${a.filling.status} ideal bulk Hall response`:""}${a.strip?" · finite strip in a separate scene":""}`,position:[0,0,span*1.2]},
       {id:"sampling",text:`${g}×${g} saved k grid; coarse/fine extrema drift ${Math.max(...a.extremaDrift).toPrecision(4)} ${a.units.energy} (${a.converged?"within":"outside"} sampling target)`,position:[0,0,-span*1.2]}]};
   const builder=new SceneBuilder(scene,digest);
   const coordinates=await builder.data("magnetic-k",a.kxValues.flatMap(kx=>a.kyValues.flatMap(ky=>[kx,ky,0])),3,a.units.momentum);
@@ -49,7 +49,8 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
     scene.topology={quantities:[],invariants:[],limitations:[
       "Chern numbers belong to the producer's gapped occupied subspaces; a touching or unresolved gap is undefined.",
       "FHS plaquette flux is an exact supplied scalar on a separate half-open periodic mesh. Its z=0 position is a display plane, not an energy sample.",
-      "Finite-strip observations, when supplied, are in a separate scene. No Fermi filling or Hall response is supplied. Math3D does not calculate Berry flux or Chern numbers."]};
+      "Finite-strip observations, when supplied, are in a separate scene. A selected filling supports ideal bulk Hall conductance only at a resolved global gap.",
+      "No experimental plateau or individual edge-channel classification is supplied. Math3D calculates no physics."]};
     for(const gap of a.chernGaps){
       const id=`occupied-${gap.occupiedBands}`;
       scene.topology.invariants.push({id:`${id}-chern`,label:`Occupied ${gap.occupiedBands} Chern`,
@@ -71,6 +72,15 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
       scene.topology.quantities.push({id:`${id}-berry-flux`,label:`Occupied ${gap.occupiedBands} FHS plaquette flux`,
         kind:"berry-curvature",object:`${id}-flux`,dataset:scalar,
         convention:"Signed FHS plaquette phase in radians; half-open magnetic zone, x-major/y-fastest; no area division"});
+    }
+    if(a.filling){
+      const f=a.filling;
+      scene.topology.invariants.push({id:"filled-global-gap",label:`Global gap after ${f.occupiedBands} occupied bands`,
+        value:f.fineGlobalGap,status:f.gapStatus==="open"?"verified":f.gapStatus==="gap-closed"?"undefined":"unresolved",
+        method:`Producer coarse/fine band extrema ${f.coarseGlobalGap.toPrecision(6)} / ${f.fineGlobalGap.toPrecision(6)} ${a.units.energy}; Fermi energy ${f.fermiEnergy?.toPrecision(6)??"undefined"}`});
+      scene.topology.invariants.push({id:"filled-hall-conductance",label:`Ideal Hall conductance at ${f.occupiedBands} occupied bands (e²/h)`,
+        value:f.conductance??null,status:f.status==="defined"?"verified":f.status==="gap-closed"?"undefined":"unresolved",
+        method:`${f.method}; occupied Chern ${f.chern??"undefined"}; Diophantine residual ${f.diophantineResidual??"undefined"}; Fermi energy ${f.fermiEnergy?.toPrecision(6)??"undefined"} ${a.units.energy}`});
     }
   }
   return builder.finish();

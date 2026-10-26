@@ -50,6 +50,10 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
         assert.equal(response.analysis.filling?.occupiedBands,1);
         assert.equal(response.analysis.filling?.gapStatus,"open");
         assert.ok((response.analysis.filling?.fineGlobalGap??0)>1.5);
+        assert.equal(response.analysis.filling?.status,"defined");
+        assert.equal(response.analysis.filling?.conductance,p==="1"?-1:1);
+        assert.equal(response.analysis.filling?.conductanceUnit,"e^2/h");
+        assert.equal(response.analysis.filling?.diophantineResidual,0);
         assert.equal(response.analysis.filling?.fineGlobalGap,
           response.analysis.fineBounds[1][0]-response.analysis.fineBounds[0][1]);
       }else assert.equal(response.analysis.filling,undefined);
@@ -73,7 +77,8 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       assert.equal(payload.scene.bands?.energies.length,Number(q)===1?undefined:Number(q));
       assert.deepEqual([...arrays.get("band-0-energy")!],response.analysis.bandEnergies[0]);
       assert.deepEqual(payload.scene.topology?.invariants.map(item=>item.value)??[],
-        response.analysis.chernGaps?.map(gap=>gap.chern)??[]);
+        [...(response.analysis.chernGaps?.map(gap=>gap.chern)??[]),
+          ...(response.analysis.filling?[response.analysis.filling.fineGlobalGap,response.analysis.filling.conductance]:[])]);
       for(const gap of response.analysis.chernGaps??[]){
         const dataset=`occupied-${gap.occupiedBands}-plaquette-flux`;
         assert.deepEqual([...arrays.get(dataset)??[]],gap.plaquetteFlux);
@@ -101,6 +106,12 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
         altered.analysis.chernGaps[0].chern=7;
         assert.equal(isTopologyResponse(altered,job),false);
       }
+      if(response.analysis.filling){
+        const altered=structuredClone(response);
+        if(altered.analysis.kind!=="hofstadter"||!altered.analysis.filling)throw new Error("Wrong result");
+        altered.analysis.filling.conductance=7;
+        assert.equal(isTopologyResponse(altered,job),false);
+      }
       const alteredStrip=structuredClone(response);
       if(alteredStrip.analysis.kind!=="hofstadter"||!alteredStrip.analysis.strip)throw new Error("Wrong result");
       alteredStrip.analysis.strip.leftWeights[3][5]=1.1;
@@ -116,7 +127,18 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       touchingResponse.analysis.kind==="hofstadter");
     assert.equal(touchingResponse.analysis.filling?.gapStatus,"gap-closed");
     assert.equal(touchingResponse.analysis.filling?.fermiEnergy,null);
+    assert.equal(touchingResponse.analysis.filling?.conductance,null);
+    assert.equal(touchingResponse.analysis.filling?.status,"gap-closed");
     assert.equal(isTopologyResponse(touchingResponse,touching),true);
+    const signed=topologyJob("harper-signed-hall",{...TOPOLOGY_DEFAULTS,
+      modelId:"hofstadter",p:"2",q:"5",hopping:"1",grid:"9",occupiedBands:"1"});
+    const signedResult=await worker.request("quantum.run",signed);
+    assert.ok(isQuantumResult(signedResult)&&signedResult.operation==="topology"&&
+      signedResult.analysis.kind==="hofstadter");
+    assert.equal(signedResult.analysis.filling?.status,"defined");
+    assert.equal(signedResult.analysis.filling?.conductance,2);
+    assert.equal(signedResult.analysis.filling?.diophantineResidual,0);
+    assert.equal(isTopologyResponse(signedResult,signed),true);
     assert.throws(()=>topologyJob("bad-filling",{...TOPOLOGY_DEFAULTS,
       modelId:"hofstadter",q:"4",occupiedBands:"4"}),/integer/);
     assert.throws(()=>topologyJob("invalid",{...TOPOLOGY_DEFAULTS,modelId:"hofstadter",p:"2",q:"4",grid:"9"}),/reduced/);

@@ -846,6 +846,18 @@ localization observation separate from the periodic occupied-gap Chern result.
 It does not define a filling, Hall conductivity, quantized plateau, or
 edge-channel classification. Those remain future producer calculations.
 
+**2026-10-26 specified-filling Hofstadter Hall extension:** A selected integer
+number of occupied magnetic bands is now part of the job and immutable run.
+The worker compares the maximum occupied and minimum empty energies across
+the entire magnetic zone on coarse and finer grids. Only a resolved positive
+global gap and a resolved FHS occupied Chern number, independently checked
+against the magnetic Diophantine sign convention, yield the ideal clean-model
+bulk Hall conductance in e²/h. Gap closure or unresolved sampling returns an
+explicit undefined conductance. The existing periodic `.qscene` can carry the
+selected filling, global gap and conditional value as source-linked read-only
+diagnostics. The finite strip remains a separate observation; no experimental
+plateau or individual edge-channel classification is claimed.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

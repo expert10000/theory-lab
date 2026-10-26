@@ -28,7 +28,7 @@
     },
     {
       "path": "packages/contracts/schemas/quantum-result.v1.json",
-      "sha256": "b8999d3e8fb33aaea7391dc8b3a4fccc4a91866bd7b2cacdc19a82b2edf8e6ba"
+      "sha256": "6d0532863b4c252ea39b47eb1faca9c72dd67979256490f5caff9f03232ddb5f"
     },
     {
       "path": "packages/contracts/schemas/worker-capabilities.v1.json",

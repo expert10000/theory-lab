@@ -134,6 +134,14 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
       if(f.gapStatus!==status||
          (status==="open"?!near(f.fermiEnergy!,
            (a.fineBounds[r][0]+a.fineBounds[r-1][1])/2):f.fermiEnergy!==null))return false;
+      const item=a.chernGaps?.[r-1],chern=item?.status==="defined"?item.chern:null;
+      const residual=chern===null||chern===undefined?null:((r+p.p*chern)%q+q)%q;
+      const hallStatus=status==="gap-closed"?"gap-closed":
+        status==="open"&&chern!==null&&chern!==undefined&&residual===0?"defined":"mesh-unresolved";
+      if(f.conductanceUnit!=="e^2/h"||f.method!=="TKNN from FHS occupied Chern; kx-ky orientation"||
+         f.diophantineResidual!==residual||f.status!==hallStatus||
+         f.chern!==(hallStatus==="defined"?chern:null)||
+         f.conductance!==(hallStatus==="defined"?chern:null))return false;
     }else if(a.filling!==undefined)return false;
     if(a.strip!==undefined){
       const strip=a.strip,c=p.stripCells,s=p.stripSamples;
