@@ -698,6 +698,80 @@ def hofstadter_matrix(np, hopping, p, q, kx, ky):
     return matrix
 
 
+def occupied_chern_links(np, frames):
+    """FHS determinant links on a half-open torus (x then y orientation).
+
+    frames[x,y] has orthonormal occupied columns. Determinants make this
+    invariant under arbitrary local U(r) rotations, including seam gauges.
+    https://arxiv.org/abs/cond-mat/0503172
+    """
+    size = frames.shape[0]
+    links = np.empty((2, size, size), dtype=complex)
+    minimum = 1.
+    for x in range(size):
+        for y in range(size):
+            for axis, neighbor in ((0, frames[(x + 1) % size, y]),
+                                   (1, frames[x, (y + 1) % size])):
+                overlap = np.linalg.det(frames[x, y].conj().T @ neighbor)
+                magnitude = float(abs(overlap))
+                minimum = min(minimum, magnitude)
+                links[axis, x, y] = overlap / magnitude if magnitude > 1e-12 else 1.
+    if minimum <= 1e-12:
+        return None, minimum, None
+    plaquette = links[0] * np.roll(links[1], -1, axis=0) * \
+        np.conj(np.roll(links[0], -1, axis=1)) * np.conj(links[1])
+    flux = np.angle(plaquette)
+    return float(np.sum(flux) / (2 * np.pi)), minimum, flux.ravel().tolist()
+
+
+def hofstadter_chern_diagnostics(np, p, q, hopping, grid):
+    """Conditional occupied-subspace Chern for every internal magnetic gap."""
+    if q == 1:
+        return []
+
+    def mesh(size):
+        # Half-open magnetic BZ; no duplicate seam row or column in FHS links.
+        kx = -np.pi / q + 2 * np.pi * np.arange(size) / (q * size)
+        ky = -np.pi + 2 * np.pi * np.arange(size) / size
+        energies = np.empty((size, size, q))
+        vectors = np.empty((size, size, q, q), complex)
+        for x, xx in enumerate(kx):
+            for y, yy in enumerate(ky):
+                energies[x, y], vectors[x, y] = np.linalg.eigh(
+                    hofstadter_matrix(np, hopping, p, q, xx, yy))
+        return energies, vectors
+
+    coarse_energy, coarse_vectors = mesh(grid - 1)
+    fine_energy, fine_vectors = mesh(2 * (grid - 1))
+    output = []
+    for occupied in range(1, q):
+        gap_index = occupied - 1
+        coarse_gap = float(np.min(coarse_energy[:, :, occupied] - coarse_energy[:, :, gap_index]))
+        fine_gap = float(np.min(fine_energy[:, :, occupied] - fine_energy[:, :, gap_index]))
+        # A sampled touching or near touching cannot support a bulk claim.
+        closed = min(coarse_gap, fine_gap) <= 1e-6 * hopping
+        coarse = fine = None
+        min_link = None
+        flux = []
+        if not closed:
+            coarse, coarse_link, _ = occupied_chern_links(np, coarse_vectors[:, :, :, :occupied])
+            fine, fine_link, flux_values = occupied_chern_links(np, fine_vectors[:, :, :, :occupied])
+            min_link = min(coarse_link, fine_link)
+            flux = flux_values or []
+        rounded = None if fine is None else int(round(fine))
+        resolved = (not closed and coarse is not None and fine is not None and
+                    abs(coarse - round(coarse)) < 1e-6 and
+                    abs(fine - rounded) < 1e-6 and
+                    int(round(coarse)) == rounded and min_link > 1e-8)
+        output.append({"occupiedBands": occupied, "coarseGap": coarse_gap,
+                       "fineGap": fine_gap, "coarseChern": coarse,
+                       "fineChern": fine, "chern": rounded if resolved else None,
+                       "minimumLink": min_link,
+                       "status": "gap-closed" if closed else "defined" if resolved else "mesh-unresolved",
+                       "mesh": 2 * (grid - 1), "plaquetteFlux": flux if resolved else []})
+    return output
+
+
 def hofstadter_analysis(np, parameters):
     """Only the bounded periodic spectrum and sampled extrema; no filled-band claim."""
     from math import gcd

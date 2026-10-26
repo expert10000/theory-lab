@@ -1,10 +1,57 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis, landau_analysis, hofstadter_matrix, hofstadter_analysis
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis, landau_analysis, hofstadter_matrix, hofstadter_analysis, hofstadter_chern_diagnostics, occupied_chern_links
 
 
 class HofstadterTests(unittest.TestCase):
+    def test_occupied_chern_diophantine_sign_reversal_and_touching_gap(self):
+        import numpy as np
+        # Independently, r = p*C (mod q) for square-lattice gap r. With our
+        # kx,ky and lower-band convention C has the negative natural-window sign.
+        for p, q, expected in ((1, 3, [-1, 1]), (-1, 3, [1, -1]),
+                               (1, 4, [-1, None, 1]), (1, 5, [-1, -2, 2, 1])):
+            for grid in (7, 9, 13):
+                gaps = hofstadter_chern_diagnostics(np, p, q, 1., grid)
+                self.assertEqual([item["chern"] for item in gaps], expected)
+                for r, item in enumerate(gaps, 1):
+                    self.assertEqual(item["occupiedBands"], r)
+                    if item["chern"] is None:
+                        self.assertEqual(item["status"], "gap-closed")
+                        self.assertEqual(item["plaquetteFlux"], [])
+                    else:
+                        self.assertEqual(item["status"], "defined")
+                        self.assertEqual(len(item["plaquetteFlux"]), item["mesh"] ** 2)
+                        self.assertAlmostEqual(sum(item["plaquetteFlux"]) / (2 * np.pi), item["chern"])
+                        self.assertGreater(item["minimumLink"], 0)
+                        self.assertEqual((p * item["chern"] + r) % q, 0)
+
+    def test_torus_seams_and_local_occupied_gauge_rotations(self):
+        import numpy as np
+        q, size = 3, 8
+        for kx, ky in ((-.31, .27), (.19, -2.14)):
+            np.testing.assert_allclose(hofstadter_matrix(np, 1., 1, q, kx, ky),
+                                       hofstadter_matrix(np, 1., 1, q, kx + 2*np.pi/q, ky), atol=1e-13)
+            np.testing.assert_allclose(hofstadter_matrix(np, 1., 1, q, kx, ky),
+                                       hofstadter_matrix(np, 1., 1, q, kx, ky + 2*np.pi), atol=1e-13)
+        frames = np.empty((size, size, q, 2), complex)
+        for x in range(size):
+            for y in range(size):
+                _, vectors = np.linalg.eigh(hofstadter_matrix(np, 1., 1, q,
+                    -np.pi/q+2*np.pi*x/(q*size), -np.pi+2*np.pi*y/size))
+                frames[x,y] = vectors[:,:2]
+        before, _, _ = occupied_chern_links(np, frames)
+        rotated = frames.copy()
+        for x in range(size):
+            for y in range(size):
+                phase = np.diag(np.exp(1j*np.array([.37*x-.13*y,.29*y+.11*x])))
+                angle = .04*x+.07*y
+                unitary = np.array([[np.cos(angle),np.sin(angle)],[-np.sin(angle),np.cos(angle)]])
+                rotated[x,y] = frames[x,y] @ phase @ unitary
+        after, _, _ = occupied_chern_links(np, rotated)
+        self.assertAlmostEqual(before, after)
+        self.assertAlmostEqual(before, 1.)
+
     def test_q_bands_zero_flux_and_pi_flux_reference(self):
         import numpy as np
         for p, q in ((0, 1), (1, 2), (1, 3), (2, 5), (-2, 5)):
