@@ -13,8 +13,8 @@ import {writeSceneBundle} from "../packages/quantum-scene/bundle";
 const destination=process.argv[2];if(!destination)throw new Error("Pass an existing output directory");
 const root=await mkdtemp(join(tmpdir(),"qlab-edge-fixture-")),worker=new WorkerSupervisor(process.cwd());
 const runs=new RunStore(join(root,"runs"),join(root,"artifacts")),store=new HofstadterEdgeStudyStore(join(root,"studies"),runs);
-const plan:HofstadterEdgePlan={schema:"quantum-hofstadter-edge-plan/v1",studyId:"fixture-hofstadter-edge-1-3",
-  p:1,q:3,hopping:1,grid:9,occupiedBands:1,stripSamples:31,widths:[18,24]};
+const plan:HofstadterEdgePlan={schema:"quantum-hofstadter-edge-plan/v1",studyId:"fixture-hofstadter-edge-1-6-tracked",
+  p:1,q:6,hopping:1,grid:9,occupiedBands:1,stripSamples:31,widths:[18,24]};
 try{
   await worker.start();const results=[] as TopologyResult[];
   for(const job of hofstadterEdgeJobs(plan)){
@@ -27,7 +27,7 @@ try{
   if(study.comparison.status!=="consistent")throw new Error("Reference edge comparison did not resolve");
   await store.save(study);const verified=await store.get(study.studyId),scene=await store.scene(study.studyId);
   const folder=await writeSceneBundle(scene,resolve(destination));
-  await writeFile(join(resolve(destination),"hofstadter-edge-producer-results.json"),
+  await writeFile(join(resolve(destination),"hofstadter-edge-tracked-producer-results.json"),
     JSON.stringify({study:verified,results}),{flag:"wx"});
   console.log(JSON.stringify({folder,status:verified.comparison.status,resultHash:scene.scene.provenance.resultSha256}));
 }finally{await worker.stop();await rm(root,{recursive:true,force:true});}

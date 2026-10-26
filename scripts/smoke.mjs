@@ -879,7 +879,7 @@ try {
   assert.equal(edgeStudies[0].status,"consistent");
   const edgeStudy=await page.evaluate(id=>window.quantum.getHofstadterEdgeStudy(id),edgeStudies[0].studyId);
   assert.equal(edgeStudy.sources.length,3);
-  assert.equal(edgeStudy.widths[0].leftFlow,-edgeStudy.bulk.hall);
+  assert.equal(edgeStudy.tracking.widths[0].leftFlow,-edgeStudy.bulk.hall);
   await page.getByRole("tab",{name:"Explore",exact:true}).click();
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
   await page.getByRole("button",{name:`Open SSH topology ${preservedTopologyRunIds.ssh}`}).click();

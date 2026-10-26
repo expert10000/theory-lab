@@ -17,13 +17,26 @@ test("bounded bulk-edge evidence, reversal, gap closure and sampling refusal",as
     return {plan,results:results as [TopologyResult,TopologyResult,TopologyResult],study:await deriveHofstadterEdgeStudy(plan,results as [TopologyResult,TopologyResult,TopologyResult])};
   };
   try{
-    const forward=await calculate(1,3,1),reversed=await calculate(-1,3,1);
+    const forward=await calculate(1,6,1),reversed=await calculate(-1,6,1);
     assert.equal(forward.study.bulk.hall,-1);assert.equal(reversed.study.bulk.hall,1);
     assert.equal(forward.study.comparison.status,"consistent");assert.equal(reversed.study.comparison.status,"consistent");
-    assert.deepEqual(forward.study.widths.map(w=>[w.leftFlow,w.rightFlow]),[[1,-1],[1,-1]]);
-    assert.deepEqual(reversed.study.widths.map(w=>[w.leftFlow,w.rightFlow]),[[-1,1],[-1,1]]);
+    assert.equal(forward.study.tracking?.status,"consistent");assert.equal(reversed.study.tracking?.status,"consistent");
+    assert.ok(forward.study.tracking!.widths.every(w=>w.ambiguousCandidates===0&&w.crossings.every(c=>c.overlap>=.5&&c.margin>=.02)));
+    assert.deepEqual(forward.study.tracking!.widths.map(w=>[w.leftFlow,w.rightFlow]),[[1,-1],[1,-1]]);
+    assert.deepEqual(reversed.study.tracking!.widths.map(w=>[w.leftFlow,w.rightFlow]),[[-1,1],[-1,1]]);
     assert.ok(forward.study.comparison.maximumKyDrift!==null&&forward.study.comparison.maximumKyDrift<.01);
     assert.ok(forward.study.widths.every(w=>w.crossings.every(c=>c.minimumWeight>=.35)));
+    const ambiguous=await calculate(1,3,1);assert.equal(ambiguous.study.comparison.status,"undefined");
+    assert.ok(ambiguous.study.tracking?.widths.every(w=>w.ambiguousCandidates>0));
+    const legacy=structuredClone(ambiguous.results);
+    for(const result of legacy.slice(1))if(result.analysis.kind==="hofstadter"&&result.analysis.strip)
+      delete result.analysis.strip.continuation;
+    const legacyStudy=await deriveHofstadterEdgeStudy(ambiguous.plan,legacy);
+    assert.equal(legacyStudy.tracking,undefined);
+    assert.equal(legacyStudy.comparison.status,"consistent");
+    const mismatchedTermination=await calculate(1,5,1);
+    assert.equal(mismatchedTermination.study.comparison.status,"undefined");
+    assert.equal(mismatchedTermination.study.tracking?.widths[0].ambiguousCandidates,0);
     const coarse=await calculate(1,3,1,17);assert.equal(coarse.study.comparison.status,"undefined");
     const touching=await calculate(1,4,2);assert.equal(touching.study.bulk.gapStatus,"gap-closed");
     assert.equal(touching.study.bulk.hall,null);assert.equal(touching.study.comparison.status,"undefined");

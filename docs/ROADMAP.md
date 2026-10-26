@@ -2078,5 +2078,12 @@ explicit global-gap, edge-localization, signed sampled-crossing and
 strip-width checks; immutable paired-run study with undefined status when
 the evidence does not resolve; exact source-linked read-only Math3D scene.
 See [`HOFSTADTER_BULK_EDGE_COMPARISON.md`](HOFSTADTER_BULK_EDGE_COMPARISON.md).
-Tracked eigenstate branches, experimental transport and Hall plateaus are
-separate future work.
+**Additive continuation implemented:** new strip results store bounded
+adjacent-momentum eigenvector-overlap assignments, ambiguity counts and
+accepted crossing pairs. The verified study compares those pairs at both
+widths, while retaining sorted-index evidence and reopening legacy studies
+without changing their recorded status. A pinned `1/6` fixture has resolved
+flow; ambiguous `1/3` and width-dependent `1/5` cases stay undefined.
+Math3D inspects the supplied crossing positions and overlap scalars with
+source hashes. Unique physical edge-channel classification, experimental
+transport and Hall plateaus remain separate future work.

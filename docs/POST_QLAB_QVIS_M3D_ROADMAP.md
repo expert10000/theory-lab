@@ -868,6 +868,15 @@ The finite ribbon and gauge-dependent eigenvectors are displayed as supplied,
 without claiming a material-specific edge phase or calculating physics in
 Math3D. Other Q08 families still require independent producers and fixtures.
 
+**2026-10-26 bounded edge-continuation extension:** The Harper strip producer
+now saves adjacent-momentum eigenvector-overlap assignments, their quality
+margin, ambiguity counts and accepted Fermi crossings. New immutable
+bulk–edge studies compare overlap-validated left/right flow at 18 and 24 sites
+and refuse unresolved evidence; historical sorted-index studies remain
+reopenable. The pinned `p/q=1/6` `.qscene` supplies exact crossing markers,
+overlap values and strip source hashes to Math3D. This does not establish a
+unique physical transport channel or an experimental Hall plateau.
+
 ```text
 feat(math3d-quantum): add topological Hamiltonian visualization
 ```

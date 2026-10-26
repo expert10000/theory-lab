@@ -12,12 +12,23 @@ export interface EdgeCrossing {
 export interface EdgeWidthEvidence {
   cells:18|24;crossings:EdgeCrossing[];leftFlow:number;rightFlow:number;
 }
+export interface TrackedEdgeCrossing extends EdgeCrossing {
+  targetStateIndex:number;overlap:number;margin:number;
+}
+export interface TrackedEdgeWidthEvidence {
+  cells:18|24;ambiguousCandidates:number;crossings:TrackedEdgeCrossing[];
+  leftFlow:number;rightFlow:number;
+}
 export interface HofstadterEdgeStudy {
   schema:"quantum-hofstadter-edge-study/v1";studyId:string;plan:HofstadterEdgePlan;
   sources:[EdgeSource,EdgeSource,EdgeSource];
   bulk:{gapStatus:"open"|"gap-closed"|"mesh-unresolved";globalGap:number;
     fermiEnergy:number|null;hall:number|null;samplingConverged:boolean};
   widths:[EdgeWidthEvidence,EdgeWidthEvidence];
+  /** Present only when both source strips saved overlap-validated continuation evidence. */
+  tracking?:{method:"maximum-eigenvector-overlap/hungarian-v1";
+    widths:[TrackedEdgeWidthEvidence,TrackedEdgeWidthEvidence];
+    status:"consistent"|"undefined";reason:string;maximumKyDrift:number|null};
   comparison:{status:"consistent"|"undefined";reason:string;maximumKyDrift:number|null};
   computedAt:string;
 }
@@ -59,4 +70,24 @@ export function assertHofstadterEdgeStudy(value:unknown):asserts value is Hofsta
     typeof s.comparison.reason!=="string"||s.comparison.reason.length>160||
     !(s.comparison.maximumKyDrift===null||Number.isFinite(s.comparison.maximumKyDrift)))
     throw new Error("Invalid Hofstadter edge study");
+  if(s.tracking!==undefined){
+    const t=s.tracking;
+    if(t.method!=="maximum-eigenvector-overlap/hungarian-v1"||
+      !["consistent","undefined"].includes(t.status)||typeof t.reason!=="string"||t.reason.length>160||
+      !(t.maximumKyDrift===null||Number.isFinite(t.maximumKyDrift))||
+      !Array.isArray(t.widths)||t.widths.length!==2||
+      t.widths.some((w,i)=>w.cells!==s.plan.widths[i]||!Number.isInteger(w.ambiguousCandidates)||
+        w.ambiguousCandidates<0||w.ambiguousCandidates>2*w.cells*s.plan.stripSamples||
+        !Number.isInteger(w.leftFlow)||!Number.isInteger(w.rightFlow)||
+        !Array.isArray(w.crossings)||w.crossings.length>2*w.cells*s.plan.stripSamples||
+        w.crossings.some(c=>!["left","right"].includes(c.side)||
+          !Number.isInteger(c.stateIndex)||c.stateIndex<0||c.stateIndex>=w.cells||
+          !Number.isInteger(c.targetStateIndex)||c.targetStateIndex<0||c.targetStateIndex>=w.cells||
+          !Number.isInteger(c.interval)||c.interval<0||c.interval>=s.plan.stripSamples-1||
+          !Number.isFinite(c.ky)||![-1,1].includes(c.direction)||
+          !Number.isFinite(c.minimumWeight)||c.minimumWeight<.35||c.minimumWeight>1||
+          !Number.isFinite(c.overlap)||c.overlap<.5||c.overlap>1||
+          !Number.isFinite(c.margin)||c.margin<.02||c.margin>1)))
+      throw new Error("Invalid tracked Hofstadter edge evidence");
+  }
 }

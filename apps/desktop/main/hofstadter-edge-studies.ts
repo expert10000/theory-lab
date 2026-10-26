@@ -1,7 +1,7 @@
 import {createHash,randomUUID} from "node:crypto";
 import {link,mkdir,readFile,readdir,unlink,writeFile} from "node:fs/promises";
 import {join} from "node:path";
-import type {TopologyResult} from "../../../packages/contracts";
+import type {HofstadterAnalysis,TopologyResult} from "../../../packages/contracts";
 import {assertHofstadterEdgeStudy,type HofstadterEdgeStudy} from "../../../packages/contracts/hofstadter-edge-study";
 import {deriveHofstadterEdgeStudy,hofstadterEdgeJobs} from "../../../packages/models/hofstadter-edge-study";
 import {SceneBuilder} from "../../../packages/quantum-scene/builder";
@@ -25,7 +25,7 @@ export class HofstadterEdgeStudyStore{
       results.push(saved.result);
     }
     const derived=await deriveHofstadterEdgeStudy(study.plan,results as [TopologyResult,TopologyResult,TopologyResult]);
-    for(const key of ["sources","bulk","widths","comparison"] as const)
+    for(const key of ["sources","bulk","widths","comparison","tracking"] as const)
       if(JSON.stringify(study[key])!==JSON.stringify(derived[key]))throw new Error("Bulk-edge evidence failed source verification");
     return results as [TopologyResult,TopologyResult,TopologyResult];
   }
@@ -95,7 +95,34 @@ export class HofstadterEdgeStudyStore{
             style:{color:side==="left"?"#79d9c1":"#f2b36f",opacity:.8,size:.035}});
       }
     }
+    if(study.tracking)for(const width of study.tracking.widths){
+      const strip=(results[width.cells===18?1:2].analysis as HofstadterAnalysis).strip!;
+      const positions=[] as number[],overlaps=[] as number[];
+      for(const [index,crossing] of width.crossings.entries()){
+        const a=crossing.interval,b=a+1,lane=4+(width.cells===18?0:.8)+(crossing.side==="right"?.3:0);
+        const key=`tracked-${width.cells}-${crossing.side}-${index}`;
+        const location=await builder.data(`${key}-position`,[
+          strip.kyValues[a],lane,strip.energies[crossing.stateIndex][a],
+          strip.kyValues[b],lane,strip.energies[crossing.targetStateIndex][b]],3,
+          "rad, display lane, hopping energy");
+        builder.object(key,`${width.cells} sites · ${crossing.side} overlap-validated crossing`,
+          "polyline",location,crossing.side==="left"?"#44dec0":"#f9a65a");
+        const energy=strip.energies[crossing.stateIndex][a]+(strip.energies[crossing.targetStateIndex][b]-
+          strip.energies[crossing.stateIndex][a])*(crossing.ky-strip.kyValues[a])/(strip.kyValues[b]-strip.kyValues[a]);
+        positions.push(crossing.ky,lane,energy);overlaps.push(crossing.overlap);
+        scene.annotations.push({id:`track-${width.cells}-${index}`,position:[crossing.ky,lane,energy],
+          text:`${width.cells} sites · ${crossing.side} · ${crossing.stateIndex}→${crossing.targetStateIndex} · interval ${a} · kᵧ ${crossing.ky} · overlap ${crossing.overlap} · margin ${crossing.margin} · run ${study.sources[width.cells===18?1:2].runId} · SHA-256 ${study.sources[width.cells===18?1:2].resultSha256}`});
+      }
+      if(positions.length){
+        const location=await builder.data(`tracked-${width.cells}-position`,positions,3,"rad, display lane, hopping energy");
+        const scalar=await builder.data(`tracked-${width.cells}-overlap`,overlaps,1,"squared eigenvector overlap");
+        builder.object(`tracked-${width.cells}`,`${width.cells} sites · validated crossings`,"point-cloud",location,
+          "#f5e68a",{scalars:scalar,style:{color:"#f5e68a",opacity:1,size:.12}});
+      }
+    }
     scene.annotations.push({id:"comparison",position:[0,5.7,0],text:`${study.comparison.status}: ${study.comparison.reason}`});
+    if(study.tracking)scene.annotations.push({id:"tracking",position:[0,5.7,0],
+      text:`${study.tracking.method} · ${study.tracking.status}: ${study.tracking.reason} · ambiguous candidates ${study.tracking.widths.map(w=>`${w.cells}:${w.ambiguousCandidates}`).join(", ")}`});
     for(const source of study.sources)scene.annotations.push({id:source.role,position:[0,5.7,0],
       text:`${source.role} · run ${source.runId} · SHA-256 ${source.resultSha256}`});
     return builder.finish();
