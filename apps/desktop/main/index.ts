@@ -18,6 +18,7 @@ import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
 import { SpectrumStudyStore } from "./spectrum-studies";
 import { IsingStudyStore } from "./ising-studies";
+import {HofstadterFluxStudyStore} from "./hofstadter-flux-studies";
 import { IsingStateStore } from "./ising-state";
 import {IsingQuenchStore} from "./ising-quench";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
@@ -84,6 +85,7 @@ app.whenReady().then(() => {
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir);
   const spectrumStudies = new SpectrumStudyStore(join(app.getPath("userData"), "spectrum-studies"), runs);
   const isingStudies = new IsingStudyStore(join(app.getPath("userData"), "ising-studies"), runs);
+  const fluxStudies = new HofstadterFluxStudyStore(join(app.getPath("userData"), "hofstadter-flux-studies"), runs);
   const isingStates = new IsingStateStore(join(app.getPath("userData"), "ising-states"), runs);
   const isingQuenches = new IsingQuenchStore(join(app.getPath("userData"),"ising-quenches"),runs);
   const workspaceFile = join(app.getPath("userData"), "workspace.json");
@@ -542,6 +544,21 @@ app.whenReady().then(() => {
   });
   ipcMain.handle("quantum:list-ising-studies", (event) => {
     trusted(event);return isingStudies.list();
+  });
+  ipcMain.handle("quantum:save-hofstadter-flux-study",(event,value:unknown)=>{trusted(event);return fluxStudies.save(value);});
+  ipcMain.handle("quantum:get-hofstadter-flux-study",(event,studyId:unknown)=>{
+    trusted(event);if(typeof studyId!=="string")throw new Error("Invalid flux study ID");return fluxStudies.get(studyId);
+  });
+  ipcMain.handle("quantum:list-hofstadter-flux-studies",event=>{trusted(event);return fluxStudies.list();});
+  ipcMain.handle("quantum:export-hofstadter-butterfly",async(event,studyId:unknown)=>{
+    trusted(event);if(typeof studyId!=="string")throw new Error("Invalid flux study ID");
+    const payload=await fluxStudies.scene(studyId);
+    const selection=await dialog.showOpenDialog({title:"Choose parent folder for verified Hofstadter butterfly .qscene",properties:["openDirectory"]});
+    if(selection.canceled||!selection.filePaths[0])return null;
+    const reverified=await fluxStudies.scene(studyId); // Refuse changes between preview and export.
+    if(reverified.scene.provenance.resultSha256!==payload.scene.provenance.resultSha256)
+      throw new Error("Flux study changed after export preview");
+    return writeSceneBundle(payload,selection.filePaths[0]);
   });
   ipcMain.handle("quantum:scene", (event, runId: unknown, view: unknown) => {
     trusted(event);

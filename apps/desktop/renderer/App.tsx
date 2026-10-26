@@ -26,6 +26,7 @@ import {ObservableWorkspace} from "./ObservableWorkspace";
 import {TwoLevelStateView} from "./TwoLevelStateView";
 import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {IsingStudyLab,ISING_STUDY_DEFAULTS} from "./IsingStudyLab";
+import {HofstadterFluxLab} from "./HofstadterFluxLab";
 import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
@@ -444,7 +445,7 @@ export function App() {
       theoryModel:tab==="theory"?activeModel:undefined, selectedPresetId: selectedPreset?.id ?? null,
       spectrum: { parameters, engine: engineMode }, dynamics: parts.dynamics,
       cavity: parts.cavity, open: parts.open, sweep: parts.sweep, manyBody: parts.manyBody, circuit: parts.circuit,
-      sweepView:tab==="sweep"&&activeModel==="two_level"?"two_level":tab==="sweep"&&activeModel==="ising_chain"?"ising_chain":"dynamics",
+      sweepView:tab==="sweep"&&activeModel==="two_level"?"two_level":tab==="sweep"&&activeModel==="ising_chain"?"ising_chain":tab==="sweep"&&activeModel==="topology"?"topology":"dynamics",
       spectrumStudy:parts.spectrumStudy??SPECTRUM_STUDY_DEFAULTS,
       isingStudy:parts.isingStudy??ISING_STUDY_DEFAULTS,
       isingQuench:parts.isingQuench,
@@ -794,8 +795,8 @@ export function App() {
           </div>
           <div hidden={tab !== "cavity"}><CavityLab bridge={window.quantum} status={status} modelId={cavityModel} preset={selectedPreset?.kind === "cavity" ? selectedPreset : null} restored={restored?.snapshot.cavity} restoreEpoch={restored?.epoch} onSnapshot={collectCavity} onCavityContext={collectCavityContext} reopenedCavity={reopenedCavity} /></div>
           <div hidden={tab !== "open"}><OpenSystemLab bridge={window.quantum} status={status} preset={selectedPreset?.kind === "open" ? selectedPreset : null} restored={restored?.snapshot.open} restoreEpoch={restored?.epoch} onSnapshot={collectOpen} onLindbladContext={collectLindbladContext} reopenedLindblad={reopenedLindblad} /></div>
-          <div hidden={tab !== "sweep"||activeModel==="two_level"||activeModel==="ising_chain"}><SweepLab bridge={window.quantum} status={status}
-            selectedModel={activeModel!=="two_level"&&activeModel!=="ising_chain"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
+          <div hidden={tab !== "sweep"||activeModel==="two_level"||activeModel==="ising_chain"||activeModel==="topology"}><SweepLab bridge={window.quantum} status={status}
+            selectedModel={activeModel!=="two_level"&&activeModel!=="ising_chain"&&activeModel!=="topology"&&tabForMode(activeModel,"sweeps")?activeModel as EvolutionModelId:undefined}
             onModelChange={setActiveModel} restored={restored?.snapshot.sweep} restoreEpoch={restored?.epoch} onSnapshot={collectSweep} onSweepContext={collectSweepContext} reopenedSweep={reopenedSweep} /></div>
           <div hidden={tab!=="sweep"||activeModel!=="two_level"}><SpectrumStudyLab bridge={window.quantum} status={status}
             restored={restored?.snapshot.spectrumStudy} restoreEpoch={restored?.epoch} atlasDraft={atlasSpectrumStudy?.draft} atlasEpoch={atlasSpectrumStudy?.epoch} onSnapshot={collectSpectrumStudy}
@@ -805,6 +806,7 @@ export function App() {
           <div hidden={tab!=="sweep"||activeModel!=="ising_chain"}><IsingStudyLab bridge={window.quantum} status={status}
             restored={restored?.snapshot.isingStudy} restoreEpoch={restored?.epoch} onSnapshot={collectIsingStudy}
             onOpenPoint={openSavedManyBody}/></div>
+          <div hidden={tab!=="sweep"||activeModel!=="topology"}><HofstadterFluxLab bridge={window.quantum} status={status} onOpenRun={openSavedTopology}/></div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} onManyBodyContext={collectManyBodyContext} reopenedManyBody={reopenedManyBody} /></div>
           <div hidden={tab!=="ising_quench"}><IsingQuenchLab bridge={window.quantum} status={status} preferredRunId={manyBodyContext?.result.runId??null}
             restored={restored?.snapshot.isingQuench} restoreEpoch={restored?.epoch} onSnapshot={collectIsingQuench}/></div>

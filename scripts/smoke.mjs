@@ -59,7 +59,7 @@ try {
   if (process.env.QLAB_SKIP_SCREENSHOTS === "1") {
     page.screenshot = async () => {};
   }
-  page.on("pageerror", (error) => errors.push(error.message));
+  page.on("pageerror", (error) => errors.push(error.stack??error.message));
   await page
     .getByTestId("worker-status")
     .filter({ hasText: "READY" })
@@ -157,6 +157,7 @@ try {
       "consumeSourceRun",
       "evolve",
       "exportFigure",
+      "exportHofstadterButterfly",
       "exportRun",
       "exportRunBundle",
       "exportScene",
@@ -166,6 +167,7 @@ try {
       "getCircuitRun",
       "getEvolutionRun",
       "getFigure",
+      "getHofstadterFluxStudy",
       "getIsingQuench",
       "getIsingState",
       "getIsingStudy",
@@ -189,6 +191,7 @@ try {
       "importSceneStream",
       "inspectSavedRun",
       "lindblad",
+      "listHofstadterFluxStudies",
       "listIsingStudies",
       "listRuns",
       "listSpectrumStudies",
@@ -213,6 +216,7 @@ try {
       "rerunSaved",
       "restart",
       "run",
+      "saveHofstadterFluxStudy",
       "saveIsingStudy",
       "saveSpectrumStudy",
       "saveWorkspace",

@@ -2059,3 +2059,13 @@ their data contracts and scientific acceptance become ready. Every slice
 requires exact-run/restart/tamper checks, model-specific numerical tests,
 desktop and web regression where exposed, and an explicit unavailable-data
 state. The separate Math3D importer remains its own release gate.
+
+## Bounded Hofstadter flux sweep extension
+
+**Implemented:** reduced `p/q` enumeration through denominator 7; separate
+verified periodic Harper runs; coarse/fine sampling and occupied-gap status;
+optional filled-band Hall values only when the global gap and Chern check
+resolve; atomic cancel/resume checkpoints; source-linked butterfly `.qscene`;
+read-only Math3D exact-sample inspection and tamper refusal. See
+[`HOFSTADTER_FLUX_SWEEP.md`](HOFSTADTER_FLUX_SWEEP.md). Experimental Hall
+plateaus and finite-strip edge-channel classification remain future work.

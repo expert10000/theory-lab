@@ -28,7 +28,7 @@ export interface WorkspaceSnapshot {
     parameters: Record<string, string>; x: SweepAxis; y: SweepAxis; twoD: boolean;
     start: string; stop: string; initialIndex: 0 | 1; engine: SweepEngineName };
   /** Optional: older workspaces and dynamics-sweep drafts remain unchanged. */
-  sweepView?: "two_level" | "dynamics" | "ising_chain";
+  sweepView?: "two_level" | "dynamics" | "ising_chain" | "topology";
   spectrumStudy?: {omega:string;start:string;stop:string;points:string;engine:EngineName;
     axisParameter?:"delta"|"omega";delta?:string};
   isingStudy?: {sites:string;interaction:string;longitudinal:string;boundary:"open"|"periodic";
@@ -105,7 +105,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
     modelId: evolutionModel, parameters: values, x: axis, y: axis, twoD: { type: "boolean" },
     start: shortText, stop: shortText, initialIndex: { enum: [0, 1] }, engine: { enum: ["qutip", "native", "dynamiqs"] },
   }),
-  sweepView: {enum:["two_level","dynamics","ising_chain"]},
+  sweepView: {enum:["two_level","dynamics","ising_chain","topology"]},
   spectrumStudy: block(["omega","start","stop","points","engine"],{
     omega:shortText,start:shortText,stop:shortText,points:shortText,engine,
     axisParameter:{enum:["delta","omega"]},delta:shortText,
