@@ -24,7 +24,7 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
       units:[a.units.momentum,a.units.momentum,a.units.energy]},
     camera:{position:[3*Math.PI/p.q,-7,span*2],target:[0,0,0],up:[0,0,1]},
     datasets:[],objects:[],annotations:[
-      {id:"scope",text:`Square-lattice Harper spectrum · flux ${p.p}/${p.q} · ${p.q} magnetic bands · ${a.chernGaps?"conditional occupied-gap Chern diagnostics":"legacy spectrum only"} · no edge spectra`,position:[0,0,span*1.2]},
+      {id:"scope",text:`Square-lattice periodic Harper spectrum · flux ${p.p}/${p.q} · ${p.q} magnetic bands · ${a.chernGaps?"conditional occupied-gap Chern diagnostics":"legacy spectrum only"}${a.strip?" · finite strip in a separate scene":""}`,position:[0,0,span*1.2]},
       {id:"sampling",text:`${g}×${g} saved k grid; coarse/fine extrema drift ${Math.max(...a.extremaDrift).toPrecision(4)} ${a.units.energy} (${a.converged?"within":"outside"} sampling target)`,position:[0,0,-span*1.2]}]};
   const builder=new SceneBuilder(scene,digest);
   const coordinates=await builder.data("magnetic-k",a.kxValues.flatMap(kx=>a.kyValues.flatMap(ky=>[kx,ky,0])),3,a.units.momentum);
@@ -49,7 +49,7 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
     scene.topology={quantities:[],invariants:[],limitations:[
       "Chern numbers belong to the producer's gapped occupied subspaces; a touching or unresolved gap is undefined.",
       "FHS plaquette flux is an exact supplied scalar on a separate half-open periodic mesh. Its z=0 position is a display plane, not an energy sample.",
-      "No open-boundary spectrum, Fermi filling or Hall response is supplied. Math3D does not calculate Berry flux or Chern numbers."]};
+      "Finite-strip observations, when supplied, are in a separate scene. No Fermi filling or Hall response is supplied. Math3D does not calculate Berry flux or Chern numbers."]};
     for(const gap of a.chernGaps){
       const id=`occupied-${gap.occupiedBands}`;
       scene.topology.invariants.push({id:`${id}-chern`,label:`Occupied ${gap.occupiedBands} Chern`,
@@ -72,6 +72,44 @@ export async function hofstadterSceneFromResult(result: QuantumResult, resultSha
         kind:"berry-curvature",object:`${id}-flux`,dataset:scalar,
         convention:"Signed FHS plaquette phase in radians; half-open magnetic zone, x-major/y-fastest; no area division"});
     }
+  }
+  return builder.finish();
+}
+
+/** The finite strip is a separate observation from periodic bulk Chern data. */
+export async function hofstadterStripSceneFromResult(result: QuantumResult, resultSha256: string,
+  digest: (bytes: Uint8Array) => Promise<string>) {
+  if (result.operation !== "topology" || result.model.type !== "hofstadter" ||
+      result.analysis.kind !== "hofstadter" || !result.analysis.strip ||
+      !consistentTopologyResult({schema:"quantum-job/v1",jobId:result.jobId,operation:"topology",
+        engine:"native",model:result.model},result))
+    throw new Error("Hofstadter strip scene requires a consistent verified run");
+  const p=result.model.parameters,strip=result.analysis.strip;
+  const source=result.model.source?.sourceRepository?.match(/^(https:\/\/github\.com\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)\/tree\/([a-f0-9]{40})$/);
+  const energyMax=Math.max(1,...strip.energies.flatMap(row=>row.map(Math.abs)));
+  const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-hofstadter-strip`,
+    title:`Open Harper strip · flux ${p.p}/${p.q}`,
+    provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:result.model.type,
+      engine:result.engine.name,engineVersion:result.engine.version,computedAt:result.provenance.computedAt,
+      resultSha256,adapter:"qvis/1",parameters:{...p},
+      ...(source?{source:{repository:source[1],revision:source[2],entryId:"hofstadter"}}:{})},
+    coordinates:{handedness:"right",axes:["ky","sorted state display lane","energy"],
+      units:[result.analysis.units.momentum,"state index + display offset",result.analysis.units.energy]},
+    camera:{position:[5,-strip.cells,energyMax*3],target:[0,(strip.cells-1)/2,0],up:[0,0,1]},
+    datasets:[],objects:[],annotations:[
+      {id:"scope",text:`Finite Harper strip: ${strip.cells} sites open in x, Bloch-periodic in y. Left/right colors encode first/last ${strip.edgeSites} site weights; lane offsets ±0.15 are display only. No filling, Hall response, or edge-channel classification.`,position:[0,0,energyMax*1.4]},
+      {id:"sampling",text:`${strip.kyValues.length} exact ky samples; state index is energy-sorted at each momentum, not a tracked branch. Maximum eigenpair residual ${strip.maxResidual.toPrecision(4)}.`,position:[0,strip.cells-1,-energyMax*1.4]}]};
+  const builder=new SceneBuilder(scene,digest);
+  for(const [side,offset,color,weights] of [
+    ["left",-.15,"#79d9c1",strip.leftWeights],
+    ["right",.15,"#f2b36f",strip.rightWeights],
+  ] as const){
+    const positions=await builder.data(`strip-${side}-positions`,strip.stateIndices.flatMap(state=>
+      strip.kyValues.flatMap((ky,k)=>[ky,state+offset,strip.energies[state][k]])),3,
+      "ky, sorted state display lane, energy");
+    const scalars=await builder.data(`strip-${side}-weight`,strip.stateIndices.flatMap(state=>weights[state]),1,
+      "probability weight");
+    builder.object(`strip-${side}`,`${side} boundary weight` ,"point-cloud",positions,color,{scalars});
   }
   return builder.finish();
 }

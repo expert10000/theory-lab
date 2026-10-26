@@ -24,11 +24,11 @@
   "protectedSchemas": [
     {
       "path": "packages/contracts/schemas/quantum-job.v1.json",
-      "sha256": "e3ac72210b51d1545fee2e5b996e017255a98b6ceb2757dabe7a179eec8c8c98"
+      "sha256": "0bbce014fff1d907ae494a8be77e8631c21215ccb0c8a22a7ba0cbd4b3d50d04"
     },
     {
       "path": "packages/contracts/schemas/quantum-result.v1.json",
-      "sha256": "480636f738a8961d3fee9e2821820bb9af2dccc4a0939831a759a608838e9cfd"
+      "sha256": "7e35ed7fd8bc43ce46e691858423833e0b1cf51bb8afc440111a729c52270fe5"
     },
     {
       "path": "packages/contracts/schemas/worker-capabilities.v1.json",

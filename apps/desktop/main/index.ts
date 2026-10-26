@@ -546,7 +546,7 @@ app.whenReady().then(() => {
   ipcMain.handle("quantum:scene", (event, runId: unknown, view: unknown) => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
-    if(view!==undefined&&view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant") throw new Error("Unsupported scene view");
+    if(view!==undefined&&view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant"&&view!=="strip") throw new Error("Unsupported scene view");
     return runs.scene(runId,view);
   });
   const sceneDigest = async (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
@@ -565,7 +565,7 @@ app.whenReady().then(() => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
     // Validate saved metadata/data before prompting. Never accept renderer paths/data.
-    if(view!==undefined&&view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant") throw new Error("Unsupported scene view");
+    if(view!==undefined&&view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant"&&view!=="strip") throw new Error("Unsupported scene view");
     if(format!==undefined&&format!=="regular"&&format!=="stream")throw new Error("Unsupported scene bundle format");
     await runs.scene(runId,view);
     const selection = await dialog.showOpenDialog({ title: "Choose parent folder for a new scene bundle", properties: ["openDirectory"] });
@@ -575,7 +575,7 @@ app.whenReady().then(() => {
   ipcMain.handle("quantum:prepare-scene-handoff",async(event,runId:unknown,view:unknown,expectedResultHash:unknown)=>{
     trusted(event);
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid scene run ID");
-    if(view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant")throw new Error("Unsupported scene view");
+    if(view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant"&&view!=="strip")throw new Error("Unsupported scene view");
     if(typeof expectedResultHash!=="string"||!/^[a-f0-9]{64}$/.test(expectedResultHash))throw new Error("Invalid expected scene source hash");
     const preview=await runs.scene(runId,view);
     if(preview.scene.provenance.resultSha256!==expectedResultHash)throw new Error("Saved scene source changed after preview");
@@ -588,7 +588,7 @@ app.whenReady().then(() => {
     if (args.length !== 3) throw new Error("Math3D handoff accepts only run, view and result hash");
     const [runId, view, expectedResultHash] = args;
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId)) throw new Error("Invalid scene run ID");
-    if (view !== "standard" && view !== "bands" && view !== "wilson" && view !== "invariant") throw new Error("Unsupported scene view");
+    if (view !== "standard" && view !== "bands" && view !== "wilson" && view !== "invariant" && view !== "strip") throw new Error("Unsupported scene view");
     if (typeof expectedResultHash !== "string" || !/^[a-f0-9]{64}$/.test(expectedResultHash))
       throw new Error("Invalid expected scene source hash");
     const preview = await runs.scene(runId, view);

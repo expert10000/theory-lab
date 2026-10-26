@@ -11,10 +11,12 @@ const destination=process.argv[2];
 if(!destination)throw new Error("Pass an existing output directory");
 const resultFile=process.argv[3]??"hofstadter-producer-result.json";
 if(!/^hofstadter(?:-[a-z]+)*-producer-result\.json$/.test(resultFile))throw new Error("Invalid producer result filename");
+const view=process.argv[4]??"standard";
+if(view!=="standard"&&view!=="strip")throw new Error("Unsupported Hofstadter fixture view");
 const root=await mkdtemp(join(tmpdir(),"qlab-harper-fixture-")),worker=new WorkerSupervisor(process.cwd());
 try{
   const job=topologyJob("fixture-harper-p1-q4",{...TOPOLOGY_DEFAULTS,modelId:"hofstadter",
-    p:"1",q:"4",hopping:"1",grid:"9"});
+    p:"1",q:"4",hopping:"1",grid:"9",edgeCells:"18",edgeSamples:"17"});
   await worker.start();
   const result=await worker.request("quantum.run",job);
   if(!isQuantumResult(result)||result.operation!=="topology"||result.analysis.kind!=="hofstadter"||
@@ -22,9 +24,9 @@ try{
   const store=new RunStore(join(root,"runs"),join(root,"artifacts"));
   await store.record(job,result);
   await store.topology(result.runId);
-  const scene=await store.exportScene(result.runId,resolve(destination),"standard");
+  const scene=await store.exportScene(result.runId,resolve(destination),view);
   await writeFile(join(resolve(destination),resultFile),
     await readFile(join(root,"runs",result.runId,"result.json")),{flag:"wx"});
-  console.log(JSON.stringify({scene,runId:result.runId,bands:result.analysis.bandIndices.length,
+  console.log(JSON.stringify({scene,runId:result.runId,view,bands:result.analysis.bandIndices.length,
     samples:result.analysis.kxValues.length*result.analysis.kyValues.length}));
 }finally{await worker.stop();await rm(root,{recursive:true,force:true});}

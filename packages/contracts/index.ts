@@ -325,7 +325,7 @@ export interface NodalLineModel {type:"nodal_line_two_band";parameters:{mass:num
 /** Uniform 2D continuum field; only nonzero same-sign field fans are admitted. */
 export interface LandauModel {type:"landau_continuum";parameters:{mass:number;charge:-1|1;fieldStart:number;fieldStop:number;fieldSamples:number;levels:number;grid:number};source?:LayerOneSource}
 /** Rational flux p/q in lowest terms; p=0,q=1 is the zero-flux reference. */
-export interface HofstadterModel {type:"hofstadter";parameters:{p:number;q:number;hopping:number;grid:number};source?:LayerOneSource}
+export interface HofstadterModel {type:"hofstadter";parameters:{p:number;q:number;hopping:number;grid:number;stripCells?:number;stripSamples?:number};source?:LayerOneSource}
 export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel | HofstadterModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
@@ -388,6 +388,10 @@ export interface HofstadterAnalysis {kind:"hofstadter";flux:number;kxValues:numb
     chernGaps?:{occupiedBands:number;coarseGap:number;fineGap:number;coarseChern:number|null;
       fineChern:number|null;chern:number|null;minimumLink:number|null;
       status:"defined"|"gap-closed"|"mesh-unresolved";mesh:number;plaquetteFlux:number[]}[];
+  /** Optional for historical periodic-only runs. Sorted eigenstate indices are not continuous branches. */
+  strip?:{cells:number;kyValues:number[];stateIndices:number[];energies:number[][];
+    leftWeights:number[][];rightWeights:number[][];edgeSites:2;
+    boundary:"open-x / periodic-y";maxResidual:number;maxNormError:number};
   units:{flux:"flux quanta per plaquette";momentum:"rad / lattice constant";energy:"hopping energy"}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
@@ -652,10 +656,10 @@ export interface QuantumBridge {
   saveIsingStudy(result:import("./ising-study").IsingStudyResult):Promise<import("./ising-study").IsingStudyResult>;
   getIsingStudy(studyId:string):Promise<import("./ising-study").IsingStudyResult>;
   listIsingStudies():Promise<import("./ising-study").IsingStudySummary[]>;
-  getScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant"): Promise<import("../quantum-scene").ScenePayload>;
-  exportScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant", format?: "regular"|"stream"): Promise<string | null>;
-  prepareSceneHandoff(runId: string, view: "standard" | "bands" | "wilson" | "invariant", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
-  openInMath3D(runId: string, view: "standard" | "bands" | "wilson" | "invariant", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
+  getScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant" | "strip"): Promise<import("../quantum-scene").ScenePayload>;
+  exportScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant" | "strip", format?: "regular"|"stream"): Promise<string | null>;
+  prepareSceneHandoff(runId: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
+  openInMath3D(runId: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
   openImportedInMath3D(): Promise<string | null>;
   importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;
   readSceneChunk(id:string,path:string): Promise<Uint8Array>;

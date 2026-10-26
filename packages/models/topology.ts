@@ -10,7 +10,7 @@ export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   velocity:"1",chirality:"1",radius:"1",subdivisions:"1",
   curvature:"1",loopCenter:"1",loopRadius:"0.25",loopSamples:"64",
   charge:"-1",fieldStart:"0.5",fieldStop:"2",fieldSamples:"7",levels:"5",
-  p:"1",q:"4",
+    p:"1",q:"4",
 };
 function numeric(raw: string, minimum: number, maximum: number, integer = false): number {
   if (!raw.trim()) throw new Error("All topology parameters are required");
@@ -70,11 +70,12 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
   }
   if(draft.modelId==="hofstadter"){
     const p=numeric(draft.p??"1",-6,6,true),q=numeric(draft.q??"4",1,7,true),grid=numeric(draft.grid,7,15,true);
+    const stripCells=numeric(draft.edgeCells??"18",12,32,true),stripSamples=numeric(draft.edgeSamples??"17",11,31,true);
     const gcd=(a:number,b:number):number=>b===0?a:gcd(b,a%b);
-    if(grid%2!==1||q===1&&p!==0||q>1&&(p===0||Math.abs(p)>=q||gcd(Math.abs(p),q)!==1))
+    if(grid%2!==1||stripSamples%2!==1||q===1&&p!==0||q>1&&(p===0||Math.abs(p)>=q||gcd(Math.abs(p),q)!==1))
       throw new Error("Hofstadter requires reduced p/q (or zero flux 0/1) and an odd momentum grid");
     return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",
-      model:{type:"hofstadter",source,parameters:{p,q,hopping:numeric(draft.hopping??"1",.25,2),grid}}};
+      model:{type:"hofstadter",source,parameters:{p,q,hopping:numeric(draft.hopping??"1",.25,2),grid,stripCells,stripSamples}}};
   }
   return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "qwz", parameters: { mass: numeric(draft.mass, -6, 6), grid: numeric(draft.grid, 11, 31, true) }, source } };
@@ -121,6 +122,26 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
            (item.status==="gap-closed"&&Math.min(item.coarseGap,item.fineGap)>1e-6*p.hopping))return false;
       }
     }
+    if(a.strip!==undefined){
+      const strip=a.strip,c=p.stripCells,s=p.stripSamples;
+      if(c===undefined||s===undefined||strip.cells!==c||strip.edgeSites!==2||
+         strip.boundary!=="open-x / periodic-y"||strip.kyValues.length!==s||
+         strip.stateIndices.length!==c||strip.energies.length!==c||
+         strip.leftWeights.length!==c||strip.rightWeights.length!==c||
+         strip.maxResidual<0||strip.maxResidual>1e-6||
+         strip.maxNormError<0||strip.maxNormError>1e-6)return false;
+      for(let k=0;k<s;k++)if(!near(strip.kyValues[k],-Math.PI+2*Math.PI*k/(s-1)))return false;
+      for(let state=0;state<c;state++){
+        if(strip.stateIndices[state]!==state||strip.energies[state].length!==s||
+           strip.leftWeights[state].length!==s||strip.rightWeights[state].length!==s)return false;
+        for(let k=0;k<s;k++){
+          const energy=strip.energies[state][k],left=strip.leftWeights[state][k],right=strip.rightWeights[state][k];
+          if(!Number.isFinite(energy)||Math.abs(energy)>8.000001||
+             !Number.isFinite(left)||!Number.isFinite(right)||left<0||right<0||
+             left+right>1.000001)return false;
+        }
+      }
+    }else if(p.stripCells!==undefined||p.stripSamples!==undefined)return false;
     return a.converged===(Math.max(...a.extremaDrift)<=.05*p.hopping);
   }
   if(job.model.type==="landau_continuum"&&a.kind==="landau_continuum"){
@@ -472,6 +493,19 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
         ["defined","gap-closed","mesh-unresolved"].includes(String(item.status))&&
         Number.isInteger(item.mesh)&&numericArray(item.plaquetteFlux,
           item.status==="defined"?Number(item.mesh)**2:0))))return false;
+    if(a.strip!==undefined){
+      const strip=a.strip,c=job.model.parameters.stripCells,s=job.model.parameters.stripSamples;
+      if(!record(strip)||c===undefined||s===undefined||strip.cells!==c||
+         strip.edgeSites!==2||strip.boundary!=="open-x / periodic-y"||
+         !numericArray(strip.kyValues,s)||!numericArray(strip.stateIndices,c)||
+         !Array.isArray(strip.energies)||!Array.isArray(strip.leftWeights)||
+         !Array.isArray(strip.rightWeights)||strip.energies.length!==c||
+         strip.leftWeights.length!==c||strip.rightWeights.length!==c||
+         !strip.energies.every(row=>numericArray(row,s))||
+         !strip.leftWeights.every(row=>numericArray(row,s))||
+         !strip.rightWeights.every(row=>numericArray(row,s))||
+         !finite(strip.maxResidual)||!finite(strip.maxNormError))return false;
+    }
   } else if(job.model.type==="landau_continuum"){
     const p=job.model.parameters,n=p.fieldSamples,l=p.levels;
     if(a.kind!=="landau_continuum"||!numericArray(a.fieldValues,n)||!numericArray(a.levelIndices,l)||

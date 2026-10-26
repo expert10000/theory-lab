@@ -836,6 +836,16 @@ Fermi level, so Hall response is still a separate future calculation. The
 source-linked `.qscene` supplies exact FHS plaquette phases and conditional
 invariants for a read-only consumer.
 
+**2026-10-26 open-boundary Hofstadter strip extension:** The producer also
+diagonalizes a bounded Harper strip with open x edges and Bloch-periodic y.
+Its immutable run stores exact kᵧ values, energy-sorted finite-strip levels,
+and separate first/last two-site probability weights with eigenpair residuals.
+A dedicated source-linked `.qscene` exposes those exact samples in Math3D;
+the state-index lane offsets are display only. This is a finite-system
+localization observation separate from the periodic occupied-gap Chern result.
+It does not define a filling, Hall conductivity, quantized plateau, or
+edge-channel classification. Those remain future producer calculations.
+
 **Additive Atlas BHZ extension:** `bhz_general` now supplies variable A, B,
 C, D, M and bounded optional spin mixing R; exact Atlas continuum bulk bands,
 a separately declared a=1 lattice bulk/ribbon, normalized complex eigenvectors,

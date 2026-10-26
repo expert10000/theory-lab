@@ -11,6 +11,7 @@ export type TopologySelection=
   | {kind:"nodal_loop_sample";runId:string;index:number}
   | {kind:"landau_level_sample";runId:string;fieldIndex:number;level:number}
   | {kind:"hofstadter_band_sample";runId:string;band:number;xIndex:number;yIndex:number}
+  | {kind:"hofstadter_strip_sample";runId:string;state:number;kIndex:number}
   | {kind:"bhz_ribbon_state";runId:string;index:number};
 export type TopologySample=
   | {kind:"ssh_band";index:number;k:number;lower:number;upper:number}
@@ -23,6 +24,7 @@ export type TopologySample=
   | {kind:"nodal_loop_sample";index:number;q:[number,number,number];lower:number;upper:number}
   | {kind:"landau_level_sample";fieldIndex:number;level:number;field:number;energy:number;frequency:number;coarseError:number;fineError:number}
   | {kind:"hofstadter_band_sample";band:number;xIndex:number;yIndex:number;kx:number;ky:number;energy:number}
+  | {kind:"hofstadter_strip_sample";state:number;kIndex:number;ky:number;energy:number;leftWeight:number;rightWeight:number}
   | {kind:"bhz_ribbon_state";index:number;k:number;energy:number;edgeWeight:number;density:number[];spin:number[];amplitudes:[number,number][]};
 export interface TopologyRunContext {
   result:TopologyResult;
@@ -39,6 +41,14 @@ export function selectedTopologySample(selection:TopologySelection|null,result:T
        xIndex<0||xIndex>=g||yIndex<0||yIndex>=analysis.kyValues.length)return null;
     return {kind:"hofstadter_band_sample",band,xIndex,yIndex,kx:analysis.kxValues[xIndex],
       ky:analysis.kyValues[yIndex],energy:analysis.bandEnergies[band][xIndex*g+yIndex]};
+  }
+  if(result.model.type==="hofstadter"&&analysis.kind==="hofstadter"&&selection.kind==="hofstadter_strip_sample"){
+    const strip=analysis.strip,{state,kIndex}=selection;
+    if(!strip||!Number.isInteger(state)||!Number.isInteger(kIndex)||state<0||
+       state>=strip.cells||kIndex<0||kIndex>=strip.kyValues.length)return null;
+    return {kind:"hofstadter_strip_sample",state,kIndex,ky:strip.kyValues[kIndex],
+      energy:strip.energies[state][kIndex],leftWeight:strip.leftWeights[state][kIndex],
+      rightWeight:strip.rightWeights[state][kIndex]};
   }
   if(result.model.type==="landau_continuum"&&analysis.kind==="landau_continuum"&&selection.kind==="landau_level_sample"){
     const {fieldIndex,level}=selection;

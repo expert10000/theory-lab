@@ -28,7 +28,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
   const [family, setFamily] = useState<LatticeFamily>("square"),
     [repeats, setRepeats] = useState(["3", "3", "1"]);
   const [view,setView]=useState<"real"|"reciprocal">("real");
-  const [savedView,setSavedView]=useState<"standard"|"bands"|"wilson"|"invariant">(launch?.view??"standard");
+  const [savedView,setSavedView]=useState<"standard"|"bands"|"wilson"|"invariant"|"strip">(launch?.view??"standard");
   const [intent,setIntent]=useState<SceneLaunch|null>(launch??null);
   const payload =
     source === "stream"?null:source === "example"
@@ -243,7 +243,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
               ))}
             </select>
           </label>
-          <label>Saved view<select aria-label="Saved scene view" value={savedView} disabled={busy} onChange={e=>{setSavedView(e.target.value as "standard"|"bands"|"wilson"|"invariant");setSource("saved");setIntent(null);}}><option value="standard">Standard result scene</option><option value="bands">Supplied energy bands</option><option value="wilson">BBH Wilson diagnostics</option><option value="invariant">Kitaev bulk invariant</option></select></label>
+          <label>Saved view<select aria-label="Saved scene view" value={savedView} disabled={busy} onChange={e=>{setSavedView(e.target.value as "standard"|"bands"|"wilson"|"invariant"|"strip");setSource("saved");setIntent(null);}}><option value="standard">Standard result scene</option><option value="bands">Supplied energy bands</option><option value="wilson">BBH Wilson diagnostics</option><option value="invariant">Kitaev bulk invariant</option><option value="strip">Hofstadter finite strip</option></select></label>
           <button type="button" disabled={busy} onClick={() => void refresh()}>
             Refresh runs
           </button>

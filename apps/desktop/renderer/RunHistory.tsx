@@ -21,7 +21,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   const [inspection,setInspection]=useState<SavedRunInspection|null>(null);
   const [inspecting,setInspecting]=useState<string|null>(null);
   const [rerunning,setRerunning]=useState(false);
-  const [topologyScenes,setTopologyScenes]=useState<Record<string,{standard:boolean;bands:boolean;invariant:boolean}>>({});
+  const [topologyScenes,setTopologyScenes]=useState<Record<string,{standard:boolean;bands:boolean;invariant:boolean;strip?:boolean}>>({});
   async function refresh() {
     setBusy(true);
     try { const [saved,selected]=await Promise.all([bridge.listRuns(),bridge.getRunComparisonPins()]);setRuns(saved);setPins(selected);setMessage(""); }
@@ -122,6 +122,8 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
             <button type="button" aria-label={`View bands scene ${run.runId}`} onClick={()=>onViewScene(run.runId,"bands")}>View bands</button>}
           {onViewScene&&run.operation==="topology"&&topologyScenes[run.runId]?.invariant&&
             <button type="button" aria-label={`View Kitaev bulk invariant ${run.runId}`} onClick={()=>onViewScene(run.runId,"invariant")}>View bulk invariant</button>}
+          {onViewScene&&run.operation==="topology"&&topologyScenes[run.runId]?.strip&&
+            <button type="button" aria-label={`View Hofstadter finite strip ${run.runId}`} onClick={()=>onViewScene(run.runId,"strip")}>View finite strip</button>}
           {run.operation==="diagonalize"&&onOpenSpectrum&&
           <button type="button" className="run-open" aria-label={`Open spectrum ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,"spectrum")}>{opening===run.runId?"Opening…":"Open spectrum"}</button>}

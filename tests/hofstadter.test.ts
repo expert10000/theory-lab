@@ -27,6 +27,21 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       assert.equal(isTopologyResponse(response,job),true);
       assert.equal(response.analysis.bandIndices.length,Number(q));
       assert.equal(response.analysis.bandEnergies[0].length,81);
+      const strip=response.analysis.strip;
+      assert.ok(strip);
+      assert.equal(strip.cells,Number(job.model.parameters.stripCells));
+      assert.equal(strip.boundary,"open-x / periodic-y");
+      assert.ok(strip.maxResidual<1e-8);
+      const stripSelection={kind:"hofstadter_strip_sample" as const,runId:response.runId,state:3,kIndex:5};
+      const stripSample=selectedTopologySample(stripSelection,response);
+      assert.equal(stripSample?.kind,"hofstadter_strip_sample");
+      if(stripSample?.kind==="hofstadter_strip_sample"){
+        assert.equal(stripSample.ky,strip.kyValues[5]);
+        assert.equal(stripSample.energy,strip.energies[3][5]);
+        assert.equal(stripSample.leftWeight,strip.leftWeights[3][5]);
+        assert.equal(stripSample.rightWeight,strip.rightWeights[3][5]);
+      }
+      assert.equal(selectedTopologySample({...stripSelection,runId:"wrong"},response),null);
       assert.equal(response.analysis.chernGaps?.length,Number(q)-1);
       if(p==="1")assert.deepEqual(response.analysis.chernGaps?.map(gap=>gap.chern),[-1,null,1]);
       if(p==="-1")assert.deepEqual(response.analysis.chernGaps?.map(gap=>gap.chern),[1,null,-1]);
@@ -59,6 +74,16 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
       }
       const folder=await store.exportScene(response.runId,root,"standard");
       assert.equal((await readSceneBundle(folder)).scene.provenance.resultSha256,payload.scene.provenance.resultSha256);
+      const stripScene=await new RunStore(join(root,"runs"),join(root,"artifacts")).scene(response.runId,"strip");
+      const stripArrays=await verifyScenePayload(stripScene,digest);
+      assert.equal(stripScene.scene.provenance.resultSha256,payload.scene.provenance.resultSha256);
+      assert.equal(stripScene.scene.topology,undefined);
+      assert.deepEqual([...stripArrays.get("strip-left-weight")!],strip.leftWeights.flat());
+      assert.deepEqual([...stripArrays.get("strip-right-weight")!],strip.rightWeights.flat());
+      assert.deepEqual([...stripArrays.get("strip-left-positions")!].slice(9*strip.kyValues.length,9*strip.kyValues.length+3),
+        [strip.kyValues[0],3-.15,strip.energies[3][0]]);
+      const stripFolder=await store.exportScene(response.runId,root,"strip");
+      assert.equal((await readSceneBundle(stripFolder)).scene.provenance.resultSha256,payload.scene.provenance.resultSha256);
       const bad=structuredClone(response);
       if(bad.analysis.kind!=="hofstadter")throw new Error("Wrong result");
       bad.analysis.coarseBounds[0][0]+=.01;
@@ -69,8 +94,13 @@ test("Harper bands retain exact reduced flux, samples and source-linked scene ac
         altered.analysis.chernGaps[0].chern=7;
         assert.equal(isTopologyResponse(altered,job),false);
       }
+      const alteredStrip=structuredClone(response);
+      if(alteredStrip.analysis.kind!=="hofstadter"||!alteredStrip.analysis.strip)throw new Error("Wrong result");
+      alteredStrip.analysis.strip.leftWeights[3][5]=1.1;
+      assert.equal(isTopologyResponse(alteredStrip,job),false);
       await writeFile(join(root,"runs",response.runId,"result.json"),"{}\n");
       await assert.rejects(new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),/integrity check/);
+      await assert.rejects(new RunStore(join(root,"runs"),join(root,"artifacts")).scene(response.runId,"strip"),/integrity check/);
     }
     assert.throws(()=>topologyJob("invalid",{...TOPOLOGY_DEFAULTS,modelId:"hofstadter",p:"2",q:"4",grid:"9"}),/reduced/);
   }finally{await worker.stop();await rm(root,{recursive:true,force:true});}

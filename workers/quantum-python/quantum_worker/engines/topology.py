@@ -834,11 +834,17 @@ def hofstadter_analysis(np, parameters):
     _, _, _, fine_bounds = sampled(2 * grid - 1)
     drift = [max(abs(coarse[side] - fine[side]) for side in (0, 1))
              for coarse, fine in zip(coarse_bounds, fine_bounds)]
+    if ("stripCells" in parameters) != ("stripSamples" in parameters):
+        raise ValueError("Hofstadter strip width and momentum samples must be supplied together")
+    strip = (hofstadter_strip_analysis(np, p, q, hopping, parameters["stripCells"],
+                                      parameters["stripSamples"])
+             if "stripCells" in parameters else None)
     return {"kind": "hofstadter", "flux": p / q, "kxValues": kx, "kyValues": ky,
             "bandIndices": list(range(q)), "bandEnergies": bands,
             "coarseBounds": coarse_bounds, "fineBounds": fine_bounds,
             "extremaDrift": drift, "converged": bool(max(drift) <= .05 * hopping),
             "chernGaps": hofstadter_chern_diagnostics(np, p, q, hopping, grid),
+            **({"strip": strip} if strip is not None else {}),
             "units": {"flux": "flux quanta per plaquette", "momentum": "rad / lattice constant",
                       "energy": "hopping energy"}}
 
