@@ -708,7 +708,7 @@ def hofstadter_strip_matrix(np, hopping, p, q, ky, cells):
     return matrix
 
 
-def hofstadter_strip_analysis(np, p, q, hopping, cells, samples):
+def hofstadter_strip_analysis(np, p, q, hopping, cells, samples, fermi=None):
     """Exact finite-strip eigenvalues and separately measured boundary weights."""
     if not (isinstance(cells, int) and 12 <= cells <= 32 and
             isinstance(samples, int) and 11 <= samples <= 31 and samples % 2 == 1):
@@ -719,21 +719,61 @@ def hofstadter_strip_analysis(np, p, q, hopping, cells, samples):
     right = [[] for _ in range(cells)]
     residual = 0.
     norm_error = 0.
-    for ky in ky_values:
+    previous = None
+    tracked = []
+    ambiguous = 0
+    for interval, ky in enumerate(ky_values):
         matrix = hofstadter_strip_matrix(np, hopping, p, q, ky, cells)
         values, vectors = np.linalg.eigh(matrix)
         residual = max(residual, float(np.max(np.linalg.norm(
             matrix @ vectors - vectors * values, axis=0))))
         norm_error = max(norm_error, float(np.max(np.abs(
             np.sum(np.abs(vectors)**2, axis=0) - 1))))
+        if previous is not None and fermi is not None:
+            from scipy.optimize import linear_sum_assignment
+            prior_values, prior_vectors, prior_left, prior_right = previous
+            overlap = np.abs(prior_vectors.conj().T @ vectors)**2
+            rows, columns = linear_sum_assignment(-overlap)
+            current_left = np.sum(np.abs(vectors[:2, :])**2, axis=0)
+            current_right = np.sum(np.abs(vectors[-2:, :])**2, axis=0)
+            for source, target in zip(rows, columns):
+                low, high = float(prior_values[source]-fermi), float(values[target]-fermi)
+                if low*high >= 0:
+                    continue
+                strength = float(overlap[source, target])
+                alternative = float(np.max(np.delete(overlap[source], target)))
+                margin = strength-alternative
+                fraction = -low/(high-low)
+                for side, before, after in (("left", prior_left, current_left),
+                                            ("right", prior_right, current_right)):
+                    minimum_weight = min(float(before[source]), float(after[target]))
+                    if minimum_weight < .35:
+                        continue
+                    if strength < .5 or margin < .02:
+                        ambiguous += 1
+                        continue
+                    tracked.append({"side": side, "stateIndex": int(source),
+                                    "targetStateIndex": int(target), "interval": interval-1,
+                                    "ky": float(ky_values[interval-1] + fraction *
+                                                (ky_values[interval]-ky_values[interval-1])),
+                                    "direction": 1 if high > low else -1,
+                                    "minimumWeight": minimum_weight,
+                                    "overlap": strength, "margin": margin})
         for state in range(cells):
             energies[state].append(float(values[state]))
             left[state].append(float(np.sum(np.abs(vectors[:2, state])**2)))
             right[state].append(float(np.sum(np.abs(vectors[-2:, state])**2)))
-    return {"cells": cells, "kyValues": ky_values.tolist(), "stateIndices": list(range(cells)),
+        previous = (values, vectors, np.sum(np.abs(vectors[:2, :])**2, axis=0),
+                    np.sum(np.abs(vectors[-2:, :])**2, axis=0))
+    result = {"cells": cells, "kyValues": ky_values.tolist(), "stateIndices": list(range(cells)),
             "energies": energies, "leftWeights": left, "rightWeights": right,
             "edgeSites": 2, "boundary": "open-x / periodic-y", "maxResidual": residual,
             "maxNormError": norm_error}
+    if fermi is not None:
+        result["continuation"] = {"method": "maximum-eigenvector-overlap/hungarian-v1",
+                                   "minimumOverlap": .5, "minimumMargin": .02,
+                                   "ambiguousCandidates": ambiguous, "crossings": tracked}
+    return result
 
 
 def occupied_chern_links(np, frames):
@@ -869,7 +909,8 @@ def hofstadter_analysis(np, parameters):
     if ("stripCells" in parameters) != ("stripSamples" in parameters):
         raise ValueError("Hofstadter strip width and momentum samples must be supplied together")
     strip = (hofstadter_strip_analysis(np, p, q, hopping, parameters["stripCells"],
-                                      parameters["stripSamples"])
+                                      parameters["stripSamples"],
+                                      filling["fermiEnergy"] if filling is not None else None)
              if "stripCells" in parameters else None)
     return {"kind": "hofstadter", "flux": p / q, "kxValues": kx, "kyValues": ky,
             "bandIndices": list(range(q)), "bandEnergies": bands,

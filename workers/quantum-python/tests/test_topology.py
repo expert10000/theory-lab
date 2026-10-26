@@ -60,6 +60,41 @@ class HofstadterTests(unittest.TestCase):
                 self.assertLessEqual(result["leftWeights"][state][index] +
                                      result["rightWeights"][state][index], 1.0000001)
 
+    def test_overlap_continuation_exact_crossings_gauge_and_ambiguity(self):
+        import numpy as np
+        from scipy.optimize import linear_sum_assignment
+        for p in (1, -1):
+            for cells in (18, 24):
+                analysis = hofstadter_analysis(np, {"p": p, "q": 5, "hopping": 1.,
+                    "grid": 9, "occupiedBands": 1, "stripCells": cells, "stripSamples": 31})
+                fermi = analysis["filling"]["fermiEnergy"]
+                self.assertIsNotNone(fermi)
+                tracked = analysis["strip"]["continuation"]
+                self.assertEqual(tracked["ambiguousCandidates"], 0)
+                self.assertEqual(len(tracked["crossings"]), 2)
+                for crossing in tracked["crossings"]:
+                    interval = crossing["interval"]
+                    ky = analysis["strip"]["kyValues"]
+                    _, before = np.linalg.eigh(hofstadter_strip_matrix(np, 1., p, 5, ky[interval], cells))
+                    _, after = np.linalg.eigh(hofstadter_strip_matrix(np, 1., p, 5, ky[interval+1], cells))
+                    overlaps = abs(before.conj().T @ after)**2
+                    rows, columns = linear_sum_assignment(-overlaps)
+                    source = crossing["stateIndex"]
+                    target = crossing["targetStateIndex"]
+                    self.assertEqual(int(columns[list(rows).index(source)]), target)
+                    self.assertAlmostEqual(crossing["overlap"], overlaps[source, target])
+                    self.assertAlmostEqual(crossing["margin"],
+                        overlaps[source, target] - max(np.delete(overlaps[source], target)))
+                    # Local eigenvector phases cannot change the continuation.
+                    phased = abs((before*np.exp(1j*np.arange(cells))).conj().T @
+                                 (after*np.exp(-1j*np.arange(cells))))**2
+                    np.testing.assert_allclose(phased, overlaps, atol=1e-13)
+        # The tighter 1/3 sample grid meets a near-degenerate continuation;
+        # recording it as ambiguous is safer than assigning a branch identity.
+        unresolved = hofstadter_analysis(np, {"p": 1, "q": 3, "hopping": 1.,
+            "grid": 9, "occupiedBands": 1, "stripCells": 24, "stripSamples": 31})
+        self.assertGreater(unresolved["strip"]["continuation"]["ambiguousCandidates"], 0)
+
     def test_occupied_chern_diophantine_sign_reversal_and_touching_gap(self):
         import numpy as np
         # Independently, r = p*C (mod q) for square-lattice gap r. With our

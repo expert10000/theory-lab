@@ -526,6 +526,22 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
          !strip.leftWeights.every(row=>numericArray(row,s))||
          !strip.rightWeights.every(row=>numericArray(row,s))||
          !finite(strip.maxResidual)||!finite(strip.maxNormError))return false;
+      if(strip.continuation!==undefined){
+        const track=strip.continuation;
+        if(!record(track)||track.method!=="maximum-eigenvector-overlap/hungarian-v1"||
+          track.minimumOverlap!==.5||track.minimumMargin!==.02||
+          !Number.isInteger(track.ambiguousCandidates)||Number(track.ambiguousCandidates)<0||
+          !Array.isArray(track.crossings)||track.crossings.length>2*c*(s-1)||
+          !track.crossings.every((entry:unknown)=>record(entry)&&
+            ["left","right"].includes(String(entry.side))&&
+            Number.isInteger(entry.stateIndex)&&Number(entry.stateIndex)>=0&&Number(entry.stateIndex)<c&&
+            Number.isInteger(entry.targetStateIndex)&&Number(entry.targetStateIndex)>=0&&Number(entry.targetStateIndex)<c&&
+            Number.isInteger(entry.interval)&&Number(entry.interval)>=0&&Number(entry.interval)<s-1&&
+            finite(entry.ky)&&[-1,1].includes(Number(entry.direction))&&
+            finite(entry.minimumWeight)&&Number(entry.minimumWeight)>=.35&&Number(entry.minimumWeight)<=1&&
+            finite(entry.overlap)&&Number(entry.overlap)>=.5&&Number(entry.overlap)<=1&&
+            finite(entry.margin)&&Number(entry.margin)>=.02&&Number(entry.margin)<=1))return false;
+      }
     }
   } else if(job.model.type==="landau_continuum"){
     const p=job.model.parameters,n=p.fieldSamples,l=p.levels;
