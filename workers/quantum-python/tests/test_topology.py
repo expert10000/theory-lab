@@ -1,7 +1,49 @@
 """Independent SSH limiting cases and finite-size edge diagnostics."""
 import unittest
 
-from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis, landau_analysis
+from quantum_worker.engines.topology import solve, bbh_bulk_matrix, bbh_open_matrix, bbh_wilson_diagnostics, kitaev_bulk_matrix, kitaev_open_matrix, kitaev_analysis, weyl_matrix, weyl_sphere, weyl_link_flux, weyl_analysis, nodal_matrix, nodal_analysis, landau_analysis, hofstadter_matrix, hofstadter_analysis
+
+
+class HofstadterTests(unittest.TestCase):
+    def test_q_bands_zero_flux_and_pi_flux_reference(self):
+        import numpy as np
+        for p, q in ((0, 1), (1, 2), (1, 3), (2, 5), (-2, 5)):
+            a = hofstadter_analysis(np, {"p": p, "q": q, "hopping": 1.2, "grid": 9})
+            self.assertEqual(len(a["bandIndices"]), q)
+            self.assertTrue(all(len(band) == 81 for band in a["bandEnergies"]))
+            self.assertEqual(a["units"]["flux"], "flux quanta per plaquette")
+            self.assertLessEqual(max(a["extremaDrift"]), .6)
+        for kx, ky in ((0., 0.), (.23, -.71), (-.41, 1.1)):
+            self.assertAlmostEqual(np.linalg.eigvalsh(hofstadter_matrix(np, 1.2, 0, 1, kx, ky))[0],
+                                   -2.4 * (np.cos(kx) + np.cos(ky)))
+            expected = 2.4 * np.hypot(np.cos(kx), np.cos(ky))
+            np.testing.assert_allclose(np.linalg.eigvalsh(hofstadter_matrix(np, 1.2, 1, 2, kx, ky)),
+                                       [-expected, expected], atol=1e-12)
+
+    def test_flux_reversal_hermiticity_and_grid_refinement(self):
+        import numpy as np
+        for p, q in ((1, 3), (2, 5)):
+            for kx, ky in ((0., 0.), (.12, -.68), (-.21, 1.33)):
+                positive = hofstadter_matrix(np, 1., p, q, kx, ky)
+                negative = hofstadter_matrix(np, 1., -p, q, kx, -ky)
+                np.testing.assert_allclose(positive, positive.conj().T)
+                np.testing.assert_allclose(np.linalg.eigvalsh(positive), np.linalg.eigvalsh(negative))
+                self.assertAlmostEqual(float(np.trace(positive).real),
+                                       -2 * sum(np.cos(ky + 2 * np.pi * p * m / q) for m in range(q)))
+        base = {"p": 1, "q": 5, "hopping": 1., "grid": 7}
+        coarse = hofstadter_analysis(np, base)
+        finer = hofstadter_analysis(np, {**base, "grid": 13})
+        np.testing.assert_allclose(coarse["kxValues"], finer["kxValues"][::2])
+        np.testing.assert_allclose(coarse["kyValues"], finer["kyValues"][::2])
+        for band in range(5):
+            self.assertLessEqual(finer["fineBounds"][band][0], coarse["coarseBounds"][band][0] + 1e-12)
+            self.assertGreaterEqual(finer["fineBounds"][band][1], coarse["coarseBounds"][band][1] - 1e-12)
+
+    def test_unreduced_or_out_of_budget_flux_refused(self):
+        import numpy as np
+        for p, q in ((2, 4), (0, 3), (1, 1), (1, 8), (3, 2)):
+            with self.assertRaises(ValueError):
+                hofstadter_analysis(np, {"p": p, "q": q, "hopping": 1., "grid": 9})
 
 
 class LandauContinuumTests(unittest.TestCase):

@@ -680,6 +680,56 @@ def landau_analysis(np, parameters):
                       "hbar": "1", "mass": "normalized mass", "charge": "elementary charge"}}
 
 
+def hofstadter_matrix(np, hopping, p, q, kx, ky):
+    """Square-lattice Landau-gauge magnetic Bloch matrix; flux alpha=p/q."""
+    phase = 2 * np.pi * p / q
+    matrix = np.zeros((q, q), dtype=complex)
+    for site in range(q):
+        matrix[site, site] = -2 * hopping * np.cos(ky + phase * site)
+    if q == 1:
+        matrix[0, 0] -= 2 * hopping * np.cos(kx)
+    else:
+        for site in range(q - 1):
+            matrix[site, site + 1] -= hopping
+            matrix[site + 1, site] -= hopping
+        boundary = -hopping * np.exp(1j * q * kx)
+        matrix[q - 1, 0] += boundary
+        matrix[0, q - 1] += boundary.conjugate()
+    return matrix
+
+
+def hofstadter_analysis(np, parameters):
+    """Only the bounded periodic spectrum and sampled extrema; no filled-band claim."""
+    from math import gcd
+    p, q, hopping, grid = (parameters[key] for key in ("p", "q", "hopping", "grid"))
+    if (not isinstance(p, int) or not isinstance(q, int) or not isinstance(grid, int)
+            or q < 1 or q > 7 or grid < 7 or grid > 15 or grid % 2 != 1
+            or hopping <= 0 or (q == 1 and p != 0)
+            or (q > 1 and (p == 0 or abs(p) >= q or gcd(abs(p), q) != 1))):
+        raise ValueError("Hofstadter requires reduced p/q, bounded odd momentum grid and positive hopping")
+    def sampled(size):
+        x_values = np.linspace(-np.pi / q, np.pi / q, size)
+        y_values = np.linspace(-np.pi, np.pi, size)
+        bands = [[] for _ in range(q)]
+        for kx in x_values:
+            for ky in y_values:
+                energies = np.linalg.eigvalsh(hofstadter_matrix(np, hopping, p, q, kx, ky))
+                for band, energy in enumerate(energies):
+                    bands[band].append(float(energy))
+        bounds = [[float(min(band)), float(max(band))] for band in bands]
+        return x_values.tolist(), y_values.tolist(), bands, bounds
+    kx, ky, bands, coarse_bounds = sampled(grid)
+    _, _, _, fine_bounds = sampled(2 * grid - 1)
+    drift = [max(abs(coarse[side] - fine[side]) for side in (0, 1))
+             for coarse, fine in zip(coarse_bounds, fine_bounds)]
+    return {"kind": "hofstadter", "flux": p / q, "kxValues": kx, "kyValues": ky,
+            "bandIndices": list(range(q)), "bandEnergies": bands,
+            "coarseBounds": coarse_bounds, "fineBounds": fine_bounds,
+            "extremaDrift": drift, "converged": bool(max(drift) <= .05 * hopping),
+            "units": {"flux": "flux quanta per plaquette", "momentum": "rad / lattice constant",
+                      "energy": "hopping energy"}}
+
+
 def solve(job):
     validate("quantum-job", job)
     if job["operation"] != "topology" or job["engine"] != "native":
@@ -705,6 +755,8 @@ def solve(job):
         analysis = nodal_analysis(np, model["parameters"])
     elif model["type"] == "landau_continuum":
         analysis = landau_analysis(np, model["parameters"])
+    elif model["type"] == "hofstadter":
+        analysis = hofstadter_analysis(np, model["parameters"])
     else:
         raise ValueError("Unsupported topology model")
     result = {"schema": "quantum-result/v1", "jobId": job["jobId"], "runId": "run-" + uuid4().hex,
