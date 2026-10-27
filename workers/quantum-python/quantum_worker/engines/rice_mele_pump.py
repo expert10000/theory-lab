@@ -3,7 +3,7 @@
 import numpy as np
 
 
-def pump_mesh(parameters, k_count, phase_count):
+def pump_mesh(parameters, k_count, phase_count, gauge_phase=None):
     base = parameters["baseHopping"]
     modulation = parameters["modulation"]
     stagger = parameters["staggerAmplitude"]
@@ -21,6 +21,10 @@ def pump_mesh(parameters, k_count, phase_count):
     h[..., 1, 0] = q.conj()
     energies, eigenvectors = np.linalg.eigh(h)
     occupied = eigenvectors[..., :, 0]
+    if gauge_phase is not None:
+        if gauge_phase.shape != (phase_count, k_count):
+            raise ValueError("Gauge phase shape must match the sampled torus")
+        occupied = occupied * np.exp(1j * gauge_phase[..., None])
     uk = np.sum(occupied.conj() * np.roll(occupied, -1, axis=1), axis=-1)
     up = np.sum(occupied.conj() * np.roll(occupied, -1, axis=0), axis=-1)
     min_link = float(min(np.min(abs(uk)), np.min(abs(up))))
@@ -28,7 +32,7 @@ def pump_mesh(parameters, k_count, phase_count):
         return {"k": k, "phase": phase, "t1": t1, "t2": t2, "delta": delta,
                 "energies": energies, "gap": float(np.min(energies[..., 1] - energies[..., 0])),
                 "minLink": min_link, "chern": None, "winding": None,
-                "polarization": np.zeros(phase_count), "flux": np.zeros((phase_count, k_count))}
+                "polarization": np.zeros(phase_count + 1), "flux": np.zeros((phase_count, k_count))}
     uk /= abs(uk)
     up /= abs(up)
     # FHS plaquettes in (phase,k) order, including both periodic seams.

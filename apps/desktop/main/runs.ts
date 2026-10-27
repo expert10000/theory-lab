@@ -439,7 +439,7 @@ export class RunStore {
   async topology(runId:string):Promise<TopologyResult>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="topology"||result.operation!=="topology"||
-      !["ssh","rice_mele","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band","landau_continuum","hofstadter"].includes(result.model.type)||data!==null||
+      !["ssh","rice_mele","rice_mele_pump","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band","landau_continuum","hofstadter"].includes(result.model.type)||data!==null||
       manifest.operation!=="topology"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!==null||manifest.artifactSha256!==null||
@@ -596,6 +596,10 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
     if (a.kind === "rice_mele") return ["k,lower_band,upper_band", ...a.kValues.map((k,i)=>`${k},${a.lowerBand[i]},${a.upperBand[i]}`),
       "", "site,middle_pair_density", ...a.middleDensity.map((v,i)=>`${i},${v}`),
       "", "finite_state,energy", ...a.finiteEnergies.map((v,i)=>`${i},${v}`)].join("\n")+"\n";
+    if(a.kind==="rice_mele_pump")return ["phase_index,phase_rad,t1,t2,delta,polarization_charge_per_cell",
+      ...a.phaseValues.map((v,i)=>`${i},${v},${a.t1Values[i]},${a.t2Values[i]},${a.deltaValues[i]},${a.polarization[i]}`),
+      "","phase_index,k_index,k_rad,lower_energy,upper_energy,berry_flux_rad",
+      ...a.lowerBand.map((energy,i)=>`${Math.floor(i/a.kValues.length)},${i%a.kValues.length},${a.kValues[i%a.kValues.length]},${energy},${a.upperBand[i]},${a.berryFlux[i]}`)].join("\n")+"\n";
     if (a.kind === "kitaev_chain") return ["k,lower_band,upper_band", ...a.kValues.map((k,i)=>`${k},${a.lowerBand[i]},${a.upperBand[i]}`),
       "", "site,finite_near_zero_pair_density", ...a.finite.siteDensity.map((v,i)=>`${i},${v}`)].join("\n")+"\n";
     if (a.kind === "bhz") return ["kx_index,ky_index,block_occupied,partner_occupied,block_empty,partner_empty",
@@ -733,6 +737,13 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
       const cells=a.finite.midgapDensity.map((value,i)=>{const x=Math.floor(i/c),y=i%c,v=Math.floor(45+195*value/max);
         return `<rect x="${70+x*350/c}" y="${90+y*350/c}" width="${351/c}" height="${351/c}" fill="rgb(${v},100,170)"/>`;}).join("");
       return head+cells+`<text x="450" y="480" fill="white" font-family="sans-serif">BBH finite corner weight ${a.finite.cornerWeight.toFixed(4)} · no quadrupole invariant</text></svg>\n`;
+    }
+    if(result.analysis.kind==="rice_mele_pump"){
+      const a=result.analysis,n=a.kValues.length,m=a.phaseValues.length;
+      const lo=Math.min(...a.berryFlux),hi=Math.max(...a.berryFlux),span=Math.max(1e-9,hi-lo);
+      const cells=a.berryFlux.map((value,j)=>{const x=j%n,y=Math.floor(j/n),v=Math.round(35+210*(value-lo)/span);
+        return `<rect x="${70+x*350/n}" y="${90+y*350/m}" width="${351/n}" height="${351/m}" fill="rgb(${v},90,${245-v})"/>`;}).join("");
+      return head+cells+`<text x="450" y="480" fill="white" font-family="sans-serif">Rice-Mele pump Chern ${a.chern??"undefined"} · winding ${a.polarizationWinding??"undefined"} · ${a.status}</text></svg>\n`;
     }
     const a = result.analysis, grid = result.model.type === "qwz" ? result.model.parameters.grid : 0;
     const max = Math.max(1e-9, ...a.berryCurvature.map(Math.abs));

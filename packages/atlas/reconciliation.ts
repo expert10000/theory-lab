@@ -6,7 +6,8 @@ import {
 } from "./index";
 import { atlasBinding, type AtlasBinding } from "./bindings";
 
-type LabModelId = QuantumJob["model"]["type"];
+// R1–R5 is a frozen inventory. Later bounded jobs are documented separately.
+type LabModelId = Exclude<QuantumJob["model"]["type"], "rice_mele_pump">;
 type Operation = QuantumJob["operation"];
 export interface LabImplementation {
   module: string;

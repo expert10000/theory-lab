@@ -1,5 +1,6 @@
 """Independent Rice–Mele cycle and Wilson-loop acceptance checks."""
 import numpy as np
+import unittest
 
 from quantum_worker.engines.rice_mele_pump import pump_mesh, rice_mele_pump_analysis
 from quantum_worker.engines.topology import solve
@@ -50,3 +51,21 @@ def test_mesh_convergence_and_periodic_seams():
     assert np.isclose(coarse["winding"],fine["winding"])
     assert abs(np.sum(coarse["flux"][-1,:])) > 1e-3  # phase seam contributes
     assert coarse["minLink"] > .1
+    phases = np.random.default_rng(47).uniform(-np.pi, np.pi, (32, 32))
+    regauged = pump_mesh(BASE, 32, 32, phases)
+    assert np.allclose(regauged["flux"], coarse["flux"])
+    assert np.isclose(regauged["chern"], coarse["chern"])
+    assert np.isclose(regauged["winding"], coarse["winding"])
+
+
+class RiceMelePumpTests(unittest.TestCase):
+    """Also run these independent checks in the repository's unittest gate."""
+
+    def test_filled_band_pump_and_independent_bloch_gap(self):
+        test_filled_band_pump_and_independent_bloch_gap()
+
+    def test_orientation_trivial_cycle_and_gap_closure(self):
+        test_orientation_trivial_cycle_and_gap_closure()
+
+    def test_mesh_convergence_and_periodic_seams(self):
+        test_mesh_convergence_and_periodic_seams()

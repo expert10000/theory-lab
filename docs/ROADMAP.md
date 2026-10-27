@@ -2087,3 +2087,15 @@ flow; ambiguous `1/3` and width-dependent `1/5` cases stay undefined.
 Math3D inspects the supplied crossing positions and overlap scalars with
 source hashes. Unique physical edge-channel classification, experimental
 transport and Hall plateaus remain separate future work.
+
+## Bounded Rice–Mele pump extension
+
+**Implemented:** a separate closed-cycle Rice–Mele job with occupied-band
+Berry-flux Chern and independent Wilson-loop polarization winding, checked on
+coarse and refined periodic meshes. Exact cycle inputs, spectra, gaps,
+convergence and conditional invariant are saved in an immutable run. The
+source-linked `.qscene` exposes recorded samples to Math3D read-only. The
+claim is ideal adiabatic transport for a filled band only; gap closure or
+unresolved meshes yield an undefined invariant. Finite-speed current and
+finite-chain edge motion remain future calculations. See
+[`RICE_MELE_PUMP_STUDY.md`](RICE_MELE_PUMP_STUDY.md).

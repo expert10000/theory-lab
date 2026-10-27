@@ -5,6 +5,7 @@ export type TopologySelection=
   | {kind:"ssh_site";runId:string;index:number}
   | {kind:"rice_mele_band";runId:string;index:number}
   | {kind:"rice_mele_site";runId:string;index:number}
+  | {kind:"rice_mele_pump_sample";runId:string;phaseIndex:number;kIndex:number}
   | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number}
   | {kind:"bbh_cell";runId:string;index:number}
   | {kind:"kitaev_band";runId:string;index:number}
@@ -20,6 +21,7 @@ export type TopologySample=
   | {kind:"ssh_site";index:number;density:number}
   | {kind:"rice_mele_band";index:number;k:number;lower:number;upper:number}
   | {kind:"rice_mele_site";index:number;density:number}
+  | {kind:"rice_mele_pump_sample";phaseIndex:number;kIndex:number;phase:number;k:number;t1:number;t2:number;delta:number;lower:number;upper:number;berryFlux:number;polarization:number}
   | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null}
   | {kind:"bbh_cell";index:number;xIndex:number;yIndex:number;density:number}
   | {kind:"kitaev_band";index:number;k:number;lower:number;upper:number}
@@ -39,6 +41,14 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="rice_mele_pump"&&analysis.kind==="rice_mele_pump"&&selection.kind==="rice_mele_pump_sample"){
+    const {phaseIndex,kIndex}=selection,n=analysis.kValues.length;
+    if(!Number.isInteger(phaseIndex)||!Number.isInteger(kIndex)||phaseIndex<0||phaseIndex>=analysis.phaseValues.length||kIndex<0||kIndex>=n)return null;
+    const j=phaseIndex*n+kIndex;
+    return {kind:"rice_mele_pump_sample",phaseIndex,kIndex,phase:analysis.phaseValues[phaseIndex],k:analysis.kValues[kIndex],
+      t1:analysis.t1Values[phaseIndex],t2:analysis.t2Values[phaseIndex],delta:analysis.deltaValues[phaseIndex],
+      lower:analysis.lowerBand[j],upper:analysis.upperBand[j],berryFlux:analysis.berryFlux[j],polarization:analysis.polarization[phaseIndex]};
+  }
   if(result.model.type==="rice_mele"&&analysis.kind==="rice_mele"){
     if(selection.kind==="rice_mele_band"&&Number.isInteger(selection.index)&&selection.index>=0&&selection.index<analysis.kValues.length){
       const index=selection.index;return {kind:"rice_mele_band",index,k:analysis.kValues[index],lower:analysis.lowerBand[index],upper:analysis.upperBand[index]};

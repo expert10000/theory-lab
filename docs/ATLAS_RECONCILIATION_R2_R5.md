@@ -482,7 +482,9 @@ Entries: `tight_binding_generic`, `bloch_two_band`, `graphene_nn`, `dirac_2d`, `
 
 Reuse: Existing SSH/QWZ topology, band/reciprocal/vector scenes and verified export/import.
 
-Missing: Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Static Rice–Mele is implemented separately; pumping remains open.
+Delivered bounded subspaces: bounded static Rice–Mele bulk and open chain; bounded closed Rice–Mele cycle with conditional filled-band Chern and polarization winding.
+
+Missing: Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Rice–Mele finite-speed current and finite-chain edge motion remain separate calculations.
 
 Acceptance requirements:
 
@@ -566,13 +568,13 @@ Acceptance requirements:
 - Known syndrome/error/decoder limiting cases
 - Distinguish Hamiltonian spectrum, syndrome observations and Monte Carlo failure rates
 
-D1 delivers bounded static/free 1D motion and monochromatic coherent forcing within G02. G07 now includes a bounded static Rice–Mele chain as a delivered subspace, including its SSH limit. A parameter cycle, polarization and Thouless pump remain future producer work. G01 restricted adapter candidates and XY/Heisenberg remain open. Historical R5 source definitions and original bindings are preserved.
+D1 delivers bounded static/free 1D motion and monochromatic coherent forcing within G02. G07 includes a static Rice–Mele chain and a separately verified closed cycle with conditional filled-band pump invariant. Finite-speed current and finite-chain edge motion remain future producer work. G01 restricted adapter candidates and XY/Heisenberg remain open. Historical R5 source definitions and original bindings are preserved.
 
 ## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `dee73183f61134ea15599dcb817401cad246a67c11b774c9defb6b9f48b6a0c5`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `3cd88caab3cc1d154044512d969a35cddfabbdcd3fed9906ac8acf1a799ca7d5`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 
@@ -580,8 +582,8 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
-| packages/contracts/schemas/quantum-job.v1.json | `36cbb200460ab62b64296b136da205f7b689bb41680329be7a154fea4a211e1f` |
-| packages/contracts/schemas/quantum-result.v1.json | `99b6f33d98e3222e131bb189a8269959cf8bd0eb4db12d7cdd6ee34cf64b75e7` |
+| packages/contracts/schemas/quantum-job.v1.json | `12eeb067d100349721f79d0e80b540f9b1af3229052d27e40f58364ecc0cd297` |
+| packages/contracts/schemas/quantum-result.v1.json | `5725a20ed7679316a9b05401216167ed30e44e24c4d0f69bdc609990e941e5fe` |
 | packages/contracts/schemas/worker-capabilities.v1.json | `ec10c915d539adba626bb7621e9d1ef83ff929e64dfe997325f575dcfc7c3fe1` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
 | packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |

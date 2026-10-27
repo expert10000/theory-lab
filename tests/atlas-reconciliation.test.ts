@@ -188,7 +188,7 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
   );
   for (const j of jobs) {
     assertJob(j);
-    const implementation = LAB_IMPLEMENTATIONS[j.model.type];
+    const implementation = LAB_IMPLEMENTATIONS[j.model.type as keyof typeof LAB_IMPLEMENTATIONS];
     assert.ok(existsSync(implementation.module));
     assert.ok(implementation.operations.includes(j.operation));
     assert.ok(implementation.engines.includes(j.engine));

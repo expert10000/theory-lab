@@ -28,6 +28,7 @@ export async function bandSceneFromResult(
   if(result.analysis.kind==="nodal_line_two_band")throw new Error("Nodal continuum ring has a loop diagnostic scene, not periodic bands");
   if(result.analysis.kind==="landau_continuum")throw new Error("Landau continuum levels use their own source-linked level fan");
   if(result.analysis.kind==="hofstadter")throw new Error("Hofstadter bands use their own source-linked magnetic-zone scene");
+  if(result.analysis.kind==="rice_mele_pump")throw new Error("Rice–Mele pump diagnostics use their own source-linked scene");
   const a = result.analysis,
     surface = a.kind !== "ssh" && a.kind !== "rice_mele" && a.kind !== "kitaev_chain",
     values: number[][] = a.kind === "bhz" || a.kind==="bbh" ? a.bandEnergies : a.kind==="bhz_general"?

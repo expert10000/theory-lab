@@ -23,6 +23,7 @@ export function availableSceneViews(result:QuantumResult):{standard:boolean;band
     if(analysis.kind==="weyl_minimal"||analysis.kind==="nodal_line_two_band"||analysis.kind==="landau_continuum")return {standard:true,bands:false,invariant:false};
     if(analysis.kind==="bhz"||analysis.kind==="bhz_general"||analysis.kind==="bbh"||analysis.kind==="kitaev_chain")return {standard:true,bands:true,invariant:analysis.kind==="kitaev_chain"&&!!analysis.invariant};
     if(analysis.kind==="rice_mele")return {standard:true,bands:true,invariant:false};
+    if(analysis.kind==="rice_mele_pump")return {standard:true,bands:false,invariant:false};
     return {standard:result.model.type==="ssh"||analysis.kind==="qwz"&&!analysis.gapClosed,
       bands:!!analysis.lowerBand&&!!analysis.upperBand&&
         (analysis.kind==="ssh"||!!analysis.bandKValues),invariant:false};

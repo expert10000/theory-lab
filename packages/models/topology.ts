@@ -4,6 +4,7 @@ import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../atlas";
 export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
 export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   modelId: "ssh", t1: "0.6", t2: "1", delta: "0.2", cells: "16", kPoints: "101", mass: "-1", grid: "21",
+  pumpBase:"1",pumpModulation:"0.4",pumpStagger:"0.6",pumpOffset:"0",pumpK:"32",pumpPhases:"32",
   A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
   gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
   mu:"0",hopping:"1",pairing:"0.8",
@@ -20,7 +21,7 @@ function numeric(raw: string, minimum: number, maximum: number, integer = false)
   return value;
 }
 export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
-  const entry = atlasEntry(draft.modelId === "bhz_general" ? "bhz" : draft.modelId)!;
+  const entry = atlasEntry(draft.modelId === "bhz_general" ? "bhz" : draft.modelId === "rice_mele_pump" ? "rice_mele" : draft.modelId)!;
   const source = { sourceRepository: `${ATLAS_SOURCE}/tree/${ATLAS_REVISION}`,
     sourceModule: `data/hamiltonian_atlas/${entry.sourceFile}`, volume: "VIII", exampleId: `Atlas ${draft.modelId}` };
   if (draft.modelId === "ssh") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
@@ -30,6 +31,18 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
     model: { type: "rice_mele", parameters: { t1: numeric(draft.t1, -3, 3), t2: numeric(draft.t2, -3, 3),
       delta: numeric(draft.delta??"0.2", -2, 2), cells: numeric(draft.cells, 4, 40, true),
       kPoints: numeric(draft.kPoints, 21, 201, true) }, source } };
+  if (draft.modelId === "rice_mele_pump") {
+    const baseHopping=numeric(draft.pumpBase??"1",.25,2);
+    const modulation=numeric(draft.pumpModulation??"0.4",-1,1);
+    if(baseHopping<=Math.abs(modulation))throw new Error("Both Rice–Mele cycle hoppings must stay positive");
+    const kSamples=numeric(draft.pumpK??"32",16,80,true);
+    const phaseSamples=numeric(draft.pumpPhases??"32",16,64,true);
+    if(kSamples%2||phaseSamples%4)throw new Error("Pump mesh needs even momentum and fourfold phase samples");
+    return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",model:{type:"rice_mele_pump",
+      source:{...source,exampleId:"Atlas rice_mele"},parameters:{baseHopping,modulation,
+        staggerAmplitude:numeric(draft.pumpStagger??"0.6",-2,2),staggerOffset:numeric(draft.pumpOffset??"0",-2,2),
+        kSamples,phaseSamples}}};
+  }
   if (draft.modelId === "bhz") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "bhz", parameters: { mass: numeric(draft.mass, -2, 10), grid: numeric(draft.grid, 11, 21, true) }, source } };
   if (draft.modelId === "bhz_general") {
@@ -382,6 +395,38 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
         Math.abs(a.lowerBand[i]+e)<1e-8&&Math.abs(a.upperBand[i]-e)<1e-8;
     });
   }
+  if(job.model.type==="rice_mele_pump"&&a.kind==="rice_mele_pump"){
+    const p=job.model.parameters,n=p.kSamples,m=p.phaseSamples;
+    if(a.kValues.length!==n||a.phaseValues.length!==m||a.lowerBand.length!==n*m||a.upperBand.length!==n*m||
+      a.berryFlux.length!==n*m||a.polarization.length!==m+1||a.t1Values.length!==m||a.t2Values.length!==m||
+      a.deltaValues.length!==m||!a.lowerBand.every(Number.isFinite)||!a.upperBand.every(Number.isFinite)||
+      !a.berryFlux.every(Number.isFinite)||a.units.energy!=="hopping energy"||a.units.momentum!=="rad / cell"||
+      a.units.phase!=="rad"||a.units.polarization!=="electron charge / cell")return false;
+    if(a.status==="defined"?a.chern===null||a.polarizationWinding!==a.chern:a.chern!==null||a.polarizationWinding!==null)return false;
+    if(a.status==="gap-closed"&&a.exactGap>1e-8)return false;
+    for(let j=0;j<m;j++){
+      const theta=2*Math.PI*j/m;
+      if(Math.abs(a.phaseValues[j]-theta)>1e-10||Math.abs(a.t1Values[j]-(p.baseHopping+p.modulation*Math.cos(theta)))>1e-8||
+        Math.abs(a.t2Values[j]-(p.baseHopping-p.modulation*Math.cos(theta)))>1e-8||
+        Math.abs(a.deltaValues[j]-(p.staggerOffset+p.staggerAmplitude*Math.sin(theta)))>1e-8)return false;
+      for(let x=0;x<n;x++){
+        const k=-Math.PI+2*Math.PI*x/n,ix=j*n+x;
+        const energy=Math.hypot(a.deltaValues[j],a.t1Values[j]+a.t2Values[j]*Math.cos(k),a.t2Values[j]*Math.sin(k));
+        if(j===0&&Math.abs(a.kValues[x]-k)>1e-10||Math.abs(a.lowerBand[ix]+energy)>1e-7||Math.abs(a.upperBand[ix]-energy)>1e-7)return false;
+      }
+    }
+    const {modulation:mod,staggerAmplitude:amp,staggerOffset:offset}=p;
+    const candidates=[-1,1],curvature=amp*amp-4*mod*mod;
+    if(curvature>0)candidates.push(Math.max(-1,Math.min(1,-offset*amp/curvature)));
+    const exactGap=2*Math.min(...candidates.map(x=>Math.hypot(2*mod*Math.sqrt(Math.max(0,1-x*x)),offset+amp*x)));
+    const fluxChern=a.berryFlux.reduce((sum,value)=>sum+value,0)/(2*Math.PI);
+    return Math.abs(a.exactGap-exactGap)<1e-8&&
+      Math.abs(a.coarseGap-Math.min(...a.upperBand.map((v,i)=>v-a.lowerBand[i])))<1e-8&&
+      (a.coarseChern===null||Math.abs(a.coarseChern-fluxChern)<1e-6)&&
+      (a.status!=="defined"||(Math.abs(a.polarization[m]-a.polarization[0]-a.polarizationWinding!)<1e-6&&
+        Math.abs(a.coarseChern!-a.chern!)<1e-6&&Math.abs(a.fineChern!-a.chern!)<1e-6&&
+        Math.abs(a.coarseWinding!-a.polarizationWinding!)<1e-6&&Math.abs(a.fineWinding!-a.polarizationWinding!)<1e-6));
+  }
   if (job.model.type === "qwz" && a.kind === "qwz") {
     const { mass, grid } = job.model.parameters;
     const gap = 2 * Math.min(Math.abs(mass + 2), Math.abs(mass), Math.abs(mass - 2));
@@ -503,6 +548,16 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
         !numericArray(a.kValues, kPoints) || !numericArray(a.lowerBand, kPoints) ||
         !numericArray(a.upperBand, kPoints) || !numericArray(a.edgeEnergies, 2) ||
         !numericArray(a.edgeDensity, 2 * cells) || !finite(a.edgeWeight) || a.edgeWeight < 0 || a.edgeWeight > 1) return false;
+  } else if(job.model.type==="rice_mele_pump"){
+    const {kSamples:n,phaseSamples:m}=job.model.parameters;
+    if(a.kind!=="rice_mele_pump"||!["defined","gap-closed","mesh-unresolved"].includes(String(a.status))||
+      !numericArray(a.kValues,n)||!numericArray(a.phaseValues,m)||!numericArray(a.t1Values,m)||
+      !numericArray(a.t2Values,m)||!numericArray(a.deltaValues,m)||!numericArray(a.lowerBand,n*m)||
+      !numericArray(a.upperBand,n*m)||!numericArray(a.berryFlux,n*m)||!numericArray(a.polarization,m+1)||
+      !finite(a.exactGap)||!finite(a.coarseGap)||!finite(a.fineGap)||!finite(a.minimumLink)||
+      !finite(a.fineMinimumLink)||!record(a.units)||typeof a.method!=="string"||
+      !(a.chern===null||[-1,0,1].includes(Number(a.chern)))||
+      !(a.polarizationWinding===null||[-1,0,1].includes(Number(a.polarizationWinding))))return false;
   } else if (job.model.type === "rice_mele") {
     const { cells, kPoints } = job.model.parameters;
     if (a.kind!=="rice_mele" || !finite(a.bulkGap) || a.bulkGap<0 || typeof a.gapClosed!=="boolean" ||

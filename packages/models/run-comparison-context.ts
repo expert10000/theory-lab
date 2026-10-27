@@ -31,7 +31,8 @@ function storedGap(result:QuantumResult):{value:number;unit:string;label:string}
     case "diagonalize":return {value:result.spectrum.eigenvalues[1]-result.spectrum.eigenvalues[0],unit:result.spectrum.units,label:"Level gap"};
     case "circuit":return {value:result.spectrum.e01,unit:result.spectrum.units,label:"E₀₁ transition"};
     case "many_body":return {value:result.spectrum.gap,unit:result.spectrum.units,label:"Many-body gap"};
-    case "topology":return result.analysis.kind==="landau_continuum"||result.analysis.kind==="hofstadter"?null:result.analysis.kind==="nodal_line_two_band"?
+    case "topology":return result.analysis.kind==="landau_continuum"||result.analysis.kind==="hofstadter"?null:result.analysis.kind==="rice_mele_pump"?
+      {value:result.analysis.exactGap,unit:result.analysis.units.energy,label:"Cycle bulk gap"}:result.analysis.kind==="nodal_line_two_band"?
       {label:"Loop gap",value:result.analysis.loopGap,unit:"normalized"}:result.analysis.kind==="weyl_minimal"?
       {value:result.analysis.sphereGap,unit:"normalized",label:"Enclosing-sphere gap"}:
       {value:result.analysis.bulkGap,unit:"normalized",label:"Bulk gap"};
