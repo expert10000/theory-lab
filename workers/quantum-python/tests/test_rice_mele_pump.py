@@ -104,6 +104,49 @@ def test_finite_speed_current_against_independent_ivp_and_slow_limit():
     assert closed["dynamics"]["adiabaticChern"] is None
 
 
+def test_open_chain_motion_against_independent_ivp_and_continuity():
+    p={**BASE,"kSamples":16,"phaseSamples":16,"duration":20.,"stepsPerPhase":8,"chainCells":4}
+    analysis=rice_mele_pump_analysis(p)
+    chain=analysis["finiteChain"]
+    assert chain["sites"]==8 and chain["occupiedOrbitals"]==4 and chain["centralBond"]==3
+    assert len(chain["siteDensity"])==17*8 and len(chain["bondElectronCurrent"])==17*7
+    assert chain["maxNormDrift"]<1e-10 and chain["maxParticleDrift"]<1e-10
+    assert chain["maxContinuityResidual"]<.02 and chain["timeStepChargeDrift"]<.02
+    assert len(chain["leftEdgePopulation"])==len(chain["rightEdgePopulation"])==17
+    for row in np.asarray(chain["siteDensity"]).reshape(17,8):
+        assert abs(sum(row)-4)<1e-10
+
+    def independent_h(theta):
+        t1=1+.4*np.cos(theta); t2=1-.4*np.cos(theta); delta=.6*np.sin(theta)
+        h=np.diag([delta if i%2==0 else -delta for i in range(8)]).astype(complex)
+        for i in range(7):
+            h[i,i+1]=h[i+1,i]=t1 if i%2==0 else t2
+        return h
+    assert independent_h(0)[0,-1]==0  # no periodic edge wrap
+    _, basis=np.linalg.eigh(independent_h(0))
+    initial=basis[:,:4]
+    def rhs(time,flat):
+        return (-1j*independent_h(2*np.pi*time/20)@flat.reshape(8,4)).ravel()
+    times=np.linspace(0,20,4001)
+    ref=solve_ivp(rhs,(0,20),initial.ravel(),t_eval=times,rtol=2e-10,atol=2e-11)
+    assert ref.success
+    states=ref.y.T.reshape(len(times),8,4)
+    ref_final=np.sum(abs(states[-1])**2,axis=1)
+    assert np.allclose(ref_final,np.asarray(chain["siteDensity"])[-8:],atol=.005)
+    theta=2*np.pi*times/20
+    central_t=1-.4*np.cos(theta)
+    ref_current=2*central_t*np.imag(np.sum(np.conj(states[:,3])*states[:,4],axis=1))
+    ref_charge=float(np.sum((ref_current[1:]+ref_current[:-1])*np.diff(times)/2))
+    assert abs(ref_charge-chain["centralBondCharge"][-1])<.01
+    assert abs(chain["centralBondCharge"][0])<1e-12
+
+    # The two widths can differ even when the midpoint solver has converged.
+    slower=rice_mele_pump_analysis({**BASE,"duration":80.,"stepsPerPhase":16,"chainCells":6})
+    assert slower["finiteChain"]["status"]=="size-sensitive"
+    assert slower["finiteChain"]["widthChargeDrift"]>.1
+    assert slower["status"]=="defined"  # periodic bulk claim remains separate
+
+
 class RiceMelePumpTests(unittest.TestCase):
     """Also run these independent checks in the repository's unittest gate."""
 
@@ -118,3 +161,6 @@ class RiceMelePumpTests(unittest.TestCase):
 
     def test_finite_speed_current_against_independent_ivp_and_slow_limit(self):
         test_finite_speed_current_against_independent_ivp_and_slow_limit()
+
+    def test_open_chain_motion_against_independent_ivp_and_continuity(self):
+        test_open_chain_motion_against_independent_ivp_and_continuity()

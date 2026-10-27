@@ -3,6 +3,76 @@
 import numpy as np
 
 
+def finite_chain_trace(parameters, cells, phase_count, duration, steps_per_phase):
+    """Evolve all occupied open-chain orbitals with midpoint Hermitian propagators."""
+    sites = 2 * cells
+    bonds = np.arange(sites - 1)
+
+    def hamiltonian(theta):
+        t1 = parameters["baseHopping"] + parameters["modulation"] * np.cos(theta)
+        t2 = parameters["baseHopping"] - parameters["modulation"] * np.cos(theta)
+        delta = parameters["staggerOffset"] + parameters["staggerAmplitude"] * np.sin(theta)
+        hopping = np.where(bonds % 2 == 0, t1, t2)
+        h = np.diag(np.where(np.arange(sites) % 2 == 0, delta, -delta)).astype(complex)
+        h[bonds, bonds + 1] = hopping
+        h[bonds + 1, bonds] = hopping
+        return h, hopping
+
+    h0, _ = hamiltonian(0.0)
+    _, eigenvectors = np.linalg.eigh(h0)
+    occupied = eigenvectors[:, :cells].copy()
+    dt = duration / (phase_count * steps_per_phase)
+    densities, currents, charges, left, right = [], [], [0.0], [], []
+    max_norm_drift = max_particle_drift = max_continuity_residual = 0.0
+    integrated_charge = 0.0
+    central_bond = cells - 1
+
+    def observables(state, hopping):
+        density = np.sum(abs(state) ** 2, axis=1).real
+        # The electron charge is -1. With this sign, d n_i / dt = j_i - j_(i-1).
+        current = 2 * hopping * np.imag(np.sum(np.conj(state[:-1]) * state[1:], axis=1))
+        return density, current
+
+    def observe(theta):
+        nonlocal max_norm_drift, max_particle_drift
+        _, hopping = hamiltonian(theta)
+        density, current = observables(occupied, hopping)
+        gram = occupied.conj().T @ occupied
+        max_norm_drift = max(max_norm_drift, float(np.max(abs(gram - np.eye(cells)))))
+        max_particle_drift = max(max_particle_drift, abs(float(np.sum(density)) - cells))
+        densities.extend(density.tolist())
+        currents.extend(current.tolist())
+        left.append(float(sum(density[:2])))
+        right.append(float(sum(density[-2:])))
+
+    observe(0.0)
+    for step in range(phase_count * steps_per_phase):
+        theta_mid = 2 * np.pi * (step + .5) / (phase_count * steps_per_phase)
+        h, hopping = hamiltonian(theta_mid)
+        energies, basis = np.linalg.eigh(h)
+        amplitudes = basis.conj().T @ occupied
+        halfway = basis @ (np.exp(-.5j * energies * dt)[:, None] * amplitudes)
+        next_state = basis @ (np.exp(-1j * energies * dt)[:, None] * amplitudes)
+        before, _ = observables(occupied, hopping)
+        after, _ = observables(next_state, hopping)
+        _, midpoint_current = observables(halfway, hopping)
+        divergence = np.r_[midpoint_current, 0] - np.r_[0, midpoint_current]
+        max_continuity_residual = max(max_continuity_residual,
+                                      float(np.max(abs((after - before) / dt - divergence))))
+        integrated_charge += dt * midpoint_current[central_bond]
+        occupied = next_state
+        if (step + 1) % steps_per_phase == 0:
+            observe(2 * np.pi * (step + 1) / (phase_count * steps_per_phase))
+            charges.append(float(integrated_charge))
+    return {"timeValues": np.linspace(0, duration, phase_count + 1).tolist(),
+            "phaseValues": np.linspace(0, 2 * np.pi, phase_count + 1).tolist(),
+            "siteDensity": densities, "bondElectronCurrent": currents,
+            "centralBondCharge": charges, "leftEdgePopulation": left,
+            "rightEdgePopulation": right, "maxNormDrift": max_norm_drift,
+            "maxParticleDrift": max_particle_drift,
+            "maxContinuityResidual": max_continuity_residual}
+
+
 def finite_speed_trace(parameters, k_count, phase_count, duration, steps_per_phase):
     """Unitary midpoint propagation at every periodic Bloch momentum (hbar=1)."""
     k = -np.pi + 2 * np.pi * np.arange(k_count) / k_count
@@ -168,6 +238,37 @@ def rice_mele_pump_analysis(parameters):
                     "adiabaticChern": integer_chern if resolved else None,
                     "method": "filled lower Bloch band at theta=0; hbar=1; unitary midpoint SU(2) propagation; electron current -dH/dk; midpoint time integral and periodic k average",
                     "units": {"time": "inverse hopping energy", "current": "electron charge / inverse hopping time", "charge": "electron charge / cell"}}
+    if "chainCells" in parameters and dynamics is None:
+        raise ValueError("Finite-chain motion requires the recorded finite-speed cycle")
+    finite_chain = None
+    if "chainCells" in parameters:
+        cells = parameters["chainCells"]
+        if not isinstance(cells, int) or not 4 <= cells <= 10 or phase_count * steps > 2048:
+            raise ValueError("Open-chain cycle exceeds bounded cell or step limits")
+        primary = finite_chain_trace(parameters, cells, phase_count, duration, steps)
+        time_refined = finite_chain_trace(parameters, cells, phase_count, duration, 2 * steps)
+        width_refined = finite_chain_trace(parameters, cells + 2, phase_count, duration, steps)
+        time_drift = abs(primary["centralBondCharge"][-1] - time_refined["centralBondCharge"][-1])
+        width_drift = abs(primary["centralBondCharge"][-1] - width_refined["centralBondCharge"][-1])
+        numerical_ok = (primary["maxNormDrift"] < 1e-8 and primary["maxParticleDrift"] < 1e-8 and
+                        primary["maxContinuityResidual"] < .02 and time_drift < .02)
+        chain_status = "resolved" if numerical_ok and width_drift < .1 else "size-sensitive" if numerical_ok else "unresolved"
+        finite_chain = {"status": chain_status, "cells": cells, "sites": 2 * cells,
+                        "occupiedOrbitals": cells, "centralBond": cells - 1,
+                        "duration": duration, "stepsPerPhase": steps,
+                        "timeValues": primary["timeValues"], "phaseValues": primary["phaseValues"],
+                        "siteDensity": primary["siteDensity"],
+                        "bondElectronCurrent": primary["bondElectronCurrent"],
+                        "centralBondCharge": primary["centralBondCharge"],
+                        "leftEdgePopulation": primary["leftEdgePopulation"],
+                        "rightEdgePopulation": primary["rightEdgePopulation"],
+                        "maxNormDrift": primary["maxNormDrift"],
+                        "maxParticleDrift": primary["maxParticleDrift"],
+                        "maxContinuityResidual": primary["maxContinuityResidual"],
+                        "timeStepChargeDrift": time_drift, "widthChargeDrift": width_drift,
+                        "method": "half-filled open Rice-Mele chain; all occupied orbitals evolved by Hermitian midpoint propagators; electron bond current and midpoint central-bond charge; no periodic edge wrap",
+                        "units": {"time": "inverse hopping energy", "density": "particles per site",
+                                  "current": "electron charge / inverse hopping time", "charge": "electron charge"}}
     return {"kind": "rice_mele_pump", "status": status,
             "chern": integer_chern if resolved else None,
             "polarizationWinding": integer_winding if resolved else None,
@@ -183,5 +284,6 @@ def rice_mele_pump_analysis(parameters):
             "berryFlux": coarse["flux"].ravel().tolist(),
             "polarization": coarse["polarization"].tolist(),
             **({"dynamics": dynamics} if dynamics is not None else {}),
+            **({"finiteChain": finite_chain} if finite_chain is not None else {}),
             "method": "occupied-band FHS torus and independent k-Wilson-loop polarization winding; periodic seams included",
             "units": {"momentum": "rad / cell", "phase": "rad", "energy": "hopping energy", "polarization": "electron charge / cell"}}
