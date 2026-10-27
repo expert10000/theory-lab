@@ -1,5 +1,6 @@
 import type { QuantumResult } from "../contracts";
 import { consistentTopologyResult } from "../models/topology";
+import { linkedRiceMeleTraces } from "../models/rice-mele-comparison";
 import { SceneBuilder } from "./builder";
 import type { QuantumScene } from "./index";
 
@@ -12,9 +13,11 @@ export async function riceMelePumpSceneFromResult(result: QuantumResult, resultS
   const p=result.model.parameters,a=result.analysis,n=a.kValues.length,m=a.phaseValues.length;
   const pinned=result.model.source?.sourceRepository?.match(/^(https:\/\/github\.com\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)\/tree\/([a-f0-9]{40})$/);
   if(a.finiteChain){
-    const c=a.finiteChain, count=c.timeValues.length;
+    const link=linkedRiceMeleTraces(result);
+    if(!link)throw new Error("Rice–Mele bulk and chain traces do not share the saved cycle");
+    const c=link.chain,d=link.bulk,count=c.timeValues.length;
     const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-open-chain-pump`,
-      title:"Rice–Mele · finite open-chain motion",
+      title:"Rice–Mele · bulk and open-chain motion",
       provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:result.model.type,
         engine:result.engine.name,engineVersion:result.engine.version,computedAt:result.provenance.computedAt,
         resultSha256,adapter:"qvis/1",parameters:{...p},
@@ -24,7 +27,8 @@ export async function riceMelePumpSceneFromResult(result: QuantumResult, resultS
       camera:{position:[c.duration*.65,-c.sites*.8,Math.max(3,c.cells*.5)],target:[c.duration/2,c.sites/2,0],up:[0,0,1]},
       objects:[],datasets:[],annotations:[
         {id:"chain-scope",text:`Half-filled open chain with ${c.cells} cells and ${c.occupiedOrbitals} occupied orbitals; finite-size status ${c.status}. Final central-bond charge ${c.centralBondCharge.at(-1)?.toPrecision(8)} ${c.units.charge}. Separate from the periodic ideal pump and not labelled quantized.`,position:[c.duration/2,c.sites/2,3]},
-        {id:"chain-checks",text:`Norm drift ${c.maxNormDrift.toExponential(3)}; particle drift ${c.maxParticleDrift.toExponential(3)}; continuity residual ${c.maxContinuityResidual.toExponential(3)}; time/width charge drift ${c.timeStepChargeDrift.toExponential(3)} / ${c.widthChargeDrift.toExponential(3)}. Open ends have no wrap bond.`,position:[c.duration/2,c.sites/2,-3]}]};
+        {id:"chain-checks",text:`Norm drift ${c.maxNormDrift.toExponential(3)}; particle drift ${c.maxParticleDrift.toExponential(3)}; continuity residual ${c.maxContinuityResidual.toExponential(3)}; time/width charge drift ${c.timeStepChargeDrift.toExponential(3)} / ${c.widthChargeDrift.toExponential(3)}. Open ends have no wrap bond.`,position:[c.duration/2,c.sites/2,-3]},
+        {id:"bulk-chain-link",text:`One run and exact cycle: bulk charge ${d.units.charge}; chain central-bond charge ${c.units.charge}. These have distinct boundary conditions and are not asserted equal.`,position:[c.duration/2,-2,2]}]};
     const b=new SceneBuilder(scene,digest);
     const sitePositions=await b.data("chain-site-positions",c.timeValues.flatMap(time=>Array.from({length:c.sites},(_,site)=>[time,site,0]).flat()),3,"time, site index, display plane");
     const density=await b.data("chain-site-density",c.siteDensity,1,c.units.density);
@@ -39,6 +43,14 @@ export async function riceMelePumpSceneFromResult(result: QuantumResult, resultS
     for(const [id,label,values,color] of [["chain-left-edge","Left-edge population",c.leftEdgePopulation,"#78c9be"],["chain-right-edge","Right-edge population",c.rightEdgePopulation,"#dd9e7c"]] as const){
       const scalar=await b.data(id,values,1,"particles in outer two sites");
       b.object(id,label,"point-cloud",edgePositions,color,{scalars:scalar,style:{color,opacity:1,size:.04}});
+    }
+    for(const [id,label,values,unit,y,color] of [
+      ["comparison-bulk-current","Periodic filled-band current",d.current,d.units.current,-1,"#50adbd"],
+      ["comparison-bulk-charge","Periodic accumulated charge per cell",d.charge,d.units.charge,-2,"#dc9e5c"],
+    ] as const){
+      const positions=await b.data(`${id}-positions`,d.timeValues.flatMap(time=>[time,y,0]),3,`${d.units.time}; bulk comparison lane`);
+      const scalars=await b.data(id,values,1,unit);
+      b.object(id,label,"point-cloud",positions,color,{scalars,style:{color,opacity:1,size:.08}});
     }
     if(count!==m+1)throw new Error("Open-chain time trace length mismatch");
     return b.finish();

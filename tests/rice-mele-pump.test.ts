@@ -106,6 +106,9 @@ test("finite open-chain pump saves exact site and bond samples and refuses chang
     assert.deepEqual([...arrays.get("chain-site-density")!],c.siteDensity);
     assert.deepEqual([...arrays.get("chain-bond-current")!],c.bondElectronCurrent);
     assert.deepEqual([...arrays.get("chain-central-charge")!],c.centralBondCharge);
+    assert.deepEqual([...arrays.get("comparison-bulk-current")!],linked.bulk.current);
+    assert.deepEqual([...arrays.get("comparison-bulk-charge")!],linked.bulk.charge);
+    assert.match(scene.scene.annotations.find(note=>note.id==="bulk-chain-link")!.text,/not asserted equal/);
     assert.match(scene.scene.annotations[0].text,/not labelled quantized/);
     const exported=await restarted.exportScene(result.runId,root,"standard");
     assert.equal((await readSceneBundle(exported)).scene.provenance.resultSha256,scene.scene.provenance.resultSha256);

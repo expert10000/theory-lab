@@ -1,27 +1,38 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { QuantumBridge, TopologyResult, WorkerStatus, WorkspaceSnapshot } from "../../../packages/contracts";
 import { TOPOLOGY_DEFAULTS, topologyJob, type TopologyDraft } from "../../../packages/models/topology";
+import { linkedRiceMeleTraces } from "../../../packages/models/rice-mele-comparison";
 import {selectedTopologySample,type TopologySelection,type TopologyRunContext} from "./topology-selection";
 
 function RiceMeleChainFigure({result,selection,onSelect}:{result:TopologyResult;selection:TopologySelection|null;onSelect:(s:TopologySelection)=>void}){
-  if(result.analysis.kind!=="rice_mele_pump"||!result.analysis.finiteChain)return null;
-  const c=result.analysis.finiteChain;
-  const selected=selection?.kind==="rice_mele_chain_sample"&&selection.runId===result.runId?selection:null;
+  const link=linkedRiceMeleTraces(result);
+  if(!link)return null;
+  const {bulk:d,chain:c,parameters:p}=link;
+  const selected=selection?.kind==="rice_mele_bulk_chain_sample"&&selection.runId===result.runId?selection:null;
   const timeIndex=selected?.timeIndex??0;
-  const scale=Math.max(.01,...c.centralBondCharge.map(Math.abs));
-  return <section className="panel cavity-result" data-testid="rice-mele-chain-result">
-    <div className="panel-heading"><div><p className="eyebrow">VERIFIED FINITE OPEN-CHAIN MOTION</p><h2>Half-filled chain · site density and bond current</h2></div><span className="result-badge">{c.status}</span></div>
-    <div className="cavity-metrics"><div><span>OPEN CHAIN</span><strong>{c.cells} cells / {c.sites} sites</strong></div>
-      <div><span>CENTRAL-BOND CHARGE</span><strong>{c.centralBondCharge.at(-1)?.toFixed(6)}</strong></div>
-      <div><span>PARTICLE / NORM DRIFT</span><strong>{c.maxParticleDrift.toExponential(2)} / {c.maxNormDrift.toExponential(2)}</strong></div>
-      <div><span>TIME / WIDTH DRIFT</span><strong>{c.timeStepChargeDrift.toExponential(2)} / {c.widthChargeDrift.toExponential(2)}</strong></div></div>
-    <svg viewBox="0 0 640 180" role="img" aria-label="Saved open-chain central-bond charge plot" style={{width:"100%",maxHeight:220}}>
-      <path d="M32 90 H625" stroke="#728b99" fill="none"/>
-      <path d={c.centralBondCharge.map((v,i)=>`${i?"L":"M"}${32+i*590/(c.timeValues.length-1)} ${90-v*65/scale}`).join(" ")} stroke="#f2b36f" strokeWidth="2" fill="none"/>
-      {c.centralBondCharge.map((v,i)=><circle key={i} cx={32+i*590/(c.timeValues.length-1)} cy={90-v*65/scale} r="5" fill="#79d9c1" role="button" aria-label={`Select open-chain time sample ${i}`} onClick={()=>onSelect({kind:"rice_mele_chain_sample",runId:result.runId,timeIndex:i,siteIndex:selected?.siteIndex??0})}/>)}</svg>
-    <p>Click a saved time, then a site. Density and right-bond current are exact recorded samples.</p>
-    <div className="topology-density">{Array.from({length:c.sites},(_,siteIndex)=>{const value=c.siteDensity[timeIndex*c.sites+siteIndex];return <button type="button" key={siteIndex} aria-label={`Select open-chain site ${siteIndex+1}`} aria-pressed={selected?.timeIndex===timeIndex&&selected.siteIndex===siteIndex} title={`site ${siteIndex+1}: ${value.toFixed(6)}`} style={{height:`${Math.max(2,value*150)}px`}} onClick={()=>onSelect({kind:"rice_mele_chain_sample",runId:result.runId,timeIndex,siteIndex})}/>})}</div>
-    <p className="plot-caption">Left/right edge populations {c.leftEdgePopulation[timeIndex].toFixed(5)} / {c.rightEdgePopulation[timeIndex].toFixed(5)}; continuity residual {c.maxContinuityResidual.toExponential(3)}. Finite-size motion is distinct from the periodic filled-band pump and is not declared quantized.</p>
+  const siteIndex=selected?.siteIndex??0;
+  const choose=(index:number,site=siteIndex)=>onSelect({kind:"rice_mele_bulk_chain_sample",runId:result.runId,timeIndex:index,siteIndex:site});
+  const series=(values:number[],label:string,color:string)=>{
+    const extent=Math.max(.01,...values.map(Math.abs));
+    const y=(value:number)=>90-value*62/extent;
+    return <div className="sweep-visual"><p className="eyebrow">{label}</p><svg viewBox="0 0 640 180" role="img" aria-label={`${label} saved trace`} style={{width:"100%",maxHeight:170}}>
+      <path d="M30 90 H625" stroke="#728b99" fill="none"/><path d={values.map((v,i)=>`${i?"L":"M"}${30+i*590/(values.length-1)} ${y(v)}`).join(" ")} stroke={color} strokeWidth="2" fill="none"/>
+      <line x1={30+timeIndex*590/(values.length-1)} x2={30+timeIndex*590/(values.length-1)} y1="15" y2="165" stroke="#b4ccd3" strokeDasharray="4 4"/>
+      {values.map((v,i)=><circle key={i} cx={30+i*590/(values.length-1)} cy={y(v)} r="4" fill={color} role="button" aria-label={`Select shared time sample ${i} from ${label}`} onClick={()=>choose(i)}><title>t {d.timeValues[i].toFixed(4)} · {v.toFixed(6)}</title></circle>)}</svg></div>;
+  };
+  return <section className="panel cavity-result" data-testid="rice-mele-bulk-chain-result">
+    <div className="panel-heading"><div><p className="eyebrow">ONE VERIFIED RUN · TWO BOUNDARY CONDITIONS</p><h2>Rice–Mele bulk–chain comparison</h2></div><span className="result-badge">{c.status}</span></div>
+    <p data-testid="rice-mele-comparison-source">Run {result.runId} · mean hopping {p.baseHopping}, modulation {p.modulation}, staggering {p.staggerAmplitude}, offset {p.staggerOffset} · duration {d.duration} · {d.stepsPerPhase} steps per phase</p>
+    <label>Shared saved time <select aria-label="Rice–Mele comparison time" value={selected?.timeIndex??""} onChange={event=>event.target.value===""?onSelect({kind:"rice_mele_bulk_chain_sample",runId:result.runId,timeIndex:0,siteIndex}):choose(Number(event.target.value))}><option value="">Choose exact time</option>{d.timeValues.map((time,i)=><option value={i} key={i}>t {time.toFixed(4)} · θ {d.phaseValues[i].toFixed(4)}</option>)}</select></label>
+    <div className="topology-figures" style={{display:"grid",gridTemplateColumns:"repeat(auto-fit, minmax(300px, 1fr))",gap:16}}>
+      <div>{series(d.current,"Periodic filled-band current", "#79d9c1")}{series(d.charge,"Periodic charge · electron charge / cell","#f2b36f")}</div>
+      <div>{series(c.bondElectronCurrent.filter((_,i)=>i%(c.sites-1)===c.centralBond),"Open-chain central-bond current","#74b8dc")}{series(c.centralBondCharge,"Open-chain central-bond charge · electron charge","#ae96e5")}</div>
+    </div>
+    <div className="cavity-metrics"><div><span>SHARED TIME / PHASE</span><strong>{d.timeValues[timeIndex].toFixed(4)} / {d.phaseValues[timeIndex].toFixed(4)}</strong></div><div><span>BULK CURRENT / CHARGE</span><strong>{d.current[timeIndex].toFixed(6)} / {d.charge[timeIndex].toFixed(6)} per cell</strong></div><div><span>CHAIN CURRENT / CHARGE</span><strong>{c.bondElectronCurrent[timeIndex*(c.sites-1)+c.centralBond].toFixed(6)} / {c.centralBondCharge[timeIndex].toFixed(6)}</strong></div><div><span>LEFT / RIGHT EDGE</span><strong>{c.leftEdgePopulation[timeIndex].toFixed(6)} / {c.rightEdgePopulation[timeIndex].toFixed(6)} particles</strong></div></div>
+    <p>Open-chain site density at this saved time; click a site for its exact density and right-bond current.</p>
+    <div className="topology-density">{Array.from({length:c.sites},(_,site)=>{const value=c.siteDensity[timeIndex*c.sites+site];return <button type="button" key={site} aria-label={`Select open-chain site ${site+1}`} aria-pressed={selected?.timeIndex===timeIndex&&selected.siteIndex===site} title={`site ${site+1}: ${value.toFixed(6)}`} style={{height:`${Math.max(2,value*150)}px`}} onClick={()=>choose(timeIndex,site)}/>})}</div>
+    <div className="cavity-metrics"><div><span>OPEN CHAIN</span><strong>{c.cells} cells / {c.sites} sites</strong></div><div><span>PARTICLE / NORM DRIFT</span><strong>{c.maxParticleDrift.toExponential(2)} / {c.maxNormDrift.toExponential(2)}</strong></div><div><span>CONTINUITY RESIDUAL</span><strong>{c.maxContinuityResidual.toExponential(3)}</strong></div><div><span>TIME / WIDTH CHARGE DRIFT</span><strong>{c.timeStepChargeDrift.toExponential(2)} / {c.widthChargeDrift.toExponential(2)}</strong></div></div>
+    <p className="plot-caption">Periodic transported charge is per cell; finite-chain charge crosses one central bond. They are separate evidence, not equal measurements or a finite-chain pump invariant. The ideal filled-band Chern {d.adiabaticChern??"undefined"} is a separate adiabatic reference.</p>
   </section>;
 }
 
@@ -218,7 +229,7 @@ export function TopologyLab({ bridge, status, restored, restoreEpoch, atlasDraft
       <label>Inspect stored loop sample<select aria-label="Nodal loop sample" value={selection?.kind==="nodal_loop_sample"&&selection.runId===result.runId?selection.index:""} onChange={event=>setSelection(event.target.value===""?null:{kind:"nodal_loop_sample",runId:result.runId,index:Number(event.target.value)})}><option value="">Choose sample</option>{result.analysis.loopPositions.map((q,i)=><option key={i} value={i}>{i+1}: ({q.map(v=>v.toFixed(3)).join(", ")})</option>)}</select></label>
       <p className="plot-caption">Atlas continuum approximation · no lattice boundary or drumhead state · {result.engine.name} {result.engine.version}</p></section>}
     {result && result.analysis.kind === "weyl_minimal" && <section className="panel cavity-result" data-testid="topology-result"><div className="panel-heading"><div><p className="eyebrow">COMPUTED WEYL RESULT</p><h2>Local cone and enclosing-sphere flux</h2></div><span className={`result-badge ${stale ? "stale" : ""}`}>{stale?"OUT OF DATE":"SAVED RUN"}</span></div><div className="cavity-metrics"><div><span>NODE CHIRALITY</span><strong>{result.analysis.chirality}</strong></div><div><span>OCCUPIED CHERN</span><strong data-testid="weyl-chern">{result.analysis.lowerChern??"unresolved"}</strong></div><div><span>ENCLOSING FLUX</span><strong>{result.analysis.flux.toFixed(6)}</strong></div><div><span>SPHERE GAP</span><strong>{result.analysis.sphereGap.toFixed(6)}</strong></div></div><p>Stored sphere: {result.analysis.positions.length} momentum samples and {result.analysis.triangles.length} Wilson faces. Select a sample to link the immutable-run inspector.</p><label>Inspect stored sphere sample<select aria-label="Weyl sphere sample" value={selection?.kind==="weyl_sphere_sample"&&selection.runId===result.runId?selection.index:""} onChange={event=>setSelection(event.target.value===""?null:{kind:"weyl_sphere_sample",runId:result.runId,index:Number(event.target.value)})}><option value="">Choose sample</option>{result.analysis.positions.map((q,i)=><option key={i} value={i}>{i+1}: ({q.map(v=>v.toFixed(3)).join(", ")})</option>)}</select></label><p className="plot-caption">Local linearization only. No periodic lattice, surface arc, or partner node. {result.engine.name} {result.engine.version}</p></section>}
-    {result && result.analysis.kind === "rice_mele_pump" && result.analysis.dynamics && ((d)=>
+    {result && result.analysis.kind === "rice_mele_pump" && result.analysis.dynamics && !result.analysis.finiteChain && ((d)=>
       <section className="panel cavity-result" data-testid="rice-mele-finite-speed-result">
         <div className="panel-heading"><div><p className="eyebrow">VERIFIED FINITE-SPEED RICE–MELE RUN</p><h2>Recorded current and charge</h2></div><span className="result-badge">{d.status}</span></div>
         <div className="cavity-metrics"><div><span>DURATION</span><strong>{d.duration.toFixed(2)}</strong></div><div><span>TRANSPORTED CHARGE</span><strong data-testid="pump-finite-charge">{d.transportedCharge.toFixed(6)}</strong></div><div><span>MAX NORM DRIFT</span><strong>{d.maxNormDrift.toExponential(2)}</strong></div><div><span>TIME / K DRIFT</span><strong>{d.timeStepChargeDrift.toExponential(2)} / {d.momentumChargeDrift.toExponential(2)}</strong></div></div>
