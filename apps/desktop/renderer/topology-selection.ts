@@ -1,4 +1,5 @@
 import type {TopologyResult} from "../../../packages/contracts";
+import {linkedRiceMeleTraces} from "../../../packages/models/rice-mele-comparison";
 
 export type TopologySelection=
   | {kind:"ssh_band";runId:string;index:number}
@@ -8,6 +9,7 @@ export type TopologySelection=
   | {kind:"rice_mele_pump_sample";runId:string;phaseIndex:number;kIndex:number}
   | {kind:"rice_mele_dynamic_sample";runId:string;timeIndex:number;kIndex:number}
   | {kind:"rice_mele_chain_sample";runId:string;timeIndex:number;siteIndex:number}
+  | {kind:"rice_mele_bulk_chain_sample";runId:string;timeIndex:number;siteIndex:number}
   | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number}
   | {kind:"bbh_cell";runId:string;index:number}
   | {kind:"kitaev_band";runId:string;index:number}
@@ -26,6 +28,7 @@ export type TopologySample=
   | {kind:"rice_mele_pump_sample";phaseIndex:number;kIndex:number;phase:number;k:number;t1:number;t2:number;delta:number;lower:number;upper:number;berryFlux:number;polarization:number}
   | {kind:"rice_mele_dynamic_sample";timeIndex:number;kIndex:number;time:number;phase:number;k:number;current:number;localCurrent:number;charge:number;excitedPopulation:number}
   | {kind:"rice_mele_chain_sample";timeIndex:number;siteIndex:number;time:number;phase:number;density:number;rightBondCurrent:number|null;centralBondCharge:number;leftEdgePopulation:number;rightEdgePopulation:number}
+  | {kind:"rice_mele_bulk_chain_sample";timeIndex:number;siteIndex:number;time:number;phase:number;bulkCurrent:number;bulkCharge:number;density:number;rightBondCurrent:number|null;centralBondCurrent:number;centralBondCharge:number;leftEdgePopulation:number;rightEdgePopulation:number}
   | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null}
   | {kind:"bbh_cell";index:number;xIndex:number;yIndex:number;density:number}
   | {kind:"kitaev_band";index:number;k:number;lower:number;upper:number}
@@ -45,6 +48,17 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(selection.kind==="rice_mele_bulk_chain_sample"){
+    const link=linkedRiceMeleTraces(result);
+    if(!link)return null;
+    const {timeIndex,siteIndex}=selection,{bulk,chain}=link;
+    if(!Number.isInteger(timeIndex)||!Number.isInteger(siteIndex)||timeIndex<0||timeIndex>=bulk.timeValues.length||siteIndex<0||siteIndex>=chain.sites)return null;
+    return {kind:"rice_mele_bulk_chain_sample",timeIndex,siteIndex,time:bulk.timeValues[timeIndex],phase:bulk.phaseValues[timeIndex],
+      bulkCurrent:bulk.current[timeIndex],bulkCharge:bulk.charge[timeIndex],density:chain.siteDensity[timeIndex*chain.sites+siteIndex],
+      rightBondCurrent:siteIndex<chain.sites-1?chain.bondElectronCurrent[timeIndex*(chain.sites-1)+siteIndex]:null,
+      centralBondCurrent:chain.bondElectronCurrent[timeIndex*(chain.sites-1)+chain.centralBond],
+      centralBondCharge:chain.centralBondCharge[timeIndex],leftEdgePopulation:chain.leftEdgePopulation[timeIndex],rightEdgePopulation:chain.rightEdgePopulation[timeIndex]};
+  }
   if(result.model.type==="rice_mele_pump"&&analysis.kind==="rice_mele_pump"&&analysis.finiteChain&&selection.kind==="rice_mele_chain_sample"){
     const c=analysis.finiteChain,{timeIndex,siteIndex}=selection;
     if(!Number.isInteger(timeIndex)||!Number.isInteger(siteIndex)||timeIndex<0||timeIndex>=c.timeValues.length||siteIndex<0||siteIndex>=c.sites)return null;

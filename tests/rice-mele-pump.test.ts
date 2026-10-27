@@ -9,6 +9,7 @@ import {RunStore} from "../apps/desktop/main/runs";
 import {selectedTopologySample} from "../apps/desktop/renderer/topology-selection";
 import {isQuantumResult} from "../packages/contracts";
 import {TOPOLOGY_DEFAULTS,isTopologyResponse,topologyJob} from "../packages/models/topology";
+import {linkedRiceMeleTraces} from "../packages/models/rice-mele-comparison";
 import {readSceneBundle} from "../packages/quantum-scene/bundle";
 import {verifyScenePayload} from "../packages/quantum-scene";
 
@@ -67,6 +68,25 @@ test("finite open-chain pump saves exact site and bond samples and refuses chang
     assert.ok(isTopologyResponse(result,job));
     const c=result.analysis.finiteChain;
     assert.ok(c&&c.cells===6&&c.sites===12&&c.occupiedOrbitals===6);
+    const linked=linkedRiceMeleTraces(result);
+    assert.ok(linked);
+    assert.equal(linked.runId,result.runId);
+    assert.deepEqual(linked.bulk.timeValues,linked.chain.timeValues);
+    assert.deepEqual(linked.bulk.phaseValues,linked.chain.phaseValues);
+    const pair=selectedTopologySample({kind:"rice_mele_bulk_chain_sample",runId:result.runId,timeIndex:8,siteIndex:5},result);
+    assert.equal(pair?.kind,"rice_mele_bulk_chain_sample");
+    if(pair?.kind==="rice_mele_bulk_chain_sample"){
+      assert.equal(pair.bulkCurrent,linked.bulk.current[8]);
+      assert.equal(pair.bulkCharge,linked.bulk.charge[8]);
+      assert.equal(pair.density,c.siteDensity[8*c.sites+5]);
+      assert.equal(pair.centralBondCharge,c.centralBondCharge[8]);
+    }
+    assert.equal(selectedTopologySample({kind:"rice_mele_bulk_chain_sample",runId:"other-run",timeIndex:8,siteIndex:5},result),null);
+    const mismatched=structuredClone(result);
+    if(mismatched.analysis.kind!=="rice_mele_pump"||!mismatched.analysis.finiteChain)throw new Error("Missing chain result");
+    mismatched.analysis.finiteChain.timeValues[8]+=.01;
+    assert.equal(linkedRiceMeleTraces(mismatched),null);
+    assert.equal(isTopologyResponse(mismatched,job),false);
     assert.equal(c.status,"resolved");
     assert.ok(c.maxNormDrift<1e-8&&c.maxParticleDrift<1e-8&&c.maxContinuityResidual<.02);
     const selection={kind:"rice_mele_chain_sample" as const,runId:result.runId,timeIndex:8,siteIndex:5};

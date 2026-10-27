@@ -1,5 +1,6 @@
 import type { TopologyJob, TopologyResult, WorkspaceSnapshot } from "../contracts";
 import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../atlas";
+import { linkedRiceMeleTraces } from "./rice-mele-comparison";
 
 export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
 export const TOPOLOGY_DEFAULTS: TopologyDraft = {
@@ -452,6 +453,7 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
          (d.status==="gap-closed")!==(a.status==="gap-closed")||
          d.status==="resolved"&&!(d.timeStepChargeDrift<.02&&d.momentumChargeDrift<.02))return false;
     }
+    if(a.finiteChain && !linkedRiceMeleTraces(result)) return false;
     if(a.kValues.length!==n||a.phaseValues.length!==m||a.lowerBand.length!==n*m||a.upperBand.length!==n*m||
       a.berryFlux.length!==n*m||a.polarization.length!==m+1||a.t1Values.length!==m||a.t2Values.length!==m||
       a.deltaValues.length!==m||!a.lowerBand.every(Number.isFinite)||!a.upperBand.every(Number.isFinite)||
