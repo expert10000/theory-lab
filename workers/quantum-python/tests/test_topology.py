@@ -506,6 +506,50 @@ def general_bhz_job(mass=2, mixing=0, grid=11, **changes):
             "engine": "native", "model": {"type": "bhz_general", "parameters": parameters}}
 
 
+class RiceMeleTests(unittest.TestCase):
+    def job(self, t1=.6, t2=1., delta=.35, cells=8, points=101):
+        return {"schema":"quantum-job/v1","jobId":"rice-mele-test","operation":"topology",
+                "engine":"native","model":{"type":"rice_mele","parameters":
+                {"t1":t1,"t2":t2,"delta":delta,"cells":cells,"kPoints":points}}}
+
+    def test_independent_bulk_matrix_spectrum_and_closure(self):
+        import numpy as np
+        for t1,t2,delta in ((.6,1.,.35),(1.,1.,0.),(-1.,1.,0.),(0.,1.,.5)):
+            with self.subTest(t1=t1,t2=t2,delta=delta):
+                a=solve(self.job(t1,t2,delta))["analysis"]
+                self.assertAlmostEqual(a["bulkGap"],2*np.hypot(delta,abs(t1)-abs(t2)))
+                self.assertEqual(a["gapClosed"],abs(delta)<1e-12 and abs(abs(t1)-abs(t2))<1e-12)
+                for index in (0,25,50,75,100):
+                    k=a["kValues"][index]
+                    h=np.array([[delta,t1+t2*np.exp(-1j*k)],
+                                [t1+t2*np.exp(1j*k),-delta]],complex)
+                    expected=np.linalg.eigvalsh(h)
+                    np.testing.assert_allclose([a["lowerBand"][index],a["upperBand"][index]],expected,atol=1e-12)
+
+    def test_open_boundary_and_ssh_limit(self):
+        import numpy as np
+        cells=8
+        a=solve(self.job(.6,1.,0.,cells))["analysis"]
+        ssh=solve(job(.6,1.,cells))["analysis"]
+        np.testing.assert_allclose(a["lowerBand"],ssh["lowerBand"],atol=1e-12)
+        np.testing.assert_allclose(a["upperBand"],ssh["upperBand"],atol=1e-12)
+        np.testing.assert_allclose(a["middleEnergies"],ssh["edgeEnergies"],atol=1e-12)
+        np.testing.assert_allclose(a["middleDensity"],ssh["edgeDensity"],atol=1e-12)
+        h=np.zeros((2*cells,2*cells))
+        for site in range(2*cells-1):
+            h[site,site+1]=h[site+1,site]=.6 if site%2==0 else 1.
+        self.assertEqual(h[0,-1],0)  # open, never periodic
+        np.testing.assert_allclose(a["finiteEnergies"],np.linalg.eigvalsh(h),atol=1e-12)
+        self.assertAlmostEqual(sum(a["middleDensity"]),1.)
+        self.assertLess(a["maxResidual"],1e-10)
+
+    def test_staggered_atomic_limit_has_no_inferred_pump(self):
+        a=solve(self.job(0.,0.,.4))["analysis"]
+        self.assertAlmostEqual(a["bulkGap"],.8)
+        self.assertEqual(a["finiteEnergies"],[-.4]*8+[.4]*8)
+        self.assertNotIn("pump",a)
+
+
 class SSHTests(unittest.TestCase):
     def test_topological_and_trivial_phases(self):
         top = solve(job(0.6, 1))["analysis"]

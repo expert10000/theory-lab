@@ -307,6 +307,8 @@ export interface ManyBodyResult {
   provenance: SpectrumResult["provenance"];
 }
 export interface SSHModel { type: "ssh"; parameters: { t1: number; t2: number; cells: number; kPoints: number }; source?: LayerOneSource }
+/** Static dimerized chain with staggered onsite potential; no pump cycle is represented. */
+export interface RiceMeleModel { type: "rice_mele"; parameters: { t1: number; t2: number; delta: number; cells: number; kPoints: number }; source?: LayerOneSource }
 export interface QWZModel { type: "qwz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
 /** Square-lattice, spin-conserving BHZ slice: A=B=1, epsilon=0. */
 export interface BHZModel { type: "bhz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
@@ -326,11 +328,18 @@ export interface NodalLineModel {type:"nodal_line_two_band";parameters:{mass:num
 export interface LandauModel {type:"landau_continuum";parameters:{mass:number;charge:-1|1;fieldStart:number;fieldStop:number;fieldSamples:number;levels:number;grid:number};source?:LayerOneSource}
 /** Rational flux p/q in lowest terms; p=0,q=1 is the zero-flux reference. */
 export interface HofstadterModel {type:"hofstadter";parameters:{p:number;q:number;hopping:number;grid:number;stripCells?:number;stripSamples?:number;occupiedBands?:number};source?:LayerOneSource}
-export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel | HofstadterModel }
+export interface TopologyJob { schema: "quantum-job/v1"; jobId: string; operation: "topology"; engine: "native"; model: SSHModel | RiceMeleModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel | HofstadterModel }
 export interface SSHAnalysis {
   kind: "ssh"; bulkGap: number; winding: number | null; kValues: number[];
   lowerBand: number[]; upperBand: number[]; edgeEnergies: [number, number];
   edgeDensity: number[]; edgeWeight: number;
+}
+export interface RiceMeleAnalysis {
+  kind: "rice_mele"; bulkGap: number; gapClosed: boolean; kValues: number[];
+  lowerBand: number[]; upperBand: number[]; finiteEnergies: number[];
+  middleEnergies: [number, number]; middleDensity: number[];
+  boundaryWeight: number; maxResidual: number; maxNormError: number;
+  units: { momentum: "rad / cell"; energy: "hopping energy"; density: "probability per site" };
 }
 export interface QWZAnalysis {
   bandKValues?: number[]; lowerBand?: number[]; upperBand?: number[];
@@ -408,8 +417,8 @@ export interface HofstadterAnalysis {kind:"hofstadter";flux:number;kxValues:numb
   units:{flux:"flux quanta per plaquette";momentum:"rad / lattice constant";energy:"hopping energy"}}
 export interface TopologyResult {
   schema: "quantum-result/v1"; jobId: string; runId: string; status: "completed";
-  operation: "topology"; model: SSHModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel | HofstadterModel;
-  engine: { name: "native"; version: string }; analysis: SSHAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis | KitaevChainAnalysis | WeylMinimalAnalysis | NodalLineAnalysis | LandauAnalysis | HofstadterAnalysis;
+  operation: "topology"; model: SSHModel | RiceMeleModel | QWZModel | BHZModel | BHZGeneralModel | BBHModel | KitaevChainModel | WeylMinimalModel | NodalLineModel | LandauModel | HofstadterModel;
+  engine: { name: "native"; version: string }; analysis: SSHAnalysis | RiceMeleAnalysis | QWZAnalysis | BHZAnalysis | BHZGeneralAnalysis | BBHAnalysis | KitaevChainAnalysis | WeylMinimalAnalysis | NodalLineAnalysis | LandauAnalysis | HofstadterAnalysis;
   provenance: SpectrumResult["provenance"];
 }
 export interface SpectrumResult {

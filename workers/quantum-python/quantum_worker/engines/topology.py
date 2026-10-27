@@ -35,6 +35,33 @@ def ssh_analysis(np, parameters):
             "edgeWeight": edge_weight}
 
 
+def rice_mele_analysis(np, parameters):
+    """One static Rice–Mele Hamiltonian; no parameter cycle or pump observable."""
+    t1, t2, delta = (parameters[key] for key in ("t1", "t2", "delta"))
+    cells, points = parameters["cells"], parameters["kPoints"]
+    k = np.linspace(-np.pi, np.pi, points)
+    band = np.sqrt(delta * delta + abs(t1 + t2 * np.exp(1j * k)) ** 2)
+    gap = 2.0 * np.sqrt(delta * delta + (abs(t1) - abs(t2)) ** 2)
+    matrix = np.zeros((2 * cells, 2 * cells), dtype=np.float64)
+    for cell in range(cells):
+        a, b = 2 * cell, 2 * cell + 1
+        matrix[a, a], matrix[b, b] = delta, -delta
+        matrix[a, b] = matrix[b, a] = t1
+        if cell + 1 < cells:
+            matrix[b, a + 2] = matrix[a + 2, b] = t2
+    energies, vectors = np.linalg.eigh(matrix)
+    pair = slice(cells - 1, cells + 1)
+    density = np.mean(abs(vectors[:, pair]) ** 2, axis=1)
+    residual = np.max(np.linalg.norm(matrix @ vectors - vectors * energies, axis=0))
+    norm_error = np.max(abs(np.sum(abs(vectors) ** 2, axis=0) - 1.0))
+    return {"kind": "rice_mele", "bulkGap": float(gap), "gapClosed": bool(gap < 1e-10),
+            "kValues": k.tolist(), "lowerBand": (-band).tolist(), "upperBand": band.tolist(),
+            "finiteEnergies": energies.tolist(), "middleEnergies": energies[pair].tolist(),
+            "middleDensity": density.tolist(), "boundaryWeight": float(density[0] + density[-1]),
+            "maxResidual": float(residual), "maxNormError": float(norm_error),
+            "units": {"momentum": "rad / cell", "energy": "hopping energy", "density": "probability per site"}}
+
+
 def qwz_analysis(np, parameters):
     mass, grid = parameters["mass"], parameters["grid"]
     # All possible closings are at high-symmetry points: m = -2, 0, +2.
@@ -952,6 +979,8 @@ def solve(job):
     model = job["model"]
     if model["type"] == "ssh":
         analysis = ssh_analysis(np, model["parameters"])
+    elif model["type"] == "rice_mele":
+        analysis = rice_mele_analysis(np, model["parameters"])
     elif model["type"] == "qwz":
         analysis = qwz_analysis(np, model["parameters"])
     elif model["type"] == "bhz":

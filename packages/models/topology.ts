@@ -3,7 +3,7 @@ import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../atlas";
 
 export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
 export const TOPOLOGY_DEFAULTS: TopologyDraft = {
-  modelId: "ssh", t1: "0.6", t2: "1", cells: "16", kPoints: "101", mass: "-1", grid: "21",
+  modelId: "ssh", t1: "0.6", t2: "1", delta: "0.2", cells: "16", kPoints: "101", mass: "-1", grid: "21",
   A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
   gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
   mu:"0",hopping:"1",pairing:"0.8",
@@ -26,6 +26,10 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
   if (draft.modelId === "ssh") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "ssh", parameters: { t1: numeric(draft.t1, -10, 10), t2: numeric(draft.t2, -10, 10),
       cells: numeric(draft.cells, 4, 40, true), kPoints: numeric(draft.kPoints, 21, 201, true) }, source } };
+  if (draft.modelId === "rice_mele") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
+    model: { type: "rice_mele", parameters: { t1: numeric(draft.t1, -3, 3), t2: numeric(draft.t2, -3, 3),
+      delta: numeric(draft.delta??"0.2", -2, 2), cells: numeric(draft.cells, 4, 40, true),
+      kPoints: numeric(draft.kPoints, 21, 201, true) }, source } };
   if (draft.modelId === "bhz") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "bhz", parameters: { mass: numeric(draft.mass, -2, 10), grid: numeric(draft.grid, 11, 21, true) }, source } };
   if (draft.modelId === "bhz_general") {
@@ -356,6 +360,28 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
       a.kValues.every((k,i)=>Number.isFinite(k)&&Math.abs(k-(-Math.PI+2*Math.PI*i/(kPoints-1)))<1e-10 &&
         Number.isFinite(a.lowerBand[i])&&Number.isFinite(a.upperBand[i])&&Math.abs(a.upperBand[i]-Math.hypot(t1+t2*Math.cos(k),t2*Math.sin(k)))<1e-10&&Math.abs(a.lowerBand[i]+a.upperBand[i])<1e-10);
   }
+  if (job.model.type === "rice_mele" && a.kind === "rice_mele") {
+    const { t1, t2, delta, cells, kPoints } = job.model.parameters;
+    const gap = 2*Math.hypot(delta, Math.abs(t1)-Math.abs(t2));
+    if (a.kValues.length!==kPoints || a.lowerBand.length!==kPoints || a.upperBand.length!==kPoints ||
+        a.finiteEnergies.length!==2*cells || a.middleEnergies.length!==2 || a.middleDensity.length!==2*cells ||
+        Math.abs(a.bulkGap-gap)>1e-8 || a.gapClosed!==(gap<1e-10) ||
+        a.units.momentum!=="rad / cell" || a.units.energy!=="hopping energy" ||
+        a.units.density!=="probability per site" || a.maxResidual>1e-7 || a.maxNormError>1e-7 ||
+        a.maxResidual<0 || a.maxNormError<0 ||
+        Math.abs(a.middleDensity.reduce((sum,value)=>sum+value,0)-1)>1e-7 ||
+        Math.abs(a.boundaryWeight-a.middleDensity[0]-a.middleDensity[2*cells-1])>1e-7 ||
+        a.finiteEnergies.some((e,i)=>!Number.isFinite(e)||(i>0&&e<a.finiteEnergies[i-1]-1e-8)) ||
+        Math.abs(a.finiteEnergies.reduce((sum,e)=>sum+e,0))>1e-7 ||
+        Math.abs(a.middleEnergies[0]-a.finiteEnergies[cells-1])>1e-8 ||
+        Math.abs(a.middleEnergies[1]-a.finiteEnergies[cells])>1e-8) return false;
+    return a.kValues.every((k,i)=>{
+      const expectedK=-Math.PI+2*Math.PI*i/(kPoints-1);
+      const e=Math.hypot(delta,t1+t2*Math.cos(expectedK),t2*Math.sin(expectedK));
+      return Number.isFinite(k)&&Math.abs(k-expectedK)<1e-10&&
+        Math.abs(a.lowerBand[i]+e)<1e-8&&Math.abs(a.upperBand[i]-e)<1e-8;
+    });
+  }
   if (job.model.type === "qwz" && a.kind === "qwz") {
     const { mass, grid } = job.model.parameters;
     const gap = 2 * Math.min(Math.abs(mass + 2), Math.abs(mass), Math.abs(mass - 2));
@@ -477,6 +503,14 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
         !numericArray(a.kValues, kPoints) || !numericArray(a.lowerBand, kPoints) ||
         !numericArray(a.upperBand, kPoints) || !numericArray(a.edgeEnergies, 2) ||
         !numericArray(a.edgeDensity, 2 * cells) || !finite(a.edgeWeight) || a.edgeWeight < 0 || a.edgeWeight > 1) return false;
+  } else if (job.model.type === "rice_mele") {
+    const { cells, kPoints } = job.model.parameters;
+    if (a.kind!=="rice_mele" || !finite(a.bulkGap) || a.bulkGap<0 || typeof a.gapClosed!=="boolean" ||
+        !numericArray(a.kValues,kPoints) || !numericArray(a.lowerBand,kPoints) ||
+        !numericArray(a.upperBand,kPoints) || !numericArray(a.finiteEnergies,2*cells) ||
+        !numericArray(a.middleEnergies,2) || !numericArray(a.middleDensity,2*cells) ||
+        !finite(a.boundaryWeight) || a.boundaryWeight<0 || a.boundaryWeight>1 ||
+        !finite(a.maxResidual) || !finite(a.maxNormError) || !record(a.units)) return false;
   } else if (job.model.type === "qwz") {
     const { grid } = job.model.parameters;
     const phase = (item: unknown) => item === null || item === -1 || item === 0 || item === 1;
