@@ -20,6 +20,7 @@ import { SpectrumStudyStore } from "./spectrum-studies";
 import { IsingStudyStore } from "./ising-studies";
 import {HofstadterFluxStudyStore} from "./hofstadter-flux-studies";
 import {HofstadterEdgeStudyStore} from "./hofstadter-edge-studies";
+import {RiceMeleConvergenceStudyStore} from "./rice-mele-convergence-studies";
 import { IsingStateStore } from "./ising-state";
 import {IsingQuenchStore} from "./ising-quench";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
@@ -88,6 +89,7 @@ app.whenReady().then(() => {
   const isingStudies = new IsingStudyStore(join(app.getPath("userData"), "ising-studies"), runs);
   const fluxStudies = new HofstadterFluxStudyStore(join(app.getPath("userData"), "hofstadter-flux-studies"), runs);
   const edgeStudies = new HofstadterEdgeStudyStore(join(app.getPath("userData"), "hofstadter-edge-studies"), runs);
+  const riceMeleStudies = new RiceMeleConvergenceStudyStore(join(app.getPath("userData"), "rice-mele-convergence-studies"), runs);
   const isingStates = new IsingStateStore(join(app.getPath("userData"), "ising-states"), runs);
   const isingQuenches = new IsingQuenchStore(join(app.getPath("userData"),"ising-quenches"),runs);
   const workspaceFile = join(app.getPath("userData"), "workspace.json");
@@ -567,6 +569,11 @@ app.whenReady().then(() => {
     trusted(event);if(typeof studyId!=="string")throw new Error("Invalid edge study ID");return edgeStudies.get(studyId);
   });
   ipcMain.handle("quantum:list-hofstadter-edge-studies",event=>{trusted(event);return edgeStudies.list();});
+  ipcMain.handle("quantum:save-rice-mele-convergence-study",(event,value:unknown)=>{trusted(event);return riceMeleStudies.save(value);});
+  ipcMain.handle("quantum:get-rice-mele-convergence-study",(event,studyId:unknown)=>{
+    trusted(event);if(typeof studyId!=="string")throw new Error("Invalid Rice–Mele study ID");return riceMeleStudies.get(studyId);
+  });
+  ipcMain.handle("quantum:list-rice-mele-convergence-studies",event=>{trusted(event);return riceMeleStudies.list();});
   ipcMain.handle("quantum:export-hofstadter-edge-scene",async(event,studyId:unknown)=>{
     trusted(event);if(typeof studyId!=="string")throw new Error("Invalid edge study ID");
     const payload=await edgeStudies.scene(studyId);

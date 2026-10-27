@@ -28,6 +28,7 @@ import {SpectrumStudyLab,SPECTRUM_STUDY_DEFAULTS} from "./SpectrumStudyLab";
 import {IsingStudyLab,ISING_STUDY_DEFAULTS} from "./IsingStudyLab";
 import {HofstadterFluxLab} from "./HofstadterFluxLab";
 import {HofstadterEdgeLab} from "./HofstadterEdgeLab";
+import {RiceMeleConvergenceLab} from "./RiceMeleConvergenceLab";
 import {spectrumSliderValue} from "./spectrum-slider";
 import {validatedSelection,type ScientificSelection} from "./scientific-selection";
 import { DynamicsLab } from "./DynamicsLab";
@@ -814,6 +815,7 @@ export function App() {
           <div hidden={tab!=="sweep"||activeModel!=="topology"}>
             <HofstadterFluxLab bridge={window.quantum} status={status} onOpenRun={openSavedTopology}/>
             <HofstadterEdgeLab bridge={window.quantum} status={status} onOpenRun={openSavedTopology}/>
+            <RiceMeleConvergenceLab bridge={window.quantum} onOpenRun={openSavedTopology}/>
           </div>
           <div hidden={tab !== "many_body"}><ManyBodyLab bridge={window.quantum} status={status} restored={restored?.snapshot.manyBody} restoreEpoch={restored?.epoch} atlasDraft={atlasManyBody?.draft} atlasEpoch={atlasManyBody?.epoch} onSnapshot={collectManyBody} onManyBodyContext={collectManyBodyContext} reopenedManyBody={reopenedManyBody} /></div>
           <div hidden={tab!=="ising_quench"}><IsingQuenchLab bridge={window.quantum} status={status} preferredRunId={manyBodyContext?.result.runId??null}

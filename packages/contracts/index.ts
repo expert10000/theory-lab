@@ -718,6 +718,10 @@ export interface QuantumBridge {
   getHofstadterEdgeStudy(studyId:string):Promise<import("./hofstadter-edge-study").HofstadterEdgeStudy>;
   listHofstadterEdgeStudies():Promise<{studyId:string;computedAt:string;status:string}[]>;
   exportHofstadterEdgeScene(studyId:string):Promise<string|null>;
+  saveRiceMeleConvergenceStudy(study:import("./rice-mele-convergence").RiceMeleConvergenceStudy):Promise<import("./rice-mele-convergence").RiceMeleConvergenceStudy>;
+  getRiceMeleConvergenceStudy(studyId:string):Promise<import("./rice-mele-convergence").RiceMeleConvergenceStudy>;
+  listRiceMeleConvergenceStudies():Promise<{studyId:string;computedAt:string;count:number}[]>;
+  exportRiceMeleConvergenceScene(studyId:string):Promise<string|null>;
   getScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant" | "strip"): Promise<import("../quantum-scene").ScenePayload>;
   exportScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant" | "strip", format?: "regular"|"stream"): Promise<string | null>;
   prepareSceneHandoff(runId: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
