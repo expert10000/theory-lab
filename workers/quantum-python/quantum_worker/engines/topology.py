@@ -7,6 +7,7 @@ from uuid import uuid4
 from quantum_worker import __version__
 from quantum_worker.contracts import validate
 from quantum_worker.engines.native_engine import libraries
+from quantum_worker.engines.rice_mele_pump import rice_mele_pump_analysis
 
 
 def ssh_analysis(np, parameters):
@@ -981,6 +982,8 @@ def solve(job):
         analysis = ssh_analysis(np, model["parameters"])
     elif model["type"] == "rice_mele":
         analysis = rice_mele_analysis(np, model["parameters"])
+    elif model["type"] == "rice_mele_pump":
+        analysis = rice_mele_pump_analysis(model["parameters"])
     elif model["type"] == "qwz":
         analysis = qwz_analysis(np, model["parameters"])
     elif model["type"] == "bhz":
