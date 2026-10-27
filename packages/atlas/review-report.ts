@@ -89,7 +89,7 @@ export function reconciliationReviewReport(): string {
       ...g.acceptance.map((a) => `- ${a}`),
       "",
     ]),
-    "D1 delivers bounded static/free 1D motion and monochromatic coherent forcing within G02. G07 includes a static Rice–Mele chain and a separately verified closed cycle with conditional filled-band pump invariant. Finite-speed current and finite-chain edge motion remain future producer work. G01 restricted adapter candidates and XY/Heisenberg remain open. Historical R5 source definitions and original bindings are preserved.",
+    "D1 delivers bounded static/free 1D motion and monochromatic coherent forcing within G02. G07 includes a static Rice–Mele chain, a separately verified closed cycle with conditional filled-band pump invariant, and bounded finite-speed bulk evolution with recorded current and charge. Finite-chain edge motion remains future producer work. G01 restricted adapter candidates and XY/Heisenberg remain open. Historical R5 source definitions and original bindings are preserved.",
     "",
     "## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)",
     "",

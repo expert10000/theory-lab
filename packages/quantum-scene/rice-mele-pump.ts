@@ -11,6 +11,38 @@ export async function riceMelePumpSceneFromResult(result: QuantumResult, resultS
     throw new Error("Rice–Mele pump scene requires a consistent verified run");
   const p=result.model.parameters,a=result.analysis,n=a.kValues.length,m=a.phaseValues.length;
   const pinned=result.model.source?.sourceRepository?.match(/^(https:\/\/github\.com\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)\/tree\/([a-f0-9]{40})$/);
+  if(a.dynamics){
+    const d=a.dynamics, count=d.timeValues.length;
+    const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-finite-pump`,
+      title:"Rice–Mele filled band · finite-speed transport",
+      provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:result.model.type,
+        engine:result.engine.name,engineVersion:result.engine.version,computedAt:result.provenance.computedAt,
+        resultSha256,adapter:"qvis/1",parameters:{...p},
+        ...(pinned?{source:{repository:pinned[1],revision:pinned[2],entryId:"rice_mele"}}:{})},
+      coordinates:{handedness:"right",axes:["time","Bloch momentum k","recorded value"],
+        units:[d.units.time,a.units.momentum,"quantity-specific; see each dataset"]},
+      camera:{position:[d.duration*.65,-8,Math.max(4,Math.abs(d.transportedCharge)*4)],target:[d.duration/2,0,0],up:[0,0,1]},
+      objects:[],datasets:[],annotations:[
+        {id:"finite-scope",text:`Finite-speed filled-band evolution at duration ${d.duration} ${d.units.time}; transported charge ${d.transportedCharge.toPrecision(8)} ${d.units.charge} (${d.status}). This finite-speed charge is not labelled quantized. No finite-chain edge motion.`,position:[d.duration/2,0,3]},
+        {id:"finite-convergence",text:`Maximum norm drift ${d.maxNormDrift.toExponential(3)}; time-step charge drift ${d.timeStepChargeDrift.toExponential(3)}; momentum-grid charge drift ${d.momentumChargeDrift.toExponential(3)}. Ideal adiabatic Chern ${d.adiabaticChern??"undefined"} is a separate reference.`,position:[d.duration/2,0,-3]}]};
+    const b=new SceneBuilder(scene,digest);
+    const baseline=await b.data("finite-time-positions",d.timeValues.flatMap(time=>[time,0,0]),3,`${d.units.time}; display baseline`);
+    const series=[
+      ["finite-current","Recorded filled-band current",d.current,d.units.current,"#50adbd"],
+      ["finite-charge","Recorded transported charge",d.charge,d.units.charge,"#dc9e5c"],
+      ["finite-excitation","Recorded excited-band population",d.excitedPopulation,"probability","#a68cd9"],
+    ] as const;
+    for(const [id,label,values,unit,color] of series){
+      const scalars=await b.data(id,values,1,unit);
+      b.object(id,label,"point-cloud",baseline,color,{scalars,style:{color,opacity:1,size:.08}});
+    }
+    const localPositions=await b.data("finite-local-positions",d.timeValues.flatMap(time=>d.kValues.flatMap(k=>[time,k,0])),3,`${d.units.time}, ${a.units.momentum}, display plane`);
+    const localCurrent=await b.data("finite-current-by-k",d.currentByK,1,d.units.current);
+    b.object("finite-local-current","Exact time–momentum current samples","point-cloud",localPositions,"#6abd9f",{scalars:localCurrent,style:{color:"#6abd9f",opacity:.75,size:.035}});
+    // The scene is an exact display of saved arrays; no finite-speed invariant is inferred here.
+    if(count!==d.current.length)throw new Error("Finite-speed time trace length mismatch");
+    return b.finish();
+  }
   const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-pump`,title:"Rice–Mele filled-band pump · saved cycle",
     provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:result.model.type,
       engine:result.engine.name,engineVersion:result.engine.version,computedAt:result.provenance.computedAt,

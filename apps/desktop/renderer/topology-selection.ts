@@ -6,6 +6,7 @@ export type TopologySelection=
   | {kind:"rice_mele_band";runId:string;index:number}
   | {kind:"rice_mele_site";runId:string;index:number}
   | {kind:"rice_mele_pump_sample";runId:string;phaseIndex:number;kIndex:number}
+  | {kind:"rice_mele_dynamic_sample";runId:string;timeIndex:number;kIndex:number}
   | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number}
   | {kind:"bbh_cell";runId:string;index:number}
   | {kind:"kitaev_band";runId:string;index:number}
@@ -22,6 +23,7 @@ export type TopologySample=
   | {kind:"rice_mele_band";index:number;k:number;lower:number;upper:number}
   | {kind:"rice_mele_site";index:number;density:number}
   | {kind:"rice_mele_pump_sample";phaseIndex:number;kIndex:number;phase:number;k:number;t1:number;t2:number;delta:number;lower:number;upper:number;berryFlux:number;polarization:number}
+  | {kind:"rice_mele_dynamic_sample";timeIndex:number;kIndex:number;time:number;phase:number;k:number;current:number;localCurrent:number;charge:number;excitedPopulation:number}
   | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null}
   | {kind:"bbh_cell";index:number;xIndex:number;yIndex:number;density:number}
   | {kind:"kitaev_band";index:number;k:number;lower:number;upper:number}
@@ -41,6 +43,13 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="rice_mele_pump"&&analysis.kind==="rice_mele_pump"&&analysis.dynamics&&selection.kind==="rice_mele_dynamic_sample"){
+    const d=analysis.dynamics,{timeIndex,kIndex}=selection,n=d.kValues.length;
+    if(!Number.isInteger(timeIndex)||!Number.isInteger(kIndex)||timeIndex<0||timeIndex>=d.timeValues.length||kIndex<0||kIndex>=n)return null;
+    return {kind:"rice_mele_dynamic_sample",timeIndex,kIndex,time:d.timeValues[timeIndex],phase:d.phaseValues[timeIndex],k:d.kValues[kIndex],
+      current:d.current[timeIndex],localCurrent:d.currentByK[timeIndex*n+kIndex],charge:d.charge[timeIndex],
+      excitedPopulation:d.excitedPopulation[timeIndex]};
+  }
   if(result.model.type==="rice_mele_pump"&&analysis.kind==="rice_mele_pump"&&selection.kind==="rice_mele_pump_sample"){
     const {phaseIndex,kIndex}=selection,n=analysis.kValues.length;
     if(!Number.isInteger(phaseIndex)||!Number.isInteger(kIndex)||phaseIndex<0||phaseIndex>=analysis.phaseValues.length||kIndex<0||kIndex>=n)return null;

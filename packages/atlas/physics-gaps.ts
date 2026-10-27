@@ -164,9 +164,10 @@ export const PHYSICS_GAP_GROUPS: PhysicsGapGroup[] = [
     deliveredSubspaces: [
       "bounded static Rice–Mele bulk and open chain",
       "bounded closed Rice–Mele cycle with conditional filled-band Chern and polarization winding",
+      "bounded finite-speed filled-band Rice–Mele evolution with recorded current, charge and convergence",
     ],
     missing:
-      "Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Rice–Mele finite-speed current and finite-chain edge motion remain separate calculations.",
+      "Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Rice–Mele finite-chain edge motion and partially filled-band transport remain separate calculations.",
     acceptance: [
       "Rice–Mele zero-staggering SSH limit",
       "Hermitian band matrices and independent analytic points",

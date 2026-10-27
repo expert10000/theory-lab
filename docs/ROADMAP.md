@@ -2096,6 +2096,11 @@ coarse and refined periodic meshes. Exact cycle inputs, spectra, gaps,
 convergence and conditional invariant are saved in an immutable run. The
 source-linked `.qscene` exposes recorded samples to Math3D read-only. The
 claim is ideal adiabatic transport for a filled band only; gap closure or
-unresolved meshes yield an undefined invariant. Finite-speed current and
-finite-chain edge motion remain future calculations. See
+unresolved meshes yield an undefined invariant. Bounded finite-speed
+filled-band evolution is also implemented with an explicit cycle
+duration, unitary propagation, saved current/charge samples, norm and two-grid
+charge convergence, and a separately labelled ideal Chern reference. A
+source-linked `.qscene` exposes its exact trace and time–momentum samples to
+Math3D read-only. Its transported charge is not presented as quantized. Finite-chain edge motion
+remains future work. See
 [`RICE_MELE_PUMP_STUDY.md`](RICE_MELE_PUMP_STUDY.md).

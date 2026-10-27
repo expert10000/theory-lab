@@ -482,9 +482,9 @@ Entries: `tight_binding_generic`, `bloch_two_band`, `graphene_nn`, `dirac_2d`, `
 
 Reuse: Existing SSH/QWZ topology, band/reciprocal/vector scenes and verified export/import.
 
-Delivered bounded subspaces: bounded static Rice–Mele bulk and open chain; bounded closed Rice–Mele cycle with conditional filled-band Chern and polarization winding.
+Delivered bounded subspaces: bounded static Rice–Mele bulk and open chain; bounded closed Rice–Mele cycle with conditional filled-band Chern and polarization winding; bounded finite-speed filled-band Rice–Mele evolution with recorded current, charge and convergence.
 
-Missing: Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Rice–Mele finite-speed current and finite-chain edge motion remain separate calculations.
+Missing: Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Rice–Mele finite-chain edge motion and partially filled-band transport remain separate calculations.
 
 Acceptance requirements:
 
@@ -568,13 +568,13 @@ Acceptance requirements:
 - Known syndrome/error/decoder limiting cases
 - Distinguish Hamiltonian spectrum, syndrome observations and Monte Carlo failure rates
 
-D1 delivers bounded static/free 1D motion and monochromatic coherent forcing within G02. G07 includes a static Rice–Mele chain and a separately verified closed cycle with conditional filled-band pump invariant. Finite-speed current and finite-chain edge motion remain future producer work. G01 restricted adapter candidates and XY/Heisenberg remain open. Historical R5 source definitions and original bindings are preserved.
+D1 delivers bounded static/free 1D motion and monochromatic coherent forcing within G02. G07 includes a static Rice–Mele chain, a separately verified closed cycle with conditional filled-band pump invariant, and bounded finite-speed bulk evolution with recorded current and charge. Finite-chain edge motion remains future producer work. G01 restricted adapter candidates and XY/Heisenberg remain open. Historical R5 source definitions and original bindings are preserved.
 
 ## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `3cd88caab3cc1d154044512d969a35cddfabbdcd3fed9906ac8acf1a799ca7d5`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `7006a3ac9998182d43174ff6639015e6f41501228dc3cf2f3c5f10ab88e9b8a2`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 

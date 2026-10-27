@@ -599,7 +599,11 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
     if(a.kind==="rice_mele_pump")return ["phase_index,phase_rad,t1,t2,delta,polarization_charge_per_cell",
       ...a.phaseValues.map((v,i)=>`${i},${v},${a.t1Values[i]},${a.t2Values[i]},${a.deltaValues[i]},${a.polarization[i]}`),
       "","phase_index,k_index,k_rad,lower_energy,upper_energy,berry_flux_rad",
-      ...a.lowerBand.map((energy,i)=>`${Math.floor(i/a.kValues.length)},${i%a.kValues.length},${a.kValues[i%a.kValues.length]},${energy},${a.upperBand[i]},${a.berryFlux[i]}`)].join("\n")+"\n";
+      ...a.lowerBand.map((energy,i)=>`${Math.floor(i/a.kValues.length)},${i%a.kValues.length},${a.kValues[i%a.kValues.length]},${energy},${a.upperBand[i]},${a.berryFlux[i]}`),
+      ...(a.dynamics?["","time_index,time,phase,current,charge,excited_population",
+        ...a.dynamics.timeValues.map((time,i)=>`${i},${time},${a.dynamics!.phaseValues[i]},${a.dynamics!.current[i]},${a.dynamics!.charge[i]},${a.dynamics!.excitedPopulation[i]}`),
+        "","time_index,k_index,k,current_at_k",
+        ...a.dynamics.currentByK.map((current,i)=>`${Math.floor(i/a.dynamics!.kValues.length)},${i%a.dynamics!.kValues.length},${a.dynamics!.kValues[i%a.dynamics!.kValues.length]},${current}`)]:[])].join("\n")+"\n";
     if (a.kind === "kitaev_chain") return ["k,lower_band,upper_band", ...a.kValues.map((k,i)=>`${k},${a.lowerBand[i]},${a.upperBand[i]}`),
       "", "site,finite_near_zero_pair_density", ...a.finite.siteDensity.map((v,i)=>`${i},${v}`)].join("\n")+"\n";
     if (a.kind === "bhz") return ["kx_index,ky_index,block_occupied,partner_occupied,block_empty,partner_empty",

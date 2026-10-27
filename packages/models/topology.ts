@@ -4,7 +4,7 @@ import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../atlas";
 export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
 export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   modelId: "ssh", t1: "0.6", t2: "1", delta: "0.2", cells: "16", kPoints: "101", mass: "-1", grid: "21",
-  pumpBase:"1",pumpModulation:"0.4",pumpStagger:"0.6",pumpOffset:"0",pumpK:"32",pumpPhases:"32",
+  pumpBase:"1",pumpModulation:"0.4",pumpStagger:"0.6",pumpOffset:"0",pumpK:"32",pumpPhases:"32",pumpDuration:"",pumpSteps:"16",
   A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
   gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
   mu:"0",hopping:"1",pairing:"0.8",
@@ -41,7 +41,9 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
     return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",model:{type:"rice_mele_pump",
       source:{...source,exampleId:"Atlas rice_mele"},parameters:{baseHopping,modulation,
         staggerAmplitude:numeric(draft.pumpStagger??"0.6",-2,2),staggerOffset:numeric(draft.pumpOffset??"0",-2,2),
-        kSamples,phaseSamples}}};
+        kSamples,phaseSamples,...(draft.pumpDuration?.trim()?{
+          duration:numeric(draft.pumpDuration,10,400),stepsPerPhase:numeric(draft.pumpSteps??"16",4,64,true)
+        }:{})}}};
   }
   if (draft.modelId === "bhz") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "bhz", parameters: { mass: numeric(draft.mass, -2, 10), grid: numeric(draft.grid, 11, 21, true) }, source } };
@@ -397,6 +399,31 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   }
   if(job.model.type==="rice_mele_pump"&&a.kind==="rice_mele_pump"){
     const p=job.model.parameters,n=p.kSamples,m=p.phaseSamples;
+    if((p.duration===undefined)!==(p.stepsPerPhase===undefined)||
+       (p.duration===undefined)!==(a.dynamics===undefined))return false;
+    if(a.dynamics){
+      const d=a.dynamics;
+      if(d.duration!==p.duration||d.stepsPerPhase!==p.stepsPerPhase||
+         d.timeValues.length!==m+1||d.phaseValues.length!==m+1||d.kValues.length!==n||
+         d.current.length!==m+1||d.charge.length!==m+1||d.excitedPopulation.length!==m+1||
+         d.currentByK.length!==(m+1)*n||d.current.some(v=>!Number.isFinite(v))||
+         d.charge.some(v=>!Number.isFinite(v))||d.currentByK.some(v=>!Number.isFinite(v))||
+         d.excitedPopulation.some(v=>!Number.isFinite(v)||v<0||v>1.000001)||
+         !Number.isFinite(d.transportedCharge)||Math.abs(d.charge[m]-d.transportedCharge)>1e-9||
+         Math.abs(d.charge[0])>1e-10||d.maxNormDrift<0||d.maxNormDrift>1e-6||
+         d.timeStepChargeDrift<0||d.momentumChargeDrift<0||
+         d.adiabaticChern!==a.chern||
+         d.units.time!=="inverse hopping energy"||d.units.charge!=="electron charge / cell"||
+         d.units.current!=="electron charge / inverse hopping time")return false;
+      for(let j=0;j<=m;j++){
+        if(Math.abs(d.timeValues[j]-d.duration*j/m)>1e-8||
+           Math.abs(d.phaseValues[j]-2*Math.PI*j/m)>1e-8||
+           Math.abs(d.current[j]-d.currentByK.slice(j*n,(j+1)*n).reduce((s,v)=>s+v,0)/n)>1e-8)return false;
+      }
+      if(d.kValues.some((v,i)=>Math.abs(v-a.kValues[i])>1e-10)||
+         (d.status==="gap-closed")!==(a.status==="gap-closed")||
+         d.status==="resolved"&&!(d.timeStepChargeDrift<.02&&d.momentumChargeDrift<.02))return false;
+    }
     if(a.kValues.length!==n||a.phaseValues.length!==m||a.lowerBand.length!==n*m||a.upperBand.length!==n*m||
       a.berryFlux.length!==n*m||a.polarization.length!==m+1||a.t1Values.length!==m||a.t2Values.length!==m||
       a.deltaValues.length!==m||!a.lowerBand.every(Number.isFinite)||!a.upperBand.every(Number.isFinite)||
@@ -558,6 +585,16 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
       !finite(a.fineMinimumLink)||!record(a.units)||typeof a.method!=="string"||
       !(a.chern===null||[-1,0,1].includes(Number(a.chern)))||
       !(a.polarizationWinding===null||[-1,0,1].includes(Number(a.polarizationWinding))))return false;
+    if((job.model.parameters.duration===undefined)!==(job.model.parameters.stepsPerPhase===undefined)||
+       (job.model.parameters.duration===undefined)!==(a.dynamics===undefined))return false;
+    if(a.dynamics&&(!record(a.dynamics)||!numericArray(a.dynamics.timeValues,m+1)||
+       !numericArray(a.dynamics.phaseValues,m+1)||!numericArray(a.dynamics.kValues,n)||
+       !numericArray(a.dynamics.current,m+1)||!numericArray(a.dynamics.charge,m+1)||
+       !numericArray(a.dynamics.currentByK,(m+1)*n)||
+       !numericArray(a.dynamics.excitedPopulation,m+1)||
+       !finite(a.dynamics.transportedCharge)||!finite(a.dynamics.maxNormDrift)||
+       !finite(a.dynamics.timeStepChargeDrift)||!finite(a.dynamics.momentumChargeDrift)||
+       !["resolved","gap-closed","unresolved"].includes(String(a.dynamics.status))))return false;
   } else if (job.model.type === "rice_mele") {
     const { cells, kPoints } = job.model.parameters;
     if (a.kind!=="rice_mele" || !finite(a.bulkGap) || a.bulkGap<0 || typeof a.gapClosed!=="boolean" ||

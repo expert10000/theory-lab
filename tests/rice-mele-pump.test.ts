@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {createHash} from "node:crypto";
-import {mkdtemp,rm,writeFile} from "node:fs/promises";
+import {mkdtemp,readFile,rm,writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 import {test} from "node:test";
@@ -48,6 +48,50 @@ test("Rice–Mele filled-band pump survives restart and refuses altered sources"
     if(changed.analysis.kind!=="rice_mele_pump")throw new Error("Wrong analysis");
     changed.analysis.lowerBand[4]+=.1;
     assert.equal(isTopologyResponse(changed,job),false);
+    await writeFile(join(root,"runs",result.runId,"result.json"),"{}\n");
+    await assert.rejects(restarted.topology(result.runId),/integrity check/);
+    await assert.rejects(restarted.scene(result.runId,"standard"),/integrity check/);
+  }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
+});
+
+test("finite-speed Rice–Mele run records exact current, charge and convergence without a quantization claim",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-rice-speed-"));
+  const worker=new WorkerSupervisor(process.cwd());
+  const store=new RunStore(join(root,"runs"),join(root,"artifacts"));
+  try{
+    await worker.start();
+    const draft={...TOPOLOGY_DEFAULTS,modelId:"rice_mele_pump" as const,pumpDuration:"80",pumpSteps:"16"};
+    const job=topologyJob("rice-speed-study",draft);
+    const result=await worker.request("quantum.run",job);
+    assert.ok(isQuantumResult(result)&&result.operation==="topology"&&result.analysis.kind==="rice_mele_pump");
+    assert.ok(isTopologyResponse(result,job));
+    const d=result.analysis.dynamics;
+    assert.ok(d&&d.status==="resolved");
+    assert.equal(d.duration,80);
+    assert.ok(Math.abs(d.transportedCharge+1)<.03);
+    assert.ok(d.maxNormDrift<1e-10&&d.timeStepChargeDrift<.02&&d.momentumChargeDrift<.02);
+    const picked=selectedTopologySample({kind:"rice_mele_dynamic_sample",runId:result.runId,timeIndex:8,kIndex:4},result);
+    assert.equal(picked?.kind,"rice_mele_dynamic_sample");
+    if(picked?.kind==="rice_mele_dynamic_sample")assert.equal(picked.localCurrent,d.currentByK[8*d.kValues.length+4]);
+    await store.record(job,result);
+    const restarted=new RunStore(join(root,"runs"),join(root,"artifacts"));
+    assert.deepEqual(await restarted.topology(result.runId),result);
+    const scene=await restarted.scene(result.runId,"standard");
+    const arrays=await verifyScenePayload(scene,digest);
+    assert.equal(scene.scene.provenance.resultSha256.length,64);
+    assert.deepEqual([...arrays.get("finite-current")!],d.current);
+    assert.deepEqual([...arrays.get("finite-charge")!],d.charge);
+    assert.deepEqual([...arrays.get("finite-current-by-k")!],d.currentByK);
+    assert.match(scene.scene.annotations[0].text,/not labelled quantized/);
+    const exported=await restarted.exportScene(result.runId,root,"standard");
+    assert.equal((await readSceneBundle(exported)).scene.provenance.resultSha256,scene.scene.provenance.resultSha256);
+    const csv=join(root,"pump.csv");
+    await restarted.export(result.runId,"csv",csv);
+    assert.match(await readFile(csv,"utf8"),/time_index,k_index,k,current_at_k/);
+    const altered=structuredClone(result);
+    if(altered.analysis.kind!=="rice_mele_pump"||!altered.analysis.dynamics)throw new Error("Missing dynamic result");
+    altered.analysis.dynamics.current[8]+=.2;
+    assert.equal(isTopologyResponse(altered,job),false);
     await writeFile(join(root,"runs",result.runId,"result.json"),"{}\n");
     await assert.rejects(restarted.topology(result.runId),/integrity check/);
     await assert.rejects(restarted.scene(result.runId,"standard"),/integrity check/);
