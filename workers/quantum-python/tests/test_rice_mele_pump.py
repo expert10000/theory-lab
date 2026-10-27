@@ -3,6 +3,7 @@ import numpy as np
 import unittest
 
 from quantum_worker.engines.rice_mele_pump import pump_mesh, rice_mele_pump_analysis
+from scipy.integrate import solve_ivp
 from quantum_worker.engines.topology import solve
 
 
@@ -58,6 +59,51 @@ def test_mesh_convergence_and_periodic_seams():
     assert np.isclose(regauged["winding"], coarse["winding"])
 
 
+def test_finite_speed_current_against_independent_ivp_and_slow_limit():
+    p={**BASE,"kSamples":16,"phaseSamples":16,"duration":20.,"stepsPerPhase":16}
+    analysis=rice_mele_pump_analysis(p)
+    d=analysis["dynamics"]
+    assert d["status"]=="resolved" and d["maxNormDrift"]<1e-10
+    assert d["adiabaticChern"]==analysis["chern"]==-1
+    assert len(d["currentByK"])==16*17
+    assert np.isclose(d["charge"][-1],d["transportedCharge"])
+    k=np.asarray(d["kValues"])
+    q0=p["baseHopping"]+p["modulation"]+(p["baseHopping"]-p["modulation"])*np.exp(-1j*k)
+    h0=np.zeros((len(k),2,2),complex)
+    h0[:,0,1],h0[:,1,0]=q0,q0.conj()
+    _,vectors=np.linalg.eigh(h0)
+    initial=vectors[:,:,0]
+    def rhs(time,state):
+        theta=2*np.pi*time/20
+        t1=1+.4*np.cos(theta);t2=1-.4*np.cos(theta);delta=.6*np.sin(theta)
+        off=t1+t2*np.exp(-1j*k)
+        psi=state.reshape(len(k),2)
+        return (-1j*np.stack((delta*psi[:,0]+off*psi[:,1],
+                              off.conj()*psi[:,0]-delta*psi[:,1]),axis=1)).ravel()
+    time=np.linspace(0,20,2001)
+    reference=solve_ivp(rhs,(0,20),initial.ravel(),t_eval=time,rtol=2e-10,atol=2e-11)
+    assert reference.success
+    psi=reference.y.T.reshape(len(time),len(k),2)
+    theta=2*np.pi*time/20
+    t2=1-.4*np.cos(theta)
+    velocity_off=-1j*t2[:,None]*np.exp(-1j*k[None,:])
+    current=np.mean(-2*np.real(np.conj(psi[:,:,0])*velocity_off*psi[:,:,1]),axis=1)
+    reference_charge=float(np.sum((current[1:]+current[:-1])*np.diff(time)/2))
+    assert abs(d["transportedCharge"]-reference_charge)<.005
+    assert np.max(abs(np.sum(abs(psi)**2,axis=-1)-1))<1e-8
+    slow=rice_mele_pump_analysis({**BASE,"duration":80.,"stepsPerPhase":16})["dynamics"]
+    assert slow["status"]=="resolved"
+    assert abs(slow["transportedCharge"]-analysis["chern"])<.03
+    reversed_cycle=rice_mele_pump_analysis({**BASE,"staggerAmplitude":-.6,
+                                            "duration":80.,"stepsPerPhase":16})
+    assert reversed_cycle["chern"]==1
+    assert abs(reversed_cycle["dynamics"]["transportedCharge"]-1)<.03
+    closed=rice_mele_pump_analysis({**BASE,"staggerOffset":.6,
+                                    "duration":20.,"stepsPerPhase":8})
+    assert closed["dynamics"]["status"]=="gap-closed"
+    assert closed["dynamics"]["adiabaticChern"] is None
+
+
 class RiceMelePumpTests(unittest.TestCase):
     """Also run these independent checks in the repository's unittest gate."""
 
@@ -69,3 +115,6 @@ class RiceMelePumpTests(unittest.TestCase):
 
     def test_mesh_convergence_and_periodic_seams(self):
         test_mesh_convergence_and_periodic_seams()
+
+    def test_finite_speed_current_against_independent_ivp_and_slow_limit(self):
+        test_finite_speed_current_against_independent_ivp_and_slow_limit()

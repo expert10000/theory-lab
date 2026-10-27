@@ -582,8 +582,8 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
-| packages/contracts/schemas/quantum-job.v1.json | `12eeb067d100349721f79d0e80b540f9b1af3229052d27e40f58364ecc0cd297` |
-| packages/contracts/schemas/quantum-result.v1.json | `5725a20ed7679316a9b05401216167ed30e44e24c4d0f69bdc609990e941e5fe` |
+| packages/contracts/schemas/quantum-job.v1.json | `19486c00080377f4936dcde51a958042ac512c9ea32b2b5128a91fdf77bad517` |
+| packages/contracts/schemas/quantum-result.v1.json | `60ff99a1ee84a399d6c7211c2ddf332841287eda3bc0c61ef9c76d048904fb7f` |
 | packages/contracts/schemas/worker-capabilities.v1.json | `ec10c915d539adba626bb7621e9d1ef83ff929e64dfe997325f575dcfc7c3fe1` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
 | packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |

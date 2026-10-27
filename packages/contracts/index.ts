@@ -313,6 +313,7 @@ export interface RiceMeleModel { type: "rice_mele"; parameters: { t1: number; t2
 export interface RiceMelePumpModel { type: "rice_mele_pump"; parameters: {
   baseHopping: number; modulation: number; staggerAmplitude: number; staggerOffset: number;
   kSamples: number; phaseSamples: number;
+  duration?: number; stepsPerPhase?: number;
 }; source?: LayerOneSource }
 export interface QWZModel { type: "qwz"; parameters: { mass: number; grid: number }; source?: LayerOneSource }
 /** Square-lattice, spin-conserving BHZ slice: A=B=1, epsilon=0. */
@@ -355,6 +356,12 @@ export interface RiceMelePumpAnalysis {
   minimumLink: number; fineMinimumLink: number;
   kValues: number[]; phaseValues: number[]; t1Values: number[]; t2Values: number[]; deltaValues: number[];
   lowerBand: number[]; upperBand: number[]; berryFlux: number[]; polarization: number[];
+  dynamics?: { status: "resolved" | "gap-closed" | "unresolved"; duration: number; stepsPerPhase: number;
+    timeValues: number[]; phaseValues: number[]; kValues: number[]; current: number[]; charge: number[];
+    currentByK: number[]; excitedPopulation: number[]; transportedCharge: number;
+    maxNormDrift: number; timeStepChargeDrift: number; momentumChargeDrift: number;
+    adiabaticChern: number | null; method: string;
+    units: { time: "inverse hopping energy"; current: "electron charge / inverse hopping time"; charge: "electron charge / cell" } };
   method: string; units: { momentum: "rad / cell"; phase: "rad"; energy: "hopping energy"; polarization: "electron charge / cell" };
 }
 export interface QWZAnalysis {
