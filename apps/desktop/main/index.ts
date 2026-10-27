@@ -36,7 +36,7 @@ import { atlasEntry, atlasUrl } from "../../../packages/atlas";
 import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
   type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
 
-const worker = new WorkerSupervisor(join(__dirname, ".."));
+const worker = new WorkerSupervisor(app.isPackaged ? process.resourcesPath : join(__dirname, ".."));
 const sceneStreams=new Map<string,Awaited<ReturnType<typeof openStreamBundle>>>();
 function trusted(event: IpcMainInvokeEvent) {
   // Renderer history changes only the fragment; the bundled file itself must remain exact.

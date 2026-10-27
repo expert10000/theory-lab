@@ -1,9 +1,11 @@
 import json
 import math
+import os
 from pathlib import Path
 from jsonschema import Draft7Validator, validators
 
-SCHEMA_DIR = Path(__file__).resolve().parents[3] / "packages" / "contracts" / "schemas"
+SCHEMA_DIR = (Path(os.environ["QLAB_RESOURCE_ROOT"]) if os.environ.get("QLAB_RESOURCE_ROOT")
+              else Path(__file__).resolve().parents[3]) / "packages" / "contracts" / "schemas"
 
 def finite_number(_checker, value):
     return isinstance(value, (int, float)) and not isinstance(value, bool) and math.isfinite(value)

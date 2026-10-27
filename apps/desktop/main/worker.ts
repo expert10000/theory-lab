@@ -69,22 +69,25 @@ export class WorkerSupervisor extends EventEmitter {
       this.fail(error instanceof Error ? error.message : String(error));
       return this.status;
     }
-    const executable =
-      process.env.QLAB_PYTHON ||
+    const packaged = this.root === process.resourcesPath && process.platform === "win32";
+    const executable = packaged
+      ? join(this.root, "quantum-worker", "quantum-worker.exe")
+      : process.env.QLAB_PYTHON ||
       join(
         this.root,
         ".venv",
         process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
       );
     const launch = this.remote ? sshLaunch(this.remote) :
-      { command: executable, args: ["-u", "-m", "quantum_worker.main"] };
+      { command: executable, args: packaged ? [] : ["-u", "-m", "quantum_worker.main"] };
     const child = spawn(launch.command, launch.args, {
       cwd: this.root,
       windowsHide: true,
       stdio: "pipe",
       env: {
         ...process.env,
-        PYTHONPATH: join(this.root, "workers/quantum-python"),
+        PYTHONPATH: packaged ? "" : join(this.root, "workers/quantum-python"),
+        QLAB_RESOURCE_ROOT: packaged ? this.root : "",
         PYTHONIOENCODING: "utf-8",
       },
     });

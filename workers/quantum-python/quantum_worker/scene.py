@@ -2,6 +2,7 @@
 import hashlib
 import json
 import math
+import os
 import struct
 from pathlib import Path
 from typing import Literal, NotRequired, TypedDict
@@ -131,7 +132,8 @@ class QuantumScene(TypedDict):
     annotations: list[Annotation]
 
 
-_schema_root = Path(__file__).resolve().parents[3] / "packages/quantum-scene"
+_schema_root = (Path(os.environ["QLAB_RESOURCE_ROOT"]) if os.environ.get("QLAB_RESOURCE_ROOT")
+                else Path(__file__).resolve().parents[3]) / "packages/quantum-scene"
 _validators = {
     version: FiniteValidator(json.loads((_schema_root / f"quantum-scene.{version}.json").read_text(encoding="utf-8")))
     for version in ("v1", "v2")

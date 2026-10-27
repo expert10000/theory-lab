@@ -10,3 +10,6 @@ runs/
 .env
 .qlab-remote-artifacts/
 gateway-data/
+build/packaged-worker/
+build/pyinstaller/
+release/

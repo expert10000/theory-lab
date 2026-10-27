@@ -10,6 +10,8 @@
   ],
   "scripts": {
     "build": "node scripts/build.mjs",
+    "package:win:dir": "npm run build && node scripts/build-frozen-worker.mjs && electron-builder --win --dir --config electron-builder.config.cjs",
+    "package:win:installer": "npm run build && node scripts/build-frozen-worker.mjs && electron-builder --win nsis --config electron-builder.config.cjs",
     "start": "node scripts/launch.mjs",
     "dev": "npm run build && npm start",
     "typecheck": "tsc --noEmit",
@@ -38,6 +40,7 @@
     "@types/react-dom": "19.3.0",
     "@types/three": "0.186.0",
     "electron": "44.4.5",
+    "electron-builder": "^26.0.12",
     "esbuild": "0.28.2",
     "playwright": "1.63.0",
     "prettier": "3.9.9",

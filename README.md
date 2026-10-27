@@ -37,6 +37,12 @@ npm start
 
 `npm run desktop:shortcut` creates **Quantum Hamiltonian Lab** on your Windows Desktop. It launches the built app directly, without a terminal. Keep the repository in place; this is a development checkout, not a standalone installer. Rebuild after source changes. `npm run dev` builds and launches; it does not hot reload.
 
+### Windows installer and frozen worker
+
+From a Windows checkout, run `npm run setup:python`, then install the packaging tool with `.venv\Scripts\python.exe -m pip install -r workers/quantum-python/requirements-packaging.txt`. Run `npm ci` and `npm run package:win:installer`. The NSIS installer appears in `release/`; it includes the supervised Python worker, QuTiP, NumPy, SciPy, and the versioned contract schemas. The installed app does not need this source checkout or a separate Python installation. Optional QuSpin, scqubits, and Dynamiqs environments are not included in the base installer.
+
+For a clean-install check, install into a new Windows directory and run `node scripts/accept-packaged.mjs "C:\path\to\Quantum Hamiltonian Lab.exe"`. This uses an isolated profile and verifies worker readiness plus the two-level QuTiP spectrum. Keep your normal Lab profile separate from this acceptance run. Math3D's **Open selected run in Theory Lab** can select this installed executable on first use; Lab still verifies the exact saved run ID and SHA-256 before reopening it.
+
 On Linux, create `.venv` with `python3.12 -m venv .venv`, then `.venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python`, followed by `npm ci`, `npm run build`, and `npm start`. Ubuntu 22.04 under WSL2/WSLg passed the v0.1 desktop acceptance suite; see [the release record](docs/RELEASE_V0.1.md) for the tested environment and caveats. `QLAB_PYTHON` may specify an alternate interpreter.
 
 ## Portable scenes (QVIS-001–013)
