@@ -31,7 +31,8 @@ function Series({title,points,x,y,unit,onOpenRun}:{title:string;points:RiceMeleC
 
 export function RiceMeleConvergenceLab({bridge,onOpenRun}:{bridge:QuantumBridge;onOpenRun:(id:string)=>Promise<void>}){
   const [runs,setRuns]=useState<TopologyResult[]>([]),[anchor,setAnchor]=useState(""),
-    [durationRun,setDurationRun]=useState(""),[widthRun,setWidthRun]=useState("");
+    [durationRun,setDurationRun]=useState(""),[durationRun2,setDurationRun2]=useState(""),
+    [widthRun,setWidthRun]=useState(""),[widthRun2,setWidthRun2]=useState("");
   const [study,setStudy]=useState<RiceMeleConvergenceStudy|null>(null),[saved,setSaved]=useState<{studyId:string;computedAt:string;count:number}[]>([]),
     [message,setMessage]=useState(""),[busy,setBusy]=useState(false);
   async function refresh(){
@@ -55,20 +56,22 @@ export function RiceMeleConvergenceLab({bridge,onOpenRun}:{bridge:QuantumBridge;
   const options=(values:TopologyResult[])=><><option value="">Choose a verified run</option>{values.map(r=>
     <option value={r.runId} key={r.runId}>{r.runId} · {r.model.type==="rice_mele_pump"?`duration ${r.model.parameters.duration}, width ${r.model.parameters.chainCells}`:""}</option>)}</>;
   async function create(){
-    if(!a||!durationRun||!widthRun||durationRun===widthRun)return;
-    const d=byId.get(durationRun),w=byId.get(widthRun);if(!d||!w)return;
+    if(!a||!durationRun||!durationRun2||!widthRun||!widthRun2||
+      new Set([anchor,durationRun,durationRun2,widthRun,widthRun2]).size!==5)return;
+    const d=byId.get(durationRun),d2=byId.get(durationRun2),w=byId.get(widthRun),w2=byId.get(widthRun2);
+    if(!d||!d2||!w||!w2)return;
     setBusy(true);
     try{
-      const duration=[a,d].sort((x,y)=>((x.model.type==="rice_mele_pump"?x.model.parameters.duration:0)??0)-
+      const duration=[a,d,d2].sort((x,y)=>((x.model.type==="rice_mele_pump"?x.model.parameters.duration:0)??0)-
         ((y.model.type==="rice_mele_pump"?y.model.parameters.duration:0)??0)).map(r=>r.runId);
-      const width=[a,w].sort((x,y)=>((x.model.type==="rice_mele_pump"?x.model.parameters.chainCells:0)??0)-
+      const width=[a,w,w2].sort((x,y)=>((x.model.type==="rice_mele_pump"?x.model.parameters.chainCells:0)??0)-
         ((y.model.type==="rice_mele_pump"?y.model.parameters.chainCells:0)??0)).map(r=>r.runId);
       const plan={schema:"quantum-rice-mele-convergence-plan/v1" as const,
         studyId:`rice-convergence-${crypto.randomUUID()}`,anchorRunId:anchor,durationRuns:duration,widthRuns:width};
       const ordered=[...new Set([...duration,...width])].map(id=>byId.get(id)!);
       const value=await deriveRiceMeleConvergenceStudy(plan,ordered);
       setStudy(await bridge.saveRiceMeleConvergenceStudy(value));setSaved(await bridge.listRiceMeleConvergenceStudies());
-      setMessage("Three exact saved runs linked and verified.");
+      setMessage("Five exact saved runs linked and verified.");
     }catch(error){setMessage(`Cannot create convergence study: ${String(error)}`);}
     finally{setBusy(false);}
   }
@@ -77,14 +80,17 @@ export function RiceMeleConvergenceLab({bridge,onOpenRun}:{bridge:QuantumBridge;
   const points=new Map(study?.sources.map(p=>[p.runId,p])??[]);
   return <section className="panel spectrum-study-lab" data-testid="rice-mele-convergence-lab">
     <p className="eyebrow">RICE–MELE / SAVED-RUN CONVERGENCE</p><h2>Compare controlled saved runs</h2>
-    <p>Select an anchor and two other verified runs. The duration pair holds chain width fixed; the width pair holds duration fixed. All cycle and sampling parameters must match exactly. Each charge keeps its own units and diagnostic meaning.</p>
+    <p>Select an anchor and four other verified runs. Three duration samples hold chain width fixed; three width samples hold duration fixed. All cycle and sampling parameters must match exactly. Each charge keeps its own units and diagnostic meaning.</p>
     <button onClick={()=>void refresh()}>Refresh verified runs</button>
     <div className="spectrum-study-fields">
-      <label>Anchor run<select aria-label="Rice convergence anchor" value={anchor} onChange={e=>{setAnchor(e.target.value);setDurationRun("");setWidthRun("");}}>{options(runs)}</select></label>
-      <label>Other duration, same width<select aria-label="Rice convergence duration run" value={durationRun} onChange={e=>setDurationRun(e.target.value)}>{options(durationOptions)}</select></label>
-      <label>Other width, same duration<select aria-label="Rice convergence width run" value={widthRun} onChange={e=>setWidthRun(e.target.value)}>{options(widthOptions)}</select></label>
+      <label>Anchor run<select aria-label="Rice convergence anchor" value={anchor} onChange={e=>{setAnchor(e.target.value);setDurationRun("");setDurationRun2("");setWidthRun("");setWidthRun2("");}}>{options(runs)}</select></label>
+      <label>Duration sample 2, same width<select aria-label="Rice convergence duration run 2" value={durationRun} onChange={e=>setDurationRun(e.target.value)}>{options(durationOptions)}</select></label>
+      <label>Duration sample 3, same width<select aria-label="Rice convergence duration run 3" value={durationRun2} onChange={e=>setDurationRun2(e.target.value)}>{options(durationOptions)}</select></label>
+      <label>Width sample 2, same duration<select aria-label="Rice convergence width run 2" value={widthRun} onChange={e=>setWidthRun(e.target.value)}>{options(widthOptions)}</select></label>
+      <label>Width sample 3, same duration<select aria-label="Rice convergence width run 3" value={widthRun2} onChange={e=>setWidthRun2(e.target.value)}>{options(widthOptions)}</select></label>
     </div>
-    <button disabled={busy||!anchor||!durationRun||!widthRun||durationRun===widthRun} onClick={()=>void create()}>Link three verified runs</button>
+    <button disabled={busy||!anchor||!durationRun||!durationRun2||!widthRun||!widthRun2||
+      new Set([anchor,durationRun,durationRun2,widthRun,widthRun2]).size!==5} onClick={()=>void create()}>Link five verified runs</button>
     {message&&<p role="status">{message}</p>}
     {!!saved.length&&<div className="spectrum-study-saved"><p className="eyebrow">SAVED STUDIES</p>{saved.map(row=><button key={row.studyId} onClick={()=>void reopen(row.studyId)}>{row.computedAt.slice(0,19).replace("T"," ")} · {row.count} sources</button>)}</div>}
     {study&&<div data-testid="rice-mele-convergence-result">

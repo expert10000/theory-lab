@@ -574,6 +574,16 @@ app.whenReady().then(() => {
     trusted(event);if(typeof studyId!=="string")throw new Error("Invalid Rice–Mele study ID");return riceMeleStudies.get(studyId);
   });
   ipcMain.handle("quantum:list-rice-mele-convergence-studies",event=>{trusted(event);return riceMeleStudies.list();});
+  ipcMain.handle("quantum:export-rice-mele-convergence-scene",async(event,studyId:unknown)=>{
+    trusted(event);if(typeof studyId!=="string")throw new Error("Invalid Rice–Mele study ID");
+    const initial=await riceMeleStudies.scene(studyId);
+    const selection=await dialog.showOpenDialog({title:"Choose parent folder for verified Rice–Mele convergence .qscene",properties:["openDirectory"]});
+    if(selection.canceled||!selection.filePaths[0])return null;
+    const verified=await riceMeleStudies.scene(studyId);
+    if(verified.scene.provenance.resultSha256!==initial.scene.provenance.resultSha256)
+      throw new Error("Rice–Mele study changed after export preview");
+    return writeSceneBundle(verified,selection.filePaths[0]);
+  });
   ipcMain.handle("quantum:export-hofstadter-edge-scene",async(event,studyId:unknown)=>{
     trusted(event);if(typeof studyId!=="string")throw new Error("Invalid edge study ID");
     const payload=await edgeStudies.scene(studyId);

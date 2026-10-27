@@ -35,7 +35,7 @@ export function assertRiceMeleConvergencePlan(value:unknown):asserts value is Ri
   if(!p||p.schema!=="quantum-rice-mele-convergence-plan/v1"||typeof p.studyId!=="string"||
     !studyId.test(p.studyId)||typeof p.anchorRunId!=="string"||!runId.test(p.anchorRunId)||
     !Array.isArray(p.durationRuns)||!Array.isArray(p.widthRuns)||
-    p.durationRuns.length<2||p.durationRuns.length>5||p.widthRuns.length<2||p.widthRuns.length>5||
+    p.durationRuns.length<3||p.durationRuns.length>5||p.widthRuns.length<3||p.widthRuns.length>5||
     [...p.durationRuns,...p.widthRuns].some(id=>typeof id!=="string"||!runId.test(id))||
     p.durationRuns.filter(id=>id===p.anchorRunId).length!==1||
     p.widthRuns.filter(id=>id===p.anchorRunId).length!==1||
