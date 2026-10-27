@@ -11,6 +11,38 @@ export async function riceMelePumpSceneFromResult(result: QuantumResult, resultS
     throw new Error("Rice–Mele pump scene requires a consistent verified run");
   const p=result.model.parameters,a=result.analysis,n=a.kValues.length,m=a.phaseValues.length;
   const pinned=result.model.source?.sourceRepository?.match(/^(https:\/\/github\.com\/[A-Za-z0-9_-]+\/[A-Za-z0-9_-]+)\/tree\/([a-f0-9]{40})$/);
+  if(a.finiteChain){
+    const c=a.finiteChain, count=c.timeValues.length;
+    const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-open-chain-pump`,
+      title:"Rice–Mele · finite open-chain motion",
+      provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:result.model.type,
+        engine:result.engine.name,engineVersion:result.engine.version,computedAt:result.provenance.computedAt,
+        resultSha256,adapter:"qvis/1",parameters:{...p},
+        ...(pinned?{source:{repository:pinned[1],revision:pinned[2],entryId:"rice_mele"}}:{})},
+      coordinates:{handedness:"right",axes:["time","open-chain site or bond","recorded value"],
+        units:[c.units.time,"site / bond index","quantity-specific; see each dataset"]},
+      camera:{position:[c.duration*.65,-c.sites*.8,Math.max(3,c.cells*.5)],target:[c.duration/2,c.sites/2,0],up:[0,0,1]},
+      objects:[],datasets:[],annotations:[
+        {id:"chain-scope",text:`Half-filled open chain with ${c.cells} cells and ${c.occupiedOrbitals} occupied orbitals; finite-size status ${c.status}. Final central-bond charge ${c.centralBondCharge.at(-1)?.toPrecision(8)} ${c.units.charge}. Separate from the periodic ideal pump and not labelled quantized.`,position:[c.duration/2,c.sites/2,3]},
+        {id:"chain-checks",text:`Norm drift ${c.maxNormDrift.toExponential(3)}; particle drift ${c.maxParticleDrift.toExponential(3)}; continuity residual ${c.maxContinuityResidual.toExponential(3)}; time/width charge drift ${c.timeStepChargeDrift.toExponential(3)} / ${c.widthChargeDrift.toExponential(3)}. Open ends have no wrap bond.`,position:[c.duration/2,c.sites/2,-3]}]};
+    const b=new SceneBuilder(scene,digest);
+    const sitePositions=await b.data("chain-site-positions",c.timeValues.flatMap(time=>Array.from({length:c.sites},(_,site)=>[time,site,0]).flat()),3,"time, site index, display plane");
+    const density=await b.data("chain-site-density",c.siteDensity,1,c.units.density);
+    b.object("chain-density","Exact time–site occupied density","point-cloud",sitePositions,"#79d9c1",{scalars:density,style:{color:"#79d9c1",opacity:.9,size:.045}});
+    const bondPositions=await b.data("chain-bond-positions",c.timeValues.flatMap(time=>Array.from({length:c.sites-1},(_,bond)=>[time,bond+.5,0]).flat()),3,"time, right-bond index + 0.5, display plane");
+    const current=await b.data("chain-bond-current",c.bondElectronCurrent,1,c.units.current);
+    b.object("chain-current","Exact time–bond electron current","point-cloud",bondPositions,"#e5a567",{scalars:current,style:{color:"#e5a567",opacity:.8,size:.035}});
+    const centerPositions=await b.data("chain-central-positions",c.timeValues.flatMap(time=>[time,c.centralBond+.5,0]),3,"time, central bond, display plane");
+    const charge=await b.data("chain-central-charge",c.centralBondCharge,1,c.units.charge);
+    b.object("chain-charge","Central-bond accumulated electron charge","point-cloud",centerPositions,"#ae96e5",{scalars:charge,style:{color:"#ae96e5",opacity:1,size:.07}});
+    const edgePositions=await b.data("chain-edge-positions",c.timeValues.flatMap(time=>[time,0,0]),3,"time, left edge baseline, display plane");
+    for(const [id,label,values,color] of [["chain-left-edge","Left-edge population",c.leftEdgePopulation,"#78c9be"],["chain-right-edge","Right-edge population",c.rightEdgePopulation,"#dd9e7c"]] as const){
+      const scalar=await b.data(id,values,1,"particles in outer two sites");
+      b.object(id,label,"point-cloud",edgePositions,color,{scalars:scalar,style:{color,opacity:1,size:.04}});
+    }
+    if(count!==m+1)throw new Error("Open-chain time trace length mismatch");
+    return b.finish();
+  }
   if(a.dynamics){
     const d=a.dynamics, count=d.timeValues.length;
     const scene:QuantumScene={schema:"quantum-scene/v1",id:`${result.runId}-finite-pump`,
@@ -23,7 +55,7 @@ export async function riceMelePumpSceneFromResult(result: QuantumResult, resultS
         units:[d.units.time,a.units.momentum,"quantity-specific; see each dataset"]},
       camera:{position:[d.duration*.65,-8,Math.max(4,Math.abs(d.transportedCharge)*4)],target:[d.duration/2,0,0],up:[0,0,1]},
       objects:[],datasets:[],annotations:[
-        {id:"finite-scope",text:`Finite-speed filled-band evolution at duration ${d.duration} ${d.units.time}; transported charge ${d.transportedCharge.toPrecision(8)} ${d.units.charge} (${d.status}). This finite-speed charge is not labelled quantized. No finite-chain edge motion.`,position:[d.duration/2,0,3]},
+        {id:"finite-scope",text:`Periodic filled-band cycle, duration ${d.duration}; charge ${d.transportedCharge.toPrecision(8)} ${d.units.charge} (${d.status}). Charge is not labelled quantized; open-chain motion is separate.`,position:[d.duration/2,0,3]},
         {id:"finite-convergence",text:`Maximum norm drift ${d.maxNormDrift.toExponential(3)}; time-step charge drift ${d.timeStepChargeDrift.toExponential(3)}; momentum-grid charge drift ${d.momentumChargeDrift.toExponential(3)}. Ideal adiabatic Chern ${d.adiabaticChern??"undefined"} is a separate reference.`,position:[d.duration/2,0,-3]}]};
     const b=new SceneBuilder(scene,digest);
     const baseline=await b.data("finite-time-positions",d.timeValues.flatMap(time=>[time,0,0]),3,`${d.units.time}; display baseline`);

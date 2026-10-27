@@ -2101,6 +2101,10 @@ filled-band evolution is also implemented with an explicit cycle
 duration, unitary propagation, saved current/charge samples, norm and two-grid
 charge convergence, and a separately labelled ideal Chern reference. A
 source-linked `.qscene` exposes its exact trace and time–momentum samples to
-Math3D read-only. Its transported charge is not presented as quantized. Finite-chain edge motion
-remains future work. See
+Math3D read-only. Its transported charge is not presented as quantized. An
+optional, bounded half-filled open-chain branch now saves exact time/site
+density, bond current, edge populations and central-bond charge with norm,
+particle, continuity, time-step and width diagnostics. Its status explicitly
+reports size-sensitive evidence. The finite-chain observation is kept separate
+from the ideal periodic pump and is exported as a verified read-only `.qscene`. See
 [`RICE_MELE_PUMP_STUDY.md`](RICE_MELE_PUMP_STUDY.md).

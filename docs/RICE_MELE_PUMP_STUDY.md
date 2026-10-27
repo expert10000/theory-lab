@@ -9,7 +9,7 @@ t_1(\theta)=b+m\cos\theta,\quad t_2(\theta)=b-m\cos\theta,\quad
 
 Both hoppings must stay positive. The worker diagonalizes the two-band Bloch Hamiltonian on bounded periodic \((\theta,k)\) grids and saves exact sampled levels, hopping/staggering values, FHS plaquette phases, and the occupied-band Wilson polarization at each cycle phase. It checks the minimum bulk gap analytically, repeats the calculation on a doubled grid, and compares occupied Chern with the separately accumulated polarization winding. Both periodic seams are included. A closed gap or unresolved mesh sets both public invariants to **undefined**. The saved status and coarse/fine diagnostics explain why.
 
-The conditional topological claim is an **ideal adiabatic cycle with the lower band filled**. A separately requested finite-speed run uses the same cycle but has its own duration and integration resolution. Its recorded transported charge is not labelled quantized. Finite-chain edge motion and partially filled-band response are not calculated.
+The conditional topological claim is an **ideal adiabatic cycle with the lower band filled**. A separately requested finite-speed run uses the same cycle but has its own duration and integration resolution. Its recorded transported charge is not labelled quantized. An optional finite open-chain branch records boundary motion separately. Partially filled-band response is not calculated.
 
 Runs store the exact job and result with SHA-256 verification. The topology inspector links a selected phase and momentum to the stored energies, local plaquette phase, and Wilson polarization. Scenes exports a source-linked, read-only `.qscene` containing both supplied band meshes and exact diagnostic samples. The existing `quantum-scene/v1` band-grid metadata is bounded to 31 per axis, so this adapter keeps its 32×32 or finer band data as verified mesh objects without downsampling or changing the frozen contract.
 
@@ -37,3 +37,11 @@ excited-band population and momentum-resolved current. In Math3D, open
 **File → Verified quantum examples → Rice–Mele → finite-speed pump**. The
 read-only inspector verifies source bytes at open and selection; it performs
 no evolution or transport calculation.
+
+## Finite open-chain motion
+
+Set **Cycle duration**, **Unitary steps per saved phase**, and **Open-chain cells** (4–10) in **Topology → Topological bands → Rice–Mele · filled-band pump**. Leaving the cell field empty preserves the periodic bulk-only job. The open chain has `2 × cells` sites and no end-to-end bond. At half filling, the worker evolves all initially occupied single-particle orbitals through the same recorded cycle. This is a finite noninteracting chain, not an edge-channel classification.
+
+The immutable run stores exact time and phase values, particle density on every site, electron current on every open bond, accumulated central-bond charge, and populations of the outer two sites at each end. It also stores occupied-subspace norm drift, particle-number drift, continuity residual, integration-step charge drift, and charge drift when the width increases by two cells. The status is **resolved**, **size-sensitive**, or **unresolved** according to those checks; a width-sensitive result is never silently treated as converged. The periodic ideal invariant and finite-speed bulk charge remain separate result sections with different units.
+
+The plot and site buttons use one run-scoped time/site selection. Reopening a saved run verifies its hash and starts with no invented selection. CSV includes exact time, site, and bond samples. The scene export carries only those source-backed arrays, units, and diagnostics. In Math3D, use **File → Verified quantum examples → Rice–Mele → finite open-chain motion**, or open the exported `.qscene` folder. Math3D re-verifies source bytes on selection and after restart, and computes no dynamics.

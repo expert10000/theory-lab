@@ -7,6 +7,7 @@ export type TopologySelection=
   | {kind:"rice_mele_site";runId:string;index:number}
   | {kind:"rice_mele_pump_sample";runId:string;phaseIndex:number;kIndex:number}
   | {kind:"rice_mele_dynamic_sample";runId:string;timeIndex:number;kIndex:number}
+  | {kind:"rice_mele_chain_sample";runId:string;timeIndex:number;siteIndex:number}
   | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number}
   | {kind:"bbh_cell";runId:string;index:number}
   | {kind:"kitaev_band";runId:string;index:number}
@@ -24,6 +25,7 @@ export type TopologySample=
   | {kind:"rice_mele_site";index:number;density:number}
   | {kind:"rice_mele_pump_sample";phaseIndex:number;kIndex:number;phase:number;k:number;t1:number;t2:number;delta:number;lower:number;upper:number;berryFlux:number;polarization:number}
   | {kind:"rice_mele_dynamic_sample";timeIndex:number;kIndex:number;time:number;phase:number;k:number;current:number;localCurrent:number;charge:number;excitedPopulation:number}
+  | {kind:"rice_mele_chain_sample";timeIndex:number;siteIndex:number;time:number;phase:number;density:number;rightBondCurrent:number|null;centralBondCharge:number;leftEdgePopulation:number;rightEdgePopulation:number}
   | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null}
   | {kind:"bbh_cell";index:number;xIndex:number;yIndex:number;density:number}
   | {kind:"kitaev_band";index:number;k:number;lower:number;upper:number}
@@ -43,6 +45,13 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="rice_mele_pump"&&analysis.kind==="rice_mele_pump"&&analysis.finiteChain&&selection.kind==="rice_mele_chain_sample"){
+    const c=analysis.finiteChain,{timeIndex,siteIndex}=selection;
+    if(!Number.isInteger(timeIndex)||!Number.isInteger(siteIndex)||timeIndex<0||timeIndex>=c.timeValues.length||siteIndex<0||siteIndex>=c.sites)return null;
+    return {kind:"rice_mele_chain_sample",timeIndex,siteIndex,time:c.timeValues[timeIndex],phase:c.phaseValues[timeIndex],
+      density:c.siteDensity[timeIndex*c.sites+siteIndex],rightBondCurrent:siteIndex<c.sites-1?c.bondElectronCurrent[timeIndex*(c.sites-1)+siteIndex]:null,
+      centralBondCharge:c.centralBondCharge[timeIndex],leftEdgePopulation:c.leftEdgePopulation[timeIndex],rightEdgePopulation:c.rightEdgePopulation[timeIndex]};
+  }
   if(result.model.type==="rice_mele_pump"&&analysis.kind==="rice_mele_pump"&&analysis.dynamics&&selection.kind==="rice_mele_dynamic_sample"){
     const d=analysis.dynamics,{timeIndex,kIndex}=selection,n=d.kValues.length;
     if(!Number.isInteger(timeIndex)||!Number.isInteger(kIndex)||timeIndex<0||timeIndex>=d.timeValues.length||kIndex<0||kIndex>=n)return null;

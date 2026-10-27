@@ -54,6 +54,54 @@ test("Rice–Mele filled-band pump survives restart and refuses altered sources"
   }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
 });
 
+test("finite open-chain pump saves exact site and bond samples and refuses changed source",async()=>{
+  const root=await mkdtemp(join(tmpdir(),"qlab-rice-chain-"));
+  const worker=new WorkerSupervisor(process.cwd());
+  const store=new RunStore(join(root,"runs"),join(root,"artifacts"));
+  try{
+    await worker.start();
+    const draft={...TOPOLOGY_DEFAULTS,modelId:"rice_mele_pump" as const,pumpK:"16",pumpPhases:"16",pumpDuration:"40",pumpSteps:"8",pumpChainCells:"6"};
+    const job=topologyJob("rice-chain-study",draft);
+    const result=await worker.request("quantum.run",job);
+    assert.ok(isQuantumResult(result)&&result.operation==="topology"&&result.analysis.kind==="rice_mele_pump");
+    assert.ok(isTopologyResponse(result,job));
+    const c=result.analysis.finiteChain;
+    assert.ok(c&&c.cells===6&&c.sites===12&&c.occupiedOrbitals===6);
+    assert.equal(c.status,"resolved");
+    assert.ok(c.maxNormDrift<1e-8&&c.maxParticleDrift<1e-8&&c.maxContinuityResidual<.02);
+    const selection={kind:"rice_mele_chain_sample" as const,runId:result.runId,timeIndex:8,siteIndex:5};
+    const picked=selectedTopologySample(selection,result);
+    assert.equal(picked?.kind,"rice_mele_chain_sample");
+    if(picked?.kind==="rice_mele_chain_sample"){
+      assert.equal(picked.density,c.siteDensity[8*c.sites+5]);
+      assert.equal(picked.rightBondCurrent,c.bondElectronCurrent[8*(c.sites-1)+5]);
+    }
+    assert.equal(selectedTopologySample({...selection,runId:"wrong-run"},result),null);
+    await store.record(job,result);
+    const restarted=new RunStore(join(root,"runs"),join(root,"artifacts"));
+    assert.deepEqual(await restarted.topology(result.runId),result);
+    const scene=await restarted.scene(result.runId,"standard");
+    const arrays=await verifyScenePayload(scene,digest);
+    assert.equal(scene.scene.provenance.resultSha256.length,64);
+    assert.deepEqual([...arrays.get("chain-site-density")!],c.siteDensity);
+    assert.deepEqual([...arrays.get("chain-bond-current")!],c.bondElectronCurrent);
+    assert.deepEqual([...arrays.get("chain-central-charge")!],c.centralBondCharge);
+    assert.match(scene.scene.annotations[0].text,/not labelled quantized/);
+    const exported=await restarted.exportScene(result.runId,root,"standard");
+    assert.equal((await readSceneBundle(exported)).scene.provenance.resultSha256,scene.scene.provenance.resultSha256);
+    const csv=join(root,"chain.csv");
+    await restarted.export(result.runId,"csv",csv);
+    assert.match(await readFile(csv,"utf8"),/open_chain_time_index,site_index,particle_density/);
+    const altered=structuredClone(result);
+    if(altered.analysis.kind!=="rice_mele_pump"||!altered.analysis.finiteChain)throw new Error("Missing chain result");
+    altered.analysis.finiteChain.siteDensity[0]+=.2;
+    assert.equal(isTopologyResponse(altered,job),false);
+    await writeFile(join(root,"runs",result.runId,"result.json"),"{}\n");
+    await assert.rejects(restarted.topology(result.runId),/integrity check/);
+    await assert.rejects(restarted.scene(result.runId,"standard"),/integrity check/);
+  }finally{await worker.stop();await rm(root,{recursive:true,force:true});}
+});
+
 test("finite-speed Rice–Mele run records exact current, charge and convergence without a quantization claim",async()=>{
   const root=await mkdtemp(join(tmpdir(),"qlab-rice-speed-"));
   const worker=new WorkerSupervisor(process.cwd());

@@ -43,7 +43,7 @@ export interface WorkspaceSnapshot {
     gammaX?:string;lambdaX?:string;gammaY?:string;lambdaY?:string;mu?:string;hopping?:string;pairing?:string;
     velocity?:string;chirality?:string;radius?:string;subdivisions?:string;curvature?:string;loopCenter?:string;loopRadius?:string;loopSamples?:string;
     charge?:string;fieldStart?:string;fieldStop?:string;fieldSamples?:string;levels?:string;p?:string;q?:string;occupiedBands?:string;
-    pumpBase?:string;pumpModulation?:string;pumpStagger?:string;pumpOffset?:string;pumpK?:string;pumpPhases?:string;
+    pumpBase?:string;pumpModulation?:string;pumpStagger?:string;pumpOffset?:string;pumpK?:string;pumpPhases?:string;pumpChainCells?:string;
     pumpDuration?:string;pumpSteps?:string };
   orbital?: { n: string; l: string; m: string; basis: "complex" | "real_cos" | "real_sin"; Z: string; radius: string; grid: string };
   oscillator?: import("../models/oscillator").OscillatorDraft;
@@ -138,7 +138,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
       curvature:shortText,loopCenter:shortText,loopRadius:shortText,loopSamples:shortText,
       charge:shortText,fieldStart:shortText,fieldStop:shortText,fieldSamples:shortText,levels:shortText,p:shortText,q:shortText,occupiedBands:shortText,
       pumpBase:shortText,pumpModulation:shortText,pumpStagger:shortText,pumpOffset:shortText,pumpK:shortText,pumpPhases:shortText,
-      pumpDuration:shortText,pumpSteps:shortText,
+      pumpDuration:shortText,pumpSteps:shortText,pumpChainCells:shortText,
   }),
   orbital: block(["n", "l", "m", "basis", "Z", "radius", "grid"], {
     n: shortText, l: shortText, m: shortText, basis: { enum: ["complex", "real_cos", "real_sin"] },

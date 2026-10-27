@@ -4,7 +4,7 @@ import { ATLAS_REVISION, ATLAS_SOURCE, atlasEntry } from "../atlas";
 export type TopologyDraft = NonNullable<WorkspaceSnapshot["topology"]>;
 export const TOPOLOGY_DEFAULTS: TopologyDraft = {
   modelId: "ssh", t1: "0.6", t2: "1", delta: "0.2", cells: "16", kPoints: "101", mass: "-1", grid: "21",
-  pumpBase:"1",pumpModulation:"0.4",pumpStagger:"0.6",pumpOffset:"0",pumpK:"32",pumpPhases:"32",pumpDuration:"",pumpSteps:"16",
+  pumpBase:"1",pumpModulation:"0.4",pumpStagger:"0.6",pumpOffset:"0",pumpK:"32",pumpPhases:"32",pumpDuration:"",pumpSteps:"16",pumpChainCells:"",
   A:"1",B:"1",C:"0",D:"0",R:"0",edgeCells:"12",edgeSamples:"15",continuumExtent:"1",
   gammaX:"0.5",lambdaX:"1",gammaY:"0.5",lambdaY:"1",
   mu:"0",hopping:"1",pairing:"0.8",
@@ -38,12 +38,15 @@ export function topologyJob(jobId: string, draft: TopologyDraft): TopologyJob {
     const kSamples=numeric(draft.pumpK??"32",16,80,true);
     const phaseSamples=numeric(draft.pumpPhases??"32",16,64,true);
     if(kSamples%2||phaseSamples%4)throw new Error("Pump mesh needs even momentum and fourfold phase samples");
+    if(draft.pumpChainCells?.trim()&&!draft.pumpDuration?.trim())throw new Error("Finite-chain motion requires a finite-speed duration");
+    const stepsPerPhase=draft.pumpDuration?.trim()?numeric(draft.pumpSteps??"16",4,64,true):undefined;
+    if(draft.pumpChainCells?.trim()&&phaseSamples*(stepsPerPhase??0)>2048)throw new Error("Open-chain cycle exceeds bounded step limit");
     return {schema:"quantum-job/v1",jobId,operation:"topology",engine:"native",model:{type:"rice_mele_pump",
       source:{...source,exampleId:"Atlas rice_mele"},parameters:{baseHopping,modulation,
         staggerAmplitude:numeric(draft.pumpStagger??"0.6",-2,2),staggerOffset:numeric(draft.pumpOffset??"0",-2,2),
         kSamples,phaseSamples,...(draft.pumpDuration?.trim()?{
-          duration:numeric(draft.pumpDuration,10,400),stepsPerPhase:numeric(draft.pumpSteps??"16",4,64,true)
-        }:{})}}};
+          duration:numeric(draft.pumpDuration,10,400),stepsPerPhase
+        }:{}),...(draft.pumpChainCells?.trim()?{chainCells:numeric(draft.pumpChainCells,4,10,true)}:{})}}};
   }
   if (draft.modelId === "bhz") return { schema: "quantum-job/v1", jobId, operation: "topology", engine: "native",
     model: { type: "bhz", parameters: { mass: numeric(draft.mass, -2, 10), grid: numeric(draft.grid, 11, 21, true) }, source } };
@@ -399,6 +402,31 @@ export function consistentTopologyResult(job: TopologyJob, result: TopologyResul
   }
   if(job.model.type==="rice_mele_pump"&&a.kind==="rice_mele_pump"){
     const p=job.model.parameters,n=p.kSamples,m=p.phaseSamples;
+    if((p.chainCells===undefined)!==(a.finiteChain===undefined)||p.chainCells!==undefined&&p.duration===undefined)return false;
+    if(a.finiteChain){
+      const c=a.finiteChain,sites=2*p.chainCells!;
+      if(c.cells!==p.chainCells||c.sites!==sites||c.occupiedOrbitals!==p.chainCells||c.centralBond!==p.chainCells-1||
+         c.duration!==p.duration||c.stepsPerPhase!==p.stepsPerPhase||
+         c.timeValues.length!==m+1||c.phaseValues.length!==m+1||
+         c.siteDensity.length!==(m+1)*sites||c.bondElectronCurrent.length!==(m+1)*(sites-1)||
+         c.centralBondCharge.length!==m+1||c.leftEdgePopulation.length!==m+1||c.rightEdgePopulation.length!==m+1||
+         c.siteDensity.some(v=>!Number.isFinite(v)||v<-.000001||v>1.000001)||
+         c.bondElectronCurrent.some(v=>!Number.isFinite(v))||
+         c.centralBondCharge.some(v=>!Number.isFinite(v))||
+         c.maxNormDrift<0||c.maxParticleDrift<0||c.maxContinuityResidual<0||
+         c.timeStepChargeDrift<0||c.widthChargeDrift<0||
+         c.units.density!=="particles per site"||c.units.charge!=="electron charge"||
+         c.units.current!=="electron charge / inverse hopping time"||c.units.time!=="inverse hopping energy")return false;
+      for(let j=0;j<=m;j++){
+        if(Math.abs(c.timeValues[j]-p.duration!*j/m)>1e-8||Math.abs(c.phaseValues[j]-2*Math.PI*j/m)>1e-8||
+           Math.abs(c.siteDensity.slice(j*sites,(j+1)*sites).reduce((sum,v)=>sum+v,0)-p.chainCells!)>1e-6||
+           c.leftEdgePopulation[j]<0||c.leftEdgePopulation[j]>2.000001||
+           c.rightEdgePopulation[j]<0||c.rightEdgePopulation[j]>2.000001)return false;
+      }
+      if(Math.abs(c.centralBondCharge[0])>1e-10||
+         c.status==="resolved"&&!(c.maxNormDrift<1e-8&&c.maxParticleDrift<1e-8&&c.maxContinuityResidual<.02&&c.timeStepChargeDrift<.02&&c.widthChargeDrift<.1)||
+         c.status==="size-sensitive"&&!(c.maxNormDrift<1e-8&&c.maxParticleDrift<1e-8&&c.maxContinuityResidual<.02&&c.timeStepChargeDrift<.02))return false;
+    }
     if((p.duration===undefined)!==(p.stepsPerPhase===undefined)||
        (p.duration===undefined)!==(a.dynamics===undefined))return false;
     if(a.dynamics){
@@ -595,6 +623,16 @@ export function isTopologyResponse(value: unknown, job: TopologyJob): value is T
        !finite(a.dynamics.transportedCharge)||!finite(a.dynamics.maxNormDrift)||
        !finite(a.dynamics.timeStepChargeDrift)||!finite(a.dynamics.momentumChargeDrift)||
        !["resolved","gap-closed","unresolved"].includes(String(a.dynamics.status))))return false;
+    const cells=job.model.parameters.chainCells;
+    if((cells===undefined)!==(a.finiteChain===undefined)||cells!==undefined&&(
+       !record(a.finiteChain)||!["resolved","size-sensitive","unresolved"].includes(String(a.finiteChain.status))||
+       a.finiteChain.cells!==cells||a.finiteChain.sites!==2*cells||
+       !numericArray(a.finiteChain.timeValues,m+1)||!numericArray(a.finiteChain.phaseValues,m+1)||
+       !numericArray(a.finiteChain.siteDensity,(m+1)*2*cells)||
+       !numericArray(a.finiteChain.bondElectronCurrent,(m+1)*(2*cells-1))||
+       !numericArray(a.finiteChain.centralBondCharge,m+1)||
+       !numericArray(a.finiteChain.leftEdgePopulation,m+1)||
+       !numericArray(a.finiteChain.rightEdgePopulation,m+1)))return false;
   } else if (job.model.type === "rice_mele") {
     const { cells, kPoints } = job.model.parameters;
     if (a.kind!=="rice_mele" || !finite(a.bulkGap) || a.bulkGap<0 || typeof a.gapClosed!=="boolean" ||

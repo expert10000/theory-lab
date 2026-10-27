@@ -603,7 +603,15 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       ...(a.dynamics?["","time_index,time,phase,current,charge,excited_population",
         ...a.dynamics.timeValues.map((time,i)=>`${i},${time},${a.dynamics!.phaseValues[i]},${a.dynamics!.current[i]},${a.dynamics!.charge[i]},${a.dynamics!.excitedPopulation[i]}`),
         "","time_index,k_index,k,current_at_k",
-        ...a.dynamics.currentByK.map((current,i)=>`${Math.floor(i/a.dynamics!.kValues.length)},${i%a.dynamics!.kValues.length},${a.dynamics!.kValues[i%a.dynamics!.kValues.length]},${current}`)]:[])].join("\n")+"\n";
+        ...a.dynamics.currentByK.map((current,i)=>`${Math.floor(i/a.dynamics!.kValues.length)},${i%a.dynamics!.kValues.length},${a.dynamics!.kValues[i%a.dynamics!.kValues.length]},${current}`)]:[]),
+      ...(a.finiteChain?[
+        "","open_chain_time_index,time,phase,central_bond_charge,left_edge_population,right_edge_population",
+        ...a.finiteChain.timeValues.map((time,i)=>`${i},${time},${a.finiteChain!.phaseValues[i]},${a.finiteChain!.centralBondCharge[i]},${a.finiteChain!.leftEdgePopulation[i]},${a.finiteChain!.rightEdgePopulation[i]}`),
+        "","open_chain_time_index,site_index,particle_density",
+        ...a.finiteChain.siteDensity.map((density,i)=>`${Math.floor(i/a.finiteChain!.sites)},${i%a.finiteChain!.sites},${density}`),
+        "","open_chain_time_index,bond_index,electron_current",
+        ...a.finiteChain.bondElectronCurrent.map((current,i)=>`${Math.floor(i/(a.finiteChain!.sites-1))},${i%(a.finiteChain!.sites-1)},${current}`)
+      ]:[])].join("\n")+"\n";
     if (a.kind === "kitaev_chain") return ["k,lower_band,upper_band", ...a.kValues.map((k,i)=>`${k},${a.lowerBand[i]},${a.upperBand[i]}`),
       "", "site,finite_near_zero_pair_density", ...a.finite.siteDensity.map((v,i)=>`${i},${v}`)].join("\n")+"\n";
     if (a.kind === "bhz") return ["kx_index,ky_index,block_occupied,partner_occupied,block_empty,partner_empty",
