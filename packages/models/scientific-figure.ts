@@ -27,6 +27,9 @@ export function figureSemantics(result:QuantumResult):Semantics{
   if(result.operation==="topology"&&result.analysis.kind==="bhz")return {
     axes:{x:axis("kₓ","rad / lattice constant"),y:axis("kᵧ","rad / lattice constant")},
     series:series(["BHZ supplied bulk bands"],"normalized"),plottedSamples:result.analysis.bandEnergies[0].length};
+  if(result.operation==="topology"&&result.analysis.kind==="rice_mele")return {
+    axes:{x:axis("Crystal momentum k","rad / cell"),y:axis("Band energy","hopping energy")},
+    series:series(["Lower band","Upper band"],"hopping energy"),plottedSamples:result.analysis.kValues.length};
   if(result.operation==="topology"&&result.analysis.kind==="hofstadter"){
     const strip=result.analysis.strip;
     return strip?{axes:{x:axis("kᵧ","rad / lattice constant"),y:axis("Strip energy","hopping energy")},

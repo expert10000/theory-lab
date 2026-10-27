@@ -8,7 +8,7 @@ import {atlasBinding} from "./bindings";
 /** Only these existing job variants can retain exact pinned Atlas identity. */
 export const CANONICAL_ATLAS_IDS=[
   "two_level_pauli","semiclassical_rabi_drive","landau_zener","floquet_two_level",
-  "jaynes_cummings","rabi","ssh","qwz",
+  "jaynes_cummings","rabi","ssh","rice_mele","qwz",
 ] as const;
 export type CanonicalAtlasId=typeof CANONICAL_ATLAS_IDS[number];
 const canonicalIds=new Set<string>(CANONICAL_ATLAS_IDS);
@@ -35,6 +35,9 @@ export function canonicalAtlasJob(id:string,jobId:string):QuantumJob|null{
   if(binding.kind==="topology"){
     const draft=binding.modelId==="ssh"?
       {...TOPOLOGY_DEFAULTS,modelId:"ssh" as const,t1:String(binding.parameters.t1),t2:String(binding.parameters.t2),
+        cells:String(binding.parameters.cells),kPoints:String(binding.parameters.kPoints)}:
+      binding.modelId==="rice_mele"?
+      {...TOPOLOGY_DEFAULTS,modelId:"rice_mele" as const,t1:String(binding.parameters.t1),t2:String(binding.parameters.t2),delta:String(binding.parameters.delta),
         cells:String(binding.parameters.cells),kPoints:String(binding.parameters.kPoints)}:
       {...TOPOLOGY_DEFAULTS,modelId:"qwz" as const,mass:String(binding.parameters.mass),grid:String(binding.parameters.grid)};
     return topologyJob(jobId,draft);

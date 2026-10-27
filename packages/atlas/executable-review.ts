@@ -121,6 +121,12 @@ export const BINDING_REVIEWS: Record<string, ScientificMappingReview> = {
       "workers/quantum-python/tests/test_topology.py",
     ],
   },
+  rice_mele: {
+    conversion: "t1=t_1, t2=t_2, delta=Delta; static real nearest-neighbor hoppings and staggered onsite ±Delta.",
+    basis: "Periodic (A,B) Bloch matrix and finite open |n,A>,|n,B> chain; no closing bond.",
+    boundedScope: "16-cell default, 101 k samples; exact bulk gap and finite middle-pair density only. No pump cycle or polarization.",
+    evidence: ["tests/rice-mele.test.ts", "workers/quantum-python/tests/test_topology.py"],
+  },
   qwz: {
     conversion: "mass=m; hopping, spacing, hbar=1; lower occupied band.",
     basis: "H=sin(kx) sigma_x+sin(ky) sigma_y+(m+cos(kx)+cos(ky)) sigma_z.",
@@ -182,7 +188,7 @@ function review(row: AtlasReconciliationEntry): ExecutableReview {
   return {
     atlasId: row.atlasId,
     disposition: row.lab
-      ? ["harmonic_oscillator","driven_harmonic_oscillator"].includes(row.atlasId) ? "accepted-binding" : "preserved-binding"
+      ? ["harmonic_oscillator","driven_harmonic_oscillator","rice_mele"].includes(row.atlasId) ? "accepted-binding" : "preserved-binding"
       : ["coulomb_one_body", "spin_half_zeeman"].includes(row.atlasId)
         ? "adapter-candidate"
         : ADDITIONAL_MAPPING_REVIEWS[row.atlasId]

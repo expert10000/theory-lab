@@ -2,15 +2,15 @@
 
 Pinned theory revision: `48e2036ba7c7dd5c79d54749341a79d41770cbb7` (https://github.com/expert10000/theory).
 
-68 reference definitions; 7 declared theory-example bindings; 11 tested Lab bindings; 4 web compute bindings; 6 bound models with saved scene adapters.
+68 reference definitions; 7 declared theory-example bindings; 12 tested Lab bindings; 5 web compute bindings; 7 bound models with saved scene adapters.
 
 R1 is implemented: the catalog, capability map and UI explanations are reconciled. No new physics executor, job/result protocol, scene format or Math3D integration is introduced. The canonical Atlas remains the metadata source; Lab owns its explicit tested parameter adapters. This map is an implementation inventory, not an execution authorization registry or the R5 contract freeze.
 
-D1 amendment: the current inventory includes static/free 1D oscillator motion and bounded monochromatic forcing. R1's original nine bindings and the tenth static oscillator binding remain unchanged; the eleventh explicitly chooses a tested monochromatic drive preset, not a general-envelope default. Historical R5 metadata is preserved in packages/atlas/fixtures/reconciliation-r5.v1.json. D1 adds job/result variants, not a scene format or parallel architecture.
+Additive inventory: the nine original bindings and D1's static and driven oscillator bindings remain unchanged. Bounded static Rice–Mele is the twelfth reviewed binding; its periodic/open-chain job adds no pump cycle. Historical R5 metadata remains in packages/atlas/fixtures/reconciliation-r5.v1.json. New jobs extend existing contracts and scenes.
 
 ## Reading the map
 
-Reference means browseable. Theory example means declared adapter/program paths exist at the pinned source revision, not that they were run or accepted here. A reference_lab binding is a related QEC program, not a one-to-one Hamiltonian executor. Lab-bound means a tested bounded mapping (nine original plus two D1 oscillator bindings). Related-only means an existing physical family is relevant but no parameter binding is enabled. Engines are implemented integrations, not a claim that optional packages/devices are installed. Runtime worker capabilities still gate execution.
+Reference means browseable. Theory example means declared adapter/program paths exist at the pinned source revision, not that they were run or accepted here. A reference_lab binding is a related QEC program, not a one-to-one Hamiltonian executor. Lab-bound means a tested bounded mapping (nine original, two D1 oscillator bindings, and static Rice–Mele). Related-only means an existing physical family is relevant but no parameter binding is enabled. Runtime worker capabilities still gate execution.
 
 ## Complete 68-entry inventory
 
@@ -20,7 +20,7 @@ Reference means browseable. Theory example means declared adapter/program paths 
 | `rabi` | lab-bound | — | `quantum_rabi` / cavity | — |
 | `jaynes_cummings` | lab-bound | direct | `jaynes_cummings` / cavity | — |
 | `ssh` | lab-bound | — | `ssh` / topology | — |
-| `rice_mele` | reference | — | — | — |
+| `rice_mele` | lab-bound | — | `rice_mele` / topology | — |
 | `hubbard` | reference | — | — | — |
 | `kitaev_chain` | reference | — | — | — |
 | `surface_code_stabilizer` | theory-example | reference_lab | — | — |
@@ -95,6 +95,7 @@ All nine bindings and the original 48 formula/basis/parameter definitions are pr
 | `rabi` | yes | no | not accepted | — | ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq\|e⟩⟨e\| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice. |
 | `jaynes_cummings` | yes | no | not accepted | — | ħ = 1. Atlas basis is Fock × qubit; lab basis is qubit × Fock (unitary permutation). Lab ωq\|e⟩⟨e\| adds global ωq/2 to Atlas energies; subtract it for absolute-spectrum comparison. Finite Fock cutoff is a lab choice. |
 | `ssh` | yes | yes | topology | standard, bands | Atlas t₁/t₂ are the lab intracell/intercell hoppings. Bloch H(k)=(t₁+t₂ cos k)σx+t₂ sin k σy; open chain uses \|n,A⟩,\|n,B⟩ and 16 cells. Winding requires nonzero bulk gap. |
+| `rice_mele` | yes | yes | topology | standard, bands | Static Atlas H=H_SSH+Δ(A†A−B†B); real intracell/intercell hoppings, 16 open cells and a bounded periodic k path. Δ=0 recovers SSH spectra. No parameter cycle, polarization or pumped charge is calculated. |
 | `landau_zener` | yes | no | evolve | standard | Atlas H = vt σz/2 + Δ σx/2; lab sweepRate = v, gap = Δ, bias = 0. Finite simulation window does not equal asymptotic LZ scattering. |
 | `semiclassical_rabi_drive` | yes | yes | evolve | standard | ħ = 1; lab Δ = ω₀, A = 2Ω, ω = ωd, φ unchanged. This is a classical drive, not the quantum Rabi cavity model. |
 | `floquet_two_level` | yes | no | evolve | standard | Lab uses A_lab cos(ωt + φ) σx/2: A_lab = 2A_Atlas, φ = 0, ħ = 1. Quasienergies are modulo ω. |
@@ -129,6 +130,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 | `ising_chain` | packages/models/many_body.ts | many_body | native, quspin | no | — | many_body / standard |
 | `transmon` | packages/models/circuit.ts | circuit | native, scqubits | no | circuit | — |
 | `ssh` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
+| `rice_mele` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `qwz` | packages/models/topology.ts | topology | native | yes | topology | topology / standard, bands |
 | `bhz` | packages/models/topology.ts | topology | native | yes | topology | topology / bands |
 | `bhz_general` | packages/models/topology.ts | topology | native | yes | topology | topology / bands |
@@ -156,6 +158,7 @@ The central MODEL_REGISTRY covers five two-level models. Other families use thei
 - **ising_chain**: Finite 2–8-site chain; optional QuSpin, not a thermodynamic solution or QEC executor.
 - **transmon**: Finite charge-basis spectrum with optional scqubits; no current Atlas binding or web compute form.
 - **ssh**: Finite open chain and supplied two-band path; gap closure gives undefined winding.
+- **rice_mele**: Static dimerized chain with staggered onsite energy, bounded periodic bands and finite open-chain samples. No Thouless-pump cycle or invariant.
 - **qwz**: Periodic two-band grid, supplied curvature/bands; unresolved mesh is not verified topology.
 - **bhz**: Bounded spin-conserving square-lattice BHZ with A=B=1 and epsilon=0; supplied four-band bulk grid and mesh-checked Z2 parity. No edge-state or spin-mixing claim.
 - **bhz_general**: Atlas A/B/M continuum bulk with declared C/D dispersion; lattice regularization, optional time-reversal-symmetric mixing and finite open ribbon. Source-attributed states and conditional inversion Z2.

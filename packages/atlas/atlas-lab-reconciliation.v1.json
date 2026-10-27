@@ -24,11 +24,11 @@
   "protectedSchemas": [
     {
       "path": "packages/contracts/schemas/quantum-job.v1.json",
-      "sha256": "d38628f396aa2001df7f2053a5d7dbe6679c80f203f602fd0a4a26c78516929b"
+      "sha256": "36cbb200460ab62b64296b136da205f7b689bb41680329be7a154fea4a211e1f"
     },
     {
       "path": "packages/contracts/schemas/quantum-result.v1.json",
-      "sha256": "ddc2b2b5d2a8a8dfffc9fdb7af3d091fa3fc68bc976516f8d74ef95ffef8f5e6"
+      "sha256": "99b6f33d98e3222e131bb189a8269959cf8bd0eb4db12d7cdd6ee34cf64b75e7"
     },
     {
       "path": "packages/contracts/schemas/worker-capabilities.v1.json",
@@ -44,7 +44,7 @@
     }
   ],
   "catalogSha256": "f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a",
-  "reviewSha256": "249e26db84ce9c58b5b8e2f7120775ac7e620cabb02d9e000dbaf81dbcf0468f",
+  "reviewSha256": "dee73183f61134ea15599dcb817401cad246a67c11b774c9defb6b9f48b6a0c5",
   "sceneReviewIds": [
     "C2",
     "C3",
@@ -194,12 +194,30 @@
       "reference": true,
       "sourceExample": null,
       "relatedModelIds": [],
-      "binding": null,
-      "executionReview": "reference-only",
+      "binding": {
+        "modelId": "rice_mele",
+        "operation": "topology",
+        "parameters": {
+          "t1": 0.6,
+          "t2": 1,
+          "delta": 0.2,
+          "cells": 16,
+          "kPoints": 101
+        },
+        "convention": "Static Atlas H=H_SSH+Δ(A†A−B†B); real intracell/intercell hoppings, 16 open cells and a bounded periodic k path. Δ=0 recovers SSH spectra. No parameter cycle, polarization or pumped charge is calculated.",
+        "desktopLoad": true,
+        "webLoad": true,
+        "gatewayOperation": "topology",
+        "sceneViews": [
+          "standard",
+          "bands"
+        ]
+      },
+      "executionReview": "accepted-binding",
       "physicsGap": {
-        "status": "new-model",
-        "groupId": "G07",
-        "priority": 2
+        "status": "covered-subspace",
+        "groupId": null,
+        "priority": 0
       }
     },
     {

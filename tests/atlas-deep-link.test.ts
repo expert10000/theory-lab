@@ -5,9 +5,9 @@ import {atlasBinding} from "../packages/atlas/bindings";
 import {ATLAS_REFERENCE_COUNT,CANONICAL_ATLAS_IDS,atlasDeepLinkCapabilities,canonicalAtlasJob,canonicalAtlasOrigin} from "../packages/atlas/deep-link";
 import {assertJob} from "../packages/contracts";
 
-test("QVIS-022 gates canonical execution to eight provenance-capable tested Atlas bindings",()=>{
+test("QVIS-022 gates canonical execution to nine provenance-capable tested Atlas bindings",()=>{
   assert.equal(ATLAS_REFERENCE_COUNT,68);
-  assert.equal(CANONICAL_ATLAS_IDS.length,8);
+  assert.equal(CANONICAL_ATLAS_IDS.length,9);
   for(const entry of ATLAS_ENTRIES){
     const capability=atlasDeepLinkCapabilities(entry.id),binding=atlasBinding(entry.id);
     assert.equal(capability.load,!!binding);

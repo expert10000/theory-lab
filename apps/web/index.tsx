@@ -116,7 +116,10 @@ function App() {
       setDelta(String(binding.parameters.delta)); setAmplitude(String(binding.parameters.amplitude));
       setFrequency(String(binding.parameters.frequency)); setReading(null); setMode("dynamics");
     } else if (binding.kind === "topology") {
-      setTopologyDraft(current => binding.modelId === "ssh"
+      setTopologyDraft(current => binding.modelId === "rice_mele"
+        ? { ...current, modelId: "rice_mele", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2),
+            delta: String(binding.parameters.delta), cells: String(binding.parameters.cells), kPoints: String(binding.parameters.kPoints) }
+        : binding.modelId === "ssh"
         ? { ...current, modelId: "ssh", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2),
             cells: String(binding.parameters.cells), kPoints: String(binding.parameters.kPoints) }
         : { ...current, modelId: "qwz", mass: String(binding.parameters.mass), grid: String(binding.parameters.grid) });

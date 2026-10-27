@@ -29,14 +29,14 @@ export async function bandSceneFromResult(
   if(result.analysis.kind==="landau_continuum")throw new Error("Landau continuum levels use their own source-linked level fan");
   if(result.analysis.kind==="hofstadter")throw new Error("Hofstadter bands use their own source-linked magnetic-zone scene");
   const a = result.analysis,
-    surface = a.kind !== "ssh" && a.kind !== "kitaev_chain",
+    surface = a.kind !== "ssh" && a.kind !== "rice_mele" && a.kind !== "kitaev_chain",
     values: number[][] = a.kind === "bhz" || a.kind==="bbh" ? a.bandEnergies : a.kind==="bhz_general"?
       (domain==="continuum"?a.continuumBandEnergies:a.latticeBandEnergies):[a.lowerBand ?? [], a.upperBand ?? []];
   if (!values.every(v=>v.length>0) || (a.kind === "qwz" && !a.bandKValues))
     throw new Error(
       "This older QWZ run has no supplied band arrays. Re-run the QWZ laboratory with the updated worker.",
     );
-  const ks:number[] = a.kind === "ssh" || a.kind === "kitaev_chain" ? a.kValues : a.kind==="bhz_general"?
+  const ks:number[] = a.kind === "ssh" || a.kind === "rice_mele" || a.kind === "kitaev_chain" ? a.kValues : a.kind==="bhz_general"?
     (domain==="continuum"?a.continuumKValues:a.latticeKValues):a.bandKValues!,
     k = surface
       ? ks.flatMap((x) => ks.flatMap((y) => [x, y, 0]))
@@ -89,6 +89,7 @@ export async function bandSceneFromResult(
           a.kind==="bhz_general"?`Atlas continuum and declared lattice regularization are separate views. Worker lattice Z2 ${a.z2??"unresolved"}; open-ribbon states are supplied only with the lattice view.`:
           a.kind==="bbh"?`BBH producer sampled bulk gap ${a.bulkGap.toPrecision(7)}. Finite corner density and occupied-Wilson diagnostics are separate saved views${a.wilson?`; quadrupole ${a.wilson.quadrupole??"undefined"} (${a.wilson.status})`:"; this older result has no Wilson data"}.`:
           a.kind==="kitaev_chain"?`Kitaev producer bulk gap ${a.bulkGap.toPrecision(7)} (${a.gapClosed?"closed":"open"}); finite end-site density is a separate observation. ${a.invariant?`Bulk Pfaffian parity ${a.invariant.parity??"undefined"}; winding ${a.invariant.winding??"undefined"} (${a.invariant.status}) in a separate diagnostic view.`:"This older result has no bulk invariant."}`:
+          a.kind==="rice_mele"?`Static Rice–Mele bulk gap ${a.bulkGap.toPrecision(7)} (${a.gapClosed?"closed":"open"}); finite middle-pair density is separate. No pump cycle or invariant is supplied.`:
           `Worker bulk gap ${a.bulkGap.toPrecision(7)}; sampled separations need not reach the exact global gap. Topology ${a.kind === "ssh" ? (a.winding ?? "undefined") : (a.chern ?? "undefined or unresolved")}.`,
         position: [0, 0, -height],
       },

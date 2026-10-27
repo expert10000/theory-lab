@@ -60,6 +60,9 @@ test("Atlas lab bindings are contract-valid and preserve explicit Hamiltonian co
     } else if (binding.modelId === "ssh") {
       job = topologyJob("atlas-test", { ...TOPOLOGY_DEFAULTS, modelId: "ssh", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2) });
       assert.deepEqual(job.model.parameters, { t1: 0.6, t2: 1, cells: 16, kPoints: 101 });
+    } else if (binding.modelId === "rice_mele") {
+      job = topologyJob("atlas-test", { ...TOPOLOGY_DEFAULTS, modelId: "rice_mele", t1: String(binding.parameters.t1), t2: String(binding.parameters.t2), delta: String(binding.parameters.delta) });
+      assert.deepEqual(job.model.parameters, { t1: 0.6, t2: 1, delta: 0.2, cells: 16, kPoints: 101 });
     } else {
       job = topologyJob("atlas-test", { ...TOPOLOGY_DEFAULTS, modelId: "qwz", mass: String(binding.parameters.mass), grid: String(binding.parameters.grid) });
       assert.deepEqual(job.model.parameters, { mass: 1, grid: 21 });

@@ -63,7 +63,7 @@ test("R1 preserves scientific definitions for all 48 legacy IDs and all nine exa
     ATLAS_ENTRIES.map((e) => [e.id, atlasBinding(e.id)]).filter(([, b]) => b),
   );
   assert.deepEqual(Object.fromEntries(Object.keys(legacy.bindings).map(id=>[id,actual[id]])), legacy.bindings);
-  assert.equal(Object.keys(actual).length,11,"nine original bindings plus static and driven oscillator additions");
+  assert.equal(Object.keys(actual).length,12,"nine original bindings plus static/driven oscillator and Rice–Mele additions");
 });
 
 test("R1 covers all 68 IDs and separates source examples, related physics, binding and scene capabilities", () => {
@@ -76,10 +76,10 @@ test("R1 covers all 68 IDs and separates source examples, related physics, bindi
   );
   assert.equal(ATLAS_RECONCILIATION.length, 68);
   assert.equal(new Set(ATLAS_RECONCILIATION.map((r) => r.atlasId)).size, 68);
-  assert.equal(ATLAS_RECONCILIATION.filter((r) => r.lab).length, 11);
+  assert.equal(ATLAS_RECONCILIATION.filter((r) => r.lab).length, 12);
   assert.equal(
     ATLAS_RECONCILIATION.filter((r) => r.lab?.implementation.webControl).length,
-    4,
+    5,
   );
   assert.equal(ATLAS_RECONCILIATION.filter((r) => r.sourceExample).length, 7);
   for (const r of ATLAS_RECONCILIATION) {
@@ -162,6 +162,7 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
     manyBodyJob("r1", MANY_BODY_DEFAULTS, "open", "native"),
     circuitJob("r1", CIRCUIT_DEFAULTS, "native"),
     topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "ssh" }),
+    topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "rice_mele" }),
     topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "qwz" }),
     topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "bhz", mass: "2" }),
     topologyJob("r1", { ...TOPOLOGY_DEFAULTS, modelId: "bhz_general", mass: "2" }),
@@ -180,7 +181,7 @@ test("existing-model inventory maps real typed modules/jobs, without adding a pa
     parametricOscillatorJob("d1-parametric", PARAMETRIC_DEFAULTS, "native"),
     anharmonicJob("d1-anharmonic", ANHARMONIC_DEFAULTS, "native"),
   ];
-  assert.equal(jobs.length, 28);
+  assert.equal(jobs.length, 29);
   assert.deepEqual(
     new Set(jobs.map((j) => j.model.type)),
     new Set(Object.keys(LAB_IMPLEMENTATIONS)),

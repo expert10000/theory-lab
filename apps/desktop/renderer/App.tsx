@@ -394,7 +394,11 @@ export function App() {
       setTab("many_body");
     } else {
       setActiveModel("topology");
-      const draft = binding.modelId === "ssh"
+      const draft = binding.modelId === "rice_mele"
+        ? { ...TOPOLOGY_DEFAULTS, modelId: "rice_mele" as const, t1: String(binding.parameters.t1),
+            t2: String(binding.parameters.t2), delta: String(binding.parameters.delta),
+            cells: String(binding.parameters.cells), kPoints: String(binding.parameters.kPoints) }
+        : binding.modelId === "ssh"
         ? { ...TOPOLOGY_DEFAULTS, modelId: "ssh" as const, t1: String(binding.parameters.t1),
             t2: String(binding.parameters.t2), cells: String(binding.parameters.cells), kPoints: String(binding.parameters.kPoints) }
         : { ...TOPOLOGY_DEFAULTS, modelId: "qwz" as const, mass: String(binding.parameters.mass), grid: String(binding.parameters.grid) };

@@ -152,6 +152,9 @@ export const LAB_IMPLEMENTATIONS: Record<LabModelId, LabImplementation> = {
     ["standard", "bands"],
     "Finite open chain and supplied two-band path; gap closure gives undefined winding.",
   ),
+  rice_mele: implementation("packages/models/topology.ts", ["topology"], ["native"], true,
+    ["topology"], ["standard", "bands"],
+    "Static dimerized chain with staggered onsite energy, bounded periodic bands and finite open-chain samples. No Thouless-pump cycle or invariant."),
   qwz: implementation(
     "packages/models/topology.ts",
     ["topology"],

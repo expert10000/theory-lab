@@ -29,8 +29,8 @@ test("R5 freezes complete additive metadata without changing existing scientific
   );
   assert.deepEqual(frozen, actual);
   assert.equal(frozen.entries.length, 68);
-  assert.equal(frozen.entries.filter((e) => e.binding).length, 11);
-  assert.equal(frozen.entries.filter((e) => e.binding?.webLoad).length, 4);
+  assert.equal(frozen.entries.filter((e) => e.binding).length, 12);
+  assert.equal(frozen.entries.filter((e) => e.binding?.webLoad).length, 5);
   assert.equal(frozen.entries.filter((e) => e.sourceExample).length, 7);
   assert.equal(frozen.catalogSha256,r5.catalogSha256,"all 68 source definitions and source-example references unchanged");
   assert.equal(freeBaseline.bindings.length,10);
@@ -39,7 +39,8 @@ test("R5 freezes complete additive metadata without changing existing scientific
   for(const previous of freeBaseline.bindings)assert.deepEqual(actual.entries.find(e=>e.atlasId===previous.atlasId),previous,`preserve all ten previously delivered bindings: ${previous.atlasId}`);
   for(const row of r5.entries){
     const current=actual.entries.find(e=>e.atlasId===row.atlasId)!;
-    if(!["harmonic_oscillator","driven_harmonic_oscillator"].includes(row.atlasId))assert.deepEqual(current,row,`preserve R5 row ${row.atlasId}`);
+    if(!["harmonic_oscillator","driven_harmonic_oscillator","rice_mele"].includes(row.atlasId))assert.deepEqual(current,row,`preserve R5 row ${row.atlasId}`);
+    else if(row.atlasId==="rice_mele"){assert.equal(current.binding?.operation,"topology");assert.equal(current.executionReview,"accepted-binding");}
     else {assert.equal(current.binding?.operation,row.atlasId==="harmonic_oscillator"?"oscillator":"oscillator_drive");assert.equal(current.executionReview,"accepted-binding");assert.deepEqual(current.relatedModelIds,row.relatedModelIds);}
   }
   for (const [id, binding] of Object.entries(legacy.bindings)) {

@@ -9,7 +9,7 @@ import { hofstadterSceneFromResult } from "./hofstadter";
 import { assertScene, decodeDataset, verifyScenePayload, type QuantumScene, type SceneObject, type ScenePayload } from "./index";
 
 export function supportsScene(operation: string, model: string): boolean {
-  return operation === "evolve" || (operation === "topology" && ["ssh", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain", "weyl_minimal", "nodal_line_two_band", "landau_continuum", "hofstadter"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
+  return operation === "evolve" || (operation === "topology" && ["ssh", "rice_mele", "qwz", "bhz", "bhz_general", "bbh", "kitaev_chain", "weyl_minimal", "nodal_line_two_band", "landau_continuum", "hofstadter"].includes(model)) || (operation === "orbital" && model === "hydrogenic") || (operation === "many_body" && model === "ising_chain");
 }
 export async function sceneFromResult(result: QuantumResult, data: Uint8Array | null, resultSha256: string,
   digest: (bytes: Uint8Array) => Promise<string>): Promise<ScenePayload> {
@@ -103,6 +103,22 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
     scene.camera = { position: [center + n * .35, -n * .9, n * .7], target: [center, 0, 0], up: [0, 0, 1] };
     points.forEach((v, i) => scene.annotations.push({ id: `site-label-${i}`, text: `site ${i}`, position: [v[0], v[1], -.3] }));
     scene.annotations.push({ id: "ising-convention", text: "Finite-chain ground state · Pauli σz (not σz/2) · geometry is schematic", position: [center, 0, 1.35] });
+  } else if (result.operation === "topology" && result.model.type === "rice_mele" && result.analysis.kind === "rice_mele") {
+    const a=result.analysis,n=a.middleDensity.length,p=result.model.parameters;
+    if(n!==2*p.cells)throw new Error("Invalid Rice–Mele open-chain density");
+    const positions=await dataset("sites",a.middleDensity.flatMap((_,i)=>[i,0,0]),3,"site index");
+    const density=await dataset("middle-density",a.middleDensity,1,"probability per site");
+    object("middle-density","Finite middle-pair density (color)","point-cloud",positions,"#79d9c1",{scalars:density});
+    scene.objects[scene.objects.length-1].style.size=.35;
+    scene.coordinates={handedness:"right",axes:["site index","display y","display z"],units:["site index","dimensionless","dimensionless"]};
+    const center=(n-1)/2;
+    scene.camera={position:[center,-n*.45,n*.3],target:[center,0,0],up:[0,0,1]};
+    for(const [parity,label,color] of [[0,"A","#f2b36f"],[1,"B","#79d9c1"]] as const){
+      object(`sublattice-${label}`,`Sublattice ${label} · onsite ${parity===0?p.delta:-p.delta}`,"point-cloud",
+        await dataset(`sublattice-${label}`,Array.from({length:p.cells},(_,i)=>[2*i+parity,-.5,0]).flat(),3,"site index / schematic offset"),color);
+      scene.objects[scene.objects.length-1].style.size=.18;
+    }
+    scene.annotations.push({id:"rice-mele-scope",text:`Static Rice–Mele · t1=${p.t1}, t2=${p.t2}, Δ=${p.delta} · gap ${a.bulkGap.toPrecision(6)} · no pump claim`,position:[center,0,1]});
   } else if (result.operation === "topology" && result.model.type === "ssh" && result.analysis.kind === "ssh") {
     const a = result.analysis, n = a.edgeDensity.length;
     if (n !== 2 * result.model.parameters.cells) throw new Error("Invalid SSH site count");

@@ -849,6 +849,15 @@ try {
   assert.equal(await page.getByRole("button",{name:"Select SSH edge site 1",exact:true}).getAttribute("aria-pressed"),"true");
   assert.ok(Number(await page.getByTestId("topology-selected-value").innerText())>=0);
   await page.screenshot({ path: "artifacts/desktop-ssh.png", fullPage: true });
+  await page.getByRole("combobox", { name: "Topology model" }).selectOption("rice_mele");
+  assert.equal(await page.getByRole("spinbutton", { name: "Rice–Mele staggered potential" }).inputValue(),"0.2");
+  await page.getByTestId("run-topology").click();
+  await page.getByTestId("topology-result").filter({hasText:"Static periodic bands and finite open chain"}).waitFor();
+  await page.getByRole("combobox",{name:"Rice–Mele band sample"}).selectOption("20");
+  await page.getByTestId("topology-inspector-selection").filter({hasText:"Stored k"}).waitFor();
+  await page.getByRole("button",{name:"Select Rice–Mele site 1",exact:true}).click();
+  await page.getByTestId("topology-inspector-selection").filter({hasText:"density"}).waitFor();
+  assert.match(await page.getByTestId("topology-result").innerText(),/No Thouless-pump cycle/);
   await page.getByRole("combobox", { name: "Topology model" }).selectOption("qwz");
   await page.getByTestId("run-topology").click();
   await page.getByTestId("qwz-chern").waitFor();

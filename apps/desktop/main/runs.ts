@@ -439,7 +439,7 @@ export class RunStore {
   async topology(runId:string):Promise<TopologyResult>{
     const {manifest,job,result,data}=await this.load(runId);
     if(job.operation!=="topology"||result.operation!=="topology"||
-      !["ssh","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band","landau_continuum","hofstadter"].includes(result.model.type)||data!==null||
+      !["ssh","rice_mele","qwz","bhz","bhz_general","bbh","kitaev_chain","weyl_minimal","nodal_line_two_band","landau_continuum","hofstadter"].includes(result.model.type)||data!==null||
       manifest.operation!=="topology"||manifest.model!==result.model.type||
       manifest.jobId!==result.jobId||manifest.engine!==result.engine.name||
       manifest.files.data!==null||manifest.artifactSha256!==null||
@@ -593,6 +593,9 @@ export function numericalCsv(result: QuantumResult, data: Buffer | null): string
       "","face,i,j,k,occupied_flux",...a.triangles.map((face,i)=>[i,...face,a.faceFlux[i]].join(","))].join("\n")+"\n";
     if (a.kind === "ssh") return ["k,lower_band,upper_band", ...a.kValues.map((k, i) => `${k},${a.lowerBand[i]},${a.upperBand[i]}`),
       "", "site,midgap_pair_density", ...a.edgeDensity.map((v, i) => `${i},${v}`)].join("\n") + "\n";
+    if (a.kind === "rice_mele") return ["k,lower_band,upper_band", ...a.kValues.map((k,i)=>`${k},${a.lowerBand[i]},${a.upperBand[i]}`),
+      "", "site,middle_pair_density", ...a.middleDensity.map((v,i)=>`${i},${v}`),
+      "", "finite_state,energy", ...a.finiteEnergies.map((v,i)=>`${i},${v}`)].join("\n")+"\n";
     if (a.kind === "kitaev_chain") return ["k,lower_band,upper_band", ...a.kValues.map((k,i)=>`${k},${a.lowerBand[i]},${a.upperBand[i]}`),
       "", "site,finite_near_zero_pair_density", ...a.finite.siteDensity.map((v,i)=>`${i},${v}`)].join("\n")+"\n";
     if (a.kind === "bhz") return ["kx_index,ky_index,block_occupied,partner_occupied,block_empty,partner_empty",
@@ -691,6 +694,11 @@ export function numericalSvg(result: QuantumResult, data: Buffer | null, fullRes
       const a = result.analysis, scale = Math.max(1e-9, ...a.upperBand);
       const line = (values: number[]) => values.map((v, i) => `${70 + i * 760 / (values.length - 1)},${265 - v * 150 / scale}`).join(" ");
       return head + `<polyline points="${line(a.lowerBand)}" fill="none" stroke="#f2b36f" stroke-width="2"/><polyline points="${line(a.upperBand)}" fill="none" stroke="#79d9c1" stroke-width="2"/><text x="70" y="480" fill="white" font-family="sans-serif">SSH winding ${a.winding ?? "undefined"} · gap ${a.bulkGap.toFixed(6)}</text></svg>\n`;
+    }
+    if (result.analysis.kind === "rice_mele") {
+      const a=result.analysis,scale=Math.max(1e-9,...a.upperBand);
+      const line=(values:number[])=>values.map((v,i)=>`${70+i*760/(values.length-1)},${265-v*150/scale}`).join(" ");
+      return head+`<polyline points="${line(a.lowerBand)}" fill="none" stroke="#f2b36f" stroke-width="2"/><polyline points="${line(a.upperBand)}" fill="none" stroke="#79d9c1" stroke-width="2"/><text x="70" y="480" fill="white" font-family="sans-serif">Static Rice-Mele bands · gap ${a.bulkGap.toFixed(6)} · no pump claim</text></svg>\n`;
     }
     if (result.analysis.kind === "kitaev_chain") {
       const a=result.analysis,scale=Math.max(1e-9,...a.upperBand);

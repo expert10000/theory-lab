@@ -8,7 +8,7 @@ D1 amendment: tables and digests below represent the current additive inventory,
 
 ## R2 — Executable mapping review (implemented)
 
-All 68 entries have an explicit disposition. The nine original bindings and tenth static oscillator binding remain unchanged; D1 adds a reviewed eleventh binding for an explicitly chosen bounded monochromatic drive preset through the existing atlasBinding switch. Two restricted adapter candidates remain disabled pending unit/parameter acceptance. Every new model must extend existing contracts and worker supervision, not create a parallel executor.
+All 68 entries have an explicit disposition. The nine original bindings and D1's static and driven oscillator bindings remain unchanged. A twelfth reviewed binding adds bounded static Rice–Mele bulk/finite calculations through the existing atlasBinding switch. Two restricted adapter candidates remain disabled pending unit/parameter acceptance. Every new model extends existing contracts and worker supervision.
 
 | Atlas ID | Disposition | Enabled existing binding | Next requirement |
 | --- | --- | --- | --- |
@@ -16,7 +16,7 @@ All 68 entries have an explicit disposition. The nine original bindings and tent
 | `rabi` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `jaynes_cummings` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `ssh` | preserved-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
-| `rice_mele` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
+| `rice_mele` | accepted-binding | yes | Preserve the current tested conversion, host controls and runtime capability gates; wider scope requires additive tests. |
 | `hubbard` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `kitaev_chain` | reference-only | no | No current Lab binding: define bounded model, parameter/unit/basis conversions, contract-valid results and independent numerical acceptance before enabling. |
 | `surface_code_stabilizer` | new-model-required | no | reference_lab program is not a one-to-one Hamiltonian solver. Separate code geometry, stabilizers, syndrome and numerical result boundaries; test commutation and logical dimension. |
@@ -122,6 +122,16 @@ Open-chain |n,A>,|n,B>; Bloch d_y=+t2*sin(k), explicit k ordering.
 16-cell default, 101 k samples; winding undefined at bulk gap closure.
 
 Evidence: `tests/atlas.test.ts`, `workers/quantum-python/tests/test_atlas_mapping.py`, `workers/quantum-python/tests/test_topology.py`.
+
+#### rice_mele
+
+t1=t_1, t2=t_2, delta=Delta; static real nearest-neighbor hoppings and staggered onsite ±Delta.
+
+Periodic (A,B) Bloch matrix and finite open |n,A>,|n,B> chain; no closing bond.
+
+16-cell default, 101 k samples; exact bulk gap and finite middle-pair density only. No pump cycle or polarization.
+
+Evidence: `tests/rice-mele.test.ts`, `workers/quantum-python/tests/test_topology.py`.
 
 #### landau_zener
 
@@ -301,7 +311,7 @@ Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/
 
 ## R4 — Genuine physics/model gaps (implemented review)
 
-Every Atlas ID is classified exactly once: 11 covered subspaces, 2 parameter-adapter candidates and 55 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.
+Every Atlas ID is classified exactly once: 12 covered subspaces, 2 parameter-adapter candidates and 54 entries requiring new model scope. Covered subspace never means the full Atlas Hamiltonian family is implemented. Priority 1 is adapter review; 2 is bounded first extensions; 3 is more involved physics; 4 is substantial many-body/QEC scope. This is an additive backlog, not authorization to execute or build every entry.
 
 | Atlas ID | Gap status | Group | Priority |
 | --- | --- | --- | --- |
@@ -309,7 +319,7 @@ Every Atlas ID is classified exactly once: 11 covered subspaces, 2 parameter-ada
 | `rabi` | covered-subspace | — | preserve |
 | `jaynes_cummings` | covered-subspace | — | preserve |
 | `ssh` | covered-subspace | — | preserve |
-| `rice_mele` | new-model | G07 | 2 |
+| `rice_mele` | covered-subspace | — | preserve |
 | `hubbard` | new-model | G10 | 4 |
 | `kitaev_chain` | new-model | G11 | 4 |
 | `surface_code_stabilizer` | new-model | G12 | 4 |
@@ -468,11 +478,11 @@ Acceptance requirements:
 
 ### G07 — Additional lattice and band Hamiltonians (priority 2)
 
-Entries: `rice_mele`, `tight_binding_generic`, `bloch_two_band`, `graphene_nn`, `dirac_2d`, `haldane`, `bhz`, `bbh`, `weyl_minimal`, `nodal_line_two_band`. Dependencies: none.
+Entries: `tight_binding_generic`, `bloch_two_band`, `graphene_nn`, `dirac_2d`, `haldane`, `bhz`, `bbh`, `weyl_minimal`, `nodal_line_two_band`. Dependencies: none.
 
 Reuse: Existing SSH/QWZ topology, band/reciprocal/vector scenes and verified export/import.
 
-Missing: Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters. Rice–Mele is a natural first extension, not already implemented.
+Missing: Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Static Rice–Mele is implemented separately; pumping remains open.
 
 Acceptance requirements:
 
@@ -556,13 +566,13 @@ Acceptance requirements:
 - Known syndrome/error/decoder limiting cases
 - Distinguish Hamiltonian spectrum, syndrome observations and Monte Carlo failure rates
 
-D1 now delivers bounded static/free 1D motion and monochromatic coherent forcing within G02; the static binding is unchanged and a reviewed eleventh binding loads the explicitly chosen drive preset. The group retains arbitrary envelopes/pulses and all broader oscillator-family requirements. G01 restricted adapter candidates, Rice–Mele and XY/Heisenberg are further bounded candidates, not implemented here. The reconciliation review itself did not implement D1; the separate D1 commits do. All current labs remain available.
+D1 delivers bounded static/free 1D motion and monochromatic coherent forcing within G02. G07 now includes a bounded static Rice–Mele chain as a delivered subspace, including its SSH limit. A parameter cycle, polarization and Thouless pump remain future producer work. G01 restricted adapter candidates and XY/Heisenberg remain open. Historical R5 source definitions and original bindings are preserved.
 
 ## R5 — Reconciled Atlas ↔ Lab metadata freeze (implemented)
 
 The additive atlas-lab-reconciliation/v1 metadata contract is frozen in packages/atlas/atlas-lab-reconciliation.v1.json with a strict JSON Schema, semantic validator and deterministic regeneration check. It covers all 68 IDs, source examples, related-only models, nine preserved binding defaults/conventions, desktop/web/gateway/scene coverage, executable dispositions, C2–C8 review IDs and physics gap groups.
 
-Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `249e26db84ce9c58b5b8e2f7120775ac7e620cabb02d9e000dbaf81dbcf0468f`. Digests detect drift, not publisher identity or scientific truth.
+Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0a`. Review/inventory digest: `dee73183f61134ea15599dcb817401cad246a67c11b774c9defb6b9f48b6a0c5`. Digests detect drift, not publisher identity or scientific truth.
 
 ### Current protocol digests; legacy branches retained
 
@@ -570,8 +580,8 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
-| packages/contracts/schemas/quantum-job.v1.json | `d38628f396aa2001df7f2053a5d7dbe6679c80f203f602fd0a4a26c78516929b` |
-| packages/contracts/schemas/quantum-result.v1.json | `ddc2b2b5d2a8a8dfffc9fdb7af3d091fa3fc68bc976516f8d74ef95ffef8f5e6` |
+| packages/contracts/schemas/quantum-job.v1.json | `36cbb200460ab62b64296b136da205f7b689bb41680329be7a154fea4a211e1f` |
+| packages/contracts/schemas/quantum-result.v1.json | `99b6f33d98e3222e131bb189a8269959cf8bd0eb4db12d7cdd6ee34cf64b75e7` |
 | packages/contracts/schemas/worker-capabilities.v1.json | `ec10c915d539adba626bb7621e9d1ef83ff929e64dfe997325f575dcfc7c3fe1` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
 | packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |

@@ -3,6 +3,8 @@ import type {TopologyResult} from "../../../packages/contracts";
 export type TopologySelection=
   | {kind:"ssh_band";runId:string;index:number}
   | {kind:"ssh_site";runId:string;index:number}
+  | {kind:"rice_mele_band";runId:string;index:number}
+  | {kind:"rice_mele_site";runId:string;index:number}
   | {kind:"qwz_cell";runId:string;xIndex:number;yIndex:number}
   | {kind:"bbh_cell";runId:string;index:number}
   | {kind:"kitaev_band";runId:string;index:number}
@@ -16,6 +18,8 @@ export type TopologySelection=
 export type TopologySample=
   | {kind:"ssh_band";index:number;k:number;lower:number;upper:number}
   | {kind:"ssh_site";index:number;density:number}
+  | {kind:"rice_mele_band";index:number;k:number;lower:number;upper:number}
+  | {kind:"rice_mele_site";index:number;density:number}
   | {kind:"qwz_cell";xIndex:number;yIndex:number;curvature:number;lower:number|null;upper:number|null}
   | {kind:"bbh_cell";index:number;xIndex:number;yIndex:number;density:number}
   | {kind:"kitaev_band";index:number;k:number;lower:number;upper:number}
@@ -35,6 +39,14 @@ export interface TopologyRunContext {
 export function selectedTopologySample(selection:TopologySelection|null,result:TopologyResult|null):TopologySample|null{
   if(!selection||!result||selection.runId!==result.runId)return null;
   const analysis=result.analysis;
+  if(result.model.type==="rice_mele"&&analysis.kind==="rice_mele"){
+    if(selection.kind==="rice_mele_band"&&Number.isInteger(selection.index)&&selection.index>=0&&selection.index<analysis.kValues.length){
+      const index=selection.index;return {kind:"rice_mele_band",index,k:analysis.kValues[index],lower:analysis.lowerBand[index],upper:analysis.upperBand[index]};
+    }
+    if(selection.kind==="rice_mele_site"&&Number.isInteger(selection.index)&&selection.index>=0&&selection.index<analysis.middleDensity.length){
+      const index=selection.index;return {kind:"rice_mele_site",index,density:analysis.middleDensity[index]};
+    }
+  }
   if(result.model.type==="hofstadter"&&analysis.kind==="hofstadter"&&selection.kind==="hofstadter_band_sample"){
     const {band,xIndex,yIndex}=selection,g=analysis.kxValues.length;
     if(![band,xIndex,yIndex].every(Number.isInteger)||band<0||band>=analysis.bandIndices.length||

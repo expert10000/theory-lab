@@ -99,7 +99,7 @@ try {
   await page.getByRole("button",{name:/^Quantum harmonic oscillator harmonic_oscillator/}).click();
   assert.match(await page.getByTestId("atlas-lab-coverage").innerText(),/Bound operation: oscillator.*Web compute control: not available/);
   assert.equal(await page.getByTestId("web-atlas-load").count(),0,"new oscillator binding remains desktop-only");
-  assert.match(await page.getByTestId("web-atlas").innerText(),/11 tested lab bindings/);
+  assert.match(await page.getByTestId("web-atlas").innerText(),/12 tested lab bindings/);
   await page.getByLabel("Search Atlas").fill("driven_harmonic_oscillator");
   await page.getByRole("button",{name:/driven_harmonic_oscillator/}).click();
   assert.match(await page.getByTestId("atlas-capability-status").innerText(),/Lab executable binding: tested subspace/);
@@ -153,6 +153,11 @@ try {
   assert.equal(await page.locator("#ssh-t1").inputValue(), "0.6");
   await page.getByTestId("run-web-topology").click();
   await page.getByTestId("web-ssh-winding").filter({ hasText: "1" }).waitFor();
+  await page.getByRole("combobox", { name: "Topology model" }).selectOption("rice_mele");
+  assert.equal(await page.locator("#rice-delta").inputValue(), "0.2");
+  await page.getByTestId("run-web-topology").click();
+  await page.getByText("Static bands and finite middle pair").waitFor();
+  await page.getByText(/No Thouless-pump cycle or invariant/).waitFor();
   await page
     .getByRole("combobox", { name: "Topology model" })
     .selectOption("qwz");

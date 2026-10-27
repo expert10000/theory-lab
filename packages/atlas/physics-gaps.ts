@@ -148,7 +148,6 @@ export const PHYSICS_GAP_GROUPS: PhysicsGapGroup[] = [
     priority: 2,
     kind: "new-model",
     atlasIds: [
-      "rice_mele",
       "tight_binding_generic",
       "bloch_two_band",
       "graphene_nn",
@@ -163,7 +162,7 @@ export const PHYSICS_GAP_GROUPS: PhysicsGapGroup[] = [
     reuse:
       "Existing SSH/QWZ topology, band/reciprocal/vector scenes and verified export/import.",
     missing:
-      "Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters. Rice–Mele is a natural first extension, not already implemented.",
+      "Explicit per-model matrices, k domains, boundaries, occupied bands, topology algorithms and numerical result adapters for the remaining entries. Static Rice–Mele is implemented separately; pumping remains open.",
     acceptance: [
       "Rice–Mele zero-staggering SSH limit",
       "Hermitian band matrices and independent analytic points",
