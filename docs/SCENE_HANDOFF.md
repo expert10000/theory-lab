@@ -67,7 +67,8 @@ have no native v1 lattice metadata. See the
 for build steps, exact controls, limits and verification.
 
 For a verified numerical scene, Math3D also offers **Open source run in Theory
-Lab**. The user selects a built local Theory Lab checkout once. Math3D re-reads
+Lab**. The user selects an installed Theory Lab executable or a built local
+checkout in **Settings → Theory Lab installation**. Math3D re-reads
 and verifies the complete active `.qscene` immediately before launch, then
 passes only its claimed source run ID and expected result SHA-256 on the Lab
 command line. Theory Lab checks the requested run against its own saved-run
@@ -75,7 +76,12 @@ store in a single verified read (job, result, artifact and exact result hash)
 and displays that same result in the appropriate laboratory. A missing run,
 different hash or corrupted file produces an unavailable message, never a
 substitute run. The launch identity is consumed once and is not a worker job.
-This local-checkout path starts a Theory Lab process; focusing an already-open
-Lab window and packaged-app discovery remain separate work. A matching saved
+The selected installation starts a Theory Lab process. A matching saved
 run proves its own integrity, not the publisher identity or numerical derivation
 of every value in a third-party `.qscene`.
+
+Pinned Math3D examples are portable, verified scene bundles. Their provenance
+names the producing Lab run, but that run is not necessarily present in the
+current Lab profile. **Open source run** succeeds only when the selected Lab
+installation has the exact saved run and result hash; the scene itself remains
+available read-only if the run is absent.
