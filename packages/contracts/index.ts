@@ -654,7 +654,7 @@ export interface WorkerResources {
   job: { activeId: string | null };
 }
 export type SourceRunLaunchResult =
-  | { ok: true; runId: string; resultSha256: string; saved: VerifiedSavedRun }
+  | { ok: true; runId: string; resultSha256: string; saved: VerifiedSavedRun; forkRequested?: boolean }
   | { ok: false; error: string };
 
 export interface QuantumBridge {
@@ -726,6 +726,8 @@ export interface QuantumBridge {
   exportScene(runId: string, view?: "standard" | "bands" | "wilson" | "invariant" | "strip", format?: "regular"|"stream"): Promise<string | null>;
   prepareSceneHandoff(runId: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
   openInMath3D(runId: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
+  openQwzStudyInMath3D(runId: string, resultSha256: string, mode: "new" | "attach"):
+    Promise<{ directory: string; launched: boolean }>;
   openImportedInMath3D(): Promise<string | null>;
   importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;
   readSceneChunk(id:string,path:string): Promise<Uint8Array>;

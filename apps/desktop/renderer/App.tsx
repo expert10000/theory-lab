@@ -136,6 +136,8 @@ export function App() {
   const [atlasRunning,setAtlasRunning]=useState(false);
   const [atlasMessage,setAtlasMessage]=useState<{id:string;text:string}|null>(null);
   const [workspaceMessage, setWorkspaceMessage] = useState("");
+  const [sourceFork, setSourceFork] = useState<{ runId: string; resultSha256: string } | null>(null);
+  const [forkBusy, setForkBusy] = useState(false);
   const collectDynamics = useCallback((value: WorkspaceSnapshot["dynamics"]) => { workspaceParts.current.dynamics = value; checkParts(); }, []);
   const collectCavity = useCallback((value: WorkspaceSnapshot["cavity"]) => { workspaceParts.current.cavity = value; checkParts(); }, []);
   const collectOpen = useCallback((value: WorkspaceSnapshot["open"]) => { workspaceParts.current.open = value; checkParts(); }, []);
@@ -565,6 +567,10 @@ export function App() {
         else if (result.operation === "orbital" && data) await openSavedOrbital(intent.runId, { result, data });
         else if (result.operation === "many_body") await openSavedManyBody(intent.runId, result);
         else throw new Error("Verified source run cannot be displayed in this Lab");
+        if (active && intent.forkRequested) {
+          setSourceFork({ runId: intent.runId, resultSha256: intent.resultSha256 });
+          setWorkspaceMessage(`Verified parent ${intent.runId}. Choose Fork verified run to calculate a new child with saved lineage.`);
+        }
       } catch (error) {
         if (active) setWorkspaceMessage(`Source run unavailable: ${error instanceof Error ? error.message : String(error)}`);
       }
@@ -1258,6 +1264,26 @@ export function App() {
         </aside>
       </div>
       {workspaceMessage && <div className="workspace-notice" role="status" data-testid="workspace-message">{workspaceMessage}</div>}
+      {sourceFork && <div className="workspace-notice" data-testid="source-fork-request">
+        <span>Fork parent <code>{sourceFork.runId}</code> · exact result <code>{sourceFork.resultSha256}</code></span>{" "}
+        <button type="button" data-testid="fork-verified-run" disabled={forkBusy} onClick={() => {
+          const request = sourceFork;
+          setForkBusy(true);
+          void (async () => {
+            try {
+              const inspected = await window.quantum.inspectSavedRun(request.runId);
+              if (inspected.hashes.result !== request.resultSha256) throw new Error("Parent result changed after the Math3D request");
+              if (!inspected.preflight.ready || !inspected.preflight.fingerprint)
+                throw new Error(inspected.preflight.reason ?? "Parent job cannot be rerun in this environment");
+              const child = await window.quantum.rerunSaved(request.runId, inspected.preflight.fingerprint);
+              setSourceFork(null);
+              setWorkspaceMessage(`Fork created: ${child.runId} · parent ${request.runId}. The parent result and scene remain saved.`);
+            } catch (error) { setWorkspaceMessage(`Fork refused: ${error instanceof Error ? error.message : String(error)}`); }
+            finally { setForkBusy(false); }
+          })();
+        }}>{forkBusy ? "Calculating child…" : "Fork verified run"}</button>{" "}
+        <button type="button" disabled={forkBusy} onClick={() => setSourceFork(null)}>Dismiss</button>
+      </div>}
       <footer className="statusbar">
         <div>
           <span

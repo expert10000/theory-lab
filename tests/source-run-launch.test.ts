@@ -8,10 +8,14 @@ test("Math3D source-run intent accepts only one bounded run ID and result hash",
   assert.equal(sourceRunLaunchArguments(["electron", "."]), null);
   assert.deepEqual(sourceRunLaunchArguments(["electron", ".", "--quantum-source-run", "run-123", hash]),
     { runId: "run-123", resultSha256: hash });
+  assert.deepEqual(sourceRunLaunchArguments(["electron", ".", "--quantum-source-fork", "run-123", hash]),
+    { runId: "run-123", resultSha256: hash, mode: "fork" });
   assert.throws(() => sourceRunLaunchArguments(["--quantum-source-run", "../run", hash]), /Invalid/);
   assert.throws(() => sourceRunLaunchArguments(["--quantum-source-run", "run-123", "bad"]), /Invalid/);
   assert.throws(() => sourceRunLaunchArguments(["--quantum-source-run", "run-123", hash,
     "--quantum-source-run", "run-456", hash]), /Only one/);
+  assert.throws(() => sourceRunLaunchArguments(["--quantum-source-run", "run-123", hash,
+    "--quantum-source-fork", "run-123", hash]), /Only one/);
 });
 
 test("source-run intent needs a hash-verified compatible saved run", async () => {
@@ -27,7 +31,9 @@ test("source-run intent needs a hash-verified compatible saved run", async () =>
   } };
   assert.deepEqual(await resolveSourceRunLaunch(store, intent),
     { ok: true, runId: intent.runId, resultSha256: hash, saved });
-  assert.equal(verifications, 1);
+  assert.deepEqual(await resolveSourceRunLaunch(store, { ...intent, mode: "fork" }),
+    { ok: true, runId: intent.runId, resultSha256: hash, saved, forkRequested: true });
+  assert.equal(verifications, 2);
   await assert.rejects(resolveSourceRunLaunch(store, { ...intent, resultSha256: "0".repeat(64) }), /does not match/);
   await assert.rejects(resolveSourceRunLaunch({ verifiedSource: async () => {
     throw new Error("Run metadata failed integrity check");

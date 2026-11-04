@@ -11,7 +11,8 @@ import { join, isAbsolute } from "node:path";
 import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
-import { chooseMath3DTarget, launchMath3D } from "./math3d-launch";
+import { chooseMath3DTarget, launchMath3D, launchMath3DStudy } from "./math3d-launch";
+import { prepareQwzStudyHandoff } from "./math3d-study-handoff";
 import { resolveSourceRunLaunch, sourceRunLaunchArguments } from "./source-run-launch";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
@@ -654,6 +655,23 @@ app.whenReady().then(() => {
     const receipt = await runs.prepareSceneHandoff(runId, parent, view, expectedResultHash);
     await launchMath3D(target, receipt.directory);
     return receipt;
+  });
+  ipcMain.handle("quantum:open-qwz-study-in-math3d", async (event, ...args: unknown[]) => {
+    trusted(event);
+    if (args.length !== 3) throw new Error("QWZ study handoff requires run, exact result hash and Project target");
+    const [runId, resultSha256, mode] = args;
+    if (typeof runId !== "string" || typeof resultSha256 !== "string" || (mode !== "new" && mode !== "attach"))
+      throw new TypeError("Invalid QWZ study handoff request");
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) throw new Error("Study window is unavailable");
+    const parent = join(app.getPath("userData"), "math3d-handoffs", randomUUID());
+    const receipt = await prepareQwzStudyHandoff(runs, runId, resultSha256, parent);
+    const target = await chooseMath3DTarget(win);
+    if (!target) return { ...receipt, launched: false };
+    // Refuse a source changed while the installation picker was open.
+    await runs.verifiedSource(runId, resultSha256);
+    await launchMath3DStudy(target, receipt.directory, mode);
+    return { ...receipt, launched: true };
   });
   ipcMain.handle("quantum:import-scene-stream",async(event,...args:unknown[])=>{
     trusted(event);if(args.length)throw new Error("Stream import accepts no renderer paths");

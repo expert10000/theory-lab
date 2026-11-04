@@ -1,11 +1,14 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { readFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { RunStore } from "../apps/desktop/main/runs";
+import { prepareQwzStudyHandoff } from "../apps/desktop/main/math3d-study-handoff";
 import { assertQuantumResultV2, qwzResultV2 } from "../packages/contracts/result-v2";
 import { verifyScenePayload } from "../packages/quantum-scene";
+import { readSceneBundle } from "../packages/quantum-scene/bundle";
 import { compileQWZSceneRecipe, QWZ_SCENE_COMPILER_VERSION, QWZ_SCENE_NUMERIC_POLICY,
   QWZ_SCENE_RECIPES } from "../packages/quantum-scene/recipes";
 
@@ -50,6 +53,24 @@ test("QWZ v2 descriptor shares one verified saved v1 result across both scene vi
   assert.equal(result.analysis.bulkGap, 2);
   assert.equal(result.analysis.chern, -1);
   assert.equal(result.analysis.sampledGap, 2.0002494853248947);
+});
+
+test("QWZ study handoff declares two independently readable scenes from the exact saved result", async () => {
+  const store = new RunStore(fixtureRoot, fixtureRoot);
+  const source = await store.inspect(runId);
+  const parent = await mkdtemp(join(tmpdir(), "qwz-study-"));
+  try {
+    const handoff = await prepareQwzStudyHandoff(store, runId, source.hashes.result, parent);
+    assert.equal(handoff.manifest.scenes.length, 2);
+    assert.deepEqual(handoff.manifest.scenes.map(item => item.role), ["curvature", "bands"]);
+    for (const declared of handoff.manifest.scenes) {
+      const opened = await readSceneBundle(join(parent, declared.folder));
+      assert.equal(opened.scene.id, declared.sceneId);
+      assert.equal(opened.scene.provenance.runId, runId);
+      assert.equal(opened.scene.provenance.resultSha256, source.hashes.result);
+    }
+    await assert.rejects(prepareQwzStudyHandoff(store, runId, "0".repeat(64), join(parent, "invalid")), /hash/);
+  } finally { await rm(parent, { recursive: true, force: true }); }
 });
 
 test("QWZ v2 refuses a changed pointer, hash, shape, source or unavailable claim", async () => {

@@ -74,6 +74,7 @@ const bridge: QuantumBridge = {
   exportScene: (runId, view, format) => ipcRenderer.invoke("quantum:export-scene", runId, view, format),
   prepareSceneHandoff: (runId, view, expectedResultHash) => ipcRenderer.invoke("quantum:prepare-scene-handoff", runId, view, expectedResultHash),
   openInMath3D: (runId, view, expectedResultHash) => ipcRenderer.invoke("quantum:open-in-math3d", runId, view, expectedResultHash),
+  openQwzStudyInMath3D: (runId, resultSha256, mode) => ipcRenderer.invoke("quantum:open-qwz-study-in-math3d", runId, resultSha256, mode),
   openImportedInMath3D: () => ipcRenderer.invoke("quantum:open-imported-in-math3d"),
   importSceneStream: () => ipcRenderer.invoke("quantum:import-scene-stream"),
   readSceneChunk: (id,path) => ipcRenderer.invoke("quantum:scene-chunk",id,path),
