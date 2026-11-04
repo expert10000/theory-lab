@@ -22,6 +22,7 @@ import {scenePreview} from "../../../packages/quantum-scene/lod";
 import {writeStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import {boundedRead} from "../../../packages/quantum-scene/bundle";
 import {figureSemantics} from "../../../packages/models/scientific-figure";
+import { compileQWZSceneRecipe } from "../../../packages/quantum-scene/recipes";
 import { qwzResultV2 } from "../../../packages/contracts/result-v2";
 import type {FigureFormat,ScientificFigureMetadata,ScientificFigurePreview} from "../../../packages/contracts/figure";
 
@@ -528,7 +529,10 @@ export class RunStore {
   }
   async scene(runId: string, view: "standard"|"bands"|"wilson"|"invariant"|"strip" = "standard") {
     if(view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant"&&view!=="strip") throw new Error("Unsupported scene view");
-    const { manifest, result, data } = await this.load(runId);
+    const { manifest, result, data, resultText } = await this.load(runId);
+    if (result.operation === "topology" && result.model.type === "qwz" && (view === "standard" || view === "bands"))
+      return compileQWZSceneRecipe(result, Buffer.from(resultText),
+        view === "bands" ? "qwz-bands/v1" : "qwz-curvature/v1", async bytes => sha(bytes));
     if(view==="wilson") return bbhWilsonSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));
     if(view==="invariant") return kitaevInvariantSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));
     if(view==="strip") return hofstadterStripSceneFromResult(result,manifest.hashes.result,async bytes=>sha(bytes));

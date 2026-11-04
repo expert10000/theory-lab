@@ -6,6 +6,8 @@ import { join, resolve } from "node:path";
 import { RunStore } from "../apps/desktop/main/runs";
 import { assertQuantumResultV2, qwzResultV2 } from "../packages/contracts/result-v2";
 import { verifyScenePayload } from "../packages/quantum-scene";
+import { compileQWZSceneRecipe, QWZ_SCENE_COMPILER_VERSION, QWZ_SCENE_NUMERIC_POLICY,
+  QWZ_SCENE_RECIPES } from "../packages/quantum-scene/recipes";
 
 const fixtureRoot = resolve("packages/contracts/fixtures");
 const runId = "run-05ce1036d70c466eb4f900944a85c474";
@@ -67,4 +69,24 @@ test("QWZ v2 refuses a changed pointer, hash, shape, source or unavailable claim
   const alteredBytes = Buffer.from(bytes);
   alteredBytes[alteredBytes.indexOf(Buffer.from("2.0002494853248947"))] = 0x33;
   assert.throws(() => assertQuantumResultV2(good, alteredBytes));
+});
+
+test("versioned QWZ recipes recompile byte-identical scenes without changing existing readers", async () => {
+  const bytes = await readFile(join(runDir, "result.json"));
+  const result = JSON.parse(bytes.toString("utf8"));
+  assert.equal(QWZ_SCENE_COMPILER_VERSION, "qvis-compiler/1");
+  assert.equal(QWZ_SCENE_NUMERIC_POLICY, "source-f64le-exact/1");
+  assert.deepEqual(QWZ_SCENE_RECIPES.map(recipe => recipe.id), ["qwz-curvature/v1", "qwz-bands/v1"]);
+  for (const [recipeId, expected] of [
+    ["qwz-curvature/v1", "38f8275bfd0e568251ef44742fe7ef412c958cb066e713558768cc2872af65b5"],
+    ["qwz-bands/v1", "9759d1e5555fd8c7af7614a08e372593d55398894960f5d96eb41a349555890b"],
+  ] as const) {
+    const first = await compileQWZSceneRecipe(result, bytes, recipeId, hash);
+    const second = await compileQWZSceneRecipe(result, bytes, recipeId, hash);
+    assert.equal(first.scene.schema, "quantum-scene/v1");
+    assert.equal(await hash(Buffer.from(JSON.stringify(first.scene, null, 2) + "\n")), expected);
+    assert.deepEqual(first, second);
+  }
+  await assert.rejects(compileQWZSceneRecipe(result, Buffer.from("{}"), "qwz-bands/v1", hash),
+    /differs from exact source bytes/);
 });
