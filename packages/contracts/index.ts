@@ -728,6 +728,8 @@ export interface QuantumBridge {
   openInMath3D(runId: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedResultHash: string): Promise<import("../quantum-scene/handoff").SceneHandoffReceipt | null>;
   openQwzStudyInMath3D(runId: string, resultSha256: string, mode: "new" | "attach"):
     Promise<{ directory: string; launched: boolean }>;
+  openHofstadterStudyInMath3D(runId: string, resultSha256: string, mode: "new" | "attach"):
+    Promise<{ directory: string; launched: boolean }>;
   openImportedInMath3D(): Promise<string | null>;
   importSceneStream(): Promise<{id:string;manifest:import("../quantum-scene/stream").SceneStream}|null>;
   readSceneChunk(id:string,path:string): Promise<Uint8Array>;

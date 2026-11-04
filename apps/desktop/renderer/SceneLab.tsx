@@ -167,6 +167,16 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
     finally { setBusy(false); }
   }
+  async function openHofstadterStudy(mode: "new" | "attach") {
+    if (source !== "saved" || payload?.scene.provenance.model !== "hofstadter") return;
+    setBusy(true); setMessage("");
+    try {
+      const result = await bridge.openHofstadterStudyInMath3D(runId, payload.scene.provenance.resultSha256, mode);
+      setMessage(result.launched ? `Math3D is verifying both Hofstadter views for the ${mode === "new" ? "new" : "current"} Project.` :
+        `Portable Hofstadter study prepared at ${result.directory}. Open this folder in Math3D when it is available.`);
+    } catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
+    finally { setBusy(false); }
+  }
   async function openExample() {
     setBusy(true);
     setMessage("");
@@ -281,6 +291,10 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
           {source === "saved" && payload?.scene.provenance.model === "qwz" && <>
             <button data-testid="open-qwz-study-math3d" disabled={busy} onClick={() => void openQwzStudy("new")}>Open both QWZ views in new Math3D Project</button>
             <button data-testid="attach-qwz-study-math3d" disabled={busy} onClick={() => void openQwzStudy("attach")}>Attach both QWZ views to current Math3D Project</button>
+          </>}
+          {source === "saved" && payload?.scene.provenance.model === "hofstadter" && <>
+            <button data-testid="open-hofstadter-study-math3d" disabled={busy} onClick={() => void openHofstadterStudy("new")}>Open bulk and strip in new Math3D Project</button>
+            <button data-testid="attach-hofstadter-study-math3d" disabled={busy} onClick={() => void openHofstadterStudy("attach")}>Attach bulk and strip to current Math3D Project</button>
           </>}
           {source !== "saved" && (
             <button

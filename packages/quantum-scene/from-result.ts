@@ -69,15 +69,23 @@ export async function sceneFromResult(result: QuantumResult, data: Uint8Array | 
     if (!data || data.byteLength !== result.data.bytes || await digest(data) !== result.data.sha256) throw new Error("Evolution source artifact failed integrity check");
     const samples = decodeDataset(data);
     if (samples.length !== result.data.rows * 10 || !samples.every(Number.isFinite)) throw new Error("Invalid evolution source layout");
-    const positions: number[] = [], time: number[] = [];
+    const positions: number[] = [], time: number[] = [], expectation: number[] = [];
     for (let i = 0; i < result.data.rows; i++) {
       const offset = i * 10;
       positions.push(samples[offset + 3], samples[offset + 4], samples[offset + 5]); time.push(samples[offset]);
+      expectation.push(samples[offset], samples[offset + 5], 0);
     }
     scene.coordinates.axes = ["sigma_x", "sigma_y", "sigma_z"];
     const trajectory = await dataset("trajectory", positions, 3, "dimensionless");
     const times = await dataset("time", time, 1, "normalized time (hbar=1)");
     object("bloch-trajectory", "Bloch trajectory (color = time)", "polyline", trajectory, "#79d9c1", { scalars: times });
+    const expectationPositions = await dataset("expectation-plot", expectation, 3, "normalized time / Pauli sigma_z");
+    scene.schema = "quantum-scene/v2";
+    scene.time = { axis: times, unit: "normalized time (hbar=1)",
+      frameIds: time.map((_, index) => `frame-${index}`),
+      tracks: [{ id: "bloch", object: "bloch-trajectory", positions: trajectory },
+        { id: "sigma-z", positions: expectationPositions }],
+      playback: { startFrame: 0, endFrame: time.length - 1, loop: false } };
     const origin = await dataset("origin", [0, 0, 0], 3, "dimensionless");
     const initial = await dataset("initial-vector", positions.slice(0, 3), 3, "dimensionless");
     object("initial-state", "Initial state", "vectors", origin, "#ffca80", { values: initial });

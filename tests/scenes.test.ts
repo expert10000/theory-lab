@@ -128,11 +128,16 @@ test("Bloch adapter preserves every verified evolution row and exports offline",
     const store = new RunStore(join(root, "runs"), artifacts); await store.record(job, result);
     const payload = await store.scene(result.runId);
     const arrays = await verifyScenePayload(payload, digest);
+    assert.equal(payload.scene.schema, "quantum-scene/v2");
+    assert.deepEqual(payload.scene.time?.tracks.map(track => track.id), ["bloch", "sigma-z"]);
+    assert.equal(payload.scene.time?.frameIds[7], "frame-7");
     const source = await readFile(join(artifacts, result.data.path));
     const view = new DataView(source.buffer, source.byteOffset, source.byteLength);
     for (let i = 0; i < 21; i++) {
       assert.equal(arrays.get("time")![i], view.getFloat64(i * 80, true));
       for (let c = 0; c < 3; c++) assert.equal(arrays.get("trajectory")![i * 3 + c], view.getFloat64(i * 80 + (c + 3) * 8, true));
+      assert.equal(arrays.get("expectation-plot")![i * 3], arrays.get("time")![i]);
+      assert.equal(arrays.get("expectation-plot")![i * 3 + 1], arrays.get("trajectory")![i * 3 + 2]);
     }
     const directory = await store.exportScene(result.runId, root);
     await worker.stop();
