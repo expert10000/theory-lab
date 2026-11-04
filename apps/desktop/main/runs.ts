@@ -22,6 +22,7 @@ import {scenePreview} from "../../../packages/quantum-scene/lod";
 import {writeStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import {boundedRead} from "../../../packages/quantum-scene/bundle";
 import {figureSemantics} from "../../../packages/models/scientific-figure";
+import { qwzResultV2 } from "../../../packages/contracts/result-v2";
 import type {FigureFormat,ScientificFigureMetadata,ScientificFigurePreview} from "../../../packages/contracts/figure";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
@@ -216,6 +217,13 @@ export class RunStore {
   async verified(runId:string):Promise<VerifiedSavedRun>{
     const {job,result,data}=await this.load(runId);
     return {job,result,data:data?Uint8Array.from(data):null};
+  }
+  /** Additive typed view of an exact saved QWZ v1 run; leaves its stored bytes unchanged. */
+  async resultV2(runId: string) {
+    const { result, resultText } = await this.load(runId);
+    if (result.operation !== "topology" || result.model.type !== "qwz")
+      throw new Error("quantum-result/v2 currently supports verified QWZ runs only");
+    return qwzResultV2(Buffer.from(resultText));
   }
   async verifiedSource(runId: string, expectedResultHash: string): Promise<VerifiedSavedRun> {
     if (!/^[a-f0-9]{64}$/.test(expectedResultHash)) throw new Error("Invalid source result hash");

@@ -1,0 +1,78 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "quantum-result/v2",
+  "title": "Additive typed dataset descriptor for a verified QWZ run",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "runId", "jobId", "operation", "model", "source", "datasets", "facts", "unavailable"],
+  "properties": {
+    "schema": { "const": "quantum-result/v2" },
+    "runId": { "$ref": "#/definitions/id" },
+    "jobId": { "$ref": "#/definitions/id" },
+    "operation": { "const": "topology" },
+    "model": {
+      "type": "object", "additionalProperties": false, "required": ["type", "parameters"],
+      "properties": {
+        "type": { "const": "qwz" },
+        "parameters": {
+          "type": "object", "additionalProperties": false, "required": ["mass", "grid"],
+          "properties": { "mass": { "type": "number" }, "grid": { "type": "integer", "minimum": 11, "maximum": 41 } }
+        }
+      }
+    },
+    "source": {
+      "type": "object", "additionalProperties": false, "required": ["schema", "resultSha256", "bytes"],
+      "properties": {
+        "schema": { "const": "quantum-result/v1" },
+        "resultSha256": { "$ref": "#/definitions/hash" },
+        "bytes": { "type": "integer", "minimum": 1, "maximum": 8388608 }
+      }
+    },
+    "datasets": {
+      "type": "array", "minItems": 4, "maxItems": 4,
+      "items": {
+        "type": "object", "additionalProperties": false,
+        "required": ["id", "role", "axes", "shape", "unit", "storage"],
+        "properties": {
+          "id": { "enum": ["band-k", "lower-band", "upper-band", "berry-curvature"] },
+          "role": { "enum": ["coordinate", "energy", "berry-curvature"] },
+          "axes": { "type": "array", "items": { "enum": ["kx", "ky", "band"] }, "minItems": 1, "maxItems": 2 },
+          "shape": { "type": "array", "items": { "type": "integer", "minimum": 1, "maximum": 1681 }, "minItems": 1, "maxItems": 2 },
+          "unit": { "enum": ["rad / lattice constant", "normalized energy (hbar=1)", "dimensionless (a=1)"] },
+          "storage": {
+            "type": "object", "additionalProperties": false, "required": ["kind", "pointer", "encoding", "sha256"],
+            "properties": {
+              "kind": { "const": "source-json-pointer" },
+              "pointer": { "enum": ["/analysis/bandKValues", "/analysis/lowerBand", "/analysis/upperBand", "/analysis/berryCurvature"] },
+              "encoding": { "const": "f64le" },
+              "sha256": { "$ref": "#/definitions/hash" }
+            }
+          }
+        }
+      }
+    },
+    "facts": {
+      "type": "object", "additionalProperties": false, "required": ["bulkGap", "sampledGap", "chern", "meshResolved"],
+      "properties": {
+        "bulkGap": { "type": "number", "minimum": 0 },
+        "sampledGap": { "type": "number", "minimum": 0 },
+        "chern": { "type": ["integer", "null"], "minimum": -1, "maximum": 1 },
+        "meshResolved": { "type": "boolean" }
+      }
+    },
+    "unavailable": {
+      "type": "array", "minItems": 2, "maxItems": 2,
+      "items": {
+        "type": "object", "additionalProperties": false, "required": ["role", "reason"],
+        "properties": {
+          "role": { "enum": ["eigenstates", "berry-connection"] },
+          "reason": { "const": "not supplied by quantum-result/v1 QWZ worker" }
+        }
+      }
+    }
+  },
+  "definitions": {
+    "hash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,100}$" }
+  }
+}

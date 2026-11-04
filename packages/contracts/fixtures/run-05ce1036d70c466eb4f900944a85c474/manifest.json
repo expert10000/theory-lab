@@ -1,0 +1,21 @@
+{
+  "schema": "quantum-run-manifest/v1",
+  "runId": "run-05ce1036d70c466eb4f900944a85c474",
+  "jobId": "job-e17ea221-6931-444a-8ce6-d7df5e556422",
+  "operation": "topology",
+  "model": "qwz",
+  "engine": "native",
+  "engineVersion": "1.18.1",
+  "computedAt": "2026-09-29T09:09:19.210086+00:00",
+  "durationMs": 0.7860000000619038,
+  "artifactSha256": null,
+  "files": {
+    "job": "job.json",
+    "result": "result.json",
+    "data": null
+  },
+  "hashes": {
+    "job": "873536502c5e734da89c36c2da8587880a2d1639c33b60a1755124f63cb89aa8",
+    "result": "01eb644e4a07df9f4aa6f49ce27a61a1e98d920aabd794962f57420ca2d2decf"
+  }
+}

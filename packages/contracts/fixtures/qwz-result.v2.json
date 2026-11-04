@@ -1,0 +1,110 @@
+{
+  "schema": "quantum-result/v2",
+  "runId": "run-05ce1036d70c466eb4f900944a85c474",
+  "jobId": "job-e17ea221-6931-444a-8ce6-d7df5e556422",
+  "operation": "topology",
+  "model": {
+    "type": "qwz",
+    "parameters": {
+      "mass": -1,
+      "grid": 21
+    }
+  },
+  "source": {
+    "schema": "quantum-result/v1",
+    "resultSha256": "01eb644e4a07df9f4aa6f49ce27a61a1e98d920aabd794962f57420ca2d2decf",
+    "bytes": 36570
+  },
+  "datasets": [
+    {
+      "id": "band-k",
+      "role": "coordinate",
+      "axes": [
+        "kx"
+      ],
+      "shape": [
+        21
+      ],
+      "unit": "rad / lattice constant",
+      "storage": {
+        "kind": "source-json-pointer",
+        "pointer": "/analysis/bandKValues",
+        "encoding": "f64le",
+        "sha256": "62289a5ebf54761e76f0aec9b7e77dd4dfd9825555cec66a79f9d204a24a41e5"
+      }
+    },
+    {
+      "id": "lower-band",
+      "role": "energy",
+      "axes": [
+        "kx",
+        "ky"
+      ],
+      "shape": [
+        21,
+        21
+      ],
+      "unit": "normalized energy (hbar=1)",
+      "storage": {
+        "kind": "source-json-pointer",
+        "pointer": "/analysis/lowerBand",
+        "encoding": "f64le",
+        "sha256": "c0ae0cf60f85ff5bf6f8ebb3dee91289e3f7dbd85fb770b3530ed465ab70d7bd"
+      }
+    },
+    {
+      "id": "upper-band",
+      "role": "energy",
+      "axes": [
+        "kx",
+        "ky"
+      ],
+      "shape": [
+        21,
+        21
+      ],
+      "unit": "normalized energy (hbar=1)",
+      "storage": {
+        "kind": "source-json-pointer",
+        "pointer": "/analysis/upperBand",
+        "encoding": "f64le",
+        "sha256": "b374a679c6c22421dd8330ee31dfe8bfe695670f0321c8deeb8b427474d53654"
+      }
+    },
+    {
+      "id": "berry-curvature",
+      "role": "berry-curvature",
+      "axes": [
+        "kx",
+        "ky"
+      ],
+      "shape": [
+        21,
+        21
+      ],
+      "unit": "dimensionless (a=1)",
+      "storage": {
+        "kind": "source-json-pointer",
+        "pointer": "/analysis/berryCurvature",
+        "encoding": "f64le",
+        "sha256": "ef18becd24e876a3008ea27daecf3d286b7c2c420f6b54a393d526f81beb1bd9"
+      }
+    }
+  ],
+  "facts": {
+    "bulkGap": 2,
+    "sampledGap": 2.0002494853248947,
+    "chern": -1,
+    "meshResolved": true
+  },
+  "unavailable": [
+    {
+      "role": "eigenstates",
+      "reason": "not supplied by quantum-result/v1 QWZ worker"
+    },
+    {
+      "role": "berry-connection",
+      "reason": "not supplied by quantum-result/v1 QWZ worker"
+    }
+  ]
+}
