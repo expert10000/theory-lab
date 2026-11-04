@@ -1,26 +1,35 @@
 import { createHash } from "node:crypto";
-import { lstat, mkdir, open, readdir, rm, writeFile } from "node:fs/promises";
-import { join } from "node:path";
+import { lstat, mkdir, mkdtemp, open, readdir, rename, rm, rmdir, writeFile } from "node:fs/promises";
+import { join, resolve, sep } from "node:path";
 import { assertScene, verifyScenePayload, type ScenePayload } from "./index";
 
 const hash = (bytes: Uint8Array) => createHash("sha256").update(bytes).digest("hex");
 const digest = async (bytes: Uint8Array) => hash(bytes);
 export async function writeSceneBundle(payload: ScenePayload, parent: string): Promise<string> {
+  if (payload.scene.id.startsWith("preview-")) throw new Error("Display previews cannot be published as final scene bundles");
   await verifyScenePayload(payload, digest);
-  // A user-selected parent plus a validated logical ID; never overwrite a bundle.
+  // Nothing at the final path is visible until every byte and manifest verifies.
   const directory = join(parent, `${payload.scene.id}.qscene`);
-  await mkdir(directory, { recursive: false });
+  const claim = join(parent, `.qscene-claim-${payload.scene.id}`);
+  try { await mkdir(claim); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new Error("Final scene publication already in progress"); throw error; }
+  try {
+  const staging = await mkdtemp(join(parent, ".qscene-finalizing-"));
   try {
     const sceneBytes = Buffer.from(JSON.stringify(payload.scene, null, 2) + "\n");
-    await writeFile(join(directory, "scene.json"), sceneBytes, { flag: "wx" });
-    for (const d of payload.scene.datasets) await writeFile(join(directory, d.path), payload.artifacts[d.path], { flag: "wx" });
-    await writeFile(join(directory, "bundle.json"), JSON.stringify({ schema: "quantum-scene-bundle/v1", scene: { path: "scene.json", bytes: sceneBytes.length, sha256: hash(sceneBytes) } }, null, 2) + "\n", { flag: "wx" });
+    await writeFile(join(staging, "scene.json"), sceneBytes, { flag: "wx" });
+    for (const d of payload.scene.datasets) await writeFile(join(staging, d.path), payload.artifacts[d.path], { flag: "wx" });
+    await writeFile(join(staging, "bundle.json"), JSON.stringify({ schema: "quantum-scene-bundle/v1", scene: { path: "scene.json", bytes: sceneBytes.length, sha256: hash(sceneBytes) } }, null, 2) + "\n", { flag: "wx" });
+    await readSceneBundle(staging);
+    try { await lstat(directory); throw new Error("Final scene bundle already exists"); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    await rename(staging, directory);
     return directory;
   } catch (error) {
-    // This exact child directory was exclusively created above by this call.
-    await rm(directory, { recursive: true, force: true });
+    if (resolve(staging).startsWith(resolve(parent) + sep)) await rm(staging, { recursive: true, force: true });
     throw error;
   }
+  } finally { await rmdir(claim); }
 }
 export async function boundedRead(path: string, expected?: number) {
   const info = await lstat(path);

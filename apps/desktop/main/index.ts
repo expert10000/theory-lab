@@ -17,6 +17,8 @@ import { resolveSourceRunLaunch, sourceRunLaunchArguments } from "./source-run-l
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
+import { integrationBusRoot, startLocalIntegrationBus } from "./local-integration-bus";
+import { SharedArtifactStore } from "./shared-artifact-store";
 import { SpectrumStudyStore } from "./spectrum-studies";
 import { IsingStudyStore } from "./ising-studies";
 import {HofstadterFluxStudyStore} from "./hofstadter-flux-studies";
@@ -39,6 +41,7 @@ import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
 
 const worker = new WorkerSupervisor(app.isPackaged ? process.resourcesPath : join(__dirname, ".."));
 const sceneStreams=new Map<string,Awaited<ReturnType<typeof openStreamBundle>>>();
+let integrationBus: Awaited<ReturnType<typeof startLocalIntegrationBus>> | null = null;
 function trusted(event: IpcMainInvokeEvent) {
   // Renderer history changes only the fragment; the bundled file itself must remain exact.
   const documentUrl=event.senderFrame?.url.split("#",1)[0];
@@ -85,7 +88,12 @@ app.whenReady().then(() => {
   let running = false;
   let importedScene: { directory: string; fingerprint: string } | null = null;
   const artifactDir = join(app.getPath("userData"), "artifacts");
-  const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir);
+  const sharedStore = new SharedArtifactStore();
+  const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir,
+    (saved, resultSha256) => integrationBus?.publishRun(saved.runId, resultSha256, saved.model), sharedStore);
+  void startLocalIntegrationBus(runs, integrationBusRoot(), join(app.getPath("userData"), "bus-handoffs"))
+    .then(bus => { integrationBus = bus; })
+    .catch(error => { console.error("Local integration bus unavailable:", error); });
   const spectrumStudies = new SpectrumStudyStore(join(app.getPath("userData"), "spectrum-studies"), runs);
   const isingStudies = new IsingStudyStore(join(app.getPath("userData"), "ising-studies"), runs);
   const fluxStudies = new HofstadterFluxStudyStore(join(app.getPath("userData"), "hofstadter-flux-studies"), runs);
@@ -98,6 +106,7 @@ app.whenReady().then(() => {
     worker,
     artifactDir,
     (progress) => {
+      try { integrationBus?.publishProgress(progress); } catch { /* Bus notices cannot interrupt a run. */ }
       for (const win of BrowserWindow.getAllWindows())
         win.webContents.send("quantum:progress", progress);
     },
@@ -790,5 +799,5 @@ app.on("before-quit", (event) => {
   if (quitting) return;
   event.preventDefault();
   quitting = true;
-  void worker.stop().finally(() => app.quit());
+  void Promise.all([worker.stop(), integrationBus?.close() ?? Promise.resolve()]).finally(() => app.quit());
 });

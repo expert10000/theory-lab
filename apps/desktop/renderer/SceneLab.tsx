@@ -366,7 +366,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
             ? "GEOMETRY FIXTURE · NO WORKER RUN"
             : source === "bundle"
               ? "IMPORTED BUNDLE · READ-ONLY · hashes verify integrity, not publisher identity"
-              : "SAVED NUMERICAL RUN"}
+              : "VERIFIED SAVED RUN · FINAL SCENE"}
         </p>
       </div>
       {message && (

@@ -1,5 +1,5 @@
 import { createHash, randomUUID } from "node:crypto";
-import { copyFile, lstat, mkdir, readFile, readdir, rename, rm, unlink, writeFile } from "node:fs/promises";
+import { lstat, mkdir, mkdtemp, readFile, readdir, rename, rm, rmdir, unlink, writeFile } from "node:fs/promises";
 import { basename, join, resolve, sep } from "node:path";
 import { assertJob, isQuantumResult, type QuantumJob, type QuantumResult, type SpectrumResult, type EvolutionResult, type CavityResult, type LindbladResult, type CircuitResult, type ManyBodyResult, type SweepResult, type TopologyResult, type OrbitalResult, type OscillatorFamilyResult, type RunComparisonPins, type VerifiedSavedRun,
   type RunExportFormat, type RunSummary } from "../../../packages/contracts";
@@ -25,6 +25,7 @@ import {figureSemantics} from "../../../packages/models/scientific-figure";
 import { compileQWZSceneRecipe } from "../../../packages/quantum-scene/recipes";
 import { qwzResultV2 } from "../../../packages/contracts/result-v2";
 import type {FigureFormat,ScientificFigureMetadata,ScientificFigurePreview} from "../../../packages/contracts/figure";
+import type { SharedArtifactStore } from "./shared-artifact-store";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const sha = (data: Uint8Array | string) => createHash("sha256").update(data).digest("hex");
@@ -45,7 +46,9 @@ function summary(result: QuantumResult): RunSummary {
     artifactSha256: "data" in result ? result.data.sha256 : null };
 }
 export class RunStore {
-  constructor(private readonly root: string, private readonly artifactDir: string) {}
+  constructor(private readonly root: string, private readonly artifactDir: string,
+    private readonly onRecorded?: (summary: RunSummary, resultSha256: string) => void,
+    private readonly sharedStore?: SharedArtifactStore) {}
   async record(job: QuantumJob, result: QuantumResult, parentRunId?: string): Promise<RunSummary> {
     assertJob(job);
     if (!isQuantumResult(result) || job.jobId !== result.jobId || job.operation !== result.operation ||
@@ -95,11 +98,18 @@ export class RunStore {
     }
     const dir = join(this.root, result.runId);
     await this.ensureRoot();
-    await mkdir(dir, { recursive: false });
+    const claim = join(this.root, `.run-claim-${result.runId}`);
+    try { await mkdir(claim); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code === "EEXIST") throw new Error("Saved run publication already in progress"); throw error; }
+    try {
+    const stage = await mkdtemp(join(this.root, ".run-finalizing-"));
+    let pinned = false;
+    try {
     const jobText = JSON.stringify(job, null, 2) + "\n";
     const resultText = JSON.stringify(result, null, 2) + "\n";
-    await writeFile(join(dir, "job.json"), jobText, { flag: "wx" });
-    await writeFile(join(dir, "result.json"), resultText, { flag: "wx" });
+    let persistedData: Buffer | null = null;
+    await writeFile(join(stage, "job.json"), jobText, { flag: "wx" });
+    await writeFile(join(stage, "result.json"), resultText, { flag: "wx" });
     const name = artifactName(result);
     if (name) {
       if (name !== `${result.jobId}.f64` || basename(name) !== name) throw new Error("Invalid run artifact path");
@@ -112,13 +122,30 @@ export class RunStore {
       if (result.operation === "oscillator_pulse") checkPulsedOscillatorData(result, data);
       if (result.operation === "oscillator_damped") checkDampedOscillatorData(result, data);
       if (result.operation === "oscillator_parametric") checkParametricData(result, data);
-      if (motionData) await writeFile(join(dir, "data.f64"), motionData, { flag: "wx" });
-      else await copyFile(join(this.artifactDir, name), join(dir, "data.f64"));
+      persistedData = data;
+      await writeFile(join(stage, "data.f64"), data, { flag: "wx" });
     }
     const manifest = { ...summary(result), ...(lineage?{lineage,parentRunId}:{}), files: { job: "job.json", result: "result.json", data: name ? "data.f64" : null },
       hashes: { job: sha(jobText), result: sha(resultText) } };
-    await writeFile(join(dir, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", { flag: "wx" });
-    return {...summary(result),...(lineage?{parentRunId}:{})};
+    await writeFile(join(stage, "manifest.json"), JSON.stringify(manifest, null, 2) + "\n", { flag: "wx" });
+    try { await lstat(dir); throw new Error("Saved run already exists"); }
+    catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+    if (this.sharedStore) {
+      const hashes = [await this.sharedStore.put(Buffer.from(jobText)), await this.sharedStore.put(Buffer.from(resultText))];
+      if (persistedData) hashes.push(await this.sharedStore.put(persistedData));
+      await this.sharedStore.pin(`run-${result.runId}`, hashes);
+      pinned = true;
+    }
+    await rename(stage, dir);
+    const recorded = {...summary(result),...(lineage?{parentRunId}:{})};
+    try { this.onRecorded?.(recorded, manifest.hashes.result); } catch { /* Notification cannot unpublish a verified run. */ }
+    return recorded;
+    } catch (error) {
+      if (pinned) await this.sharedStore?.unpin(`run-${result.runId}`).catch(() => {});
+      if (resolve(stage).startsWith(resolve(this.root) + sep)) await rm(stage, { recursive: true, force: true });
+      throw error;
+    }
+    } finally { await rmdir(claim); }
   }
   async ensureRoot() { await mkdir(this.root, { recursive: true }); }
   async list(): Promise<RunSummary[]> {
