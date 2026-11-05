@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { QuantumBridge } from "../../../packages/contracts";
 const bridge: QuantumBridge = {
+  qecRepetition: (flips) => ipcRenderer.invoke("quantum:qec-repetition", flips),
   run: (job) => ipcRenderer.invoke("quantum:run", job),
   evolve: (job) => ipcRenderer.invoke("quantum:evolve", job),
   cavity: (job) => ipcRenderer.invoke("quantum:cavity", job),

@@ -28,6 +28,7 @@ import {RiceMeleConvergenceStudyStore} from "./rice-mele-convergence-studies";
 import { IsingStateStore } from "./ising-state";
 import {IsingQuenchStore} from "./ising-quench";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
+import {verifyQecRepetitionStudy, type QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
 import {openStreamBundle} from "../../../packages/quantum-scene/stream-bundle";
 import { assertExampleRequest, sceneExample } from "../../../packages/quantum-scene/examples";
@@ -229,6 +230,23 @@ app.whenReady().then(() => {
     if (typeof jobId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(jobId))
       throw new Error("Invalid job ID");
     return evolution.readData(jobId);
+  });
+  ipcMain.handle("quantum:qec-repetition", async (event, value: unknown) => {
+    trusted(event);
+    if (!Array.isArray(value) || value.length < 1 || value.length > 32 ||
+        value.some(bit => !Number.isInteger(bit) || bit < -1 || bit > 2))
+      throw new Error("Invalid bounded repetition-code schedule");
+    if (worker.status.state !== "READY" || !worker.status.capabilities?.engines.native.available)
+      throw new Error("Native worker is not ready");
+    const result = await worker.request("quantum.qecRepetition", {flips:value}, 10000) as QecRepetitionStudy;
+    const canonical=(item:unknown):string=>Array.isArray(item)?`[${item.map(canonical).join(",")}]`:
+      item&&typeof item==="object"?`{${Object.entries(item).sort(([a],[b])=>a.localeCompare(b)).map(([key,val])=>`${JSON.stringify(key)}:${canonical(val)}`).join(",")}}`:
+      JSON.stringify(item);
+    const {sha256,...record}=result;
+    if (!verifyQecRepetitionStudy(value, result) ||
+        createHash("sha256").update(canonical(record)).digest("hex")!==sha256)
+      throw new Error("Invalid repetition-code worker trace");
+    return result;
   });
   ipcMain.handle("quantum:run", async (event, value: unknown) => {
     trusted(event);

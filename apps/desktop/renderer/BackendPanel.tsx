@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { WorkerResources, WorkerStatus } from "../../../packages/contracts";
+import type {QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { runtimeNegotiation } from "../../../packages/contracts/runtime-negotiation";
 import { ATLAS_ENTRIES,ATLAS_REVISION } from "../../../packages/atlas";
 
@@ -21,6 +22,17 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
   const negotiated = runtimeNegotiation(status);
   const [resources, setResources] = useState<WorkerResources | null>(null);
   const [resourceError, setResourceError] = useState("");
+  const [qecSchedule,setQecSchedule]=useState("0, none, 1");
+  const [qecStudy,setQecStudy]=useState<QecRepetitionStudy|null>(null);
+  const [qecError,setQecError]=useState("");
+  async function runQecExample(){
+    try{
+      const flips=qecSchedule.split(",").map(value=>value.trim().toLowerCase()==="none"?-1:value.trim()===""?NaN:Number(value.trim()));
+      if(flips.length<1||flips.length>32||flips.some(bit=>!Number.isInteger(bit)||bit < -1||bit > 2))
+        throw new Error("Enter 1–32 comma-separated rounds: none, 0, 1, or 2.");
+      setQecStudy(await window.quantum.qecRepetition(flips));setQecError("");
+    }catch(error){setQecStudy(null);setQecError(String(error));}
+  }
   useEffect(() => {
     if (status.state !== "READY") { setResources(null); return; }
     let active = true;
@@ -55,6 +67,17 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
         </div>
       </div>
       <div className="backend-card-grid">
+        <article className="panel backend-card backend-wide" data-testid="qec-repetition-example">
+          <p className="eyebrow">QI-31 / IDEAL SYNDROME EXAMPLE</p>
+          <h2>Three-data-bit repetition code</h2>
+          <p>Specify one prescribed bit flip per round. The worker records parity syndromes and changes between rounds, then applies a final minimum-weight correction. Multiple errors can be ambiguous. This teaching example is not a surface code or a fault-tolerance result.</p>
+          <label>Flip schedule <input aria-label="QEC flip schedule" value={qecSchedule} onChange={event=>setQecSchedule(event.target.value)} /></label>{" "}
+          <button type="button" disabled={status.state!=="READY"} onClick={()=>void runQecExample()}>Measure ideal syndromes</button>
+          {qecError&&<p role="alert">{qecError}</p>}
+          {qecStudy&&<div role="status"><p>Trace SHA-256 {qecStudy.sha256} · correction bit {qecStudy.decoder.correctionBit} · logical result {qecStudy.decoder.logicalResult}{qecStudy.decoder.ambiguousMultipleErrors?" · multiple-error ambiguity":""}</p>
+            <table><thead><tr><th>Round</th><th>Flip</th><th>Syndrome</th><th>Defects</th><th>Data bits</th></tr></thead><tbody>{qecStudy.rounds.map(row=><tr key={row.round}><td>{row.round}</td><td>{row.flip<0?"none":row.flip}</td><td>{row.syndrome.join("")}</td><td>{row.defects.join("")}</td><td>{row.dataBits.join("")}</td></tr>)}</tbody></table>
+            <small>Live example only; this trace is not an immutable saved run or an exported quantum scene.</small></div>}
+        </article>
         <article className="panel backend-card" data-testid="runtime-negotiation">
           <p className="eyebrow">RUNTIME CAPABILITIES / QI-22</p>
           <h2>Available on this worker</h2>
