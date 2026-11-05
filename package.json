@@ -24,6 +24,9 @@
     "test:source-run-locate": "npm run build && node scripts/smoke-source-run-locate.mjs",
     "test:ssh-ui": "npm run build && node scripts/smoke-ssh-ui.mjs",
     "accept:remote": "tsx scripts/accept-remote.ts",
+    "accept:transport": "tsx scripts/accept-remote.ts",
+    "check:transport": "tsx scripts/check-transport.ts",
+    "benchmark:acceleration": "node scripts/python.mjs -m quantum_worker.acceleration",
     "start:gateway": "npm run build && node dist/gateway.cjs",
     "setup:python": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup-python.ps1",
     "desktop:shortcut": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/create-shortcut.ps1"

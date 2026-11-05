@@ -1,8 +1,8 @@
 # Worker observatory and API
 
-The authenticated web laboratory has a **Worker & API** page. It refreshes every five seconds and reports worker state, selected transport, platform, logical CPU count, physical RAM total, active asynchronous job, installed engine versions, advertised operations, protocol methods, and recent gateway calls. Resource values come from the Python worker—even over SSH—not from the browser. Physical RAM is host total, not free memory or a per-job allocation.
+The authenticated web laboratory has a **Worker & API** page. It refreshes every five seconds and reports worker state, selected transport, platform, logical CPU count, physical RAM total, active asynchronous job, installed engine versions, advertised operations, protocol methods, and recent gateway calls. Resource values come from the Python worker, including over a selected transport, and not from the browser. Physical RAM is host total, not free memory or a per-job allocation.
 
-The Electron **Backend** tab shows the same worker resource snapshot and the selected SSH connection. Local Python over stdio is the default. When `QLAB_REMOTE_SSH_TARGET` and `QLAB_REMOTE_ROOT` are set before launch, it displays the target, checkout, Python executable and artifact directory resolved by the supervisor. Python defaults to `<remote-root>/.venv/bin/python`; remote artifacts default to `<remote-root>/.qlab-remote-artifacts`. Authentication remains in the user's OpenSSH configuration. The UI never reads or displays private keys.
+The Electron **Backend** tab shows the same worker resource snapshot and the selected transport identity. Local Python over stdio is the default. SSH, WSL and Docker settings select a single supervised worker environment; the tab displays its target, checkout, Python executable and artifact directory. SSH authentication remains in the user's OpenSSH configuration. The UI never reads or displays private keys.
 
 ## Protocol methods
 
@@ -95,3 +95,7 @@ curl -H "Authorization: Bearer <token>" http://127.0.0.1:8765/api/resources
 ```
 
 Run `npm run test:web` for the local browser path. With the `QLAB_REMOTE_*` settings from the SSH setup, `npm run test:ssh-ui` checks that Electron shows the selected SSH target and worker resources; `npm run test:web` then tests the gateway over SSH too. The machine-local `qlab-wsl-local` alias created during acceptance is an example OpenSSH profile, not a built-in default or an external deployment.
+
+## Runtime transport and capability additions
+
+QI-22–24 capability decisions, WSL/Docker/SSH configuration, transport acceptance and optional GPU benchmark are documented in [QI22_24_RUNTIME.md](QI22_24_RUNTIME.md).

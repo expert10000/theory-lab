@@ -6,13 +6,14 @@ import { join, resolve } from "node:path";
 import { WorkerSupervisor } from "../apps/desktop/main/worker";
 import { EvolutionCoordinator } from "../apps/desktop/main/evolution";
 import { defaultsFor, evolutionJob, spectrumJob } from "../packages/models";
-import { remoteConfig } from "../apps/desktop/main/remote";
+import { transportConfig } from "../apps/desktop/main/transport-adapters";
 
-if (!remoteConfig(process.env))
-  throw new Error("Set QLAB_REMOTE_SSH_TARGET and QLAB_REMOTE_ROOT before remote acceptance");
+const selected = transportConfig(process.env);
+if (!selected)
+  throw new Error("Select SSH, WSL or Docker worker settings before transport acceptance");
 
 const root = resolve(import.meta.dirname, "..");
-const local = await mkdtemp(join(tmpdir(), "qlab-live-ssh-"));
+const local = await mkdtemp(join(tmpdir(), "qlab-live-transport-"));
 const worker = new WorkerSupervisor(root);
 let progressJob = "";
 let sawProgress: (value: void) => void = () => {};
@@ -23,8 +24,8 @@ const coordinator = new EvolutionCoordinator(worker, local, progress => {
 try {
   const status = await worker.start();
   assert.equal(status.state, "READY", status.detail);
-  assert.equal(status.transport, "ssh");
-  assert.equal(status.connection?.target, process.env.QLAB_REMOTE_SSH_TARGET);
+  assert.equal(status.transport, selected.kind);
+  assert.equal(status.connection?.target, selected.target);
   assert.ok(status.capabilities?.engines.native.available);
   const resources = await worker.resources();
   assert.equal(resources.schema, "worker-resources/v1");
@@ -63,7 +64,7 @@ try {
   assert.match(await outcome, /cancelled/i);
   assert.deepEqual(await worker.request("health"), { status: "ok" });
   assert.equal((await worker.restart()).state, "READY");
-  console.log("PASS: live SSH handshake, native spectrum, binary artifact, integrity rejection, cancellation, health and restart");
+  console.log(`PASS: live ${selected.kind} handshake, native spectrum, binary artifact, integrity rejection, cancellation, health and restart`);
 } finally {
   await worker.stop();
   await rm(local, { recursive: true, force: true });

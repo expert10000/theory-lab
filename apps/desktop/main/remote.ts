@@ -10,7 +10,7 @@ export interface RemoteConfig {
   artifacts: string;
 }
 const absolute = /^\/(?:[A-Za-z0-9_.-]+\/)*[A-Za-z0-9_.-]+\/?$/;
-function safeAbsolute(value: string): string {
+export function safeAbsolute(value: string): string {
   if (!absolute.test(value) || value.split("/").includes(".."))
     throw new Error("Remote paths must be absolute POSIX paths without spaces or '..'");
   return value.replace(/\/$/, "");
@@ -37,6 +37,12 @@ export function verifyRemoteBytes(bytes: Uint8Array, expected: { bytes: number; 
   if (bytes.byteLength !== expected.bytes || createHash("sha256").update(bytes).digest("hex") !== expected.sha256)
     throw new Error("Remote artifact failed SHA-256 integrity check");
 }
+export function validateArtifactMetadata(jobId: string, expected: { path: string; bytes: number; sha256: string }): void {
+  if (!/^[A-Za-z0-9_-]{1,100}$/.test(jobId) || expected.path !== `${jobId}.f64` ||
+      !Number.isInteger(expected.bytes) || expected.bytes < 16 || expected.bytes > 8_000_000 ||
+      !/^[a-f0-9]{64}$/.test(expected.sha256))
+    throw new Error("Invalid remote artifact metadata");
+}
 type Copier = (config: RemoteConfig, jobId: string, temporary: string, timeoutMs: number) => Promise<void>;
 async function copyByScp(config: RemoteConfig, jobId: string, temporary: string, timeoutMs: number): Promise<void> {
   await new Promise<void>((resolve, reject) => {
@@ -53,10 +59,7 @@ async function copyByScp(config: RemoteConfig, jobId: string, temporary: string,
 export async function fetchRemoteArtifact(config: RemoteConfig, jobId: string, expected: {
   path: string; bytes: number; sha256: string;
 }, localDir: string, timeoutMs = 120000, copier: Copier = copyByScp): Promise<void> {
-  if (!/^[A-Za-z0-9_-]{1,100}$/.test(jobId) || expected.path !== `${jobId}.f64` ||
-      !Number.isInteger(expected.bytes) || expected.bytes < 16 || expected.bytes > 8_000_000 ||
-      !/^[a-f0-9]{64}$/.test(expected.sha256))
-    throw new Error("Invalid remote artifact metadata");
+  validateArtifactMetadata(jobId, expected);
   await mkdir(localDir, { recursive: true });
   const temporary = join(localDir, `${jobId}.${randomUUID()}.part`);
   try {

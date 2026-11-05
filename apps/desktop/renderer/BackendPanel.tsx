@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { WorkerResources, WorkerStatus } from "../../../packages/contracts";
+import { runtimeNegotiation } from "../../../packages/contracts/runtime-negotiation";
 import { ATLAS_ENTRIES,ATLAS_REVISION } from "../../../packages/atlas";
 
 const columns = [
@@ -17,6 +18,7 @@ const columns = [
 
 export function BackendPanel({ status }: { status: WorkerStatus }) {
   const engines = status.capabilities?.engines;
+  const negotiated = runtimeNegotiation(status);
   const [resources, setResources] = useState<WorkerResources | null>(null);
   const [resourceError, setResourceError] = useState("");
   useEffect(() => {
@@ -36,7 +38,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
         <p className="eyebrow">DESKTOP BACKEND / QLAB-009</p>
         <h2>Methods and formats, in the open.</h2>
         <p>
-          The renderer never imports scientific Python code. A supervised {status.transport === "ssh" ? "SSH remote" : "local"}{" "}
+          The renderer never imports scientific Python code. A supervised {status.transport ?? "local"}{" "}
           worker receives validated jobs and returns results through Electron’s
           narrow preload bridge.
         </p>
@@ -53,6 +55,15 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
         </div>
       </div>
       <div className="backend-card-grid">
+        <article className="panel backend-card" data-testid="runtime-negotiation">
+          <p className="eyebrow">RUNTIME CAPABILITIES / QI-22</p>
+          <h2>Available on this worker</h2>
+          <p>Protocol {negotiated.protocol ?? "—"} · worker {negotiated.workerVersion ?? "—"} · scene viewers {negotiated.sceneFormats.join(", ")}</p>
+          <ul>{negotiated.decisions.map(item => <li key={item.operation}>
+            <strong>{item.operation}</strong>: {item.reason}{item.fallback ? ` · fallback: ${item.fallback}` : ""}
+          </li>)}</ul>
+          <small>Fallbacks are suggestions. Selecting a different engine still requires an explicit user choice.</small>
+        </article>
         <article className="panel backend-card">
           <div className="backend-card-title">
             <p className="eyebrow">ENGINE 01</p>
@@ -135,8 +146,8 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             <code>quantum-job/v1</code>, <code>quantum-result/v1</code>, and{" "}
             <code>worker-capabilities/v1</code> are checked on both sides of the
             Python boundary. Worker commands use newline-delimited JSON-RPC 2.0
-            over stdio. Local mode has no network server; opt-in SSH mode carries
-            that stream over an authenticated, host-key-verified connection.
+            over stdio. Local mode has no network server. SSH, WSL and Docker
+            transports are explicit worker launch choices.
           </p>
           <small>hello · capabilities · health · run · cancel · shutdown</small>
           <p>QVIS-017 adds on-demand <code>quantum.isingState</code> through trusted <code>quantum:ising-state</code> IPC. It accepts only a hash-verified saved Ising job plus its exact source hashes and returns a separate bounded <code>quantum-ising-state/v1</code> summary. Native or QuSpin computes correlations, contiguous-cut entropy and at most 16 basis probabilities; Electron checks the result against the saved run and caches a hash-wrapped sidecar. The original <code>quantum-result/v1</code> branch is unchanged.</p>
@@ -161,17 +172,17 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
         </article>
         <article className="panel backend-card">
           <p className="eyebrow">WORKER TRANSPORT / QLAB-024</p>
-          <h2>{status.transport === "ssh" ? "Remote SSH" : "Local stdio"}</h2>
+          <h2>{status.transport === "ssh" ? "Remote SSH" : status.transport === "wsl" ? "WSL" : status.transport === "docker" ? "Docker" : "Local stdio"}</h2>
           <p>{status.detail}</p>
           <dl className="backend-facts" data-testid="ssh-connection">
             <div><dt>Default</dt><dd>Local Python over stdio</dd></div>
-            <div><dt>Selected SSH target</dt><dd>{status.connection?.target ?? "None configured"}</dd></div>
-            <div><dt>Remote checkout</dt><dd>{status.connection?.root ?? "QLAB_REMOTE_ROOT required for SSH"}</dd></div>
+            <div><dt>Selected target</dt><dd>{status.connection?.target ?? "None configured"}</dd></div>
+            <div><dt>Worker checkout</dt><dd>{status.connection?.root ?? "Local checkout"}</dd></div>
             <div><dt>Python</dt><dd>{status.connection?.python ?? "Local .venv"}</dd></div>
             <div><dt>Remote artifacts</dt><dd>{status.connection?.artifacts ?? "Not applicable"}</dd></div>
-            <div><dt>Authentication</dt><dd>SSH key · BatchMode · strict host-key check</dd></div>
+            <div><dt>Access</dt><dd>{status.transport === "ssh" ? "SSH key · BatchMode · strict host-key check" : status.transport === "docker" ? "Local Docker daemon access" : status.transport === "wsl" ? "Local WSL distribution" : "Local process"}</dd></div>
           </dl>
-          <small>Set QLAB_REMOTE_SSH_TARGET and QLAB_REMOTE_ROOT before starting the app. SSH artifacts use SCP/SFTP and SHA-256 verification. No private keys or tokens are exposed here.</small>
+          <small>Select QLAB_REMOTE_SSH_TARGET, QLAB_WSL_DISTRO or QLAB_DOCKER_CONTAINER before starting the app. Binary artifacts are SHA-256 verified before use. No private keys or tokens are exposed here.</small>
         </article>
         <article className="panel backend-card">
           <p className="eyebrow">DATA PLANE</p>

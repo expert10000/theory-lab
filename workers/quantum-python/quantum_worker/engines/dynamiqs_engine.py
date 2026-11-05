@@ -4,9 +4,12 @@ Importing this module never imports JAX. A machine without the optional stack
 continues to use QuTiP and SciPy without a GPU initialization side effect.
 """
 from importlib import metadata, util
+from functools import lru_cache
+import math
 import os
 
 
+@lru_cache(maxsize=1)
 def availability():
     if util.find_spec("dynamiqs") is None or util.find_spec("jax") is None:
         return {"available": False, "version": None, "device": None}
@@ -14,8 +17,17 @@ def availability():
         os.environ.setdefault("XLA_PYTHON_CLIENT_PREALLOCATE", "false")
         import dynamiqs  # verify import, not just wheel metadata
         import jax
+        import jax.numpy as jnp
         devices = jax.devices("gpu")
         if not devices:
+            return {"available": False, "version": metadata.version("dynamiqs"), "device": None}
+        jax.config.update("jax_enable_x64", True)
+        dynamiqs.set_device("gpu")
+        # Registration requires a solved, normalized state with an exact analytic answer.
+        probe = dynamiqs.sesolve(0.5 * dynamiqs.sigmax(), dynamiqs.basis(2, 0),
+                                jnp.asarray([0.0, math.pi], dtype=jnp.float64), progress_meter=False)
+        state = dynamiqs.to_numpy(probe.final_state).reshape(2)
+        if abs(abs(state[1]) ** 2 - 1.0) > 5e-4 or abs(sum(abs(value) ** 2 for value in state) - 1.0) > 1e-5:
             return {"available": False, "version": metadata.version("dynamiqs"), "device": None}
         return {"available": True, "version": metadata.version("dynamiqs"),
                 "device": str(devices[0])}

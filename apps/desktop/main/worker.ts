@@ -7,13 +7,17 @@ import {
   type WorkerStatus,
   type WorkerResources,
 } from "../../../packages/contracts";
-import { fetchRemoteArtifact, remoteConfig, sshLaunch, type RemoteConfig } from "./remote";
+import { negotiateRuntime, type RuntimeEngine, type RuntimeOperation } from "../../../packages/contracts/runtime-negotiation";
+import { fetchTransportArtifact, transportConfig, transportLaunch, type ExternalTransport } from "./transport-adapters";
 
 type Pending = {
   resolve: (value: unknown) => void;
   reject: (error: Error) => void;
   timer: NodeJS.Timeout;
 };
+const requestedTransport = (): "local" | "ssh" | "wsl" | "docker" =>
+  process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : process.env.QLAB_WSL_DISTRO ? "wsl" :
+  process.env.QLAB_DOCKER_CONTAINER ? "docker" : "local";
 export class WorkerSupervisor extends EventEmitter {
   status: WorkerStatus = {
     state: "STOPPED",
@@ -27,14 +31,14 @@ export class WorkerSupervisor extends EventEmitter {
   private starting?: Promise<WorkerStatus>;
   private stopping = false;
   private stderr = "";
-  private remote: RemoteConfig | null = null;
+  private remote: ExternalTransport | null = null;
   constructor(private root: string) {
     super();
   }
 
   private fail(message: string) {
     this.status = { state: "ERROR", detail: message, capabilities: null,
-      transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local" };
+      transport: this.remote?.kind ?? requestedTransport() };
     if (this.remote) this.status.connection = { ...this.remote };
     this.emit("unavailable", message);
     if (this.heartbeat) clearInterval(this.heartbeat);
@@ -61,10 +65,10 @@ export class WorkerSupervisor extends EventEmitter {
       state: "STARTING",
       detail: "Connecting to Python",
       capabilities: null,
-      transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local",
+      transport: requestedTransport(),
     };
     this.remote = null;
-    try { this.remote = remoteConfig(process.env); }
+    try { this.remote = transportConfig(process.env); }
     catch (error) {
       this.fail(error instanceof Error ? error.message : String(error));
       return this.status;
@@ -78,7 +82,7 @@ export class WorkerSupervisor extends EventEmitter {
         ".venv",
         process.platform === "win32" ? "Scripts/python.exe" : "bin/python",
       );
-    const launch = this.remote ? sshLaunch(this.remote) :
+    const launch = this.remote ? transportLaunch(this.remote) :
       { command: executable, args: packaged ? [] : ["-u", "-m", "quantum_worker.main"] };
     const child = spawn(launch.command, launch.args, {
       cwd: this.root,
@@ -99,7 +103,7 @@ export class WorkerSupervisor extends EventEmitter {
     });
     child.on("error", (error) => {
       if (this.child === child)
-        this.fail(this.remote ? `SSH worker: ${error.message}. Check OpenSSH and remote settings.` :
+        this.fail(this.remote ? `${this.remote.kind.toUpperCase()} worker: ${error.message}. Check transport settings.` :
           `Python worker: ${error.message}. Run npm run setup:python.`);
     });
     child.stdin.on("error", (error) => {
@@ -154,17 +158,19 @@ export class WorkerSupervisor extends EventEmitter {
       if (buffer.length > 262144) this.fail("Worker response exceeded 256 KiB");
     });
     try {
-      const hello = (await this.request("hello")) as { protocol: number };
+      const hello = (await this.request("hello")) as { protocol: number; workerVersion: string };
       if (hello.protocol !== 1) throw new Error("Incompatible worker protocol");
       const capabilities = await this.request("capabilities");
       if (!isWorkerCapabilities(capabilities))
         throw new Error("Invalid worker capabilities");
+      if (capabilities.worker.version !== hello.workerVersion)
+        throw new Error("Worker hello and capability versions disagree");
       await this.checkHealth();
       this.status = {
         state: "READY",
-        detail: this.remote ? `Remote SSH worker connected: ${this.remote.target}` : "Worker connected",
+        detail: this.remote ? `${this.remote.kind.toUpperCase()} worker connected: ${this.remote.target}` : "Worker connected",
         capabilities,
-        transport: this.remote ? "ssh" : "local",
+        transport: this.remote?.kind ?? "local",
         connection: this.remote ? { ...this.remote } : undefined,
       };
       this.heartbeat = setInterval(() => {
@@ -192,13 +198,22 @@ export class WorkerSupervisor extends EventEmitter {
     return this.remote?.artifacts ?? localDir;
   }
   async fetchArtifact(jobId: string, data: { path: string; bytes: number; sha256: string }, localDir: string): Promise<void> {
-    if (this.remote) await fetchRemoteArtifact(this.remote, jobId, data, localDir);
+    if (this.remote) await fetchTransportArtifact(this.remote, jobId, data, localDir);
   }
   request(
     method: string,
     params: unknown = {},
     timeout = 30000,
   ): Promise<unknown> {
+    if (method === "quantum.run" || method === "quantum.start") {
+      const job = method === "quantum.start" ? (params as { job?: unknown })?.job : params;
+      if (!job || typeof job !== "object") return Promise.reject(new Error("Missing quantum job"));
+      const { operation, engine } = job as { operation?: unknown; engine?: unknown };
+      if (typeof operation !== "string" || typeof engine !== "string")
+        return Promise.reject(new Error("Missing quantum operation or engine"));
+      const decision = negotiateRuntime(this.status, operation as RuntimeOperation, engine as RuntimeEngine);
+      if (!decision.available) return Promise.reject(new Error(decision.reason));
+    }
     if (!this.child || this.child.killed)
       return Promise.reject(new Error("Python worker is unavailable"));
     const id = `rpc-${++this.sequence}`;
@@ -252,7 +267,7 @@ export class WorkerSupervisor extends EventEmitter {
       state: "STOPPED",
       detail: "Worker stopped",
       capabilities: null,
-      transport: process.env.QLAB_REMOTE_SSH_TARGET ? "ssh" : "local",
+      transport: this.remote?.kind ?? requestedTransport(),
       connection: this.remote ? { ...this.remote } : undefined,
     };
   }

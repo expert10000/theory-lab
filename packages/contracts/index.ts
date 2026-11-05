@@ -643,7 +643,7 @@ export interface WorkerStatus {
   state: "STARTING" | "READY" | "ERROR" | "STOPPED";
   detail: string;
   capabilities: WorkerCapabilities | null;
-  transport?: "local" | "ssh";
+  transport?: "local" | "ssh" | "wsl" | "docker";
   connection?: { target: string; root: string; python: string; artifacts: string };
 }
 export interface WorkerResources {
