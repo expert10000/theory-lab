@@ -24,6 +24,7 @@ import type { EvolutionPreset } from "../../../packages/models/presets";
 import { PresetCheck } from "./PresetCheck";
 import {DynamicsFlow} from "./DynamicsFlow";
 import { selectedEvolutionSample, type EvolutionRunContext, type EvolutionTimeSelection } from "./evolution-selection";
+import { sampledPopulationSpectrum } from "./dynamics-spectrum";
 
 type EngineMode = EvolutionEngineName | "compare";
 
@@ -295,6 +296,12 @@ export function DynamicsLab({
     },
     [result, data, selectedIndex, modelId],
   );
+  const sampledSpectrum = useMemo(() => {
+    if (!result || !data) return null;
+    try { return sampledPopulationSpectrum(data, result.data.rows); }
+    catch { return null; }
+  }, [result, data]);
+  const spectrumMaximum = sampledSpectrum?.reduce((maximum, point) => Math.max(maximum, point.magnitude), 1e-12) ?? 1;
   useEffect(() => {
     const finalSample=result&&data?selectedEvolutionSample({kind:"time_sample",model:modelId,runId:result.runId,index:result.data.rows-1},result,data):null;
     if (!result || !selected || !finalSample) { onEvolutionContext?.(null); return; }
@@ -577,6 +584,28 @@ export function DynamicsLab({
               />
             </div>
             {selected && <BlochSphere data={data} sample={selected} />}
+          </div>
+          <div className="readout-card" data-testid="dynamics-sampled-spectrum">
+            <p className="eyebrow">SAMPLED POPULATION RESPONSE · SAME VERIFIED RUN</p>
+            {sampledSpectrum?.length ? <>
+              <svg viewBox="0 0 500 120" role="img" aria-label="Discrete sampled population spectrum"
+                style={{ width: "100%", maxHeight: 150 }}>
+                {sampledSpectrum.map((point, index) => {
+                  const height = 90 * point.magnitude / spectrumMaximum;
+                  return <rect key={index} x={8 + index * 484 / sampledSpectrum.length}
+                    y={105 - height} width={Math.max(1, 440 / sampledSpectrum.length)} height={height}
+                    fill="#79d9c1"><title>{point.frequency.toPrecision(5)} cycles / model time · magnitude {point.magnitude.toPrecision(5)}</title></rect>;
+                })}
+                <text x="8" y="118" fill="currentColor" fontSize="10">0</text>
+                <text x="360" y="118" fill="currentColor" fontSize="10">{sampledSpectrum.at(-1)!.frequency.toPrecision(4)} cycles / model time</text>
+              </svg>
+              <small>Hann-windowed DFT of recorded P₁(t); display analysis only. The selected time {selected?.time.toFixed(4)} comes from sample {selectedIndex + 1}. This is not an energy spectrum or a solver uncertainty estimate.</small>
+            </> : <small>Spectrum unavailable: the saved time grid is incomplete or not uniform.</small>}
+          </div>
+          <div className="readout-card" data-testid="dynamics-solver-evidence">
+            <p className="eyebrow">SOLVER OUTPUT AND LIMITS</p>
+            <div>Run {result.runId} · {result.status} · {result.data.rows} recorded samples · SHA-256 {result.data.sha256.slice(0, 16)}…</div>
+            <small>Recorded interval {result.solver.tStart.toFixed(4)} to {result.solver.tStop.toFixed(4)} model time. The result contract records completion, with no early-termination reason or uncertainty estimate. No behavior beyond the final saved sample is inferred.</small>
           </div>
           {comparison && (
             <div
