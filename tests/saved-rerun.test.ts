@@ -62,6 +62,14 @@ test("UI-7 rerun records a distinct immutable child with verified parent hashes 
     const exported=JSON.parse(await readFile(exportPath,"utf8"));
     assert.equal(exported.manifest.lineage.parentRunId,"parent-run");
     assert.equal(exported.manifest.hashes.job,inspection.hashes.job);
+    const reportPath=join(root,"child-report.html");
+    await restarted.export("child-run","html",reportPath);
+    const report=await readFile(reportPath,"utf8");
+    assert.match(report,/<svg /);
+    assert.match(report,/quantum-report\/v1/);
+    assert.ok(report.includes(inspection.hashes.result));
+    assert.ok(report.includes(inspection.hashes.job));
+    assert.match(report,/Content-Security-Policy/);
     const bundle=await restarted.exportBundle("child-run",root);
     const portable=new RunStore(join(root,"portable-runs"),join(root,"absent-artifacts"));
     const imported=await portable.importBundle(bundle);
@@ -103,6 +111,7 @@ test("UI-7 rerun records a distinct immutable child with verified parent hashes 
     const jobPath=join(root,"runs","parent-run","job.json");
     await writeFile(jobPath,(await readFile(jobPath,"utf8")).replace('"delta": 1','"delta": 9'));
     await assert.rejects(restarted.inspect("parent-run"),/integrity/);
+    await assert.rejects(restarted.export("parent-run","html",join(root,"tampered-report.html")),/integrity/);
     await assert.rejects(restarted.record(cloneSavedJob(job,"third-job"),result(cloneSavedJob(job,"third-job") as SpectrumJob,"third-run"),"parent-run"),/integrity/);
   }finally{await rm(root,{recursive:true,force:true});}
 });

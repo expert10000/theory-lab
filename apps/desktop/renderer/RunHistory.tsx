@@ -173,7 +173,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
           {(["oscillator","oscillator_evolve","oscillator_drive","oscillator_pulse","oscillator_damped","oscillator_parametric","oscillator_anharmonic"] as string[]).includes(run.operation)&&onOpenOscillator&&
           <button type="button" className="run-open" aria-label={`Open ${run.operation} ${run.runId}`} disabled={!!opening}
             onClick={()=>void openOne(run.runId,"oscillator")}>{opening===run.runId?"Opening…":`Open ${run.operation.replaceAll("_"," ")}`}</button>}
-          {(["csv", "svg", "manifest"] as const).map(format =>
+          {(["csv", "svg", "manifest", "html"] as const).map(format =>
           <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}
           {onFigure&&<button type="button" aria-label={`Figure ${run.runId}`} onClick={()=>onFigure(run.runId)}>Figure</button>}
           <button type="button" aria-label={`Export study report ${run.runId}`} data-testid={`export-study-report-${run.runId}`}

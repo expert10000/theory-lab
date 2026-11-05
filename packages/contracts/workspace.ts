@@ -69,7 +69,7 @@ export interface RunSummary {
   /** Present only on a new run made from a verified saved parent. */
   parentRunId?: string;
 }
-export type RunExportFormat = "csv" | "svg" | "manifest";
+export type RunExportFormat = "csv" | "svg" | "manifest" | "html";
 
 const shortText = { type: "string", maxLength: 100 };
 const values = { type: "object", maxProperties: 20, propertyNames: { pattern: "^[A-Za-z][A-Za-z0-9]{0,40}$" },

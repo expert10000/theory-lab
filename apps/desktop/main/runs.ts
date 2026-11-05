@@ -509,6 +509,15 @@ export class RunStore {
     const { manifest, job, result, data } = await this.load(runId);
     let output: string;
     if (format === "manifest") output = JSON.stringify({ schema: "quantum-run-export/v1", manifest, job, result }, null, 2) + "\n";
+    else if (format === "html") {
+      let figure: string;
+      try { figure = numericalSvg(result, data); }
+      catch { figure = "<p>No supported figure for this recorded result.</p>"; }
+      const evidence = { schema: "quantum-report/v1", runId, hashes: manifest.hashes,
+        artifactSha256: "data" in result ? result.data.sha256 : null,
+        job, result, lineage: manifest.lineage ?? null };
+      output = `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'"><title>${xml(result.model.type)} · verified run report</title><style>body{font:15px system-ui;max-width:1000px;margin:auto;padding:2rem;color:#17232b}svg{max-width:100%}pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f3f6f7;padding:1rem}code{overflow-wrap:anywhere}</style></head><body><h1>${xml(result.model.type)} · ${xml(result.operation)}</h1><p>Verified saved run <code>${xml(runId)}</code> · result SHA-256 <code>${xml(manifest.hashes.result)}</code></p><p>Engine ${xml(result.engine.name)} ${xml(result.engine.version)} · worker ${xml(result.provenance.workerVersion)} · Python ${xml(result.provenance.pythonVersion)} · computed ${xml(result.provenance.computedAt)}</p><h2>Recorded figure</h2>${figure}<p>The figure is a display of recorded samples; inspect the saved CSV or portable .qrun for full numerical data. No uncertainty was recorded unless stated in the result.</p><h2>Inputs, settings, diagnostics and provenance</h2><pre>${xml(JSON.stringify(evidence, null, 2))}</pre></body></html>\n`;
+    }
     else if (format === "csv") output = numericalCsv(result, data);
     else if (format === "svg") output = numericalSvg(result, data);
     else throw new Error("Unsupported run export format");

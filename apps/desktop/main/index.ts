@@ -789,7 +789,7 @@ app.whenReady().then(() => {
   ipcMain.handle("quantum:export-run", async (event, runId: unknown, format: unknown) => {
     trusted(event);
     if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId) ||
-        typeof format !== "string" || !["csv", "svg", "manifest"].includes(format)) throw new Error("Invalid run export request");
+        typeof format !== "string" || !["csv", "svg", "manifest", "html"].includes(format)) throw new Error("Invalid run export request");
     const kind = format as RunExportFormat;
     const extension = kind === "manifest" ? "json" : kind;
     const selection = await dialog.showSaveDialog({ title: `Export ${kind.toUpperCase()} run`,
