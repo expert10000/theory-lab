@@ -91,9 +91,6 @@ export class QecRepetitionRunStore {
       datasets: [], objects: [], annotations: [
         { id: "scope", text: "Ideal parity checks and prescribed X flips only. Discrete rounds are not physical time; no surface-code or fault-tolerance claim.", position: [0, 5, 0] },
         { id: "decoder", text: `Final minimum-weight correction bit ${result.decoder.correctionBit}; logical result ${result.decoder.logicalResult}; multiple-error ambiguity ${result.decoder.ambiguousMultipleErrors}.`, position: [count - 1, 5, 1] },
-        { id: "syndrome-lane", text: "Blue: recorded Z0Z1 and Z1Z2 parity bits; height 0 or 1.", position: [0, 0, 2] },
-        { id: "defect-lane", text: "Orange: parity changes since the preceding round; height 0 or 1.", position: [0, 3, 2] },
-        { id: "data-lane", text: "Teal: three recorded data bits; x is the discrete round index.", position: [0, -3, 2] },
       ] };
     const builder = new SceneBuilder(scene, async bytes => sha(bytes));
     const syndromePositions = result.rounds.flatMap(row => row.syndrome.flatMap((bit, check) => [row.round, check, bit]));

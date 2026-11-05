@@ -31,6 +31,7 @@ test("real ideal QEC trace saves immutably and exports a verified portable scene
     assert.equal(payload.scene.provenance.runId, saved.runId);
     assert.equal(payload.scene.provenance.resultSha256, saved.resultSha256);
     assert.equal(payload.scene.provenance.model, "qec_repetition_ideal");
+    assert.deepEqual(payload.scene.annotations.map(note => note.id), ["scope", "decoder"]);
     const arrays = await verifyScenePayload(payload, digest);
     assert.deepEqual([...arrays.get("qec-syndrome")!], result.rounds.flatMap(row => row.syndrome));
     assert.deepEqual([...arrays.get("qec-defects")!], result.rounds.flatMap(row => row.defects));
