@@ -13,6 +13,10 @@ test("SSH transport is opt-in, bounded and command-injection resistant", () => {
   assert.throws(() => remoteConfig({ QLAB_REMOTE_SSH_TARGET: "host;touch", QLAB_REMOTE_ROOT: "/work/lab" }));
   assert.throws(() => remoteConfig({ QLAB_REMOTE_SSH_TARGET: "host", QLAB_REMOTE_ROOT: "/work/../lab" }));
   assert.throws(() => remoteConfig({ QLAB_REMOTE_SSH_TARGET: "host", QLAB_REMOTE_ROOT: "/work/lab name" }));
+  assert.throws(() => remoteConfig({ QLAB_REMOTE_SSH_TARGET: "host", QLAB_REMOTE_ROOT: "/work/lab",
+    QLAB_REMOTE_PYTHON: "/usr/bin/python;touch /tmp/pwned" }), /absolute POSIX/);
+  assert.throws(() => remoteConfig({ QLAB_REMOTE_SSH_TARGET: "host", QLAB_REMOTE_ROOT: "/work/lab",
+    QLAB_REMOTE_ARTIFACTS: "/work/$(id)" }), /absolute POSIX/);
   const config = remoteConfig({ QLAB_REMOTE_SSH_TARGET: "alice@compute.example", QLAB_REMOTE_ROOT: "/srv/quantum-lab" });
   assert.ok(config);
   assert.equal(config.artifacts, "/srv/quantum-lab/.qlab-remote-artifacts");
