@@ -26,3 +26,20 @@ test("stored density matrix Hermiticity is measured and a broken conjugate is wa
   view.setFloat64(5 * 8, 0.1, true);
   assert.equal(savedRunValidation(run).find(check => check.name === "Hermiticity")?.status, "warning");
 });
+
+test("cavity norm and Lindblad purity use stored samples",()=>{
+  const data=new Uint8Array(16),view=new DataView(data.buffer);
+  view.setFloat64(0,0.95,true);view.setFloat64(8,1.2,true);
+  const cavity={job:{} as VerifiedSavedRun["job"],data:data.subarray(0,8),
+    result:{operation:"cavity",data:{rows:1,columns:["norm"]}} as unknown as VerifiedSavedRun["result"]};
+  const lindblad={job:{} as VerifiedSavedRun["job"],data:data.subarray(8,16),
+    result:{operation:"lindblad",data:{rows:1,columns:["purity"]}} as unknown as VerifiedSavedRun["result"]};
+  assert.equal(savedRunValidation(cavity).find(item=>item.name==="Normalization")?.status,"warning");
+  assert.equal(savedRunValidation(lindblad).find(item=>item.name==="Purity bounds")?.status,"warning");
+});
+
+test("unresolved topology is not presented as a checked invariant",()=>{
+  const run={job:{} as VerifiedSavedRun["job"],data:null,
+    result:{operation:"topology",analysis:{kind:"nodal_line_two_band",status:"mesh-unresolved"}} as unknown as VerifiedSavedRun["result"]};
+  assert.equal(savedRunValidation(run).find(item=>item.name==="Topological invariant")?.status,"warning");
+});

@@ -28,6 +28,20 @@ export function savedRunValidation(run: VerifiedSavedRun): ValidationCheck[] {
         detail: `Maximum stored |P₀+P₁−1| = ${drift.toExponential(3)} across ${p0.length} samples.` });
     }
   }
+  if (result.operation === "cavity") {
+    const norm = series("norm");
+    if (norm?.length) {
+      const drift = Math.max(...norm.map(value => Math.abs(value - 1)));
+      checks.push({ name: "Normalization", status: drift <= 1e-6 ? "checked" : "warning",
+        detail: `Maximum stored |norm−1| = ${drift.toExponential(3)} across ${norm.length} samples.` });
+    }
+  }
+  const purity = series("purity");
+  if (purity?.length) {
+    const outside = Math.max(...purity.map(value => Math.max(0, -value, value - 1)));
+    checks.push({ name: "Purity bounds", status: outside <= 1e-6 ? "checked" : "warning",
+      detail: `Maximum distance outside [0,1] = ${outside.toExponential(3)} across ${purity.length} stored samples.` });
+  }
   const trace = series("trace");
   if (trace?.length) {
     const drift = Math.max(...trace.map(value => Math.abs(value - 1)));
@@ -37,6 +51,9 @@ export function savedRunValidation(run: VerifiedSavedRun): ValidationCheck[] {
   if (result.operation === "diagonalize" && result.stateAnalysis?.status === "resolved") {
     const [a, b] = result.stateAnalysis.states.map(state => state.amplitudes);
     const overlap = Math.abs(a[0] * b[0] + a[1] * b[1]);
+    const norm = Math.max(...[a,b].map(state => Math.abs(state[0] ** 2 + state[1] ** 2 - 1)));
+    checks.push({name:"Normalization",status:norm<=1e-6?"checked":"warning",
+      detail:`Maximum stored eigenstate norm error = ${norm.toExponential(3)}.`});
     checks.push({ name: "Orthogonality", status: overlap <= 1e-6 ? "checked" : "warning",
       detail: `Stored two-state |⟨u₀|u₁⟩| = ${overlap.toExponential(3)}; residuals ${result.stateAnalysis.states.map(state => state.residualNorm.toExponential(2)).join(" / ")}.` });
   }
@@ -59,7 +76,8 @@ export function savedRunValidation(run: VerifiedSavedRun): ValidationCheck[] {
   if (result.operation === "topology") {
     const analysis = result.analysis as { kind: string; gapClosed?: boolean; status?: string;
       converged?: boolean; meshResolved?: boolean; chern?: number | null; winding?: number | null };
-    const unresolved = analysis.gapClosed || analysis.status === "unresolved" || analysis.status === "gap-closed";
+    const unresolved = analysis.gapClosed || (analysis.status !== undefined && analysis.status !== "defined" && analysis.status !== "resolved") ||
+      ("winding" in analysis && analysis.winding === null) || ("chern" in analysis && analysis.chern === null);
     checks.push({ name: "Topological invariant", status: unresolved ? "warning" : "checked",
       detail: unresolved ? "Gap closure or unresolved status: no invariant is inferred." :
         `Producer analysis ${analysis.kind}; Chern ${analysis.chern ?? "not supplied"}, winding ${analysis.winding ?? "not supplied"}.` });

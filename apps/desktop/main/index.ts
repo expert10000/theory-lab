@@ -240,7 +240,7 @@ app.whenReady().then(() => {
       throw new Error("Native worker is not ready");
     const result = await worker.request("quantum.qecRepetition", {flips:value}, 10000) as QecRepetitionStudy;
     const canonical=(item:unknown):string=>Array.isArray(item)?`[${item.map(canonical).join(",")}]`:
-      item&&typeof item==="object"?`{${Object.entries(item).sort(([a],[b])=>a.localeCompare(b)).map(([key,val])=>`${JSON.stringify(key)}:${canonical(val)}`).join(",")}}`:
+      item&&typeof item==="object"?`{${Object.entries(item).sort(([a],[b])=>a<b?-1:a>b?1:0).map(([key,val])=>`${JSON.stringify(key)}:${canonical(val)}`).join(",")}}`:
       JSON.stringify(item);
     const {sha256,...record}=result;
     if (!verifyQecRepetitionStudy(value, result) ||
