@@ -3,6 +3,7 @@ import { ATLAS_ENTRIES, ATLAS_REVISION, atlasEntry, atlasUrl } from "../../../pa
 import { atlasBinding } from "../../../packages/atlas/bindings";
 import {atlasDeepLinkCapabilities} from "../../../packages/atlas/deep-link";
 import { AtlasCapabilities } from "../../../packages/ui/AtlasCapabilities";
+import { QecSyndromeViewer } from "./QecSyndromeViewer";
 
 export function AtlasPanel({ openLab,onRun,onSweep,runReady=false,availableOperations=[],running=false,message,focus }:
   {openLab?:(id:string)=>void;onRun?:(id:string)=>void;onSweep?:(id:string)=>void;
@@ -43,5 +44,6 @@ export function AtlasPanel({ openLab,onRun,onSweep,runReady=false,availableOpera
           </div> : <p className="scope-note">No tested Theory Lab binding for this entry yet. This entry has no Load, Run or Sweep action.</p>}
         </article>}</div>
     </section>
+    <QecSyndromeViewer />
   </div>;
 }
