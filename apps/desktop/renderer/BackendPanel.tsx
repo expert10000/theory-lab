@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { WorkerResources, WorkerStatus } from "../../../packages/contracts";
-import type {QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
+import type {QecRepetitionStudy,QecRepetitionRunSummary} from "../../../packages/contracts/qec-repetition";
 import { runtimeNegotiation } from "../../../packages/contracts/runtime-negotiation";
 import { ATLAS_ENTRIES,ATLAS_REVISION } from "../../../packages/atlas";
 
@@ -24,15 +24,37 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
   const [resourceError, setResourceError] = useState("");
   const [qecSchedule,setQecSchedule]=useState("0, none, 1");
   const [qecStudy,setQecStudy]=useState<QecRepetitionStudy|null>(null);
+  const [qecRunId,setQecRunId]=useState<string|null>(null);
+  const [savedQec,setSavedQec]=useState<QecRepetitionRunSummary[]>([]);
   const [qecError,setQecError]=useState("");
+  const [qecMessage,setQecMessage]=useState("");
   async function runQecExample(){
     try{
       const flips=qecSchedule.split(",").map(value=>value.trim().toLowerCase()==="none"?-1:value.trim()===""?NaN:Number(value.trim()));
       if(flips.length<1||flips.length>32||flips.some(bit=>!Number.isInteger(bit)||bit < -1||bit > 2))
         throw new Error("Enter 1–32 comma-separated rounds: none, 0, 1, or 2.");
-      setQecStudy(await window.quantum.qecRepetition(flips));setQecError("");
-    }catch(error){setQecStudy(null);setQecError(String(error));}
+      const saved=await window.quantum.qecRepetition(flips);
+      setQecStudy(saved.study);setQecRunId(saved.runId);setQecError("");
+      setSavedQec(await window.quantum.listQecRepetitionRuns());
+      setQecMessage(`Saved immutable run ${saved.runId}.`);
+    }catch(error){setQecStudy(null);setQecRunId(null);setQecError(String(error));}
   }
+  async function reopenQec(runId:string){
+    try{const saved=await window.quantum.getQecRepetitionRun(runId);
+      setQecStudy(saved.result);setQecRunId(saved.runId);
+      setQecSchedule(saved.flips.map(bit=>bit<0?"none":String(bit)).join(", "));
+      setQecError("");setQecMessage(`Reopened verified run ${runId}.`);}
+    catch(error){setQecStudy(null);setQecRunId(null);setQecError(String(error));}
+  }
+  async function exportQec(){
+    if(!qecRunId)return;
+    try{const path=await window.quantum.exportQecRepetitionScene(qecRunId);
+      setQecMessage(path?`Exported verified QEC scene: ${path}`:"QEC scene export cancelled.");}
+    catch(error){setQecError(String(error));}
+  }
+  useEffect(()=>{let active=true;void window.quantum.listQecRepetitionRuns()
+    .then(rows=>{if(active)setSavedQec(rows);}).catch(()=>{});
+    return()=>{active=false;};},[]);
   useEffect(() => {
     if (status.state !== "READY") { setResources(null); return; }
     let active = true;
@@ -74,9 +96,14 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <label>Flip schedule <input aria-label="QEC flip schedule" value={qecSchedule} onChange={event=>setQecSchedule(event.target.value)} /></label>{" "}
           <button type="button" disabled={status.state!=="READY"} onClick={()=>void runQecExample()}>Measure ideal syndromes</button>
           {qecError&&<p role="alert">{qecError}</p>}
-          {qecStudy&&<div role="status"><p>Trace SHA-256 {qecStudy.sha256} · correction bit {qecStudy.decoder.correctionBit} · logical result {qecStudy.decoder.logicalResult}{qecStudy.decoder.ambiguousMultipleErrors?" · multiple-error ambiguity":""}</p>
+          {qecMessage&&<p role="status" data-testid="qec-saved-status">{qecMessage}</p>}
+          {qecStudy&&<div role="status"><p>Run {qecRunId} · trace SHA-256 {qecStudy.sha256} · correction bit {qecStudy.decoder.correctionBit} · logical result {qecStudy.decoder.logicalResult}{qecStudy.decoder.ambiguousMultipleErrors?" · multiple-error ambiguity":""}</p>
             <table><thead><tr><th>Round</th><th>Flip</th><th>Syndrome</th><th>Defects</th><th>Data bits</th></tr></thead><tbody>{qecStudy.rounds.map(row=><tr key={row.round}><td>{row.round}</td><td>{row.flip<0?"none":row.flip}</td><td>{row.syndrome.join("")}</td><td>{row.defects.join("")}</td><td>{row.dataBits.join("")}</td></tr>)}</tbody></table>
-            <small>Live example only; this trace is not an immutable saved run or an exported quantum scene.</small></div>}
+            <button type="button" onClick={()=>void exportQec()} disabled={!qecRunId}>Export verified QEC scene</button>{" "}
+            <small>Immutable ideal-example run. The scene maps recorded rounds to display lanes; it is not a surface-code result.</small></div>}
+          {savedQec.length>0&&<div data-testid="qec-saved-runs"><h3>Saved ideal-example runs</h3>
+            <ul>{savedQec.slice(0,10).map(row=><li key={row.runId}><button type="button" onClick={()=>void reopenQec(row.runId)}>
+              Reopen {row.runId}</button> · {row.rounds} rounds · {row.computedAt}</li>)}</ul></div>}
         </article>
         <article className="panel backend-card" data-testid="runtime-negotiation">
           <p className="eyebrow">RUNTIME CAPABILITIES / QI-22</p>

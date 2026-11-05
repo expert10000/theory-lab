@@ -27,6 +27,7 @@ import {HofstadterEdgeStudyStore} from "./hofstadter-edge-studies";
 import {RiceMeleConvergenceStudyStore} from "./rice-mele-convergence-studies";
 import { IsingStateStore } from "./ising-state";
 import {IsingQuenchStore} from "./ising-quench";
+import { QecRepetitionRunStore } from "./qec-repetition-runs";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
 import {verifyQecRepetitionStudy, type QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -93,6 +94,7 @@ app.whenReady().then(() => {
   const sharedStore = new SharedArtifactStore();
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir,
     (saved, resultSha256) => integrationBus?.publishRun(saved.runId, resultSha256, saved.model), sharedStore);
+  const qecRuns = new QecRepetitionRunStore(join(app.getPath("userData"), "qec-repetition-runs"));
   const phaseDiagrams = new QwzPhaseDiagramStore(join(app.getPath("userData"), "qwz-phase-diagrams"), runs);
   ipcMain.handle("quantum:build-qwz-phase-diagram", async event => { trusted(event); return phaseDiagrams.build(); });
   ipcMain.handle("quantum:get-qwz-phase-diagram", async (event, id: unknown) => {
@@ -246,7 +248,23 @@ app.whenReady().then(() => {
     if (!verifyQecRepetitionStudy(value, result) ||
         createHash("sha256").update(canonical(record)).digest("hex")!==sha256)
       throw new Error("Invalid repetition-code worker trace");
-    return result;
+    const saved = await qecRuns.save(value, result, worker.status.capabilities.worker.version);
+    return { runId: saved.runId, study: saved.result };
+  });
+  ipcMain.handle("quantum:list-qec-repetition-runs", async event => {
+    trusted(event); return qecRuns.list();
+  });
+  ipcMain.handle("quantum:get-qec-repetition-run", async (event, runId: unknown) => {
+    trusted(event); if (typeof runId !== "string") throw new Error("Invalid QEC run ID");
+    return qecRuns.get(runId);
+  });
+  ipcMain.handle("quantum:export-qec-repetition-scene", async (event, runId: unknown) => {
+    trusted(event); if (typeof runId !== "string") throw new Error("Invalid QEC run ID");
+    const payload = await qecRuns.scene(runId);
+    const selection = await dialog.showOpenDialog({ title: "Choose parent folder for a verified QEC scene bundle",
+      properties: ["openDirectory"] });
+    if (selection.canceled || !selection.filePaths[0]) return null;
+    return writeSceneBundle(payload, selection.filePaths[0]);
   });
   ipcMain.handle("quantum:run", async (event, value: unknown) => {
     trusted(event);

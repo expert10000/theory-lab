@@ -10,18 +10,37 @@ export interface QecRepetitionStudy {
   sha256: string;
 }
 
+/** Immutable host record for the bounded ideal example, separate from quantum-result/v1|v2. */
+export interface QecRepetitionRun {
+  schema: "qec-repetition-run/v1";
+  runId: string; jobId: string; computedAt: string; workerVersion: string;
+  flips: number[]; result: QecRepetitionStudy; resultSha256: string;
+}
+export type QecRepetitionRunSummary = Pick<QecRepetitionRun, "runId" | "computedAt" | "resultSha256"> & { rounds: number };
+
 /** Check the returned trace against the prescribed flips, independently of Python. */
 export function verifyQecRepetitionStudy(flips: number[], value: QecRepetitionStudy): boolean {
-  if (value?.schema !== "qec-repetition-study/v1" || value.code !== "three-bit-repetition" ||
+  const exact = (item: unknown, keys: string[]) => item !== null && typeof item === "object" &&
+    !Array.isArray(item) && Object.keys(item).sort().join(",") === keys.sort().join(",");
+  if (!exact(value, ["schema", "code", "initialLogical", "rounds", "decoder", "limitations", "sha256"]) ||
+      value.schema !== "qec-repetition-study/v1" || value.code !== "three-bit-repetition" ||
+      value.initialLogical !== 0 || !Array.isArray(flips) || flips.length < 1 || flips.length > 32 ||
+      flips.some(bit => !Number.isInteger(bit) || bit < -1 || bit > 2) ||
       !Array.isArray(value.rounds) || value.rounds.length !== flips.length ||
-      !/^[a-f0-9]{64}$/.test(value.sha256) || !Array.isArray(value.limitations)) return false;
+      !/^[a-f0-9]{64}$/.test(value.sha256) ||
+      JSON.stringify(value.limitations) !== JSON.stringify([
+        "Only ideal parity checks and prescribed bit flips are modeled.",
+        "Multiple data errors can share a syndrome; no surface-code or fault-tolerance claim.",
+      ]) || !exact(value.decoder, ["method", "correctionBit", "correctedBits", "logicalResult", "ambiguousMultipleErrors"]))
+    return false;
   const bits = [0, 0, 0]; let previous = [0, 0];
   for (let i = 0; i < flips.length; i++) {
     const flip = flips[i], row = value.rounds[i];
     if (flip >= 0) bits[flip] ^= 1;
     const syndrome = [bits[0] ^ bits[1], bits[1] ^ bits[2]];
     const defects = syndrome.map((item, j) => item ^ previous[j]);
-    if (!row || row.round !== i || row.flip !== flip ||
+    if (!exact(row, ["round", "flip", "syndrome", "defects", "dataBits"]) ||
+        row.round !== i || row.flip !== flip ||
         JSON.stringify(row.dataBits) !== JSON.stringify(bits) ||
         JSON.stringify(row.syndrome) !== JSON.stringify(syndrome) ||
         JSON.stringify(row.defects) !== JSON.stringify(defects)) return false;

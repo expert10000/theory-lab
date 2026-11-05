@@ -658,7 +658,10 @@ export type SourceRunLaunchResult =
   | { ok: false; error: string };
 
 export interface QuantumBridge {
-  qecRepetition(flips: number[]): Promise<import("./qec-repetition").QecRepetitionStudy>;
+  qecRepetition(flips: number[]): Promise<{runId: string; study: import("./qec-repetition").QecRepetitionStudy}>;
+  listQecRepetitionRuns(): Promise<import("./qec-repetition").QecRepetitionRunSummary[]>;
+  getQecRepetitionRun(runId: string): Promise<import("./qec-repetition").QecRepetitionRun>;
+  exportQecRepetitionScene(runId: string): Promise<string | null>;
   getStatus(): Promise<WorkerStatus>;
   getCapabilities(): Promise<WorkerCapabilities>;
   getResources(): Promise<WorkerResources>;
