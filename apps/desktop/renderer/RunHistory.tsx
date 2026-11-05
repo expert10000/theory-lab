@@ -71,7 +71,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
       const payload=JSON.stringify(runSupportBundle(verified),null,2)+"\n";
       const url=URL.createObjectURL(new Blob([payload],{type:"application/json"}));
       const link=document.createElement("a");link.href=url;link.download=`quantum-run-support-${runId}.json`;
-      link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+      document.body.appendChild(link);link.click();link.remove();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
       setMessage(`Redacted support bundle ready for ${runId}.`);
     }catch(error){setMessage(error instanceof Error?error.message:String(error));}
   }
