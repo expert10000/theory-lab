@@ -120,7 +120,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
           <div className="backend-card-title"><p className="eyebrow">ENGINE 03 · OPTIONAL</p><span className={engines?.dynamiqs?.available ? "live-dot" : "offline-dot"}/></div>
           <h2>Dynamiqs / JAX GPU</h2>
           <p className="backend-version">{engines?.dynamiqs?.available ? `${engines.dynamiqs.version} · ${engines.dynamiqs.device}` : "Unavailable on this worker"}</p>
-          <p>Linux/WSL2 CUDA two-level Schrödinger evolution uses <code>dq.sesolve()</code> in bounded chunks. Parameter sweeps group up to 32 Hamiltonians in one GPU solve, checkpointing each batch. Capability detection verifies package import and a real JAX GPU device. Cavity and Lindblad adapters are later milestones.</p>
+          <p>Linux/WSL2 CUDA two-level Schrödinger evolution uses <code>dq.sesolve()</code> in bounded chunks. Parameter sweeps group up to 32 Hamiltonians in one GPU solve, checkpointing each batch. Capability detection solves an analytic GPU probe after checking the package and device. Cavity and Lindblad adapters are later milestones.</p>
           <small>Optional compute path · cancellation between GPU chunks/batches</small>
         </article>
         <article className="panel backend-card">

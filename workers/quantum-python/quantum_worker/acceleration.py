@@ -13,19 +13,31 @@ TOLERANCE = 5e-4
 def assess_samples(reference, candidate, tolerance=TOLERANCE):
     """Compare matching samples and reject invalid normalization before timing claims."""
     if len(reference) != len(candidate) or not reference:
-        return {"passed": False, "maxPopulationError": None, "maxNormError": None}
+        return {"passed": False, "maxPopulationError": None, "maxNormError": None,
+                "maxStateError": None}
     differences = []
     norms = []
+    state_errors = []
     for expected, actual in zip(reference, candidate):
         if len(expected) != 2 or len(actual) != 2:
-            return {"passed": False, "maxPopulationError": None, "maxNormError": None}
+            return {"passed": False, "maxPopulationError": None, "maxNormError": None,
+                    "maxStateError": None}
+        if not all(math.isfinite(part) for value in (*expected, *actual)
+                   for part in (complex(value).real, complex(value).imag)):
+            return {"passed": False, "maxPopulationError": None, "maxNormError": None,
+                    "maxStateError": None}
         differences.append(abs(abs(expected[1]) ** 2 - abs(actual[1]) ** 2))
-        norms.append(abs(sum(abs(value) ** 2 for value in actual) - 1))
-    if not all(math.isfinite(value) for value in differences + norms):
-        return {"passed": False, "maxPopulationError": None, "maxNormError": None}
-    error, norm = max(differences), max(norms)
-    return {"passed": error <= tolerance and norm <= 1e-5,
-            "maxPopulationError": error, "maxNormError": norm}
+        norms.extend(abs(sum(abs(value) ** 2 for value in state) - 1)
+                     for state in (expected, actual))
+        overlap = sum(complex(ref).conjugate() * complex(got)
+                      for ref, got in zip(expected, actual))
+        phase = overlap / abs(overlap) if abs(overlap) else 1
+        state_errors.append(math.sqrt(sum(abs(complex(got) - phase * complex(ref)) ** 2
+                                          for ref, got in zip(expected, actual))))
+    error, norm, state_error = max(differences), max(norms), max(state_errors)
+    return {"passed": error <= tolerance and norm <= 1e-5 and state_error <= tolerance,
+            "maxPopulationError": error, "maxNormError": norm,
+            "maxStateError": state_error}
 
 
 def benchmark_evolution():
@@ -33,7 +45,8 @@ def benchmark_evolution():
     report = {"schema": "quantum-acceleration-benchmark/v1", "engine": "dynamiqs",
               "available": info["available"], "version": info["version"], "device": info["device"],
               "samples": 65, "tolerance": TOLERANCE, "passed": False,
-              "maxPopulationError": None, "maxNormError": None, "maxRepeatError": None,
+              "maxPopulationError": None, "maxNormError": None, "maxStateError": None,
+              "maxRepeatError": None,
               "deterministic": False,
               "nativeMs": None, "acceleratedMs": None, "speedup": None}
     if not info["available"]:
@@ -54,7 +67,7 @@ def benchmark_evolution():
     checks = assess_samples(reference, candidate)
     report.update(checks)
     repeat = assess_samples(candidate, repeated, 1e-8)
-    report["maxRepeatError"] = repeat["maxPopulationError"]
+    report["maxRepeatError"] = repeat["maxStateError"]
     report["deterministic"] = repeat["passed"]
     report["passed"] = checks["passed"] and repeat["passed"]
     report["nativeMs"] = native_ms
