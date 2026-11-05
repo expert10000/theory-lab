@@ -22,6 +22,11 @@ test("negotiation explains missing engines and preserves an explicit fallback", 
   const stopped = negotiateRuntime({ ...ready, state: "STOPPED" }, "topology", "native");
   assert.equal(stopped.available, false);
   assert.equal(runtimeNegotiation(ready).sceneFormats[1], "quantum-scene/v2");
+  const overview = runtimeNegotiation(ready).decisions;
+  assert.equal(overview.find(item => item.operation === "diagonalize")?.selected, "native");
+  assert.equal(overview.find(item => item.operation === "evolve")?.available, true);
+  assert.equal(overview.find(item => item.operation === "evolve")?.fallback, null);
+  assert.equal(negotiateRuntime(ready, "evolve", "qutip").fallback, "native");
   assert.match(negotiateRuntime({ ...ready, capabilities: { ...ready.capabilities!, worker: { version: "1.0.0" } } }, "evolve", "native").reason, /incompatible/);
 });
 

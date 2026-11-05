@@ -42,7 +42,7 @@ export function negotiateRuntime(status: WorkerStatus, operation: RuntimeOperati
     fallback, reason: `${preferred} does not implement ${operation}; ${fallback ?? "no"} fallback available` };
   if (!available(preferred)) return { operation, available: false, selected: null,
     fallback, reason: `${preferred} is unavailable on this worker${fallback ? `; ${fallback} is available` : ""}` };
-  return { operation, available: true, selected: preferred, fallback,
+  return { operation, available: true, selected: preferred, fallback: null,
     reason: `${preferred} ${capabilities.engines[preferred]?.version ?? "version unknown"} is ready` };
 }
 
@@ -51,6 +51,8 @@ export function runtimeNegotiation(status: WorkerStatus): RuntimeNegotiation {
   return { schema: "quantum-runtime-negotiation/v1", workerVersion: caps?.worker.version ?? null,
     protocol: caps?.protocol ?? null, transport: status.transport,
     sceneFormats: ["quantum-scene/v1", "quantum-scene/v2"],
-    decisions: (Object.keys(engines) as RuntimeOperation[]).map(operation =>
-      negotiateRuntime(status, operation, engines[operation][0]!)) };
+    decisions: (Object.keys(engines) as RuntimeOperation[]).map(operation => {
+      const preferred = engines[operation].find(name => caps?.engines[name]?.available) ?? engines[operation][0]!;
+      return negotiateRuntime(status, operation, preferred);
+    }) };
 }
