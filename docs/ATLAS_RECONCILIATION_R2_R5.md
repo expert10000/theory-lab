@@ -307,7 +307,7 @@ Additive gap: Periodic bonds, species/orbital metadata and arbitrary crystal con
 
 Evidence: `tests/lattice-scenes.test.ts`, `tests/reciprocal-scenes.test.ts`.
 
-Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/Python validators, hashes, 16 MiB regular-scene budget, four fields and 3..49 grid axes; larger/chunked data retains the separate existing stream contract. No direct Lab-to-Math3D worker calls.
+Keep QuantumResult → QuantumScene → independent consumers. Reuse current TS/Python validators, hashes, 16 MiB per-dataset budget, four fields and 3..97 grid axes (at most 1,000,000 samples per dataset); larger/chunked data retains the separate existing stream contract. No direct Lab-to-Math3D worker calls.
 
 ## R4 — Genuine physics/model gaps (implemented review)
 
@@ -578,7 +578,7 @@ Catalog digest: `f115cf435899bd1805e30de9088d6ac46a3389afc2f04f6335b07b94b5466f0
 
 ### Current protocol digests; legacy branches retained
 
-Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platform line-ending differences. No existing job/result/scene schema was edited by R2–R5.
+Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platform line-ending differences. R2–R5 did not edit an existing job/result/scene schema. The later large-field extension raised the quantum-scene/v1 grid axis cap from 49 to 97 and dataset count cap from 300,000 to 1,000,000; the current digest records that reviewed reader scope.
 
 | Existing schema | Semantic SHA-256 |
 | --- | --- |
@@ -586,7 +586,7 @@ Hashes below use SHA-256 of JSON.stringify(JSON.parse(schema)), avoiding platfor
 | packages/contracts/schemas/quantum-result.v1.json | `3fbc617cbd9cb4abe85a1e701b69e5ec3dd9c8a6f9eae1a5bbfcc7bf6d6a3214` |
 | packages/contracts/schemas/worker-capabilities.v1.json | `ec10c915d539adba626bb7621e9d1ef83ff929e64dfe997325f575dcfc7c3fe1` |
 | packages/contracts/schemas/worker-resources.v1.json | `200d7dc74f4e6ba1d197662655211c091e08a0c9940eeb804761e034b448c436` |
-| packages/quantum-scene/quantum-scene.v1.json | `b5b61c3b7749d6ae077dca1f2baad3ac298077cb1dc1d452dcfffc2359f23ccc` |
+| packages/quantum-scene/quantum-scene.v1.json | `2c556cf0384db83d7f5077f35387e9881ec164e06db06dc6c73fd4b8155c6fec` |
 
 ### Additive change policy
 
