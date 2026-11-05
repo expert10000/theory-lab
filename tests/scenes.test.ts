@@ -62,7 +62,7 @@ test("real saved SSH/QWZ results produce portable verified geometry, not inferre
       assert.deepEqual(handoff.coordinates,payload.scene.coordinates);
       assert.deepEqual(handoff.datasets.map(d=>d.sha256),payload.scene.datasets.map(d=>d.sha256));
       assert.deepEqual((await readSceneBundle(handoff.directory)).scene,payload.scene);
-      await assert.rejects(store.exportScene(result.runId, root), /EEXIST/);
+      await assert.rejects(store.exportScene(result.runId, root), /Final scene bundle already exists/);
       const name = payload.scene.datasets[0].path;
       await writeFile(join(directory, name), Buffer.alloc(payload.scene.datasets[0].bytes));
       await assert.rejects(readSceneBundle(directory), /integrity/);
