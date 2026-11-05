@@ -56,8 +56,24 @@ test("QVIS-021 figures preserve all recorded points, exact source hashes and ind
     assert.equal(digest(pngBytes),pngMeta.fileSha256);
     assert.equal(pngMeta.svgSha256,svgMeta.svgSha256);
     assert.equal(pngMeta.source.resultSha256,svgMeta.source.resultSha256);
+    const reportDir=await reopened.exportReport(result.runId,root);
+    const reportManifest=JSON.parse(await readFile(join(reportDir,"manifest.json"),"utf8"));
+    const report=await readFile(join(reportDir,"report.md"),"utf8");
+    const validation=JSON.parse(await readFile(join(reportDir,"validation.json"),"utf8"));
+    assert.equal(reportManifest.schema,"quantum-study-report/v1");
+    assert.equal(reportManifest.source.jobSha256,svgMeta.source.jobSha256);
+    assert.equal(reportManifest.source.resultSha256,svgMeta.source.resultSha256);
+    assert.equal(reportManifest.source.artifactSha256,digest(bytes));
+    assert.match(report,/## Numerical settings/);
+    assert.match(report,/\[Saved scientific figure\]\(figure.svg\)/);
+    assert.equal(validation.checks.artifactHash,"verified");
+    assert.equal(validation.checks.numericalConsistency,"not-evaluated");
+    for(const [name,entry] of Object.entries(reportManifest.files) as [string,{bytes:number;sha256:string}][]){
+      const file=await readFile(join(reportDir,name));assert.equal(file.length,entry.bytes);assert.equal(digest(file),entry.sha256);
+    }
     await writeFile(join(root,"runs",result.runId,"data.f64"),Buffer.alloc(bytes.length));
     await assert.rejects(reopened.figure(result.runId),/integrity/);
     await assert.rejects(reopened.exportFigure(result.runId,root,"svg"),/integrity/);
+    await assert.rejects(reopened.exportReport(result.runId,root),/integrity/);
   }finally{await rm(root,{recursive:true,force:true})}
 });

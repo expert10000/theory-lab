@@ -1,5 +1,5 @@
 import { type SceneField, type ScenePayload, type Vec3 } from "../quantum-scene";
-export type FieldQuantity = "density" | "real" | "imaginary" | "phase";
+export type FieldQuantity = "density" | "amplitude" | "real" | "imaginary" | "phase" | "real-zero" | "imaginary-zero";
 export function gridIndex(shape: [number, number, number], x: number, y: number, z: number) {
   return (x * shape[1] + y) * shape[2] + z;
 }
@@ -14,9 +14,10 @@ export function fieldValues(field: SceneField, arrays: Map<string, Float64Array>
   }
   return Float64Array.from(real, (r, i) => {
     const im = imaginary![i];
-    if (quantity === "real") return r;
-    if (quantity === "imaginary") return im;
+    if (quantity === "real" || quantity === "real-zero") return r;
+    if (quantity === "imaginary" || quantity === "imaginary-zero") return im;
     if (quantity === "density") return r * r + im * im;
+    if (quantity === "amplitude") return Math.hypot(r, im);
     return Math.atan2(im, r);
   });
 }
@@ -75,7 +76,8 @@ export async function surfacePayload(source: ScenePayload, field: SceneField, ar
   if (!maximum) return null;
   const level = maximum * fraction;
   const real = arrays.get(field.real)!, imaginary = field.imaginary ? arrays.get(field.imaginary)! : undefined;
-  const levels = quantity === "real" || quantity === "imaginary" ? [level,-level] : [level];
+  const zero = quantity === "real-zero" || quantity === "imaginary-zero";
+  const levels = zero ? [0] : quantity === "real" || quantity === "imaginary" ? [level,-level] : [level];
   const scene = { ...source.scene, fields: undefined, objects: [], datasets: [], annotations: source.scene.annotations } as ScenePayload["scene"];
   // Omit absent optional property (strict schema does not accept undefined).
   delete scene.fields;
@@ -88,7 +90,7 @@ export async function surfacePayload(source: ScenePayload, field: SceneField, ar
       data.forEach((v,i)=>view.setFloat64(i*8,v,true)); payload.artifacts[`${name}.f64`] = bytes;
       scene.datasets.push({id:name,path:`${name}.f64`,format:"f64le",components,count:data.length/components,unit,bytes:bytes.length,sha256:await digest(bytes)});
     }
-    scene.objects.push({id:`surface-${part}`,label:`${quantity === "phase" ? "Density surface / phase color" : quantity} = ${levels[part].toPrecision(5)}`,
+    scene.objects.push({id:`surface-${part}`,label:zero ? `${quantity === "real-zero" ? "Real" : "Imaginary"} component = 0 (nodal component surface)` : `${quantity === "phase" ? "Density surface / phase color" : quantity} = ${levels[part].toPrecision(5)}`,
       kind:"mesh",positions:`vertices-${part}`,indices:`indices-${part}`, ...(quantity === "phase" ? {scalars:`phase-${part}`} : {}),
       visible:true,...(quantity==="phase"?{colorMap:"phase" as const}:{}),style:{color:part ? "#5995f0" : "#f5b269",opacity:1,size:1}});
   }

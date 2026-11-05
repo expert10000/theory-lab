@@ -744,6 +744,7 @@ export interface QuantumBridge {
   exportRun(runId: string, format: import("./workspace").RunExportFormat): Promise<string | null>;
   getFigure(runId:string):Promise<import("./figure").ScientificFigurePreview>;
   exportFigure(runId:string,format:import("./figure").FigureFormat,expectedResultHash:string):Promise<string|null>;
+  exportReport(runId:string):Promise<string|null>;
   exportRunBundle(runId:string):Promise<string|null>;
   importRunBundle():Promise<import("./workspace").RunSummary|null>;
 }

@@ -63,8 +63,8 @@ export function FieldViewer({ payload,onSelectGrid,focusGrid }: { payload: Scene
   const quantityUnit = quantity==="phase"?"rad":quantity==="density"?(amplitudeUnit==="a0^-3/2"?"a0^-3":amplitudeUnit==="dimensionless"?"dimensionless":`(${amplitudeUnit})²`):amplitudeUnit;
   return <section className="field-viewer" data-testid="field-viewer">
     <div className="scene-run-controls"><label>Field<select aria-label="Scene field" value={fieldId} onChange={e=>setFieldId(e.target.value)}>{payload.scene.fields?.map(f=><option value={f.id} key={f.id}>{f.label}</option>)}</select></label>
-      <label>Quantity<select aria-label="Field quantity" value={quantity} onChange={e=>setQuantity(e.target.value as FieldQuantity)}>{(field?.kind==="scalar-field"?["real"]:["density","real","imaginary","phase"]).map(q=><option key={q} value={q}>{q==="density"?"|ψ|² density":q==="real"?"Real component":q==="imaginary"?"Imaginary component":"Phase (density surface)"}</option>)}</select></label>
-      <label>Surface threshold {Math.round(fraction*100)}% of sampled maximum<input aria-label="Field threshold" type="range" min={.01} max={.9} step={.01} value={fraction} onChange={e=>setFraction(Number(e.target.value))}/></label></div>
+      <label>Quantity<select aria-label="Field quantity" value={quantity} onChange={e=>setQuantity(e.target.value as FieldQuantity)}>{(field?.kind==="scalar-field"?["real"]:["density","amplitude","real","imaginary","phase","real-zero","imaginary-zero"]).map(q=><option key={q} value={q}>{q==="density"?"|ψ|² density":q==="amplitude"?"|ψ| amplitude":q==="real"?"Signed real amplitude":q==="imaginary"?"Signed imaginary amplitude":q==="phase"?"Phase (density surface)":q==="real-zero"?"Real = 0 surface":"Imaginary = 0 surface"}</option>)}</select></label>
+      <label>Surface threshold {quantity.endsWith("-zero")?"fixed at zero":`${Math.round(fraction*100)}% of sampled maximum`}<input aria-label="Field threshold" type="range" min={.01} max={.9} step={.01} value={fraction} disabled={quantity.endsWith("-zero")} onChange={e=>setFraction(Number(e.target.value))}/></label></div>
     <p data-testid="field-verification">{ready?"SHA-256 VERIFIED · regular xyz grid, z-fastest":"Verifying field artifacts…"}</p>
     {error&&<p role="alert">{error}</p>}{busy&&<p role="status">Extracting bounded isosurface…</p>}
     {surface?<SceneViewer payload={surface}/>:ready&&!busy&&!error?<p>No surface at this threshold (the selected component may be identically zero). Slice inspection remains available.</p>:null}
@@ -74,6 +74,6 @@ export function FieldViewer({ payload,onSelectGrid,focusGrid }: { payload: Scene
       <p data-testid="field-sample">({position?.map((v,i)=>`${v.toPrecision(5)} ${payload.scene.coordinates.units[i]}`).join(", ")}) · {quantity} = {phaseUndefined?"undefined near a node":values[selected].toPrecision(7)} {quantityUnit}</p>
       {range&&<p>Slice color scale: {quantity==="phase"?"cyclic phase −π…π (rad); near-zero density masked":`${range[0].toPrecision(5)} … ${range[1].toPrecision(5)}`} · {quantityUnit}</p>}
     </div>}
-    <p className="scene-axis-note">Linear grid interpolation / marching tetrahedra. Threshold is a fraction of the sampled maximum, not an enclosed-probability percentage. Phase uses interpolated complex amplitudes; it is undefined at nodes.</p>
+    <p className="scene-axis-note">Linear grid interpolation / marching tetrahedra. Threshold is a fraction of the sampled maximum, not an enclosed-probability percentage. Phase uses interpolated complex amplitudes; it is undefined at nodes. Absolute phase and signed real/imaginary components depend on the arbitrary global phase. Their separate zero surfaces intersect at complex nodes; either surface alone is not a physical node.</p>
   </section>;
 }

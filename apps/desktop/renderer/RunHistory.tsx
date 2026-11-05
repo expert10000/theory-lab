@@ -58,6 +58,10 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
     try{const path=await bridge.exportRunBundle(runId);setMessage(path?`Exported portable run: ${path}`:"Export cancelled");}
     catch(error){setMessage(error instanceof Error?error.message:String(error));}
   }
+  async function exportReport(runId:string){
+    try{const path=await bridge.exportReport(runId);setMessage(path?`Exported verified study report: ${path}`:"Report export cancelled");}
+    catch(error){setMessage(error instanceof Error?error.message:String(error));}
+  }
   async function importBundle(){
     setBusy(true);setMessage("");
     try{
@@ -157,6 +161,8 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
           {(["csv", "svg", "manifest"] as const).map(format =>
           <button type="button" key={format} aria-label={`Export ${format.toUpperCase()} ${run.runId}`} onClick={() => void exportOne(run.runId, format)}>{format.toUpperCase()}</button>)}
           {onFigure&&<button type="button" aria-label={`Figure ${run.runId}`} onClick={()=>onFigure(run.runId)}>Figure</button>}
+          <button type="button" aria-label={`Export study report ${run.runId}`} data-testid={`export-study-report-${run.runId}`}
+            onClick={()=>void exportReport(run.runId)}>Study report</button>
           <button type="button" aria-label={`Export portable run ${run.runId}`} onClick={()=>void exportBundle(run.runId)}>.qrun</button></div>
         {inspection?.summary.runId===run.runId&&<div className="run-provenance" data-testid="run-provenance">
           <p className="eyebrow">QLAB-UI-7 / HASH-VERIFIED SOURCE RUN</p>

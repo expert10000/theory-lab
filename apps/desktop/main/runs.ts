@@ -554,6 +554,58 @@ export class RunStore {
     await writeFile(join(directory,"metadata.json"),JSON.stringify(figureMetadata,null,2)+"\n",{flag:"wx"});
     return {directory,metadata:figureMetadata};
   }
+  /** Self-contained, hash-linked report assembled only from a reopened verified run. */
+  async exportReport(runId: string, parent: string): Promise<string> {
+    const { manifest, job, result, data, jobText, resultText } = await this.load(runId);
+    const figure = await this.figure(runId);
+    if (figure.metadata.source.jobSha256 !== manifest.hashes.job ||
+        figure.metadata.source.resultSha256 !== manifest.hashes.result ||
+        figure.metadata.source.artifactSha256 !== (manifest.artifactSha256 ?? null))
+      throw new Error("Report figure source differs from the verified run");
+    const settings = "solver" in job ? job.solver : "sweep" in job ? job.sweep :
+      "model" in job ? job.model.parameters : {};
+    const validation = { schema: "quantum-study-validation/v1", runId,
+      checks: { jobContract: "verified", resultContract: "verified",
+        sourceHashes: "verified", artifactHash: data ? "verified" : "not-applicable",
+        numericalConsistency: ["diagonalize", "topology", "orbital", "oscillator", "oscillator_evolve",
+          "oscillator_drive", "oscillator_pulse", "oscillator_damped", "oscillator_parametric",
+          "oscillator_anharmonic"].includes(result.operation) ? "verified" : "not-evaluated" },
+      uncertainty: "not recorded; no uncertainty estimate is inferred",
+      engine: result.engine, provenance: result.provenance };
+    const report = `# ${result.model.type} study · ${runId}\n\n`+
+      `- Operation: ${result.operation}\n- Engine: ${result.engine.name} ${result.engine.version}\n`+
+      `- Computed: ${result.provenance.computedAt}\n- Worker: ${result.provenance.workerVersion}; Python: ${result.provenance.pythonVersion}\n`+
+      `- Input SHA-256: ${manifest.hashes.job}\n- Result SHA-256: ${manifest.hashes.result}\n`+
+      `- Artifact SHA-256: ${manifest.artifactSha256 ?? "none (inline result)"}\n\n`+
+      `## Numerical settings\n\n~~~json\n${JSON.stringify(settings, null, 2)}\n~~~\n\n`+
+      `## Figure\n\n![Saved scientific figure](figure.svg)\n\n`+
+      `The figure uses ${figure.metadata.plottedSamples} recorded samples. ${figure.metadata.uncertainty}.\n\n`+
+      `## Source and validation\n\n[Exact input](job.json) · [Exact result](result.json)`+
+      `${data ? " · [Exact binary artifact](data.f64)" : ""} · [Validation report](validation.json)\n\n`+
+      `These files reproduce the saved source record. Validation records the checks performed; it does not claim an unreported uncertainty or convergence study.\n`;
+    const files: Record<string, Uint8Array> = { "job.json": Buffer.from(jobText),
+      "result.json": Buffer.from(resultText), "figure.svg": Buffer.from(figure.svg),
+      "validation.json": Buffer.from(JSON.stringify(validation, null, 2) + "\n"),
+      "report.md": Buffer.from(report) };
+    if (data) files["data.f64"] = data;
+    const reportManifest = { schema: "quantum-study-report/v1", runId,
+      source: { jobSha256: manifest.hashes.job, resultSha256: manifest.hashes.result,
+        artifactSha256: manifest.artifactSha256 },
+      files: Object.fromEntries(Object.entries(files).map(([name, bytes]) =>
+        [name, { bytes: bytes.byteLength, sha256: sha(bytes) }])) };
+    const staging = await mkdtemp(join(parent, ".qreport-finalizing-"));
+    try {
+      for (const [name, bytes] of Object.entries(files))
+        await writeFile(join(staging, name), bytes, { flag: "wx" });
+      await writeFile(join(staging, "manifest.json"), JSON.stringify(reportManifest, null, 2) + "\n", { flag: "wx" });
+      const directory = join(parent, `${runId}-${randomUUID().slice(0, 8)}.qreport`);
+      await rename(staging, directory);
+      return directory;
+    } catch (error) {
+      if (resolve(staging).startsWith(resolve(parent) + sep)) await rm(staging, { recursive: true, force: true });
+      throw error;
+    }
+  }
   async scene(runId: string, view: "standard"|"bands"|"wilson"|"invariant"|"strip" = "standard") {
     if(view!=="standard"&&view!=="bands"&&view!=="wilson"&&view!=="invariant"&&view!=="strip") throw new Error("Unsupported scene view");
     const { manifest, result, data, resultText } = await this.load(runId);

@@ -90,6 +90,7 @@ const bridge: QuantumBridge = {
   exportRun: (runId, format) => ipcRenderer.invoke("quantum:export-run", runId, format),
   getFigure: runId => ipcRenderer.invoke("quantum:figure",runId),
   exportFigure: (runId,format,expectedResultHash) => ipcRenderer.invoke("quantum:export-figure",runId,format,expectedResultHash),
+  exportReport: (runId) => ipcRenderer.invoke("quantum:export-report", runId),
   exportRunBundle: (runId) => ipcRenderer.invoke("quantum:export-run-bundle",runId),
   importRunBundle: () => ipcRenderer.invoke("quantum:import-run-bundle"),
 };

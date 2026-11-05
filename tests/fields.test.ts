@@ -16,9 +16,11 @@ test("complex grid fixture verifies layout, exact derived quantities and bounds"
   const i=gridIndex(field.grid.shape,2,1,0);
   assert.deepEqual(gridPosition(field,2,1,0),[1,0,-1]);
   assert.equal(fieldValues(field,arrays,"density")[i],1);
+  assert.equal(fieldValues(field,arrays,"amplitude")[i],1);
   assert.equal(fieldValues(field,arrays,"real")[i],1);
   assert.equal(fieldValues(field,arrays,"imaginary")[i],0);
   assert.equal(fieldValues(field,arrays,"phase")[i],0);
+  assert.deepEqual([...fieldValues(field,arrays,"real-zero")],[...fieldValues(field,arrays,"real")]);
   for(const mutate of [(f:any)=>f.grid.shape[0]=50,(f:any)=>f.grid.spacing[0]=0,(f:any)=>f.imaginary="missing",(f:any)=>f.grid.order="zyx",(f:any)=>f.kind="scalar-field"]){
     const bad=fieldFixture();mutate(bad.scene.fields![0]);assert.throws(()=>assertScene(bad.scene));
   }
@@ -31,6 +33,12 @@ test("marching tetrahedra reconstructs a plane and preserves phase branch contin
   for(let i=0;i<mesh.positions.length;i+=3)assert.ok(Math.abs(mesh.positions[i]-.3)<1e-12);
   const derived=await surfacePayload(payload,field,arrays,"phase",.4,digest);assert.ok(derived);
   await verifyScenePayload(derived,digest);assert.equal(derived.scene.objects[0].colorMap,"phase");
+  const realNode=await surfacePayload(payload,field,arrays,"real-zero",.4,digest);
+  const imaginaryNode=await surfacePayload(payload,field,arrays,"imaginary-zero",.4,digest);
+  assert.ok(realNode&&imaginaryNode);
+  await verifyScenePayload(realNode,digest);await verifyScenePayload(imaginaryNode,digest);
+  assert.match(realNode.scene.objects[0].label,/Real component = 0/);
+  assert.match(imaginaryNode.scene.objects[0].label,/Imaginary component = 0/);
   assert.ok(phaseColor(Math.PI).every((v,i)=>Math.abs(v-phaseColor(-Math.PI)[i])<1e-12));
   await assert.rejects(isosurface(field,arrays.get("real")!,.3,arrays.get("real")!,undefined,()=>true),/cancelled/);
 });

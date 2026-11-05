@@ -785,6 +785,15 @@ app.whenReady().then(() => {
     };
     return (await runs.exportFigure(runId,choice.filePaths[0],format,rasterize,expectedResultHash)).directory;
   });
+  ipcMain.handle("quantum:export-report", async (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string" || !/^[A-Za-z0-9_-]{1,100}$/.test(runId))
+      throw new Error("Invalid report source run ID");
+    const choice = await dialog.showOpenDialog({ title: "Choose parent folder for verified study report",
+      properties: ["openDirectory"] });
+    if (choice.canceled || !choice.filePaths[0]) return null;
+    return runs.exportReport(runId, choice.filePaths[0]);
+  });
   ipcMain.handle("quantum:export-run-bundle",async(event,runId:unknown)=>{
     trusted(event);
     if(typeof runId!=="string"||!/^[A-Za-z0-9_-]{1,100}$/.test(runId))throw new Error("Invalid run bundle ID");
