@@ -6,6 +6,7 @@ import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/ca
 import {supportsScene} from "../../../packages/quantum-scene/from-result";
 import {availableSceneViews,type SceneView} from "./scene-bridge";
 import { savedRunValidation } from "./run-validation";
+import { runSupportBundle } from "./run-support";
 
 const evolutionModels:readonly EvolutionModelId[]=["driven_two_level","landau_zener","stuckelberg","strong_drive"];
 function evolutionLabel(model:string){return evolutionModels.includes(model as EvolutionModelId)?MODEL_REGISTRY[model as EvolutionModelId].label:null;}
@@ -63,6 +64,16 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   async function exportReport(runId:string){
     try{const path=await bridge.exportReport(runId);setMessage(path?`Exported verified study report: ${path}`:"Report export cancelled");}
     catch(error){setMessage(error instanceof Error?error.message:String(error));}
+  }
+  async function exportSupport(runId:string){
+    try {
+      const verified=inspection?.summary.runId===runId?inspection:await bridge.inspectSavedRun(runId);
+      const payload=JSON.stringify(runSupportBundle(verified),null,2)+"\n";
+      const url=URL.createObjectURL(new Blob([payload],{type:"application/json"}));
+      const link=document.createElement("a");link.href=url;link.download=`quantum-run-support-${runId}.json`;
+      link.click();window.setTimeout(()=>URL.revokeObjectURL(url),1000);
+      setMessage(`Redacted support bundle ready for ${runId}.`);
+    }catch(error){setMessage(error instanceof Error?error.message:String(error));}
   }
   async function importBundle(){
     setBusy(true);setMessage("");
@@ -167,7 +178,9 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
           {onFigure&&<button type="button" aria-label={`Figure ${run.runId}`} onClick={()=>onFigure(run.runId)}>Figure</button>}
           <button type="button" aria-label={`Export study report ${run.runId}`} data-testid={`export-study-report-${run.runId}`}
             onClick={()=>void exportReport(run.runId)}>Study report</button>
-          <button type="button" aria-label={`Export portable run ${run.runId}`} onClick={()=>void exportBundle(run.runId)}>.qrun</button></div>
+          <button type="button" aria-label={`Export portable run ${run.runId}`} onClick={()=>void exportBundle(run.runId)}>.qrun</button>
+          <button type="button" aria-label={`Export redacted support bundle ${run.runId}`} data-testid={`export-run-support-${run.runId}`}
+            onClick={()=>void exportSupport(run.runId)}>Support JSON</button></div>
         {inspection?.summary.runId===run.runId&&<div className="run-provenance" data-testid="run-provenance">
           <p className="eyebrow">QLAB-UI-7 / HASH-VERIFIED SOURCE RUN</p>
           <div className="run-provenance-grid">
