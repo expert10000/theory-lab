@@ -67,7 +67,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   }
   async function exportSupport(runId:string){
     try {
-      const verified=inspection?.summary.runId===runId?inspection:await bridge.inspectSavedRun(runId);
+      const verified=await bridge.inspectSavedRun(runId);
       const payload=JSON.stringify(runSupportBundle(verified),null,2)+"\n";
       const url=URL.createObjectURL(new Blob([payload],{type:"application/json"}));
       const link=document.createElement("a");link.href=url;link.download=`quantum-run-support-${runId}.json`;

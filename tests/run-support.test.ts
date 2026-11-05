@@ -14,4 +14,7 @@ test("verified run support bundle correlates job and result without paths or par
   assert.equal(bundle.correlation.resultSha256, "b".repeat(64));
   assert.equal(bundle.runtime.durationMs, 13);
   assert.doesNotMatch(JSON.stringify(bundle), /secretPath|private|parameters|directory/i);
+  const unsafe = { ...inspection, summary: { ...inspection.summary, runId: "C:\\private\\run" },
+    provenance: { ...inspection.provenance, workerVersion: "/private/version" } };
+  assert.doesNotMatch(JSON.stringify(runSupportBundle(unsafe)), /private|C:\\/);
 });
