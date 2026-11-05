@@ -6,7 +6,7 @@ import {tmpdir} from "node:os";
 import {join} from "node:path";
 import fixture from "../packages/quantum-scene/fixtures/complex-field.json";
 import {assertScene,type ScenePayload} from "../packages/quantum-scene";
-import {assertStream,SceneChunkLoader,makeSceneStream,STREAM_CACHE_BYTES} from "../packages/quantum-scene/stream";
+import {assertStream,SceneChunkLoader,makeSceneStream,STREAM_CACHE_BYTES,STREAM_CHUNK_BYTES} from "../packages/quantum-scene/stream";
 import {scenePreview} from "../packages/quantum-scene/lod";
 import {writeStreamBundle,openStreamBundle} from "../packages/quantum-scene/stream-bundle";
 import {SceneBuilder} from "../packages/quantum-scene/builder";
@@ -33,4 +33,25 @@ test("LRU evicts old verified chunks instead of accumulating a full large datase
   const b=new SceneBuilder(scene,digest),positions=await b.data("large-points",Array.from({length:600000},(_,i)=>i%3===0?Math.floor(i/3):0),3,"synthetic test spacing");b.object("points","Large supplied test points","point-cloud",positions,"#79d9c1");
   const payload=await b.finish(),s=await makeSceneStream([{label:"Full points",payload}],digest);let reads=0;
   const loader=new SceneChunkLoader(s.manifest,async p=>{reads++;return s.chunks[p];},digest);await loader.load(0,new AbortController().signal);assert.ok(loader.cacheBytes<=STREAM_CACHE_BYTES&&loader.cacheBytes>3*1024*1024);const first=reads;await loader.load(0,new AbortController().signal);assert.ok(reads>first);assert.ok(loader.cacheBytes<=STREAM_CACHE_BYTES);
+});
+test("a 97³ field displays a small preview while full chunks load within a fixed buffer budget",async()=>{
+  const scene=structuredClone(field().scene);scene.id="large-field-fixture";scene.datasets=[];scene.objects=[];
+  scene.fields=[{id:"large-field",label:"Large scalar fixture",kind:"scalar-field",real:"large-real",
+    grid:{shape:[97,97,97],origin:[-1,-1,-1],spacing:[2/96,2/96,2/96],order:"xyz-z-fastest"}}];
+  const b=new SceneBuilder(scene,digest),count=97**3;
+  await b.data("large-real",Array.from({length:count},(_,index)=>index/count),1,"dimensionless");
+  const full=await b.finish(),preview=await scenePreview(full,digest);
+  assert.ok(preview.scene.datasets.reduce((sum,d)=>sum+d.bytes,0)<full.scene.datasets[0].bytes/16);
+  const stream=await makeSceneStream([{label:"Coarse",payload:preview},{label:"Full",payload:full}],digest);
+  const loader=new SceneChunkLoader(stream.manifest,async path=>stream.chunks[path],digest);
+  await loader.load(0,new AbortController().signal);
+  let ticks=0,progress=0;
+  const timer=setInterval(()=>ticks++,0);
+  try{
+    const loaded=await loader.load(1,new AbortController().signal,()=>progress++);
+    assert.equal(loaded.scene.datasets[0].sha256,full.scene.datasets[0].sha256);
+    assert.ok(progress>100&&ticks>0,"full loading must yield to the preview render loop");
+    assert.ok(loader.cacheBytes<=STREAM_CACHE_BYTES);
+    assert.ok(loader.peakResidentBytes<=16*1024*1024+STREAM_CACHE_BYTES+STREAM_CHUNK_BYTES);
+  }finally{clearInterval(timer);}
 });

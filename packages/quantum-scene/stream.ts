@@ -26,18 +26,22 @@ export function assertStream(value:unknown):asserts value is SceneStream {
 }
 export class SceneChunkLoader {
   private cache=new Map<string,Uint8Array>();private used=0;
+  private peak=0;
   constructor(readonly manifest:SceneStream,private read:(path:string,signal:AbortSignal)=>Promise<Uint8Array>,private digest:(bytes:Uint8Array)=>Promise<string>){assertStream(manifest);this.manifest=structuredClone(manifest);}
   get cacheBytes(){return this.used;}
+  get peakResidentBytes(){return this.peak;}
   clear(){this.cache.clear();this.used=0;}
   async load(level:number,signal:AbortSignal,onProgress:(done:number,total:number)=>void=()=>{}):Promise<ScenePayload>{
     const l=this.manifest.levels[level];if(!Number.isInteger(level)||!l)throw new Error("Invalid scene level");signal.throwIfAborted();
-    const artifacts:Record<string,Uint8Array>={}, total=l.parts.reduce((n,p)=>n+p.chunks.length,0);let done=0;
+    const artifacts:Record<string,Uint8Array>={}, total=l.parts.reduce((n,p)=>n+p.chunks.length,0);let done=0,resident=0;
     for(const p of l.parts){const d=l.scene.datasets.find(d=>d.id===p.dataset)!,data=new Uint8Array(d.bytes);let offset=0;
+      resident+=data.byteLength;this.peak=Math.max(this.peak,resident+this.used+STREAM_CHUNK_BYTES);
       for(const path of p.chunks){signal.throwIfAborted();let bytes=this.cache.get(path);if(bytes){this.cache.delete(path);this.cache.set(path,bytes);}else{
         const descriptor=this.manifest.chunks.find(c=>c.path===path)!;bytes=await this.read(path,signal);signal.throwIfAborted();
         if(!(bytes instanceof Uint8Array)||bytes.byteLength!==descriptor.bytes||await this.digest(bytes)!==descriptor.sha256)throw new Error("Stream chunk integrity failed");signal.throwIfAborted();bytes=new Uint8Array(bytes);
         while(this.used+bytes.length>STREAM_CACHE_BYTES){const oldest=this.cache.keys().next().value!;this.used-=this.cache.get(oldest)!.length;this.cache.delete(oldest);}this.cache.set(path,bytes);this.used+=bytes.length;
-      }data.set(bytes,offset);offset+=bytes.length;onProgress(++done,total);}
+      }data.set(bytes,offset);offset+=bytes.length;this.peak=Math.max(this.peak,resident+this.used+STREAM_CHUNK_BYTES);onProgress(++done,total);
+        if(done%16===0){await new Promise<void>(resolve=>setTimeout(resolve,0));signal.throwIfAborted();}}
       artifacts[d.path]=data;
     }
     const payload={scene:structuredClone(l.scene),artifacts};await verifyScenePayload(payload,this.digest);signal.throwIfAborted();return payload;

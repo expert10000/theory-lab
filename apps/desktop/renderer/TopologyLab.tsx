@@ -3,6 +3,7 @@ import type { QuantumBridge, TopologyResult, WorkerStatus, WorkspaceSnapshot } f
 import { TOPOLOGY_DEFAULTS, topologyJob, type TopologyDraft } from "../../../packages/models/topology";
 import { linkedRiceMeleTraces } from "../../../packages/models/rice-mele-comparison";
 import {selectedTopologySample,type TopologySelection,type TopologyRunContext} from "./topology-selection";
+import { QwzPhaseDiagramPanel } from "./QwzPhaseDiagramPanel";
 
 function RiceMeleChainFigure({result,selection,onSelect}:{result:TopologyResult;selection:TopologySelection|null;onSelect:(s:TopologySelection)=>void}){
   const link=linkedRiceMeleTraces(result);
@@ -121,10 +122,11 @@ function GeneralBHZFigure({result,selection,onSelect}:{result:TopologyResult;sel
       <p>Cell density is computed from each saved normalized eigenvector. Select a state to inspect complex amplitudes and spin.</p></div></div>;
 }
 
-export function TopologyLab({ bridge, status, restored, restoreEpoch, atlasDraft, atlasEpoch, onSnapshot, onTopologyContext, reopenedRun }: {
+export function TopologyLab({ bridge, status, restored, restoreEpoch, atlasDraft, atlasEpoch, onSnapshot, onTopologyContext, reopenedRun, onOpenPhaseRun, onViewPhaseScene }: {
   bridge: QuantumBridge; status: WorkerStatus; restored?: TopologyDraft | null; restoreEpoch?: number;
   atlasDraft?: TopologyDraft | null; atlasEpoch?: number; onSnapshot?: (value: TopologyDraft) => void;
   onTopologyContext?:(context:TopologyRunContext|null)=>void; reopenedRun?:{epoch:number;result:TopologyResult}|null;
+  onOpenPhaseRun:(result:TopologyResult)=>Promise<void>;onViewPhaseScene:(runId:string,view:"standard"|"bands")=>void;
 }) {
   const [draft, setDraft] = useState<TopologyDraft>(TOPOLOGY_DEFAULTS);
   const [result, setResult] = useState<TopologyResult | null>(null);
@@ -276,5 +278,6 @@ export function TopologyLab({ bridge, status, restored, restoreEpoch, atlasDraft
     {result && result.analysis.kind === "bbh" && <section className="panel cavity-result" data-testid="topology-result"><div className="panel-heading"><div><p className="eyebrow">COMPUTED BBH RESULT</p><h2>Four bulk bands and finite corner density</h2></div><span className={`result-badge ${stale ? "stale" : ""}`}>{stale ? "OUT OF DATE" : "SAVED RUN"}</span></div>
       <div className="cavity-metrics"><div><span>SAMPLED BULK GAP</span><strong>{result.analysis.bulkGap.toFixed(6)}</strong></div><div><span>FINITE CORNER WEIGHT</span><strong>{result.analysis.finite.cornerWeight.toFixed(6)}</strong></div><div><span>MIDGAP ENERGIES</span><strong>{result.analysis.finite.midgapEnergies.map(v=>v.toFixed(3)).join(" / ")}</strong></div></div>
       <BBHFigure result={result} selection={selection} onSelect={setSelection}/><p className="plot-caption">Atlas BBH π-flux convention · {result.analysis.wilson? `periodic nested Wilson quadrupole ${result.analysis.wilson.quadrupole??"undefined"} (${result.analysis.wilson.status})`:"legacy run without Wilson data"} · finite corner localization is a separate observation · {result.engine.name} {result.engine.version}</p></section>}
+    <QwzPhaseDiagramPanel bridge={bridge} onOpenRun={onOpenPhaseRun} onViewScene={onViewPhaseScene}/>
   </div>;
 }

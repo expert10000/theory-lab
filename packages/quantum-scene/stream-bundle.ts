@@ -1,6 +1,6 @@
 import {createHash} from "node:crypto";
-import {lstat,mkdir,readdir,writeFile,rm} from "node:fs/promises";
-import {join} from "node:path";
+import {lstat,mkdir,mkdtemp,readdir,rename,writeFile,rm,rmdir} from "node:fs/promises";
+import {join,resolve,sep} from "node:path";
 import {boundedRead} from "./bundle";
 import {assertStream,MAX_STREAM_METADATA,SceneChunkLoader,type SceneStream} from "./stream";
 const hash=(b:Uint8Array)=>createHash("sha256").update(b).digest("hex");
@@ -9,10 +9,17 @@ export async function writeStreamBundle(stream:{manifest:SceneStream;chunks:Reco
   const bytes=Buffer.from(JSON.stringify(stream.manifest));if(bytes.length>MAX_STREAM_METADATA)throw new Error("Stream metadata budget exceeded");
   const verifier=new SceneChunkLoader(stream.manifest,async path=>stream.chunks[path],async b=>hash(b));
   for(let i=0;i<stream.manifest.levels.length;i++)await verifier.load(i,new AbortController().signal);verifier.clear();
-  const directory=join(parent,`${stream.manifest.levels.at(-1)!.scene.id}-lod.qscene`);await mkdir(directory,{recursive:false});
-  try {for(const c of stream.manifest.chunks){const data=stream.chunks[c.path];if(!data||data.length!==c.bytes||hash(data)!==c.sha256)throw new Error("Stream chunk integrity failed");await writeFile(join(directory,c.path),data,{flag:"wx"});}
-    await writeFile(join(directory,"stream.json"),bytes,{flag:"wx"});await writeFile(join(directory,"bundle.json"),JSON.stringify({schema:"quantum-scene-stream-bundle/v1",stream:{path:"stream.json",bytes:bytes.length,sha256:hash(bytes)}}),{flag:"wx"});return directory;
-  }catch(e){await rm(directory,{recursive:true,force:true});throw e;}
+  const id=stream.manifest.levels.at(-1)!.scene.id,directory=join(parent,`${id}-lod.qscene`),claim=join(parent,`.qscene-stream-claim-${id}`);
+  try{await mkdir(claim);}catch(error){if((error as NodeJS.ErrnoException).code==="EEXIST")throw new Error("Stream publication already in progress");throw error;}
+  try{
+    const staging=await mkdtemp(join(parent,".qscene-stream-finalizing-"));
+    try {for(const c of stream.manifest.chunks){const data=stream.chunks[c.path];if(!data||data.length!==c.bytes||hash(data)!==c.sha256)throw new Error("Stream chunk integrity failed");await writeFile(join(staging,c.path),data,{flag:"wx"});}
+      await writeFile(join(staging,"stream.json"),bytes,{flag:"wx"});await writeFile(join(staging,"bundle.json"),JSON.stringify({schema:"quantum-scene-stream-bundle/v1",stream:{path:"stream.json",bytes:bytes.length,sha256:hash(bytes)}}),{flag:"wx"});
+      await openStreamBundle(staging);
+      try{await lstat(directory);throw new Error("Stream bundle already exists");}catch(error){if((error as NodeJS.ErrnoException).code!=="ENOENT")throw error;}
+      await rename(staging,directory);return directory;
+    }catch(error){if(resolve(staging).startsWith(resolve(parent)+sep))await rm(staging,{recursive:true,force:true});throw error;}
+  }finally{await rmdir(claim);}
 }
 export async function openStreamBundle(directory:string){
   const root=await lstat(directory);if(!root.isDirectory()||root.isSymbolicLink())throw new Error("Stream root must be a directory, not a link");

@@ -19,6 +19,7 @@ import { EvolutionCoordinator } from "./evolution";
 import { RunStore } from "./runs";
 import { integrationBusRoot, startLocalIntegrationBus } from "./local-integration-bus";
 import { SharedArtifactStore } from "./shared-artifact-store";
+import { QwzPhaseDiagramStore } from "./qwz-phase-diagrams";
 import { SpectrumStudyStore } from "./spectrum-studies";
 import { IsingStudyStore } from "./ising-studies";
 import {HofstadterFluxStudyStore} from "./hofstadter-flux-studies";
@@ -91,6 +92,22 @@ app.whenReady().then(() => {
   const sharedStore = new SharedArtifactStore();
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir,
     (saved, resultSha256) => integrationBus?.publishRun(saved.runId, resultSha256, saved.model), sharedStore);
+  const phaseDiagrams = new QwzPhaseDiagramStore(join(app.getPath("userData"), "qwz-phase-diagrams"), runs);
+  ipcMain.handle("quantum:build-qwz-phase-diagram", async event => { trusted(event); return phaseDiagrams.build(); });
+  ipcMain.handle("quantum:get-qwz-phase-diagram", async (event, id: unknown) => {
+    trusted(event); if (typeof id !== "string") throw new Error("Invalid phase study ID"); return phaseDiagrams.get(id);
+  });
+  ipcMain.handle("quantum:list-qwz-phase-diagrams", async event => { trusted(event); return phaseDiagrams.list(); });
+  ipcMain.handle("quantum:open-qwz-phase-point", async (event, id: unknown, mass: unknown, grid: unknown) => {
+    trusted(event);
+    if (typeof id !== "string" || typeof mass !== "number" || !Number.isFinite(mass) ||
+        typeof grid !== "number" || !Number.isInteger(grid)) throw new Error("Invalid phase cell request");
+    const map = await phaseDiagrams.get(id), point = map.points.find(item => item.mass === mass && item.grid === grid);
+    if (!point) throw new Error("Phase cell has no verified saved run");
+    const source = await runs.verifiedSource(point.runId, point.resultSha256);
+    if (source.result.operation !== "topology") throw new Error("Phase source is not topology");
+    return { point, result: source.result };
+  });
   void startLocalIntegrationBus(runs, integrationBusRoot(), join(app.getPath("userData"), "bus-handoffs"))
     .then(bus => { integrationBus = bus; })
     .catch(error => { console.error("Local integration bus unavailable:", error); });

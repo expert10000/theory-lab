@@ -702,6 +702,10 @@ export interface QuantumBridge {
   getIsingQuench(runId:string,request:import("./ising-quench").IsingQuenchRequest):Promise<import("./ising-quench").IsingQuenchArtifact>;
   getSweepRun(runId:string):Promise<{result:SweepResult;data:Uint8Array}>;
   getTopologyRun(runId:string):Promise<TopologyResult>;
+  buildQwzPhaseDiagram():Promise<import("./qwz-phase-diagram").QwzPhaseDiagram>;
+  getQwzPhaseDiagram(studyId:string):Promise<import("./qwz-phase-diagram").QwzPhaseDiagram>;
+  listQwzPhaseDiagrams():Promise<{studyId:string;computedAt:string;points:number}[]>;
+  openQwzPhasePoint(studyId:string,mass:number,grid:number):Promise<{point:import("./qwz-phase-diagram").QwzPhasePoint;result:TopologyResult}>;
   getOrbitalRun(runId:string):Promise<{result:OrbitalResult;data:Uint8Array}>;
   getOscillatorRun(runId:string):Promise<{result:OscillatorFamilyResult;data:Uint8Array|null}>;
   saveSpectrumStudy(result:import("./spectrum-study").SpectrumStudyResult|import("./spectrum-omega-study").SpectrumOmegaStudyResult):Promise<import("./spectrum-study").SpectrumStudyResult|import("./spectrum-omega-study").SpectrumOmegaStudyResult>;
