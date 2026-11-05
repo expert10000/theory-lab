@@ -34,6 +34,7 @@ export function RunComparisonPanel({bridge,onChangePins}:{bridge:QuantumBridge;o
   const [a,setA]=useState<VerifiedSavedRun|null>(null),[b,setB]=useState<VerifiedSavedRun|null>(null);
   const [error,setError]=useState(""),[busy,setBusy]=useState(true);
   const [metricIndex,setMetricIndex]=useState(0),[sampleIndex,setSampleIndex]=useState(0);
+  const [interpolate,setInterpolate]=useState(false);
   useEffect(()=>{
     let live=true;
     void (async()=>{
@@ -49,7 +50,7 @@ export function RunComparisonPanel({bridge,onChangePins}:{bridge:QuantumBridge;o
     })();
     return ()=>{live=false;};
   },[bridge]);
-  const comparison=useMemo(()=>a&&b?compareVerifiedRuns(a,b):null,[a,b]);
+  const comparison=useMemo(()=>a&&b?compareVerifiedRuns(a,b,{interpolation:interpolate?"linear":"none"}):null,[a,b,interpolate]);
   const context=useMemo(()=>a&&b&&comparison?comparisonContext(a,b,comparison):null,[a,b,comparison]);
   const metric=comparison?.observables[metricIndex]??null;
   const sample=metric?Math.min(sampleIndex,metric.a.length-1):0;
@@ -76,7 +77,8 @@ export function RunComparisonPanel({bridge,onChangePins}:{bridge:QuantumBridge;o
         </div>
         {context&&<details className="comparison-context" data-testid="comparison-context" open>
           <summary>QVIS-018 · Contextual A/B summary</summary>
-          <p>Only exact, hash-verified saved runs are inspected. Δ = B − A. No job is run and no sample is interpolated.</p>
+          <p>Only exact, hash-verified saved runs are inspected. Δ = B − A. No job is run.
+            {comparison?.observables.some(item=>item.alignment==="linear")?" Overlapping scalar samples use the selected display interpolation policy.":" Samples align exactly; none are interpolated."}</p>
           <div className="comparison-context-grid">
             <div><h4>Changed model inputs</h4>
               {context.compatibleModel?(context.parameters.length?context.parameters.map(item=><DeltaLine key={item.label} item={item}/>):<p>No numerical model input changed.</p>):
@@ -111,10 +113,19 @@ export function RunComparisonPanel({bridge,onChangePins}:{bridge:QuantumBridge;o
             <p>No separate analysis or cache block was stored for either run.</p>}
         </div>
         <div className="comparison-science" data-testid="comparison-science"><h3>Recorded observable alignment</h3>
+          <label><input type="checkbox" data-testid="comparison-linear-alignment" checked={interpolate}
+            onChange={event=>{setInterpolate(event.target.checked);setMetricIndex(0);setSampleIndex(0);}} />
+            Align overlapping scalar samples by linear interpolation</label>
+          <p>Exact alignment is the default. Interpolation uses declared coordinate and value units, excludes extrapolation, and never compares complex amplitudes or assigns error bars.</p>
           <p data-testid="comparison-status">{comparison?.status==="aligned"?"Aligned":"Metadata only"} · {comparison?.reason}</p>
+          {comparison?.eigenstates&&<div data-testid="comparison-eigenstate-match">
+            Nondegenerate two-level state matching: A₀→B{comparison.eigenstates.assignment[0]}, A₁→B{comparison.eigenstates.assignment[1]};
+            squared overlaps {comparison.eigenstates.fidelities.map(fmt).join(" / ")}. Sign/phase invariant; no coefficient subtraction.
+          </div>}
           {metric&&<><label>Observable <select aria-label="Comparison observable" value={metricIndex} onChange={event=>{setMetricIndex(Number(event.target.value));setSampleIndex(0);}}>
             {comparison!.observables.map((entry,index)=><option key={`${entry.name}-${index}`} value={index}>{entry.name} · {entry.unit}</option>)}</select></label>
-            <p>{metric.a.length} saved aligned samples · {metric.coordinate} · {metric.unit} · Δ = B − A, with no interpolation</p>
+            <p>{metric.a.length} {metric.alignment==="linear"?"overlap-aligned":"exactly aligned"} samples · {metric.coordinate} · {metric.unit} · Δ = B − A.
+              {metric.flags?.length?` ${metric.flags.join("; ")}.`:""}</p>
             <div className="comparison-summary"><div><span>Maximum |Δ|</span><strong data-testid="comparison-max-delta">{fmt(metric.maxAbsDelta)}</strong></div>
               <div><span>RMS Δ</span><strong>{fmt(metric.rmsDelta)}</strong></div></div>
             <label>Saved coordinate <input type="range" aria-label="Comparison sample cursor" min="0" max={metric.a.length-1} value={sample} onChange={event=>setSampleIndex(Number(event.target.value))}/></label>

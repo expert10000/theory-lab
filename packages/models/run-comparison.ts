@@ -1,13 +1,16 @@
 import type {QuantumResult,VerifiedSavedRun} from "../contracts";
+import { alignScientificSeries, matchTwoLevelEigenstates } from "./scientific-alignment";
 
 export interface ComparedObservable {
   name:string;unit:string;coordinate:string;positions:number[];
   a:number[];b:number[];maxAbsDelta:number;rmsDelta:number;
+  alignment?: "exact" | "linear"; flags?: string[];
 }
 export interface RunComparison {
   a:string;b:string;operation:string;model:string;
   status:"aligned"|"metadata-only";reason:string;
   observables:ComparedObservable[];withheld:string[];
+  eigenstates?: { assignment: readonly [number,number]; fidelities: readonly [number,number]; flags:string[] };
 }
 
 const same=(a:number,b:number)=>Math.abs(a-b)<=1e-10*Math.max(1,Math.abs(a),Math.abs(b));
@@ -60,13 +63,25 @@ function orbitalDensities(run:VerifiedSavedRun):number[]|null{
 function identicalValues(a:unknown,b:unknown){return JSON.stringify(a)===JSON.stringify(b);}
 
 /** Compare only declared observables. Missing or unaligned data never receives a fabricated delta. */
-export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun):RunComparison{
+export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun,
+  options: { interpolation?: "none" | "linear" } = {}):RunComparison{
   const left=a.result,right=b.result,observables:ComparedObservable[]=[],withheld:string[]=[];
+  let eigenstates: RunComparison["eigenstates"];
   const out=(reason:string):RunComparison=>({a:left.runId,b:right.runId,operation:left.operation,model:left.model.type,
-    status:observables.length?"aligned":"metadata-only",reason,observables,withheld});
+    status:observables.length?"aligned":"metadata-only",reason,observables,withheld,...(eigenstates?{eigenstates}:{})});
   const add=(name:string,unit:string,coordinate:string,positions:number[],av:number[]|null,bv:number[]|null)=>{
     const item=av&&bv?metric(name,unit,coordinate,positions,av,bv):null;
     if(item)observables.push(item);else withheld.push(`${name}: missing or unaligned saved values`);
+  };
+  const addResampled=(name:string,unit:string,coordinate:string,positionsA:number[],valuesA:number[]|null,
+    positionsB:number[],valuesB:number[]|null,coordinateUnit:string)=>{
+    const alignment=valuesA&&valuesB?alignScientificSeries(
+      {positions:positionsA,values:valuesA,coordinateUnit,valueUnit:unit},
+      {positions:positionsB,values:valuesB,coordinateUnit,valueUnit:unit},
+      options.interpolation==="linear"?"linear":"exact"):null;
+    const item=alignment?metric(name,unit,coordinate,alignment.positions,alignment.a,alignment.b):null;
+    if(item)observables.push({...item,alignment:alignment!.policy,flags:alignment!.flags});
+    else withheld.push(`${name}: saved coordinates differ or scalar interpolation is unavailable`);
   };
   if(left.runId===right.runId)return out("Choose two distinct saved runs.");
   if(left.operation!==right.operation||left.model.type!==right.model.type)
@@ -76,6 +91,9 @@ export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun):RunCo
       if(right.operation!=="diagonalize")break;
       if(left.spectrum.units!==right.spectrum.units)return out("Energy units differ.");
       add("E− / E+",left.spectrum.units,"level",[0,1],left.spectrum.eigenvalues,right.spectrum.eigenvalues);
+      if (left.stateAnalysis?.status==="resolved" && right.stateAnalysis?.status==="resolved")
+        eigenstates=matchTwoLevelEigenstates(left.stateAnalysis,right.stateAnalysis)??undefined;
+      if (!eigenstates) withheld.push("Eigenstate matching: missing, degenerate or ambiguous states; no gauge-dependent amplitude delta");
       break;
     }
     case "circuit":{
@@ -99,9 +117,12 @@ export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun):RunCo
       if(right.operation!=="topology")break;
       if(left.analysis.kind!==right.analysis.kind)return out("Topology analyses use different models.");
       if(left.analysis.kind==="ssh"&&right.analysis.kind==="ssh"){
-        if(!aligned(left.analysis.kValues,right.analysis.kValues))return out("SSH k-sample grids differ.");
-        add("Lower band","normalized","k",left.analysis.kValues,left.analysis.lowerBand,right.analysis.lowerBand);
-        add("Upper band","normalized","k",left.analysis.kValues,left.analysis.upperBand,right.analysis.upperBand);
+        if(options.interpolation!=="linear"&&!aligned(left.analysis.kValues,right.analysis.kValues))
+          return out("SSH k-sample grids differ.");
+        addResampled("Lower band","normalized","k",left.analysis.kValues,left.analysis.lowerBand,
+          right.analysis.kValues,right.analysis.lowerBand,"rad");
+        addResampled("Upper band","normalized","k",left.analysis.kValues,left.analysis.upperBand,
+          right.analysis.kValues,right.analysis.upperBand,"rad");
         if(left.model.type==="ssh"&&right.model.type==="ssh"&&left.model.parameters.cells===right.model.parameters.cells)
           add("Edge density","probability","site",indices(left.analysis.edgeDensity.length),left.analysis.edgeDensity,right.analysis.edgeDensity);
         else withheld.push("Edge density: finite-chain sizes differ");
@@ -121,9 +142,8 @@ export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun):RunCo
       if(right.operation!=="orbital")break;
       if(left.model.parameters.basis!==right.model.parameters.basis)return out("Orbital basis conventions differ.");
       add("Energy","Hartree","quantity",[0],[left.analysis.energyHartree],[right.analysis.energyHartree]);
-      if(aligned(left.analysis.radialRadii,right.analysis.radialRadii))
-        add("Radial probability","a₀⁻¹","radius / a₀",left.analysis.radialRadii,left.analysis.radialProbability,right.analysis.radialProbability);
-      else withheld.push("Radial probability: radial grids differ");
+      addResampled("Radial probability","a₀⁻¹","radius / a₀",left.analysis.radialRadii,left.analysis.radialProbability,
+        right.analysis.radialRadii,right.analysis.radialProbability,"dimensionless");
       if(left.model.parameters.grid===right.model.parameters.grid&&left.model.parameters.radius===right.model.parameters.radius)
         add("Grid density","a₀⁻³","voxel index",indices(left.data.rows),orbitalDensities(a),orbitalDensities(b));
       else withheld.push("Grid density: box or grid differs");
@@ -133,8 +153,7 @@ export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun):RunCo
       if(right.operation!=="oscillator")break;
       if(left.spectrum.units!==right.spectrum.units)return out("Energy units differ.");
       add("Harmonic levels","normalized","level",indices(left.spectrum.energies.length),left.spectrum.energies,right.spectrum.energies);
-      if(aligned(left.state.q,right.state.q))add("Spatial density","q⁻¹","q",left.state.q,left.state.density,right.state.density);
-      else withheld.push("Spatial density: q grids differ");
+      addResampled("Spatial density","q⁻¹","q",left.state.q,left.state.density,right.state.q,right.state.density,"dimensionless");
       break;
     }
     case "oscillator_anharmonic":{
@@ -153,7 +172,9 @@ export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun):RunCo
     default:{
       if(!("data" in left)&&!("data" in right))return out("No declared comparable observable for this result type.");
       const ar=bytesAsRows(a),br=bytesAsRows(b),timesA=column(ar,"time"),timesB=column(br,"time");
-      if(!ar||!br||!timesA||!timesB||!aligned(timesA,timesB))
+      if(!ar||!br||!timesA||!timesB)
+        return out("Saved time coordinates differ or a verified binary row is unavailable.");
+      if(options.interpolation!=="linear"&&!aligned(timesA,timesB))
         return out("Saved time coordinates differ or a verified binary row is unavailable.");
       const fields:Record<string,string[]>= {
         evolve:["p0","p1","sigma_x","sigma_y","sigma_z"],
@@ -170,12 +191,15 @@ export function compareVerifiedRuns(a:VerifiedSavedRun,b:VerifiedSavedRun):RunCo
       for(const name of selected){
         const unit=name.startsWith("p_")||name==="purity"||name==="norm"||name==="trace"||name==="parity"||name==="boundary_probability"?"dimensionless":
           name==="mean_number"||name==="mean_photon"?"quanta":"normalized";
-        add(name,unit,"time",timesA,column(ar,name),column(br,name));
+        addResampled(name,unit,"time",timesA,column(ar,name),timesB,column(br,name),"model-time");
       }
       if(left.operation==="oscillator_damped")withheld.push("Density-matrix elements: not compared as scalar observables");
       if(left.operation==="evolve"||left.operation.startsWith("oscillator_"))withheld.push("Complex amplitudes: global phase is not compared pointwise");
       break;
     }
   }
-  return out(observables.length?"Aligned declared observables; Δ = B − A at the same saved coordinate.":"No declared observables align; metadata only.");
+  return out(observables.length?observables.some(item=>item.alignment==="linear")?
+    "Opt-in linear alignment on overlapping saved coordinates; interpolation uncertainty is unquantified.":
+    "Aligned declared observables; Δ = B − A at the same saved coordinate.":
+    "No declared observables align; metadata only.");
 }
