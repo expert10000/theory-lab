@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from "react";
 import {canonicalAtlasOrigin} from "../../../packages/atlas/deep-link";
-import type { QuantumBridge, RunComparisonPins, RunExportFormat, RunSummary, SavedRunInspection } from "../../../packages/contracts";
+import type { QuantumBridge, RunComparisonPins, RunExportFormat, RunSummary, SavedRunInspection, VerifiedSavedRun } from "../../../packages/contracts";
 import { MODEL_REGISTRY, type EvolutionModelId } from "../../../packages/models";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import {supportsScene} from "../../../packages/quantum-scene/from-result";
 import {availableSceneViews,type SceneView} from "./scene-bridge";
+import { savedRunValidation } from "./run-validation";
 
 const evolutionModels:readonly EvolutionModelId[]=["driven_two_level","landau_zener","stuckelberg","strong_drive"];
 function evolutionLabel(model:string){return evolutionModels.includes(model as EvolutionModelId)?MODEL_REGISTRY[model as EvolutionModelId].label:null;}
@@ -19,6 +20,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   const [pins,setPins]=useState<RunComparisonPins>({a:null,b:null});
   const [pinning,setPinning]=useState(false);
   const [inspection,setInspection]=useState<SavedRunInspection|null>(null);
+  const [validatedRun,setValidatedRun]=useState<VerifiedSavedRun|null>(null);
   const [inspecting,setInspecting]=useState<string|null>(null);
   const [rerunning,setRerunning]=useState(false);
   const [topologyScenes,setTopologyScenes]=useState<Record<string,{standard:boolean;bands:boolean;invariant:boolean;strip?:boolean}>>({});
@@ -73,10 +75,11 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   }
   async function inspectOne(runId:string){
     if(inspecting||rerunning)return;
-    if(inspection?.summary.runId===runId){setInspection(null);return;}
+    if(inspection?.summary.runId===runId){setInspection(null);setValidatedRun(null);return;}
     setInspecting(runId);setMessage("");
-    try{setInspection(await bridge.inspectSavedRun(runId));}
-    catch(error){setInspection(null);setMessage(error instanceof Error?error.message:String(error));}
+    try{const [details,verified]=await Promise.all([bridge.inspectSavedRun(runId),bridge.getVerifiedRun(runId)]);
+      setInspection(details);setValidatedRun(verified);}
+    catch(error){setInspection(null);setValidatedRun(null);setMessage(error instanceof Error?error.message:String(error));}
     finally{setInspecting(null);}
   }
   async function rerunOne(){
@@ -178,6 +181,12 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
               {inspection.lineage&&<><code>Parent job SHA-256 {inspection.lineage.parentJobSha256}</code>
                 <code>Parent result SHA-256 {inspection.lineage.parentResultSha256}</code></>}</div>
           </div>
+          {validatedRun?.result.runId===run.runId&&<section data-testid="run-validation-dashboard">
+            <h4>Numerical validation dashboard</h4>
+            <p>Saved evidence and independently derived diagnostics are listed by scope. Unavailable means the source did not record enough data for that check.</p>
+            {savedRunValidation(validatedRun).map(check=><div key={check.name} className="key-value">
+              <span>{check.name}</span><strong>{check.status}</strong><small>{check.detail}</small></div>)}
+          </section>}
           {(()=>{const origin=canonicalAtlasOrigin(inspection.job);return origin&&<div className="atlas-binding" data-testid="run-atlas-origin">
             <strong>Exact canonical Atlas binding</strong><p>{origin.entry.name} · {origin.section} · pinned revision <code>{origin.revision}</code></p>
             <p>The verified stored job matches this entry's source and canonical parameters exactly.</p>
