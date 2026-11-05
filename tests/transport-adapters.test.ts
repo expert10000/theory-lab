@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { mkdtemp, readFile, readdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
-import { fetchTransportArtifact, transportConfig, transportLaunch } from "../apps/desktop/main/transport-adapters";
+import { fetchTransportArtifact, transportArtifactRead, transportConfig, transportLaunch } from "../apps/desktop/main/transport-adapters";
 
 test("WSL and Docker transport identities and commands are explicit and bounded", () => {
   assert.equal(transportConfig({}), null);
@@ -19,6 +19,11 @@ test("WSL and Docker transport identities and commands are explicit and bounded"
   assert.equal(transportLaunch(docker).command, "docker");
   assert.ok(transportLaunch(docker).args.includes("--workdir"));
   assert.equal(docker.artifacts, "/srv/lab/.qlab-artifacts");
+  const dockerRead = transportArtifactRead(docker, "/srv/lab/.qlab-artifacts/job-1.f64");
+  assert.equal(dockerRead.command, "docker");
+  assert.deepEqual(dockerRead.args.slice(0, 4), ["exec", "qlab-worker", docker.python, "-c"]);
+  assert.equal(dockerRead.args.at(-1), "/srv/lab/.qlab-artifacts/job-1.f64");
+  assert.equal(dockerRead.args.includes("cp"), false);
 });
 
 test("container artifacts remain behind the same hash and size gate", async () => {

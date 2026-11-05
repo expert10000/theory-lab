@@ -39,6 +39,16 @@ export function transportLaunch(config: ExternalTransport): { command: string; a
     config.python, "-u", "-m", "quantum_worker.main"] };
 }
 
+/** Stream artifact bytes over stdout so the declared cap applies before local disk writes. */
+export function transportArtifactRead(config: ExternalTransport, source: string): { command: string; args: string[] } {
+  if (config.kind === "wsl") return { command: "wsl.exe",
+    args: ["--distribution", config.target, "--exec", "cat", source] };
+  if (config.kind === "docker") return { command: "docker",
+    args: ["exec", config.target, config.python, "-c",
+      "import shutil,sys; shutil.copyfileobj(open(sys.argv[1], 'rb'), sys.stdout.buffer, 65536)", source] };
+  throw new Error("SSH copying uses SCP");
+}
+
 async function command(command: string, args: string[], maxBytes: number, timeoutMs: number): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     const child = spawn(command, args, { windowsHide: true, stdio: ["ignore", "pipe", "pipe"] });
@@ -58,12 +68,9 @@ async function command(command: string, args: string[], maxBytes: number, timeou
 type Copier = (config: ExternalTransport, jobId: string, temporary: string, maxBytes: number, timeoutMs: number) => Promise<void>;
 async function copyArtifact(config: ExternalTransport, jobId: string, temporary: string, maxBytes: number, timeoutMs: number) {
   const source = `${config.artifacts}/${jobId}.f64`;
-  if (config.kind === "wsl") {
-    const bytes = await command("wsl.exe", ["--distribution", config.target, "--exec", "cat", source], maxBytes, timeoutMs);
-    await writeFile(temporary, bytes, { flag: "wx" });
-  } else if (config.kind === "docker") {
-    await command("docker", ["cp", `${config.target}:${source}`, temporary], 4096, timeoutMs);
-  } else throw new Error("SSH copying uses SCP");
+  const read = transportArtifactRead(config, source);
+  const bytes = await command(read.command, read.args, maxBytes, timeoutMs);
+  await writeFile(temporary, bytes, { flag: "wx" });
 }
 
 export async function fetchTransportArtifact(config: ExternalTransport, jobId: string,
