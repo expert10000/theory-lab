@@ -89,6 +89,7 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
       const created=await bridge.rerunSaved(inspection.summary.runId,inspection.preflight.fingerprint);
       setMessage(`New saved run ${created.runId} created from ${inspection.summary.runId}. The original was not changed.`);
       setInspection(null);
+      setValidatedRun(null);
       setRuns(await bridge.listRuns());
     }catch(error){setMessage(error instanceof Error?error.message:String(error));}
     finally{setRerunning(false);}
