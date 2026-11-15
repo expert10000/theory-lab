@@ -24,6 +24,7 @@
     "verify:qi40-retained": "node scripts/verify-qi40-retained.mjs",
     "accept:qi40-math3d": "node scripts/accept-qi40-math3d.mjs",
     "extract:qi40-candidate": "node scripts/extract-qi40-candidate.mjs",
+    "accept:qi40-matched": "node scripts/accept-qi40-matched.mjs",
     "accept:packaged-qwz": "node scripts/accept-packaged-qwz.mjs",
     "test:math3d-handoff": "npm run build && node scripts/smoke-math3d-handoff.mjs",
     "test:source-run-locate": "npm run build && node scripts/smoke-source-run-locate.mjs",

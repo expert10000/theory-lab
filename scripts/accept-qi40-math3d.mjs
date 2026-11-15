@@ -60,11 +60,15 @@ try {
   assert.equal(await page.getByRole("button", { name: "Verify and view scene" }).count(), 2);
   const viewed = [];
   const screenshots = [];
-  for (const [index, scene] of study.scenes.entries()) {
+  for (const index of [0, 1]) {
     await page.getByRole("button", { name: "Verify and view scene" }).nth(index).click();
-    const bundlePath = join(retained, "freshStudy", scene.folder);
-    await page.getByText(`Bundle: ${bundlePath}`, { exact: true }).waitFor({ timeout: 20_000 });
+    await page.getByText(/^Bundle: /).first().waitFor({ timeout: 20_000 });
     const detail = await page.locator("body").innerText();
+    const scene = study.scenes.find(item => detail.includes(`Bundle: ${join(retained, "freshStudy", item.folder)}`));
+    assert.ok(scene, "Math3D opened a bundle outside the retained study");
+    assert.ok(!viewed.includes(scene.role), `Math3D opened ${scene.role} twice`);
+    const bundlePath = join(retained, "freshStudy", scene.folder);
+    assert.ok(detail.includes(`Bundle: ${bundlePath}`));
     assert.match(detail, /Verified quantum-scene\/v1 · qwz/);
     assert.ok(detail.includes(study.resultSha256));
     if (scene.role === "curvature") {
@@ -88,6 +92,7 @@ try {
     }
     await page.getByRole("button", { name: "Close", exact: true }).last().click();
   }
+  assert.deepEqual(viewed.toSorted(), ["bands", "curvature"]);
   const report = { schema: "theory-lab/qi40-math3d-consumer/v1", executableSha256: expectedHash,
     runId: study.runId, resultSha256: study.resultSha256, stagedViews: 2, viewed };
   if (candidate) {
