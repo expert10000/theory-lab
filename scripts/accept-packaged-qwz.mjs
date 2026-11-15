@@ -94,9 +94,32 @@ try {
       assert.equal(digest(await readFile(join(folder, dataset.path))), dataset.sha256);
     scenes.push({ role: declared.role, sceneSha256 });
   }
+  await page.locator('details[data-model-group="topology"] summary').click();
+  await page.getByRole("button", { name: "Topological bands" }).click();
+  await page.getByTestId("topology-lab").waitFor();
+  await page.getByRole("combobox", { name: "Topology model" }).selectOption("qwz");
+  await page.getByTestId("run-topology").click();
+  await page.getByTestId("qwz-chern").filter({ hasText: "-1" }).waitFor({ timeout: 30_000 });
+  const freshRunId = await page.getByTestId("workspace-run-id").innerText();
+  assert.notEqual(freshRunId, runId);
+  const fresh = await page.evaluate(id => window.quantum.inspectSavedRun(id), freshRunId);
+  assert.equal(fresh.summary.operation, "topology");
+  assert.equal(fresh.summary.model, "qwz");
+  assert.equal(fresh.job.model.parameters.mass, -1);
+  assert.equal(fresh.job.model.parameters.grid, 21);
+  const freshResult = await page.evaluate(id => window.quantum.getTopologyRun(id), freshRunId);
+  assert.equal(freshResult.analysis.kind, "qwz");
+  assert.equal(freshResult.analysis.chern, -1);
+  assert.equal(freshResult.analysis.bulkGap, 2);
+  assert.equal(freshResult.analysis.gapClosed, false);
+  const freshResultBytes = await readFile(join(profile, "runs", freshRunId, "result.json"));
+  assert.equal(digest(freshResultBytes), fresh.hashes.result);
   process.stdout.write(JSON.stringify({
-    schema: "theory-lab/qi40-packaged-producer-acceptance/v1",
+    schema: "theory-lab/qi40-packaged-producer-acceptance/v2",
     executableSha256, runId, resultSha256, manifestSha256: digest(manifestBytes), scenes,
+    freshRun: { runId: freshRunId, resultSha256: fresh.hashes.result,
+      mass: fresh.job.model.parameters.mass, grid: fresh.job.model.parameters.grid,
+      chern: freshResult.analysis.chern, bulkGap: freshResult.analysis.bulkGap },
     math3d: "capture-stub-only",
   }, null, 2) + "\n");
 } finally {
