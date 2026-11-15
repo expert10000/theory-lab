@@ -92,6 +92,19 @@ See [QI40_MATH3D_CONSUMER_ACCEPTANCE.md](QI40_MATH3D_CONSUMER_ACCEPTANCE.md).
 
 See [QI40_MATCHED_CANDIDATE_ACCEPTANCE.md](QI40_MATCHED_CANDIDATE_ACCEPTANCE.md).
 
+## Commits 25–28
+
+25. Fix installed Math3D discovery under Electron by checking `app.asar`
+    through the unpatched filesystem API.
+26. Exercise the real Theory Lab QWZ bridge into the packaged Math3D process,
+    recording exact command-line and handoff bytes.
+27. Independently compare the direct handoff with the retained producer study
+    and reject changed copied scene files.
+28. Document the original candidate failure, fixed unpacked result, and
+    required rebuilt-installer gates.
+
+See [QI40_DIRECT_LAUNCH_ACCEPTANCE.md](QI40_DIRECT_LAUNCH_ACCEPTANCE.md).
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies

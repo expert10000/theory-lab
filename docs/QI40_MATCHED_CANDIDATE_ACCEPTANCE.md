@@ -53,7 +53,11 @@ the two links in either order; each viewer is identified by its bundle path.
 
 This is a sequential unpacked-app acceptance. The producer's launch target
 is a capture stub, and the consumer opens the retained study via its CLI.
-It does not exercise the installed deep link, installer execution on this
+The [subsequent direct launch check](QI40_DIRECT_LAUNCH_ACCEPTANCE.md) found
+that the pinned Theory Lab candidate rejects an installed-style Math3D target
+because Electron treats `app.asar` as a directory through patched `fs.stat`.
+A fixed unpacked Theory Lab build launched the paired Math3D app successfully.
+That matched check does not exercise the installed deep link or installer execution on this
 machine, Project rollback, or the 80-cycle memory budget. The [Math3D NSIS
 record](https://github.com/expert10000/Math3D/blob/19484d0d/docs/evidence/quantum-qi40-nsis313-production-2026-11-07.md)
 supplies separate installed setup evidence for these installer hashes. QI-40

@@ -44,6 +44,16 @@ its paired installer. It verified the cross-app hashes and visually inspected
 both scenes. This still used unpacked apps and a staged CLI import, so the
 installed deep link and installed memory budget remain open.
 
+The [direct launch check](QI40_DIRECT_LAUNCH_ACCEPTANCE.md) then found a
+functional blocker in that pinned Theory Lab candidate: Electron's patched
+`fs.stat` classifies Math3D's `app.asar` as a directory, so the Lab rejected
+a valid installed-style Math3D executable. Commit `f026d7c` fixes the check
+with `original-fs`. A new unpacked Theory Lab build passed the real QWZ
+launch into the paired Math3D app, with byte-identical study files. That fix
+is **not** in installer `377707a7c917a5f1aabf7bc8cdc89f7ab44343800219bf6f562140664f815d25`.
+Rebuild and recheck the exact installer pair before making an installed
+two-app claim; the memory gate also remains open.
+
 | Gate | Current evidence | Required before a full QI-40 claim |
 | --- | --- | --- |
 | QWZ source parity | Exact saved-run hash, deterministic curvature/band recipes, verified two-scene handoff, and cross-language golden checks are recorded in the [result descriptor](quantum-result-v2-qwz.md), [recipe record](qwz-scene-recipes.md), and [handoff record](qwz-study-math3d-fork.md). | Run the final two-app matrix against the exact 2.0.0 candidate binaries and record scene hashes and visual inspection. |
