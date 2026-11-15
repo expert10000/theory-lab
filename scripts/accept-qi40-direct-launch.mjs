@@ -96,10 +96,16 @@ try {
     runId: source.runId, resultSha256: source.hashes.result,
     sourceStudySha256: await shaFile(join(retained, "freshStudy", "study.json")),
     launchedStudySha256: await shaFile(join(output, "study", "study.json")),
+    handoffDirectory: handoff.directory,
     process: { pid: launched.ProcessId, parentPid: launched.ParentProcessId,
       rendererPid: renderer.ProcessId, commandLine: launched.CommandLine },
     files };
   await writeFile(join(output, "acceptance.json"), `${JSON.stringify(report, null, 2)}\n`, { flag: "wx" });
+  const recheck = spawnSync(process.execPath,
+    [resolve("scripts/verify-qi40-direct-launch.mjs"), lab, math3d, retained, output],
+    { encoding: "utf8", timeout: 30_000 });
+  if (recheck.status !== 0)
+    throw new Error(`Direct launch evidence failed verification: ${recheck.stderr || recheck.stdout}`);
   console.log(JSON.stringify(report, null, 2));
 } finally {
   for (const item of math3dProcesses().filter(item => !before.some(old => old.ProcessId === item.ProcessId) &&
