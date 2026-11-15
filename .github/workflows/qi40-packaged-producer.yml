@@ -40,7 +40,10 @@ jobs:
           $worker = Join-Path $root 'resources/quantum-worker/quantum-worker.exe'
           $exeHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $exe).Hash.ToLowerInvariant()
           $acceptance = 'artifacts/qi40-packaged-candidate/packaged-producer-acceptance.json'
-          node scripts/accept-packaged-qwz.mjs $exe $exeHash > $acceptance
+          $retained = 'artifacts/qi40-packaged-candidate/retained'
+          node scripts/accept-packaged-qwz.mjs $exe $exeHash --retain $retained > $acceptance
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run verify:qi40-retained -- $retained
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $record = Get-Content -LiteralPath $acceptance -Raw | ConvertFrom-Json
           if ($record.schema -ne 'theory-lab/qi40-packaged-producer-acceptance/v2' -or $record.executableSha256 -ne $exeHash) {
@@ -53,6 +56,7 @@ jobs:
             appAsarSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $appAsar).Hash.ToLowerInvariant()
             workerExeSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $worker).Hash.ToLowerInvariant()
             acceptanceSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath $acceptance).Hash.ToLowerInvariant()
+            retainedLedgerSha256 = (Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $retained 'artifact-hashes.json')).Hash.ToLowerInvariant()
           } | ConvertTo-Json | Set-Content -LiteralPath 'artifacts/qi40-packaged-candidate/candidate-hashes.json' -Encoding utf8
       - name: Archive exact unpacked candidate and evidence
         uses: actions/upload-artifact@v4
