@@ -30,6 +30,7 @@
     "verify:qi40-direct-launch": "node scripts/verify-qi40-direct-launch.mjs",
     "accept:packaged-qwz": "node scripts/accept-packaged-qwz.mjs",
     "test:math3d-handoff": "npm run build && node scripts/smoke-math3d-handoff.mjs",
+    "test:math3d-installed-target": "npm run build && node scripts/smoke-math3d-installed-target.mjs",
     "test:source-run-locate": "npm run build && node scripts/smoke-source-run-locate.mjs",
     "test:ssh-ui": "npm run build && node scripts/smoke-ssh-ui.mjs",
     "accept:remote": "tsx scripts/accept-remote.ts",
@@ -47,6 +48,7 @@
     "three": "0.186.1"
   },
   "devDependencies": {
+    "@electron/asar": "3.2.18",
     "@types/node": "26.6.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
