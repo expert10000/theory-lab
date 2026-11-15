@@ -40,6 +40,11 @@ checks support the producer and scene claims above. They do not exercise a
 Math3D installer or close the installed gates. A final candidate build must
 be recorded separately.
 
+A later [local packaged Theory Lab producer check](QI40_PACKAGED_PRODUCER_ACCEPTANCE.md)
+records an unpacked Windows executable and exact QWZ scene hashes. It used a
+saved fixture and a Math3D launch capture stub, so the installed two-app gates
+above remain open.
+
 The QI-40 release decision is **open** until every required gate passes for
 identified artifacts, or the published release text stays within the preview
 scope above. See the [Math3D QI-40 roadmap](https://github.com/expert10000/Math3D/blob/cd3cc5221734232d4d60055917e28ab5c4c05a7b/docs/quantum-math3d-integration-roadmap-2026-11-04.md#qi-40--integration-certification--release-freeze)

@@ -39,6 +39,9 @@ installed two-app release.
 8. Record the candidate acceptance procedure and its exact artifact evidence.
    Keep full installed two-app certification conditional on the gates below.
 
+The local unpacked Windows producer result and its limits are in
+[QI40_PACKAGED_PRODUCER_ACCEPTANCE.md](QI40_PACKAGED_PRODUCER_ACCEPTANCE.md).
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies
