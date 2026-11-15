@@ -1,11 +1,11 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { RunStore } from "../apps/desktop/main/runs";
-import { prepareQwzStudyHandoff } from "../apps/desktop/main/math3d-study-handoff";
+import { prepareQwzStudyHandoff, verifyQwzStudyHandoff } from "../apps/desktop/main/math3d-study-handoff";
 import { assertQuantumResultV2, qwzResultV2 } from "../packages/contracts/result-v2";
 import { verifyScenePayload } from "../packages/quantum-scene";
 import { readSceneBundle } from "../packages/quantum-scene/bundle";
@@ -63,6 +63,7 @@ test("QWZ study handoff declares two independently readable scenes from the exac
     const handoff = await prepareQwzStudyHandoff(store, runId, source.hashes.result, parent);
     assert.equal(handoff.manifest.scenes.length, 2);
     assert.deepEqual(handoff.manifest.scenes.map(item => item.role), ["curvature", "bands"]);
+    await verifyQwzStudyHandoff(parent, handoff.manifest);
     for (const declared of handoff.manifest.scenes) {
       const opened = await readSceneBundle(join(parent, declared.folder));
       assert.equal(opened.scene.id, declared.sceneId);
@@ -70,6 +71,15 @@ test("QWZ study handoff declares two independently readable scenes from the exac
       assert.equal(opened.scene.provenance.resultSha256, source.hashes.result);
     }
     await assert.rejects(prepareQwzStudyHandoff(store, runId, "0".repeat(64), join(parent, "invalid")), /hash/);
+    const manifestPath = join(parent, "study.json");
+    const manifestBytes = await readFile(manifestPath);
+    await writeFile(manifestPath, manifestBytes.toString("utf8").replace('"curvature"', '"bands"'));
+    await assert.rejects(verifyQwzStudyHandoff(parent, handoff.manifest), /manifest changed/);
+    await writeFile(manifestPath, manifestBytes);
+    const scenePath = join(parent, handoff.manifest.scenes[0].folder, "scene.json");
+    const sceneBytes = await readFile(scenePath);
+    await writeFile(scenePath, Buffer.concat([sceneBytes, Buffer.from(" ")]));
+    await assert.rejects(verifyQwzStudyHandoff(parent, handoff.manifest), /bundle file size/);
   } finally { await rm(parent, { recursive: true, force: true }); }
 });
 

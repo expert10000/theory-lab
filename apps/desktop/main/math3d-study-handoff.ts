@@ -1,6 +1,45 @@
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readdir, writeFile } from "node:fs/promises";
 import { basename, join } from "node:path";
+import { boundedRead, readSceneBundle } from "../../../packages/quantum-scene/bundle";
 import type { RunStore } from "./runs";
+
+export type QwzStudyManifest = {
+  schema: "quantum-study-handoff/v1";
+  model: "qwz";
+  runId: string;
+  resultSha256: string;
+  scenes: [
+    { role: "curvature"; folder: string; sceneId: string },
+    { role: "bands"; folder: string; sceneId: string },
+  ];
+};
+
+/** Check the exact manifest plus both hash-verified bundles before launch. */
+export async function verifyQwzStudyHandoff(directory: string, expected: QwzStudyManifest) {
+  const names = new Set(["study.json", ...expected.scenes.map(scene => scene.folder)]);
+  if (names.size !== 3 || expected.scenes.some(scene =>
+    basename(scene.folder) !== scene.folder || !scene.folder.endsWith(".qscene")))
+    throw new Error("Invalid QWZ study scene folders");
+  const entries = await readdir(directory, { withFileTypes: true });
+  if (entries.length !== names.size || entries.some(entry =>
+    !names.has(entry.name) || entry.isSymbolicLink() ||
+    (entry.name === "study.json" ? !entry.isFile() : !entry.isDirectory())))
+    throw new Error("QWZ study contains missing, unexpected or linked files");
+  const manifestBytes = await boundedRead(join(directory, "study.json"));
+  if (!manifestBytes.equals(Buffer.from(JSON.stringify(expected, null, 2) + "\n")))
+    throw new Error("QWZ study manifest changed after preparation");
+  for (const declared of expected.scenes) {
+    const { scene } = await readSceneBundle(join(directory, declared.folder));
+    if (scene.id !== declared.sceneId || scene.provenance.runId !== expected.runId ||
+        scene.provenance.resultSha256 !== expected.resultSha256 ||
+        scene.provenance.model !== "qwz")
+      throw new Error("QWZ study scene source or identity changed");
+    const datasets = new Set(scene.datasets.map(dataset => dataset.id));
+    if (declared.role === "curvature" ? !datasets.has("curvature") :
+        !datasets.has("band-energy-0") || !datasets.has("band-energy-1"))
+      throw new Error("QWZ study scene role changed");
+  }
+}
 
 /** The handoff is a portable folder; Math3D independently verifies both bundles. */
 export async function prepareQwzStudyHandoff(runs: RunStore, runId: string, resultSha256: string, parent: string) {
@@ -12,10 +51,13 @@ export async function prepareQwzStudyHandoff(runs: RunStore, runId: string, resu
   await mkdir(parent, { recursive: true });
   const curvature = await runs.prepareSceneHandoff(runId, parent, "standard", resultSha256);
   const bands = await runs.prepareSceneHandoff(runId, parent, "bands", resultSha256);
-  const scenes = [{ role: "curvature", folder: basename(curvature.directory), sceneId: curvature.sceneId },
-    { role: "bands", folder: basename(bands.directory), sceneId: bands.sceneId }];
-  const manifest = { schema: "quantum-study-handoff/v1", model: "qwz", runId, resultSha256, scenes };
+  const scenes: QwzStudyManifest["scenes"] = [
+    { role: "curvature", folder: basename(curvature.directory), sceneId: curvature.sceneId },
+    { role: "bands", folder: basename(bands.directory), sceneId: bands.sceneId },
+  ];
+  const manifest: QwzStudyManifest = { schema: "quantum-study-handoff/v1", model: "qwz", runId, resultSha256, scenes };
   await writeFile(join(parent, "study.json"), JSON.stringify(manifest, null, 2) + "\n", { flag: "wx" });
+  await verifyQwzStudyHandoff(parent, manifest);
   return { directory: parent, manifest };
 }
 

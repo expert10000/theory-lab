@@ -12,7 +12,7 @@ import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
 import { randomUUID, createHash } from "node:crypto";
 import { pathToFileURL } from "node:url";
 import { chooseMath3DTarget, launchMath3D, launchMath3DStudy } from "./math3d-launch";
-import { prepareHofstadterStudyHandoff, prepareQwzStudyHandoff } from "./math3d-study-handoff";
+import { prepareHofstadterStudyHandoff, prepareQwzStudyHandoff, verifyQwzStudyHandoff } from "./math3d-study-handoff";
 import { resolveSourceRunLaunch, sourceRunLaunchArguments } from "./source-run-launch";
 import { WorkerSupervisor } from "./worker";
 import { EvolutionCoordinator } from "./evolution";
@@ -732,6 +732,7 @@ app.whenReady().then(() => {
     if (!target) return { ...receipt, launched: false };
     // Refuse a source changed while the installation picker was open.
     await runs.verifiedSource(runId, resultSha256);
+    await verifyQwzStudyHandoff(receipt.directory, receipt.manifest);
     await launchMath3DStudy(target, receipt.directory, mode);
     return { ...receipt, launched: true };
   });
