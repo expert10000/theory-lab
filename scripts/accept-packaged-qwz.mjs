@@ -45,7 +45,7 @@ try {
   await mkdir(join(target, "dist"), { recursive: true });
   await writeFile(join(target, "package.json"), JSON.stringify({ name: "math3d", main: "dist/main.js" }));
   await writeFile(join(target, "dist", "main.js"),
-    "require('node:fs').writeFileSync(process.env.QLAB_MATH3D_CAPTURE, JSON.stringify({ argv: process.argv }) + '\\n');\n");
+    "require('node:fs').appendFileSync(process.env.QLAB_MATH3D_CAPTURE, JSON.stringify({ argv: process.argv }) + '\\n');\n");
   await writeFile(join(target, "renderer", "dist", "index.html"), "<!doctype html>\n");
   await copyFile(process.execPath, fakeExecutable);
   const env = { ...process.env, QLAB_TEST_PROFILE: profile, QLAB_MATH3D_HOME: target,
@@ -64,10 +64,17 @@ try {
   const handoff = await page.evaluate(({ id, hash }) =>
     window.quantum.openQwzStudyInMath3D(id, hash, "new"), { id: runId, hash: resultSha256 });
   assert.equal(handoff.launched, true);
-  for (let attempt = 0; attempt < 50; attempt++) {
-    try { await stat(capture); break; } catch { await new Promise(done => setTimeout(done, 100)); }
+  async function waitLaunches(count) {
+    for (let attempt = 0; attempt < 50; attempt++) {
+      try {
+        const lines = (await readFile(capture, "utf8")).trim().split("\n");
+        if (lines.length >= count) return lines.map(line => JSON.parse(line));
+      } catch { /* Target may not have written its capture yet. */ }
+      await new Promise(done => setTimeout(done, 100));
+    }
+    throw new Error(`Math3D capture did not record ${count} launches`);
   }
-  const launch = JSON.parse(await readFile(capture, "utf8"));
+  const launch = (await waitLaunches(1))[0];
   const flag = launch.argv.indexOf("--quantum-study");
   assert.ok(flag >= 0);
   assert.equal(launch.argv[flag + 1], handoff.directory);
@@ -114,12 +121,55 @@ try {
   assert.equal(freshResult.analysis.gapClosed, false);
   const freshResultBytes = await readFile(join(profile, "runs", freshRunId, "result.json"));
   assert.equal(digest(freshResultBytes), fresh.hashes.result);
+  await assert.rejects(page.evaluate(({ id }) =>
+    window.quantum.openQwzStudyInMath3D(id, "0".repeat(64), "attach"), { id: freshRunId }), /hash|changed/i);
+  assert.equal((await waitLaunches(1)).length, 1);
+  const freshHandoff = await page.evaluate(({ id, hash }) =>
+    window.quantum.openQwzStudyInMath3D(id, hash, "attach"),
+    { id: freshRunId, hash: fresh.hashes.result });
+  assert.equal(freshHandoff.launched, true);
+  const freshLaunch = (await waitLaunches(2))[1];
+  const freshFlag = freshLaunch.argv.indexOf("--quantum-study");
+  assert.ok(freshFlag >= 0);
+  assert.equal(freshLaunch.argv[freshFlag + 1], freshHandoff.directory);
+  assert.equal(freshLaunch.argv[freshFlag + 2], "attach");
+  const freshManifestBytes = await readFile(join(freshHandoff.directory, "study.json"));
+  const freshManifest = JSON.parse(freshManifestBytes.toString("utf8"));
+  assert.equal(freshManifest.runId, freshRunId);
+  assert.equal(freshManifest.resultSha256, fresh.hashes.result);
+  assert.deepEqual(freshManifest.scenes.map(scene => scene.role), ["curvature", "bands"]);
+  const freshScenes = [];
+  for (const declared of freshManifest.scenes) {
+    const folder = join(freshHandoff.directory, declared.folder);
+    const sceneBytes = await readFile(join(folder, "scene.json"));
+    const bundle = JSON.parse(await readFile(join(folder, "bundle.json"), "utf8"));
+    const scene = JSON.parse(sceneBytes.toString("utf8"));
+    const sceneSha256 = digest(sceneBytes);
+    assert.equal(sceneSha256, bundle.scene.sha256);
+    assert.equal(scene.id, declared.sceneId);
+    assert.equal(scene.provenance.runId, freshRunId);
+    assert.equal(scene.provenance.resultSha256, fresh.hashes.result);
+    const expectedArrays = declared.role === "curvature"
+      ? { curvature: freshResult.analysis.berryCurvature }
+      : { "band-energy-0": freshResult.analysis.lowerBand,
+          "band-energy-1": freshResult.analysis.upperBand };
+    for (const dataset of scene.datasets) {
+      const bytes = await readFile(join(folder, dataset.path));
+      assert.equal(digest(bytes), dataset.sha256);
+      if (dataset.id in expectedArrays) {
+        const actual = Array.from({ length: bytes.length / 8 }, (_, index) => bytes.readDoubleLE(index * 8));
+        assert.deepEqual(actual, expectedArrays[dataset.id]);
+      }
+    }
+    freshScenes.push({ role: declared.role, sceneSha256 });
+  }
   process.stdout.write(JSON.stringify({
     schema: "theory-lab/qi40-packaged-producer-acceptance/v2",
     executableSha256, runId, resultSha256, manifestSha256: digest(manifestBytes), scenes,
     freshRun: { runId: freshRunId, resultSha256: fresh.hashes.result,
       mass: fresh.job.model.parameters.mass, grid: fresh.job.model.parameters.grid,
-      chern: freshResult.analysis.chern, bulkGap: freshResult.analysis.bulkGap },
+      chern: freshResult.analysis.chern, bulkGap: freshResult.analysis.bulkGap,
+      manifestSha256: digest(freshManifestBytes), scenes: freshScenes },
     math3d: "capture-stub-only",
   }, null, 2) + "\n");
 } finally {
