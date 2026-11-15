@@ -28,6 +28,7 @@ jobs:
       - run: npm run typecheck
       - run: npm run test:qi40-source
       - run: npm run test:math3d-handoff
+      - run: npm run test:math3d-installed-target
       - run: node scripts/build-frozen-worker.mjs
       - name: Package unpacked Windows candidate
         run: npx electron-builder --win --dir --config electron-builder.config.cjs --config.directories.output=artifacts/qi40-packaged-candidate

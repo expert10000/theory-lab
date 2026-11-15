@@ -49,6 +49,9 @@ jobs:
       - name: Electron desktop smoke (Windows)
         if: runner.os == 'Windows'
         run: npm run test:desktop
+      - name: Installed-style Math3D target handoff (Windows)
+        if: runner.os == 'Windows'
+        run: npm run test:math3d-installed-target
       - name: Electron desktop smoke (Linux/Xvfb)
         if: runner.os == 'Linux'
         env:
