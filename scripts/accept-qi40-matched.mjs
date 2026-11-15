@@ -66,4 +66,9 @@ const report = {
   consumerScreenshots: consumer.screenshots,
 };
 await writeFile(join(output, "matched-acceptance.json"), `${JSON.stringify(report, null, 2)}\n`, { flag: "wx" });
+const verification = spawnSync(process.execPath,
+  [resolve("scripts/verify-qi40-matched.mjs"), manifestPath, extractionPath, output],
+  { cwd: resolve("."), encoding: "utf8", timeout: 60_000 });
+if (verification.status !== 0)
+  throw new Error(`Matched acceptance verification failed: ${verification.error?.message ?? verification.stderr ?? verification.stdout}`);
 console.log(JSON.stringify(report, null, 2));
