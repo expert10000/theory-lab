@@ -8,7 +8,7 @@ await Promise.all([
     bundle: true,
     platform: "node",
     format: "cjs",
-    external: ["electron"],
+    external: ["electron", "original-fs"],
     outfile: "dist/main.cjs",
   }),
   build({

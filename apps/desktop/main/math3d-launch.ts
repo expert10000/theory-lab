@@ -3,6 +3,7 @@ import { randomUUID } from "node:crypto";
 import { readFile, rename, stat, unlink, writeFile } from "node:fs/promises";
 import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { app, BrowserWindow, dialog } from "electron";
+import { statSync as originalStatSync } from "original-fs";
 
 const CONFIG_SCHEMA = "theory-lab/math3d-target/v1";
 const CONFIG_FILE = "math3d-target.json";
@@ -14,7 +15,8 @@ async function targetExecutable(directory: string): Promise<Math3DTarget> {
   if (process.platform === "win32" && directory.toLowerCase().endsWith(".exe")) {
     if (!["math3d.exe", "math3d dev.exe"].includes(basename(directory).toLowerCase()))
       throw new Error("Selected executable is not Math3D");
-    if (!(await stat(directory)).isFile() || !(await stat(join(dirname(directory), "resources", "app.asar"))).isFile())
+    // Electron's patched fs presents app.asar as a directory; inspect the archive itself.
+    if (!(await stat(directory)).isFile() || !originalStatSync(join(dirname(directory), "resources", "app.asar")).isFile())
       throw new Error("Math3D installation is incomplete");
     return { kind: "installed", directory: dirname(directory), executable: directory };
   }
