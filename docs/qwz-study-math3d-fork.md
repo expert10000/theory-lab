@@ -1,5 +1,9 @@
 # QWZ study handoff and verified source fork
 
+For a proposed 2.0.0 release, this workflow has a bounded preview claim; QI-40
+installed integration certification remains open. See the
+[release disposition](RELEASE_2.0_QI40_DISPOSITION.md).
+
 The Scene Lab now offers a two-view QWZ study handoff for one selected, verified saved run. It writes the exact curvature and bands `.qscene` folders plus a `quantum-study-handoff/v1` manifest containing the run ID, result hash, scene IDs and roles. Lab can launch a built Math3D checkout or an installed Windows application. If no target is selected, the study folder remains available for manual opening in Math3D's Project panel.
 
 Math3D independently verifies both folders before the user chooses a new or current Project. The existing single-scene route still works.
