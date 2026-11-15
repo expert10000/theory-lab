@@ -1,6 +1,6 @@
 /** Regression check for an installed-style Math3D executable and app.asar. */
 import assert from "node:assert/strict";
-import { cp, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, mkdtemp, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve, sep } from "node:path";
 import { createPackage } from "@electron/asar";
@@ -34,6 +34,9 @@ try {
   desktop = await electron.launch({ args: ["."], cwd: resolve("."), env });
   const page = await desktop.firstWindow();
   await page.getByTestId("worker-status").filter({ hasText: "READY" }).waitFor({ timeout: 60_000 });
+  await assert.rejects(page.evaluate(id =>
+    window.quantum.openQwzStudyInMath3D(id, "0".repeat(64), "new"), runId), /hash|changed/i);
+  await assert.rejects(readFile(capture), /ENOENT/);
   const receipt = await page.evaluate(({ id, hash }) =>
     window.quantum.openQwzStudyInMath3D(id, hash, "new"), { id: runId, hash: resultSha256 });
   assert.equal(receipt.launched, true);
@@ -47,7 +50,23 @@ try {
   assert.ok(flag >= 0);
   assert.equal(launched[flag + 1], receipt.directory);
   assert.equal(launched[flag + 2], "new");
-  console.log("PASS: installed-style Math3D app.asar target accepted and launched exact QWZ study");
+  const captured = await readFile(capture, "utf8");
+  await desktop.evaluate((_electron, path) => { process.env.QLAB_MATH3D_HOME = path; },
+    join(target, "NotMath3D.exe"));
+  await assert.rejects(page.evaluate(({ id, hash }) =>
+    window.quantum.openQwzStudyInMath3D(id, hash, "new"),
+    { id: runId, hash: resultSha256 }), /Selected executable is not Math3D/);
+  assert.equal(await readFile(capture, "utf8"), captured);
+  const incomplete = join(root, "incomplete-installed");
+  await mkdir(incomplete);
+  await copyFile(executable, join(incomplete, "Math3D.exe"));
+  await desktop.evaluate((_electron, path) => { process.env.QLAB_MATH3D_HOME = path; },
+    join(incomplete, "Math3D.exe"));
+  await assert.rejects(page.evaluate(({ id, hash }) =>
+    window.quantum.openQwzStudyInMath3D(id, hash, "new"),
+    { id: runId, hash: resultSha256 }), /ENOENT|Math3D installation is incomplete/);
+  assert.equal(await readFile(capture, "utf8"), captured);
+  console.log("PASS: installed-style Math3D launches exact QWZ study; wrong hash and invalid targets are refused");
 } finally {
   await desktop?.close();
   const safeRoot = resolve(root);
