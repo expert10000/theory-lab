@@ -46,6 +46,10 @@ executable, SHA-256 `94929ab6dba1a526ea995434846a958e1f0fc65cf1f8c07991bad10c0b2
 Its bytes are not the candidate Theory Lab installer above, so this check
 does not assert exact two-app installed parity.
 
+A [later matched-installer acceptance](QI40_MATCHED_CANDIDATE_ACCEPTANCE.md)
+uses a fresh run from the Theory Lab app extracted from that candidate's
+Theory Lab installer and opens it in the paired extracted Math3D app.
+
 The [Math3D NSIS 3.13 production record](https://github.com/expert10000/Math3D/blob/19484d0d/docs/evidence/quantum-qi40-nsis313-production-2026-11-07.md)
 reports that the same final installer pair passed 18/18 install probes on each
 of Windows 2022 and Windows latest, and its installed UI/QEC, rollback, and

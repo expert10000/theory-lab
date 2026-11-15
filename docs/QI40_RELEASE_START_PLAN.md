@@ -80,6 +80,18 @@ artifact and verification command.
 
 See [QI40_MATH3D_CONSUMER_ACCEPTANCE.md](QI40_MATH3D_CONSUMER_ACCEPTANCE.md).
 
+## Commits 21–24
+
+21. Verify and extract both exact installers from one candidate artifact,
+    recording hashes for the embedded apps.
+22. Compute a fresh QWZ run in the extracted Theory Lab app and open its
+    retained curvature and bands in the paired extracted Math3D app.
+23. Independently recheck the candidate, cross-app identities, scene bytes,
+    and screenshots; reject changed evidence.
+24. Record the matched result and its installed-release limits.
+
+See [QI40_MATCHED_CANDIDATE_ACCEPTANCE.md](QI40_MATCHED_CANDIDATE_ACCEPTANCE.md).
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies

@@ -37,6 +37,13 @@ candidate was 2,832,516 bytes, above the provisional 2,097,152-byte limit.
 The table below records the earlier November 6 baseline; the installed
 memory and final exact-candidate cross-app gates remain open.
 
+The subsequent [matched installer-pair check](QI40_MATCHED_CANDIDATE_ACCEPTANCE.md)
+computed a fresh QWZ run in the Theory Lab app extracted from that exact
+candidate installer and opened both views in the Math3D app extracted from
+its paired installer. It verified the cross-app hashes and visually inspected
+both scenes. This still used unpacked apps and a staged CLI import, so the
+installed deep link and installed memory budget remain open.
+
 | Gate | Current evidence | Required before a full QI-40 claim |
 | --- | --- | --- |
 | QWZ source parity | Exact saved-run hash, deterministic curvature/band recipes, verified two-scene handoff, and cross-language golden checks are recorded in the [result descriptor](quantum-result-v2-qwz.md), [recipe record](qwz-scene-recipes.md), and [handoff record](qwz-study-math3d-fork.md). | Run the final two-app matrix against the exact 2.0.0 candidate binaries and record scene hashes and visual inspection. |
