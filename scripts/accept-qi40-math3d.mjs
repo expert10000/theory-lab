@@ -1,27 +1,43 @@
 /** Exercise a retained QWZ study in an unpacked, hash-pinned Math3D candidate.
  * Usage: node scripts/accept-qi40-math3d.mjs <Math3D.exe> <exe-sha256> <retained-directory>
+ *   [--candidate <candidate-manifest.json> --evidence <new-directory>]
  */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { createReadStream } from "node:fs";
-import { mkdtemp, readFile, rm } from "node:fs/promises";
+import { mkdir, mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import { _electron as electron } from "playwright";
 
-const [exeArg, expectedHash, retainedArg] = process.argv.slice(2);
-if (process.argv.length !== 5 || !exeArg || !/^[a-f0-9]{64}$/.test(expectedHash ?? "") || !retainedArg)
-  throw new Error("Pass Math3D.exe, its lowercase SHA-256, and a retained QI-40 directory");
+const [exeArg, expectedHash, retainedArg, ...options] = process.argv.slice(2);
+if (!exeArg || !/^[a-f0-9]{64}$/.test(expectedHash ?? "") || !retainedArg ||
+    (options.length !== 0 && (options.length !== 4 || options[0] !== "--candidate" || options[2] !== "--evidence")))
+  throw new Error("Pass Math3D.exe, lowercase SHA-256, retained directory, and optional --candidate manifest --evidence new-dir");
 if (process.platform !== "win32") throw new Error("The packaged Math3D acceptance requires Windows");
 const executable = resolve(exeArg);
 const retained = resolve(retainedArg);
 const verified = spawnSync(process.execPath, [resolve("scripts/verify-qi40-retained.mjs"), retained],
   { encoding: "utf8", timeout: 30_000 });
 if (verified.status !== 0) throw new Error(`Retained input failed verification: ${verified.stderr || verified.stdout}`);
-const hash = createHash("sha256");
-for await (const chunk of createReadStream(executable)) hash.update(chunk);
-assert.equal(hash.digest("hex"), expectedHash, "Math3D executable hash mismatch");
+async function shaFile(path) {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest("hex");
+}
+assert.equal(await shaFile(executable), expectedHash, "Math3D executable hash mismatch");
+let candidate;
+if (options.length) {
+  const manifestPath = resolve(options[1]);
+  candidate = JSON.parse(await readFile(manifestPath, "utf8"));
+  assert.equal(candidate.schema, "math3d/two-app-candidate/v1");
+  for (const item of [candidate.math3d, candidate.theoryLab]) {
+    assert.match(item.installerName, /^[A-Za-z0-9 ._-]+\.exe$/);
+    assert.equal(await shaFile(join(dirname(manifestPath), item.installerName)), item.installerSha256,
+      `${item.installerName} hash mismatch`);
+  }
+}
 const study = JSON.parse(await readFile(join(retained, "freshStudy", "study.json"), "utf8"));
 const acceptance = JSON.parse(await readFile(join(retained, "acceptance.json"), "utf8"));
 assert.deepEqual(study.scenes.map(scene => scene.role), ["curvature", "bands"]);
@@ -43,6 +59,7 @@ try {
   assert.match(staged, /Quantum scenes \(2\)/);
   assert.equal(await page.getByRole("button", { name: "Verify and view scene" }).count(), 2);
   const viewed = [];
+  const screenshots = [];
   for (const [index, scene] of study.scenes.entries()) {
     await page.getByRole("button", { name: "Verify and view scene" }).nth(index).click();
     const bundlePath = join(retained, "freshStudy", scene.folder);
@@ -63,10 +80,27 @@ try {
       assert.match(detail, /Source axes: kx, ky, energy/);
     }
     viewed.push(scene.role);
+    if (candidate) {
+      await page.waitForTimeout(750);
+      screenshots.push({ role: scene.role, bytes: await page.screenshot({ fullPage: true }) });
+    }
     await page.getByRole("button", { name: "Close", exact: true }).last().click();
   }
-  console.log(JSON.stringify({ schema: "theory-lab/qi40-math3d-consumer/v1", executableSha256: expectedHash,
-    runId: study.runId, resultSha256: study.resultSha256, stagedViews: 2, viewed }, null, 2));
+  const report = { schema: "theory-lab/qi40-math3d-consumer/v1", executableSha256: expectedHash,
+    runId: study.runId, resultSha256: study.resultSha256, stagedViews: 2, viewed };
+  if (candidate) {
+    report.candidate = { buildRunId: candidate.buildRunId, math3d: candidate.math3d,
+      theoryLab: candidate.theoryLab };
+    report.retained = { acceptanceSha256: await shaFile(join(retained, "acceptance.json")),
+      ledgerSha256: await shaFile(join(retained, "artifact-hashes.json")) };
+    report.screenshots = screenshots.map(({ role, bytes }) => ({ role, file: `${role}.png`,
+      sha256: createHash("sha256").update(bytes).digest("hex") }));
+    const output = resolve(options[3]);
+    await mkdir(output);
+    for (const { role, bytes } of screenshots) await writeFile(join(output, `${role}.png`), bytes);
+    await writeFile(join(output, "acceptance.json"), `${JSON.stringify(report, null, 2)}\n`);
+  }
+  console.log(JSON.stringify(report, null, 2));
 } finally {
   if (app) await app.close();
   await rm(profile, { recursive: true, force: true });
