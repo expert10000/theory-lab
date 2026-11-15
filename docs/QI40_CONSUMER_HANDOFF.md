@@ -43,6 +43,10 @@ artifact when transferring it to the Math3D acceptance environment.
 
 ## Math3D acceptance still required
 
+A [hash-pinned unpacked Math3D consumer check](QI40_MATH3D_CONSUMER_ACCEPTANCE.md)
+has now opened both retained views and captured their visible curvature and
+bands. The installed checks below remain separate release gates.
+
 On a clean Windows machine, verify the exact Math3D installer and executable
 hashes, then use Math3D's Project import path to open `freshStudy/` and
 `fixtureStudy/`. Record the two scene roles, source run/result hashes, visible

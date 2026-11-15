@@ -24,6 +24,19 @@ promotion opens for editing in a prior Math3D version.
 
 ## Evidence and open gates
 
+**Update 2026-11-15.** The [unpacked Math3D consumer check](QI40_MATH3D_CONSUMER_ACCEPTANCE.md)
+opened and visually inspected both exact QWZ views from the retained packaged
+Theory Lab run. The [final NSIS 3.13 candidate record](https://github.com/expert10000/Math3D/blob/19484d0d/docs/evidence/quantum-qi40-nsis313-production-2026-11-07.md)
+reports 18/18 install probes on both Windows 2022 and latest for installer
+hashes `1518115d4891701a53407a0e73a5a4b892b4d7e9d8a510e9388da30cb0afc3a2`
+(Math3D) and `377707a7c917a5f1aabf7bc8cdc89f7ab44343800219bf6f562140664f815d25`
+(Theory Lab), plus passing installed UI/QEC, rollback, and upgrade checks.
+An older rollback installer had an intermittent `System.dll` crash in a prior
+run. The installed 80-cycle memory result on a preceding current-main
+candidate was 2,832,516 bytes, above the provisional 2,097,152-byte limit.
+The table below records the earlier November 6 baseline; the installed
+memory and final exact-candidate cross-app gates remain open.
+
 | Gate | Current evidence | Required before a full QI-40 claim |
 | --- | --- | --- |
 | QWZ source parity | Exact saved-run hash, deterministic curvature/band recipes, verified two-scene handoff, and cross-language golden checks are recorded in the [result descriptor](quantum-result-v2-qwz.md), [recipe record](qwz-scene-recipes.md), and [handoff record](qwz-study-math3d-fork.md). | Run the final two-app matrix against the exact 2.0.0 candidate binaries and record scene hashes and visual inspection. |

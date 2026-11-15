@@ -67,6 +67,19 @@ The local unpacked Windows producer result and its limits are in
 See [QI40_CONSUMER_HANDOFF.md](QI40_CONSUMER_HANDOFF.md) for the transferable
 artifact and verification command.
 
+## Commits 17–20
+
+17. Open the independently verified retained study in a hash-pinned unpacked
+    Math3D candidate and assert that both exact QWZ views stage.
+18. Open both read-only Math3D viewers and check their supplied curvature,
+    bands, source identity, units, and numerical summaries.
+19. Hash both candidate installers and capture screenshot-backed consumer
+    evidence in a new local directory.
+20. Record the observed candidate, visual check, and remaining installed
+    release gates without claiming certification.
+
+See [QI40_MATH3D_CONSUMER_ACCEPTANCE.md](QI40_MATH3D_CONSUMER_ACCEPTANCE.md).
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies

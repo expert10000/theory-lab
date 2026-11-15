@@ -72,12 +72,14 @@ try {
       assert.ok(detail.includes(`Producer Chern number: ${acceptance.freshRun.chern} · verified`));
       assert.ok(detail.includes(`curvature-grid: ${acceptance.freshRun.grid ** 2} × 3`));
       assert.match(detail, /Source axes: kx, ky, Berry curvature/);
+      assert.match(detail, /Source coordinate units: rad \/ lattice constant, rad \/ lattice constant, dimensionless \(a=1\)/);
     } else {
       assert.ok(detail.includes("QWZ supplied energy bands"), "Bands view was not shown");
       assert.ok(detail.includes(`Supplied bulk gap: ${acceptance.freshRun.bulkGap} normalized energy`));
       assert.ok(detail.includes(`band-energy-0: ${acceptance.freshRun.grid ** 2} × 1`));
       assert.ok(detail.includes(`band-energy-1: ${acceptance.freshRun.grid ** 2} × 1`));
       assert.match(detail, /Source axes: kx, ky, energy/);
+      assert.match(detail, /Source coordinate units: rad \/ lattice constant, rad \/ lattice constant, normalized energy \(hbar=1\)/);
     }
     viewed.push(scene.role);
     if (candidate) {
