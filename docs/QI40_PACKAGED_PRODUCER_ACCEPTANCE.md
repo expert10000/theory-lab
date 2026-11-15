@@ -44,8 +44,36 @@ The machine-readable local output is
 A deliberately wrong executable SHA-256 was rejected before application
 launch.
 
-This test uses a previously verified saved QWZ fixture; it does not compute a
-fresh QWZ run in the installed worker. The Math3D target is a capture stub, so
-it does not inspect Math3D rendering, memory, installer behavior, or native
-Project rollback. These remain open in the
+## Fresh packaged QWZ continuation
+
+The extended acceptance harness at Theory Lab `51f59ef` was rerun against the
+same unpacked candidate and recorded executable SHA-256. It also computed a new
+QWZ run in the frozen worker: mass `-1`, grid `21×21`, Chern `-1`, and bulk
+gap `2`. The saved result bytes matched the stored result SHA-256. A wrong
+hash was refused, then the packaged Lab launched a new two-scene study with
+`attach` mode. Both scene bundles passed their file hashes, source identities,
+and exact Float64 comparisons of curvature and supplied band arrays against
+the saved worker result.
+
+One local run produced this evidence. Fresh run IDs and hashes vary between
+runs and are recorded as observations, not fixed golden values.
+
+| Fresh-run artifact | Observed SHA-256 |
+| --- | --- |
+| Saved result, run `run-6559d160eb3c41f28d6614f058860f01` | `0e80b15bcc9077e4df3b3157d04cdc57e31964406fc2f485b9e725d702778185` |
+| Study manifest | `8f891b585a2d93ddae8f6f53e86dfd2aba301d457ccd3316d4ba4f3895471ecf` |
+| Curvature scene JSON | `13553d0ff59b6c9b2b197dd5de814fe5c2ad18326d6bc59f5872ebf4376f4460` |
+| Bands scene JSON | `807cc7bef8ebab85a66d5efa58e477de51d053d3e3347666d8c424bad2f592dd` |
+| Acceptance JSON | `c397e9043deadeeb1373cdea3c8266220259c8735598e595fec1dccb9ea232c3` |
+
+The ignored local record is
+`artifacts/qi40-package-2026-11-15-r2/packaged-producer-acceptance-v2.json`.
+The [manual Windows workflow](../.github/workflows/qi40-packaged-producer.yml)
+rebuilds an unpacked candidate, runs source and Electron handoff gates, then
+archives the full candidate, hash ledger and packaged acceptance JSON. It has
+not run remotely for this branch.
+
+The Math3D target in both checks is a capture stub. These results do not
+inspect Math3D rendering, retained memory, installer behavior, or native
+Project rollback. The full installed two-app gates remain open in the
 [QI-40 release disposition](RELEASE_2.0_QI40_DISPOSITION.md).

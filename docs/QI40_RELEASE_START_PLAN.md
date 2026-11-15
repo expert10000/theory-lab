@@ -42,6 +42,17 @@ installed two-app release.
 The local unpacked Windows producer result and its limits are in
 [QI40_PACKAGED_PRODUCER_ACCEPTANCE.md](QI40_PACKAGED_PRODUCER_ACCEPTANCE.md).
 
+## Commits 9–12
+
+9. Compute a fresh QWZ run in the packaged worker and verify its saved result
+   hash, Chern value, and bulk gap.
+10. Launch a fresh two-scene study in `attach` mode and compare its Float64
+    curvature and band arrays with the saved worker result.
+11. Add a manually triggered Windows workflow that archives the exact
+    unpacked candidate and its hash and acceptance records.
+12. Record the observed packaged result and keep the remaining installed
+    Math3D gates explicit.
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies
@@ -55,6 +66,9 @@ Windows and Linux CI run the same command and upload `evidence.json` with the
 workflow run. This ledger identifies the Theory Lab producer output only; an
 installed two-app acceptance record still needs exact executable and installer
 hashes plus the Math3D results listed below.
+
+The manual packaged producer workflow adds fresh-worker and handoff evidence
+for its own executable. It does not replace the installed two-app matrix.
 
 ## Gates after these commits
 

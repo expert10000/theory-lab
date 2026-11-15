@@ -41,9 +41,10 @@ Math3D installer or close the installed gates. A final candidate build must
 be recorded separately.
 
 A later [local packaged Theory Lab producer check](QI40_PACKAGED_PRODUCER_ACCEPTANCE.md)
-records an unpacked Windows executable and exact QWZ scene hashes. It used a
-saved fixture and a Math3D launch capture stub, so the installed two-app gates
-above remain open.
+records an unpacked Windows executable and exact QWZ scene hashes. Its initial
+check used a saved fixture; an extended check computed a fresh QWZ run and
+verified both scene arrays against the saved worker result. Both checks used a
+Math3D launch capture stub, so the installed two-app gates above remain open.
 
 The QI-40 release decision is **open** until every required gate passes for
 identified artifacts, or the published release text stays within the preview
