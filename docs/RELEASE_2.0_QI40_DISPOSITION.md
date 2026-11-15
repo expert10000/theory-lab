@@ -45,6 +45,9 @@ records an unpacked Windows executable and exact QWZ scene hashes. Its initial
 check used a saved fixture; an extended check computed a fresh QWZ run and
 verified both scene arrays against the saved worker result. Both checks used a
 Math3D launch capture stub, so the installed two-app gates above remain open.
+The [portable consumer handoff](QI40_CONSUMER_HANDOFF.md) now retains and
+independently rechecks a fresh QWZ run and its two scene bundles. It supplies
+input for the installed Math3D matrix; it does not replace that matrix.
 
 The QI-40 release decision is **open** until every required gate passes for
 identified artifacts, or the published release text stays within the preview

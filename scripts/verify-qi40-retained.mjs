@@ -3,7 +3,7 @@
  */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { lstat, readFile, readdir, stat } from "node:fs/promises";
+import { lstat, readFile, readdir } from "node:fs/promises";
 import { join, resolve } from "node:path";
 
 const argument = process.argv[2];
@@ -15,8 +15,9 @@ const sha = bytes => createHash("sha256").update(bytes).digest("hex");
 const name = value => typeof value === "string" && /^[A-Za-z0-9._-]+$/.test(value) &&
   value !== "." && value !== "..";
 async function json(path) {
-  const info = await stat(path);
-  if (!info.isFile() || info.size > 8 * 1024 * 1024) throw new Error("Invalid QI-40 evidence file");
+  const info = await lstat(path);
+  if (!info.isFile() || info.isSymbolicLink() || info.size > 8 * 1024 * 1024)
+    throw new Error("Invalid QI-40 evidence file");
   return JSON.parse(await readFile(path, "utf8"));
 }
 async function files(directory, prefix = "") {
@@ -25,8 +26,13 @@ async function files(directory, prefix = "") {
     if (!name(entry.name) || entry.isSymbolicLink()) throw new Error("Unsafe retained evidence entry");
     const relative = join(prefix, entry.name);
     if (entry.isDirectory()) values.push(...await files(directory, relative));
-    else if (entry.isFile()) values.push({ path: relative.replaceAll("\\", "/"),
-      sha256: sha(await readFile(join(directory, relative))) });
+    else if (entry.isFile()) {
+      const info = await lstat(join(directory, relative));
+      if (!info.isFile() || info.isSymbolicLink() || info.size > 8 * 1024 * 1024)
+        throw new Error("Invalid retained evidence file");
+      values.push({ path: relative.replaceAll("\\", "/"),
+        sha256: sha(await readFile(join(directory, relative))) });
+    }
     else throw new Error("Unsupported retained evidence entry");
   }
   return values.sort((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0);
@@ -41,6 +47,8 @@ assert.deepEqual((await readdir(root)).sort(),
 for (const key of ["fixtureStudy", "freshRun", "freshStudy"]) {
   const expected = ledger.files[key];
   assert.ok(Array.isArray(expected));
+  const info = await lstat(join(root, key));
+  if (!info.isDirectory() || info.isSymbolicLink()) throw new Error("Invalid retained evidence directory");
   assert.deepEqual(await files(join(root, key)),
     expected.toSorted((left, right) => left.path < right.path ? -1 : left.path > right.path ? 1 : 0),
     `Retained ${key} bytes differ from the acceptance ledger`);

@@ -53,6 +53,20 @@ The local unpacked Windows producer result and its limits are in
 12. Record the observed packaged result and keep the remaining installed
     Math3D gates explicit.
 
+## Commits 13–16
+
+13. Retain the verified fixture study, fresh worker run, fresh study, and a
+    per-file SHA-256 ledger from packaged acceptance.
+14. Independently recheck the retained artifact before passing it to Math3D,
+    including exact source arrays and rejection of changed files.
+15. Include retained input and its verification in the manual Windows
+    packaged-producer workflow archive.
+16. Document the portable handoff, observed hashes, and the separate installed
+    Math3D acceptance still needed.
+
+See [QI40_CONSUMER_HANDOFF.md](QI40_CONSUMER_HANDOFF.md) for the transferable
+artifact and verification command.
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies
