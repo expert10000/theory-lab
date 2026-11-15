@@ -53,6 +53,14 @@ Math3D renders both views from this exact saved run. A deliberately changed
 copy of a directly launched `scene.json` was rejected by
 `verify:qi40-direct-launch`.
 
+The Windows `test:math3d-installed-target` smoke now builds a minimal
+installed-style Electron target with a real `Math3D.exe` and `app.asar`.
+It confirms that Theory Lab launches the exact two-scene QWZ study and
+refuses a wrong source hash, an executable with the wrong name, and a target
+without `app.asar`. The desktop CI workflow and manual packaged-producer
+workflow run this regression. Their future runs gate the source fix; they
+do not replace a rebuilt two-app installer matrix.
+
 This is still an **unpacked** Theory Lab build and an extracted Math3D app.
 It does not prove a newly installed Theory Lab or an installed Math3D launch,
 nor does process evidence replace visual inspection of that launched window.

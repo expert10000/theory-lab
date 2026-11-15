@@ -105,6 +105,16 @@ See [QI40_MATCHED_CANDIDATE_ACCEPTANCE.md](QI40_MATCHED_CANDIDATE_ACCEPTANCE.md)
 
 See [QI40_DIRECT_LAUNCH_ACCEPTANCE.md](QI40_DIRECT_LAUNCH_ACCEPTANCE.md).
 
+## Commits 29–32
+
+29. Reproduce the installed-style `Math3D.exe` plus `app.asar` target in an
+    isolated Windows Electron smoke and verify the exact QWZ launch.
+30. Check that a wrong result hash, invalid executable name, and incomplete
+    target cannot launch a second study.
+31. Run this installed-style target regression in Windows desktop CI and the
+    manual packaged-producer workflow.
+32. Record the new gate and the remaining rebuilt-installer release work.
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies

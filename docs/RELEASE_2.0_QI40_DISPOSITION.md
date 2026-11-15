@@ -53,6 +53,10 @@ launch into the paired Math3D app, with byte-identical study files. That fix
 is **not** in installer `377707a7c917a5f1aabf7bc8cdc89f7ab44343800219bf6f562140664f815d25`.
 Rebuild and recheck the exact installer pair before making an installed
 two-app claim; the memory gate also remains open.
+The Windows [installed-style target regression](QI40_DIRECT_LAUNCH_ACCEPTANCE.md)
+now covers this discovery path in desktop CI and the manual packaged-producer
+workflow. It is a source gate; a new installer containing the fix remains
+the next release artifact to identify and test.
 
 | Gate | Current evidence | Required before a full QI-40 claim |
 | --- | --- | --- |
