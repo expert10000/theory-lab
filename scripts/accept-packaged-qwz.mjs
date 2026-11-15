@@ -1,24 +1,39 @@
 /** Verify a packaged Lab candidate's QWZ producer and Math3D launch contract.
- * Usage: node scripts/accept-packaged-qwz.mjs <absolute-Lab-executable> <expected-executable-sha256>
+ * Usage: node scripts/accept-packaged-qwz.mjs <absolute-Lab-executable> <expected-executable-sha256> [--retain <new-directory>]
  * The Math3D target is a capture stub; this does not certify its rendering.
  */
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { createReadStream } from "node:fs";
-import { copyFile, cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { copyFile, cp, mkdir, mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { isAbsolute, join, resolve, sep } from "node:path";
 import { _electron as electron } from "playwright";
 
-const [executable, expectedExecutableHash] = process.argv.slice(2);
-if (process.argv.length !== 4 || !executable || !isAbsolute(executable) ||
+const [executable, expectedExecutableHash, retainFlag, retainPath] = process.argv.slice(2);
+if ((process.argv.length !== 4 && process.argv.length !== 6) ||
+    (process.argv.length === 6 && (retainFlag !== "--retain" || !retainPath)) ||
+    !executable || !isAbsolute(executable) ||
     !/^[a-f0-9]{64}$/.test(expectedExecutableHash) || !(await stat(executable)).isFile())
-  throw new Error("Pass an absolute packaged Lab executable and its expected SHA-256");
+  throw new Error("Pass an absolute packaged Lab executable, its expected SHA-256, and optional --retain new-directory");
 const digest = bytes => createHash("sha256").update(bytes).digest("hex");
 async function fileHash(path) {
   const hash = createHash("sha256");
   for await (const chunk of createReadStream(path)) hash.update(chunk);
   return hash.digest("hex");
+}
+async function treeHashes(root, prefix = "") {
+  const files = [];
+  for (const entry of (await readdir(join(root, prefix), { withFileTypes: true }))
+    .sort((left, right) => left.name.localeCompare(right.name))) {
+    if (entry.isSymbolicLink()) throw new Error("Retained evidence cannot contain links");
+    const relative = join(prefix, entry.name);
+    if (entry.isDirectory()) files.push(...await treeHashes(root, relative));
+    else if (entry.isFile()) files.push({ path: relative.replaceAll("\\", "/"),
+      sha256: await fileHash(join(root, relative)) });
+    else throw new Error("Retained evidence contains an unsupported entry");
+  }
+  return files;
 }
 const executableSha256 = await fileHash(executable);
 assert.equal(executableSha256, expectedExecutableHash, "Packaged Lab executable hash changed");
@@ -163,7 +178,7 @@ try {
     }
     freshScenes.push({ role: declared.role, sceneSha256 });
   }
-  process.stdout.write(JSON.stringify({
+  const record = {
     schema: "theory-lab/qi40-packaged-producer-acceptance/v2",
     executableSha256, runId, resultSha256, manifestSha256: digest(manifestBytes), scenes,
     freshRun: { runId: freshRunId, resultSha256: fresh.hashes.result,
@@ -171,7 +186,31 @@ try {
       chern: freshResult.analysis.chern, bulkGap: freshResult.analysis.bulkGap,
       manifestSha256: digest(freshManifestBytes), scenes: freshScenes },
     math3d: "capture-stub-only",
-  }, null, 2) + "\n");
+  };
+  const acceptanceBytes = Buffer.from(JSON.stringify(record, null, 2) + "\n");
+  if (retainPath) {
+    const output = resolve(retainPath);
+    await mkdir(output);
+    const sources = {
+      fixtureStudy: handoff.directory,
+      freshStudy: freshHandoff.directory,
+      freshRun: join(profile, "runs", freshRunId),
+    };
+    const hashes = {};
+    for (const [name, source] of Object.entries(sources)) {
+      hashes[name] = await treeHashes(source);
+      const destination = join(output, name);
+      await cp(source, destination, { recursive: true });
+      assert.deepEqual(await treeHashes(destination), hashes[name], `Retained ${name} copy changed`);
+    }
+    await writeFile(join(output, "acceptance.json"), acceptanceBytes, { flag: "wx" });
+    await writeFile(join(output, "artifact-hashes.json"), JSON.stringify({
+      schema: "theory-lab/qi40-retained-artifacts/v1",
+      acceptanceSha256: digest(acceptanceBytes),
+      files: hashes,
+    }, null, 2) + "\n", { flag: "wx" });
+  }
+  process.stdout.write(acceptanceBytes);
 } finally {
   await app?.close();
   if (!resolve(root).startsWith(resolve(tmpdir()) + sep) || !root.includes("qi40-packaged-lab-"))
