@@ -1,5 +1,5 @@
-import { mkdir, readdir, writeFile } from "node:fs/promises";
-import { basename, join } from "node:path";
+import { lstat, mkdir, mkdtemp, readdir, rename, rm, writeFile } from "node:fs/promises";
+import { basename, dirname, join } from "node:path";
 import { boundedRead, readSceneBundle } from "../../../packages/quantum-scene/bundle";
 import type { RunStore } from "./runs";
 
@@ -48,17 +48,26 @@ export async function prepareQwzStudyHandoff(runs: RunStore, runId: string, resu
   const saved = await runs.verifiedSource(runId, resultSha256);
   if (saved.result.operation !== "topology" || saved.result.model.type !== "qwz")
     throw new Error("Only a verified saved QWZ run can declare this two-scene study");
-  await mkdir(parent, { recursive: true });
-  const curvature = await runs.prepareSceneHandoff(runId, parent, "standard", resultSha256);
-  const bands = await runs.prepareSceneHandoff(runId, parent, "bands", resultSha256);
-  const scenes: QwzStudyManifest["scenes"] = [
-    { role: "curvature", folder: basename(curvature.directory), sceneId: curvature.sceneId },
-    { role: "bands", folder: basename(bands.directory), sceneId: bands.sceneId },
-  ];
-  const manifest: QwzStudyManifest = { schema: "quantum-study-handoff/v1", model: "qwz", runId, resultSha256, scenes };
-  await writeFile(join(parent, "study.json"), JSON.stringify(manifest, null, 2) + "\n", { flag: "wx" });
-  await verifyQwzStudyHandoff(parent, manifest);
-  return { directory: parent, manifest };
+  await mkdir(dirname(parent), { recursive: true });
+  try { await lstat(parent); throw new Error("QWZ study destination already exists"); }
+  catch (error) { if ((error as NodeJS.ErrnoException).code !== "ENOENT") throw error; }
+  const staging = await mkdtemp(join(dirname(parent), ".qwz-study-finalizing-"));
+  try {
+    const curvature = await runs.prepareSceneHandoff(runId, staging, "standard", resultSha256);
+    const bands = await runs.prepareSceneHandoff(runId, staging, "bands", resultSha256);
+    const scenes: QwzStudyManifest["scenes"] = [
+      { role: "curvature", folder: basename(curvature.directory), sceneId: curvature.sceneId },
+      { role: "bands", folder: basename(bands.directory), sceneId: bands.sceneId },
+    ];
+    const manifest: QwzStudyManifest = { schema: "quantum-study-handoff/v1", model: "qwz", runId, resultSha256, scenes };
+    await writeFile(join(staging, "study.json"), JSON.stringify(manifest, null, 2) + "\n", { flag: "wx" });
+    await verifyQwzStudyHandoff(staging, manifest);
+    await rename(staging, parent);
+    return { directory: parent, manifest };
+  } catch (error) {
+    await rm(staging, { recursive: true, force: true });
+    throw error;
+  }
 }
 
 export async function prepareHofstadterStudyHandoff(runs: RunStore, runId: string, resultSha256: string, parent: string) {

@@ -27,6 +27,18 @@ and unresolved gates are recorded in
 These commits establish Theory Lab producer evidence. They do not certify an
 installed two-app release.
 
+## Commits 5–8
+
+5. Publish the QWZ study only after both scene views and the manifest verify.
+   Failed preparation must leave no visible partial study.
+6. Exercise the two-view QWZ handoff through Electron with a captured Math3D
+   launch, exact source identity, and invalid-hash rejection.
+7. Add a packaged Theory Lab acceptance command that pins the executable hash,
+   loads the verified QWZ fixture in an isolated profile, and checks the
+   two-scene launch without claiming Math3D rendering.
+8. Record the candidate acceptance procedure and its exact artifact evidence.
+   Keep full installed two-app certification conditional on the gates below.
+
 ## Reproduce the source gate
 
 Run `npm run test:qi40-source` from the repository root. The command verifies

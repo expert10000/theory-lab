@@ -1,7 +1,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, readdir, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { RunStore } from "../apps/desktop/main/runs";
@@ -58,7 +58,8 @@ test("QWZ v2 descriptor shares one verified saved v1 result across both scene vi
 test("QWZ study handoff declares two independently readable scenes from the exact saved result", async () => {
   const store = new RunStore(fixtureRoot, fixtureRoot);
   const source = await store.inspect(runId);
-  const parent = await mkdtemp(join(tmpdir(), "qwz-study-"));
+  const root = await mkdtemp(join(tmpdir(), "qwz-study-"));
+  const parent = join(root, "study");
   try {
     const handoff = await prepareQwzStudyHandoff(store, runId, source.hashes.result, parent);
     assert.equal(handoff.manifest.scenes.length, 2);
@@ -80,7 +81,25 @@ test("QWZ study handoff declares two independently readable scenes from the exac
     const sceneBytes = await readFile(scenePath);
     await writeFile(scenePath, Buffer.concat([sceneBytes, Buffer.from(" ")]));
     await assert.rejects(verifyQwzStudyHandoff(parent, handoff.manifest), /bundle file size/);
-  } finally { await rm(parent, { recursive: true, force: true }); }
+  } finally { await rm(root, { recursive: true, force: true }); }
+});
+
+test("QWZ study publishes only after both scene views verify", async () => {
+  const source = await new RunStore(fixtureRoot, fixtureRoot).inspect(runId);
+  const root = await mkdtemp(join(tmpdir(), "qwz-study-atomic-"));
+  const parent = join(root, "study");
+  class FailingBandStore extends RunStore {
+    override async prepareSceneHandoff(id: string, directory: string, view: "standard" | "bands" | "wilson" | "invariant" | "strip", expectedHash: string) {
+      if (view === "bands") throw new Error("Injected band export failure");
+      return super.prepareSceneHandoff(id, directory, view, expectedHash);
+    }
+  }
+  try {
+    await assert.rejects(prepareQwzStudyHandoff(
+      new FailingBandStore(fixtureRoot, fixtureRoot), runId, source.hashes.result, parent), /Injected band/);
+    await assert.rejects(stat(parent), { code: "ENOENT" });
+    assert.deepEqual(await readdir(root), []);
+  } finally { await rm(root, { recursive: true, force: true }); }
 });
 
 test("QWZ v2 refuses a changed pointer, hash, shape, source or unavailable claim", async () => {
