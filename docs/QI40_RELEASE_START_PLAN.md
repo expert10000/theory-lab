@@ -27,6 +27,20 @@ and unresolved gates are recorded in
 These commits establish Theory Lab producer evidence. They do not certify an
 installed two-app release.
 
+## Reproduce the source gate
+
+Run `npm run test:qi40-source` from the repository root. The command verifies
+the pinned saved result, writes both scene bundles, checks their golden scene
+hashes, and compares two independent exports. To retain the study and JSON
+ledger, run `npm run test:qi40-source -- <new-output-directory>`. The directory
+must not already exist. Open its `study/` subfolder in a compatible Math3D
+checkout for manual source inspection.
+
+Windows and Linux CI run the same command and upload `evidence.json` with the
+workflow run. This ledger identifies the Theory Lab producer output only; an
+installed two-app acceptance record still needs exact executable and installer
+hashes plus the Math3D results listed below.
+
 ## Gates after these commits
 
 | Gate | Next work | Completion evidence |

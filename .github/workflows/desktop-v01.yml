@@ -37,6 +37,13 @@ jobs:
         run: .venv/bin/python -m pip install -c workers/quantum-python/requirements.lock -e workers/quantum-python
       - run: npm run typecheck
       - run: npm test
+      - name: Verify QI-40 source evidence
+        run: npm run test:qi40-source -- "${{ runner.temp }}/qi40-source-evidence"
+      - name: Save QI-40 source evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: qi40-source-${{ matrix.os }}
+          path: ${{ runner.temp }}/qi40-source-evidence/evidence.json
       - run: npm run test:worker
       - run: npm run build
       - name: Electron desktop smoke (Windows)
