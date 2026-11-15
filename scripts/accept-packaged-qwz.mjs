@@ -1,0 +1,107 @@
+/** Verify a packaged Lab candidate's QWZ producer and Math3D launch contract.
+ * Usage: node scripts/accept-packaged-qwz.mjs <absolute-Lab-executable> <expected-executable-sha256>
+ * The Math3D target is a capture stub; this does not certify its rendering.
+ */
+import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
+import { createReadStream } from "node:fs";
+import { copyFile, cp, mkdir, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { isAbsolute, join, resolve, sep } from "node:path";
+import { _electron as electron } from "playwright";
+
+const [executable, expectedExecutableHash] = process.argv.slice(2);
+if (process.argv.length !== 4 || !executable || !isAbsolute(executable) ||
+    !/^[a-f0-9]{64}$/.test(expectedExecutableHash) || !(await stat(executable)).isFile())
+  throw new Error("Pass an absolute packaged Lab executable and its expected SHA-256");
+const digest = bytes => createHash("sha256").update(bytes).digest("hex");
+async function fileHash(path) {
+  const hash = createHash("sha256");
+  for await (const chunk of createReadStream(path)) hash.update(chunk);
+  return hash.digest("hex");
+}
+const executableSha256 = await fileHash(executable);
+assert.equal(executableSha256, expectedExecutableHash, "Packaged Lab executable hash changed");
+
+const runId = "run-05ce1036d70c466eb4f900944a85c474";
+const resultSha256 = "01eb644e4a07df9f4aa6f49ce27a61a1e98d920aabd794962f57420ca2d2decf";
+const golden = {
+  curvature: "38f8275bfd0e568251ef44742fe7ef412c958cb066e713558768cc2872af65b5",
+  bands: "9759d1e5555fd8c7af7614a08e372593d55398894960f5d96eb41a349555890b",
+};
+const root = await mkdtemp(join(tmpdir(), "qi40-packaged-lab-"));
+const profile = join(root, "profile");
+const target = join(root, "fake-math3d");
+const capture = join(root, "launch.json");
+const fakeExecutable = join(target, "node_modules", "electron", "dist",
+  process.platform === "win32" ? "electron.exe" : "electron");
+let app;
+try {
+  await mkdir(join(profile, "runs"), { recursive: true });
+  await cp(resolve("packages", "contracts", "fixtures", runId),
+    join(profile, "runs", runId), { recursive: true });
+  await mkdir(join(target, "node_modules", "electron", "dist"), { recursive: true });
+  await mkdir(join(target, "renderer", "dist"), { recursive: true });
+  await mkdir(join(target, "dist"), { recursive: true });
+  await writeFile(join(target, "package.json"), JSON.stringify({ name: "math3d", main: "dist/main.js" }));
+  await writeFile(join(target, "dist", "main.js"),
+    "require('node:fs').writeFileSync(process.env.QLAB_MATH3D_CAPTURE, JSON.stringify({ argv: process.argv }) + '\\n');\n");
+  await writeFile(join(target, "renderer", "dist", "index.html"), "<!doctype html>\n");
+  await copyFile(process.execPath, fakeExecutable);
+  const env = { ...process.env, QLAB_TEST_PROFILE: profile, QLAB_MATH3D_HOME: target,
+    QLAB_MATH3D_CAPTURE: capture };
+  delete env.ELECTRON_RUN_AS_NODE;
+  delete env.QLAB_PYTHON;
+  delete env.PYTHONPATH;
+  app = await electron.launch({ executablePath: executable, env });
+  const page = await app.firstWindow();
+  await page.getByTestId("worker-status").filter({ hasText: "READY" }).waitFor({ timeout: 60_000 });
+  await page.getByTestId("result-state").filter({ hasText: "COMPUTED" }).waitFor({ timeout: 30_000 });
+  assert.equal(await page.getByTestId("energy-low").textContent(), "-0.640312");
+  assert.equal(await page.getByTestId("energy-high").textContent(), "0.640312");
+  await assert.rejects(page.evaluate(({ id }) =>
+    window.quantum.openQwzStudyInMath3D(id, "0".repeat(64), "new"), { id: runId }), /hash|changed/i);
+  const handoff = await page.evaluate(({ id, hash }) =>
+    window.quantum.openQwzStudyInMath3D(id, hash, "new"), { id: runId, hash: resultSha256 });
+  assert.equal(handoff.launched, true);
+  for (let attempt = 0; attempt < 50; attempt++) {
+    try { await stat(capture); break; } catch { await new Promise(done => setTimeout(done, 100)); }
+  }
+  const launch = JSON.parse(await readFile(capture, "utf8"));
+  const flag = launch.argv.indexOf("--quantum-study");
+  assert.ok(flag >= 0);
+  assert.equal(launch.argv[flag + 1], handoff.directory);
+  assert.equal(launch.argv[flag + 2], "new");
+  const manifestBytes = await readFile(join(handoff.directory, "study.json"));
+  const manifest = JSON.parse(manifestBytes.toString("utf8"));
+  assert.equal(manifest.schema, "quantum-study-handoff/v1");
+  assert.equal(manifest.runId, runId);
+  assert.equal(manifest.resultSha256, resultSha256);
+  assert.deepEqual(manifest.scenes.map(scene => scene.role), ["curvature", "bands"]);
+  const scenes = [];
+  for (const declared of manifest.scenes) {
+    const folder = join(handoff.directory, declared.folder);
+    const sceneBytes = await readFile(join(folder, "scene.json"));
+    const bundle = JSON.parse(await readFile(join(folder, "bundle.json"), "utf8"));
+    const scene = JSON.parse(sceneBytes.toString("utf8"));
+    const sceneSha256 = digest(sceneBytes);
+    assert.equal(sceneSha256, bundle.scene.sha256);
+    assert.equal(sceneSha256, golden[declared.role]);
+    assert.equal(scene.id, declared.sceneId);
+    assert.equal(scene.provenance.runId, runId);
+    assert.equal(scene.provenance.resultSha256, resultSha256);
+    for (const dataset of scene.datasets)
+      assert.equal(digest(await readFile(join(folder, dataset.path))), dataset.sha256);
+    scenes.push({ role: declared.role, sceneSha256 });
+  }
+  process.stdout.write(JSON.stringify({
+    schema: "theory-lab/qi40-packaged-producer-acceptance/v1",
+    executableSha256, runId, resultSha256, manifestSha256: digest(manifestBytes), scenes,
+    math3d: "capture-stub-only",
+  }, null, 2) + "\n");
+} finally {
+  await app?.close();
+  if (!resolve(root).startsWith(resolve(tmpdir()) + sep) || !root.includes("qi40-packaged-lab-"))
+    throw new Error("Unsafe packaged QWZ acceptance cleanup path");
+  await rm(root, { recursive: true, force: true, maxRetries: 20, retryDelay: 250 });
+}
