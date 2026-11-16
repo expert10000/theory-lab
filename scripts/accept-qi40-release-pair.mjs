@@ -7,6 +7,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import { PINNED_SYSTEM_DLL_SHA256 } from "./qi40-nsis-component.mjs";
 
 const [manifestArg, extractionArg, outputArg] = process.argv.slice(2);
 if (process.argv.length !== 5 || !manifestArg || !extractionArg || !outputArg)
@@ -18,6 +19,7 @@ const output = resolve(outputArg);
 const manifest = JSON.parse(await readFile(manifestPath, "utf8"));
 const extraction = JSON.parse(await readFile(extractionPath, "utf8"));
 assert.equal(manifest.schema, "math3d/two-app-candidate/v1");
+assert.equal(manifest.nsisSystemDllSha256, PINNED_SYSTEM_DLL_SHA256);
 assert.equal(extraction.schema, "theory-lab/qi40-extracted-candidate/v1");
 assert.equal(manifest.buildRunId, extraction.buildRunId);
 const appRoot = dirname(extractionPath);
@@ -49,6 +51,7 @@ assert.equal(direct.math3dExecutableSha256, matched.executableSha256.math3d);
 const report = { schema: "theory-lab/qi40-release-pair-acceptance/v1",
   scope: "unpacked-apps-from-pinned-installers",
   buildRunId: manifest.buildRunId, sourceCandidateRunId: manifest.sourceCandidateRunId ?? null,
+  nsisSystemDllSha256: manifest.nsisSystemDllSha256,
   theoryLabSourceCommit: manifest.theoryLab.commit,
   installerSha256: matched.installerSha256,
   executableSha256: matched.executableSha256,

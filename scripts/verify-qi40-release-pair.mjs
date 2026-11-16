@@ -6,6 +6,7 @@ import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import { readFile, readdir } from "node:fs/promises";
 import { dirname, join, resolve } from "node:path";
+import { inspectPinnedNsisInstaller, PINNED_SYSTEM_DLL_SHA256 } from "./qi40-nsis-component.mjs";
 
 const [manifestArg, extractionArg, outputArg] = process.argv.slice(2);
 if (process.argv.length !== 5 || !manifestArg || !extractionArg || !outputArg)
@@ -23,6 +24,8 @@ const [manifest, extraction, report, matched, direct] = await Promise.all([
 assert.equal(report.schema, "theory-lab/qi40-release-pair-acceptance/v1");
 assert.equal(report.scope, "unpacked-apps-from-pinned-installers");
 assert.equal(manifest.schema, "math3d/two-app-candidate/v1");
+assert.equal(manifest.nsisSystemDllSha256, PINNED_SYSTEM_DLL_SHA256);
+assert.equal(report.nsisSystemDllSha256, manifest.nsisSystemDllSha256);
 assert.equal(extraction.schema, "theory-lab/qi40-extracted-candidate/v1");
 assert.equal(report.buildRunId, manifest.buildRunId);
 assert.equal(report.buildRunId, extraction.buildRunId);
@@ -30,6 +33,11 @@ assert.equal(report.sourceCandidateRunId, manifest.sourceCandidateRunId ?? null)
 assert.equal(report.theoryLabSourceCommit, manifest.theoryLab.commit);
 assert.deepEqual(report.installerSha256,
   { math3d: manifest.math3d.installerSha256, theoryLab: manifest.theoryLab.installerSha256 });
+for (const app of ["math3d", "theoryLab"]) {
+  const installer = join(dirname(manifestPath), manifest[app].installerName);
+  assert.equal(inspectPinnedNsisInstaller(installer, manifest[app].installerSha256).systemDllSha256,
+    report.nsisSystemDllSha256);
+}
 assert.deepEqual(report.executableSha256,
   { math3d: extraction.applications.math3d.executableSha256,
     theoryLab: extraction.applications.theoryLab.executableSha256 });
