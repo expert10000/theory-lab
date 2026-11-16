@@ -151,6 +151,7 @@ try {
     require: "undefined",
     process: "undefined",
     keys: [
+      "buildQwzPhaseDiagram",
       "cancel",
       "cavity",
       "circuit",
@@ -159,6 +160,8 @@ try {
       "exportFigure",
       "exportHofstadterButterfly",
       "exportHofstadterEdgeScene",
+      "exportQecRepetitionScene",
+      "exportReport",
       "exportRiceMeleConvergenceScene",
       "exportRun",
       "exportRunBundle",
@@ -178,6 +181,8 @@ try {
       "getManyBodyRun",
       "getOrbitalRun",
       "getOscillatorRun",
+      "getQecRepetitionRun",
+      "getQwzPhaseDiagram",
       "getRabiRun",
       "getResources",
       "getRiceMeleConvergenceStudy",
@@ -198,6 +203,8 @@ try {
       "listHofstadterEdgeStudies",
       "listHofstadterFluxStudies",
       "listIsingStudies",
+      "listQecRepetitionRuns",
+      "listQwzPhaseDiagrams",
       "listRiceMeleConvergenceStudies",
       "listRuns",
       "listSpectrumStudies",
@@ -205,8 +212,11 @@ try {
       "manyBody",
       "onProgress",
       "openAtlasSource",
+      "openHofstadterStudyInMath3D",
       "openImportedInMath3D",
       "openInMath3D",
+      "openQwzPhasePoint",
+      "openQwzStudyInMath3D",
       "orbital",
       "oscillator",
       "oscillatorAnharmonic",
@@ -216,6 +226,7 @@ try {
       "oscillatorParametric",
       "oscillatorPulse",
       "prepareSceneHandoff",
+      "qecRepetition",
       "readData",
       "readSceneChunk",
       "releaseSceneStream",
@@ -354,7 +365,7 @@ try {
   await page.getByTestId("comparison-status").filter({hasText:"Aligned"}).waitFor();
   assert.match(await page.getByTestId("comparison-context").innerText(),/Stored gap \/ transition.*Level gap/s);
   assert.match(await page.getByTestId("comparison-context").innerText(),/Backend and runtime/);
-  assert.match(await page.getByTestId("comparison-science").innerText(),/Δ = B − A, with no interpolation/);
+  assert.match(await page.getByTestId("comparison-science").innerText(),/2 exactly aligned samples.*Δ = B − A/s);
   assert.equal(await page.getByTestId("comparison-delta").innerText(),"0.000000");
   assert.match(await page.getByTestId("comparison-inputs").innerText(),/model.parameters.delta/);
   await page.getByRole("tab",{name:"Runs",exact:true}).click();
@@ -1669,7 +1680,7 @@ try {
   await page.getByTestId("export-scene").click();
   await page.getByRole("status").filter({ hasText: "Exported verified scene bundle" }).waitFor();
   const bundle = JSON.parse(await readFile(resolve(parent, `${sceneRun.runId}.qscene`, "scene.json"), "utf8"));
-  assert.equal(bundle.schema, "quantum-scene/v1");
+  assert.equal(bundle.schema, "quantum-scene/v2", "time-track scenes retain the v2 contract");
   assert.equal(bundle.provenance.runId, sceneRun.runId);
   assert.equal(bundle.provenance.resultSha256,sceneSource.hashes.result,"portable scene retains verified result source hash");
   assert.ok(bundle.datasets.some(d => d.id === "trajectory"));
@@ -1816,7 +1827,7 @@ try {
   await page.getByRole("status").filter({hasText:"Scene import cancelled"}).waitFor();
   assert.match(await page.getByTestId("scene-source").innerText(),/IMPORTED BUNDLE/);
   await page.getByRole("button",{name:"Return to saved run"}).click();
-  await page.getByTestId("scene-source").filter({hasText:"SAVED NUMERICAL RUN"}).waitFor();
+  await page.getByTestId("scene-source").filter({hasText:"VERIFIED SAVED RUN"}).waitFor();
   await page.getByTestId("scenes-page").getByTestId("field-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   const primitiveFolder = resolve(parent, `${sceneRun.runId}.qscene`);
   await app.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},primitiveFolder);
