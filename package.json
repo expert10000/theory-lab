@@ -24,6 +24,7 @@
     "verify:qi40-retained": "node scripts/verify-qi40-retained.mjs",
     "accept:qi40-math3d": "node scripts/accept-qi40-math3d.mjs",
     "extract:qi40-candidate": "node scripts/extract-qi40-candidate.mjs",
+    "stage:qi40-pair": "node scripts/stage-qi40-pair.mjs",
     "accept:qi40-matched": "node scripts/accept-qi40-matched.mjs",
     "verify:qi40-matched": "node scripts/verify-qi40-matched.mjs",
     "accept:qi40-direct-launch": "node scripts/accept-qi40-direct-launch.mjs",
