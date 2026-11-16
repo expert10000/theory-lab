@@ -40,7 +40,9 @@ test("Atlas BHZ continuum, lattice and ribbon survive saved-run and scene verifi
     assert.match(inspector,/Indirect lattice energy gap/);
     assert.match(inspector,/Outer-edge weight/);
     await store.record(job,response);
-    assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),response);
+    // The saved result is JSON; a worker's -0 is serialized as 0 on reopen.
+    assert.deepEqual(await new RunStore(join(root,"runs"),join(root,"artifacts")).topology(response.runId),
+      JSON.parse(JSON.stringify(response)));
     const continuum=await store.scene(response.runId,"standard"),lattice=await store.scene(response.runId,"bands");
     await verifyScenePayload(continuum,digest);await verifyScenePayload(lattice,digest);
     assert.equal(continuum.scene.bands?.energies.length,4);
