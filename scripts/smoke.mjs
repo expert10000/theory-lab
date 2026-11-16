@@ -1062,11 +1062,14 @@ try {
     name: /QuTiP population and Pauli/,
   });
   await chart.scrollIntoViewIfNeeded();
-  const chartBox = await chart.boundingBox();
-  await page.mouse.click(
-    chartBox.x + chartBox.width / 2,
-    chartBox.y + chartBox.height / 2,
-  );
+  const chartMidpoint = await chart.evaluate((svg) => {
+    const point = svg.createSVGPoint();
+    point.x = 400;
+    point.y = 185;
+    const screen = point.matrixTransform(svg.getScreenCTM());
+    return { x: screen.x, y: screen.y };
+  });
+  await page.mouse.click(chartMidpoint.x, chartMidpoint.y);
   assert.equal(
     await page.getByTestId("selected-time").textContent(),
     "t = 10.0000",
