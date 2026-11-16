@@ -12,6 +12,7 @@
     "build": "node scripts/build.mjs",
     "package:win:dir": "npm run build && node scripts/build-frozen-worker.mjs && electron-builder --win --dir --config electron-builder.config.cjs",
     "package:win:installer": "npm run build && node scripts/build-frozen-worker.mjs && electron-builder --win nsis --config electron-builder.config.cjs",
+    "package:win:installer:qi40": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/build-qi40-installer.ps1",
     "start": "node scripts/launch.mjs",
     "dev": "npm run build && npm start",
     "typecheck": "tsc --noEmit",
