@@ -12,7 +12,7 @@ The same component hash was verified in the pinned Math3D setup.
 | --- | --- |
 | Math3D Setup 1.7.0.exe, source run 42396101411 | 1518115d4891701a53407a0e73a5a4b892b4d7e9d8a510e9388da30cb0afc3a2 |
 | Quantum-Hamiltonian-Lab-Setup-0.1.0.exe, local pinned build | 13a1de021ae74059d3cbf041f2d5471e609bc6030188febd5d5354cdaa7305be |
-| Staged pair manifest | b761a82059351f3bcb8ebf286713e7d15ffabc4e4ef1199d85e5915fd385b5cc |
+| Component-checked pair manifest | 9ac66e97f80acab898a43b263e96d37e4b46dc6723233d0fe9317befd25092d9 |
 
 The old local Theory Lab setup
 c95be1cfcee8e04cb698c3aa1333596d4502dd5ca940867d320c0e5878c3c3bd
@@ -23,15 +23,16 @@ unpacked acceptance are superseded by the pinned pair.
 
 The pinned pair was staged as local-13a1de021ae74059, extracted from both
 installers, and accepted through matched retained views and direct
-Theory Lab-to-Math3D launch. The top-level acceptance self-verified against
-its nested reports. Its run ID is
-run-821bedf27d7c4d6682ba625ecc3404f0; result SHA-256 is
-768c03dd6b0d54de8066303fddace02c8e4cfdcb1da545ca8ca642c77ed9447d;
+Theory Lab-to-Math3D launch. The top-level acceptance independently reopens
+both setup archives and checks the embedded component as well as its nested
+reports. Its latest checked run ID is run-73a42c38e750439bb506de6eb8bacc98;
+result SHA-256 is
+3f8ad785e7ca05d356e0eee381b78d3e9ffdd4b1d27b6eba0ffbecff2326fd0b;
 launched study SHA-256 is
-d9af7305809603bc9d42ce7f015c27902faa61acd2f4c3811da2dcb3a119e4d4.
+37d7fe965b2cd048ce276638299e8d266af007d15c734ef9195da28bafd362b9.
 The matched and direct acceptance report hashes are respectively
-2cda576509da9e7cff57e7ecd5f1793252cc4e398bdb05ce25d461cfc899b072
-and 8b8e96eece738bd62c5b5e9a1255569e66426879e9d59046d7976003a5bcd70f.
+07fa11f6c54c96f5a6746fd76517f58e688701e6249da221e67be48df62a1cea
+and 42d23ceccb0760b422bded2e5dfe60a8228641b045cbbc8836e1124e2bca2f4c.
 
 This is **unpacked application evidence**. It does not establish clean
 installation reliability or close Math3D's retained-memory release gate.
@@ -41,3 +42,7 @@ To reproduce the pinned Theory Lab setup on Windows, install the locked
 dependencies and run npm run package:win:installer:qi40. The build
 downloads the hash-pinned NSIS bundle and verifies the component actually
 embedded in the resulting setup.
+
+The manual QI-40 packaged producer workflow also builds the pinned setup,
+checks that its app.asar and frozen worker match the accepted unpacked
+producer, and archives the exact setup with component and payload hashes.

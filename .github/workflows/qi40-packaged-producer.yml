@@ -66,3 +66,44 @@ jobs:
           path: artifacts/qi40-packaged-candidate/
           compression-level: 0
           if-no-files-found: error
+      - name: Prepare pinned NSIS 3.13
+        shell: pwsh
+        run: |
+          $toolchain = Join-Path $env:RUNNER_TEMP ('qi40-nsis313-' + [guid]::NewGuid().ToString('N'))
+          & ./scripts/prepare-qi40-nsis313.ps1 -OutputRoot $toolchain
+      - name: Package pinned Theory Lab installer
+        shell: pwsh
+        run: |
+          npx electron-builder --win nsis --config electron-builder.config.cjs --publish never
+          if ($LASTEXITCODE -ne 0) { throw 'Pinned Theory Lab installer build failed' }
+      - name: Verify installer component and packaged payload
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath release -Filter 'Quantum-Hamiltonian-Lab-Setup-*.exe' -File)
+          if ($installers.Count -ne 1) { throw "Expected one installer; found $($installers.Count)" }
+          $component = & ./scripts/verify-qi40-installer-nsis.ps1 -Installer $installers[0].FullName | ConvertFrom-Json
+          $unpackedAsar = (Get-FileHash -Algorithm SHA256 -LiteralPath 'artifacts/qi40-packaged-candidate/win-unpacked/resources/app.asar').Hash.ToLowerInvariant()
+          $installerAsar = (Get-FileHash -Algorithm SHA256 -LiteralPath 'release/win-unpacked/resources/app.asar').Hash.ToLowerInvariant()
+          if ($unpackedAsar -ne $installerAsar) { throw 'Installer app.asar differs from the accepted unpacked producer' }
+          $unpackedWorker = (Get-FileHash -Algorithm SHA256 -LiteralPath 'artifacts/qi40-packaged-candidate/win-unpacked/resources/quantum-worker/quantum-worker.exe').Hash.ToLowerInvariant()
+          $installerWorker = (Get-FileHash -Algorithm SHA256 -LiteralPath 'release/win-unpacked/resources/quantum-worker/quantum-worker.exe').Hash.ToLowerInvariant()
+          if ($unpackedWorker -ne $installerWorker) { throw 'Installer worker differs from the accepted unpacked producer' }
+          [ordered]@{
+            schema = 'theory-lab/qi40-pinned-installer/v1'
+            sourceCommit = '${{ github.sha }}'
+            installerName = $component.installer
+            installerSha256 = $component.installerSha256
+            systemDllSha256 = $component.systemDllSha256
+            systemDllBytes = $component.systemDllBytes
+            appAsarSha256 = $installerAsar
+            workerExeSha256 = $installerWorker
+          } | ConvertTo-Json | Set-Content -LiteralPath 'release/qi40-pinned-installer-evidence.json' -Encoding utf8
+      - name: Archive exact pinned installer and evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: qi40-pinned-installer-${{ github.sha }}
+          path: |
+            release/Quantum-Hamiltonian-Lab-Setup-*.exe
+            release/qi40-pinned-installer-evidence.json
+          compression-level: 0
+          if-no-files-found: error
