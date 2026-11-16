@@ -57,4 +57,9 @@ const report = { schema: "theory-lab/qi40-release-pair-acceptance/v1",
   matchedAcceptanceSha256: sha(await readFile(join(matchedRoot, "matched-acceptance.json"))),
   directAcceptanceSha256: sha(await readFile(join(directRoot, "acceptance.json"))) };
 await writeFile(join(output, "acceptance.json"), `${JSON.stringify(report, null, 2)}\n`, { flag: "wx" });
+const recheck = spawnSync(process.execPath,
+  [resolve("scripts/verify-qi40-release-pair.mjs"), manifestPath, extractionPath, output],
+  { encoding: "utf8", timeout: 60_000 });
+if (recheck.status !== 0)
+  throw new Error(`Release-pair evidence failed verification: ${recheck.error?.message ?? recheck.stderr ?? recheck.stdout}`);
 console.log(JSON.stringify(report, null, 2));
