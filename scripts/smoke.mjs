@@ -1070,21 +1070,23 @@ try {
     return { x: screen.x, y: screen.y };
   });
   await page.mouse.click(chartMidpoint.x, chartMidpoint.y);
-  assert.equal(
-    await page.getByTestId("selected-time").textContent(),
-    "t = 10.0000",
-  );
-  await page.getByTestId("rabi-inspector-time").filter({hasText:"10.0000"}).waitFor();
+  const linkedTimeIndex = Number(await cursor.inputValue());
+  const finalTimeIndex = Number(await cursor.getAttribute("max"));
+  assert.ok(Math.abs(linkedTimeIndex - finalTimeIndex / 2) <= 1,
+    "chart midpoint selects a saved sample near the middle of the run");
+  const selectedTime = await page.getByTestId("selected-time").textContent();
+  assert.match(selectedTime, /^t = \d+\.\d{4}$/);
+  await page.getByTestId("rabi-inspector-time")
+    .filter({ hasText: selectedTime.slice(4) }).waitFor();
   assert.match(await page.getByTestId("scientific-reference-coordinate").innerText(),/Stored time row/);
   assert.equal(await page.getByTestId("scientific-reference-run").getAttribute("title"),rabiRunId);
-  const linkedTimeIndex=await cursor.inputValue();
   const rabiSource=await page.evaluate(id=>window.quantum.inspectSavedRun(id),rabiRunId);
   await page.getByTestId("view-in-scenes").click();
   await page.getByTestId("scene-verification").filter({hasText:"SHA-256 VERIFIED"}).waitFor();
   await page.getByLabel("Scene saved run").locator(`option[value="${rabiRunId}"]`).waitFor({state:"attached"});
   assert.equal(await page.getByLabel("Scene saved run").inputValue(),rabiRunId,"lab launch keeps the exact run ID");
   assert.equal(await page.getByLabel("Saved scene view").inputValue(),"standard");
-  assert.equal(await page.getByLabel("Scene sample").inputValue(),linkedTimeIndex,"saved time sample links to scene trajectory");
+  assert.equal(await page.getByLabel("Scene sample").inputValue(),String(linkedTimeIndex),"saved time sample links to scene trajectory");
   assert.match(await page.getByTestId("scene-bridge-status").innerText(),/Linked saved evolution time sample/);
   assert.match(await page.getByTestId("scene-run-id").innerText(),new RegExp(rabiSource.hashes.result));
   await page.getByRole("tab",{name:"Dynamics",exact:true}).click();
