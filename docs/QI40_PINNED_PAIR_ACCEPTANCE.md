@@ -46,3 +46,15 @@ embedded in the resulting setup.
 The manual QI-40 packaged producer workflow also builds the pinned setup,
 checks that its app.asar and frozen worker match the accepted unpacked
 producer, and archives the exact setup with component and payload hashes.
+
+The same workflow now silently installs that setup in a new Windows runner
+directory. Its probe records the setup exit code and compares the installed
+executable, app.asar, and frozen worker with the just-packaged files. On
+success, it computes a fresh QWZ run from the installed executable, retains
+the study and source files, and independently verifies the probe and retained
+evidence. A failed install retains an error record and matching Windows
+Application Error details when available.
+
+This adds one clean-runner installed Theory Lab producer check. Math3D is a
+launch capture stub in that check. The two-app installed scene and retained
+memory gates still require their own evidence.

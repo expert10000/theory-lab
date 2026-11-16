@@ -58,6 +58,13 @@ now covers this discovery path in desktop CI and the manual packaged-producer
 workflow. It is a source gate; a new installer containing the fix remains
 the next release artifact to identify and test.
 
+The [pinned replacement pair](QI40_PINNED_PAIR_ACCEPTANCE.md) contains the
+Theory Lab discovery fix and the NSIS 3.13 component used by Math3D. An
+unpacked direct launch passed for that exact installer pair. The manual
+packaged-producer workflow now includes a clean-runner installed Theory Lab
+probe and fresh QWZ producer check. Those checks do not close the installed
+two-app scene or Math3D retained-memory gates.
+
 | Gate | Current evidence | Required before a full QI-40 claim |
 | --- | --- | --- |
 | QWZ source parity | Exact saved-run hash, deterministic curvature/band recipes, verified two-scene handoff, and cross-language golden checks are recorded in the [result descriptor](quantum-result-v2-qwz.md), [recipe record](qwz-scene-recipes.md), and [handoff record](qwz-study-math3d-fork.md). | Run the final two-app matrix against the exact 2.0.0 candidate binaries and record scene hashes and visual inspection. |

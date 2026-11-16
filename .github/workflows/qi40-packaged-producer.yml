@@ -107,3 +107,25 @@ jobs:
             release/qi40-pinned-installer-evidence.json
           compression-level: 0
           if-no-files-found: error
+      - name: Probe clean installed Theory Lab payload
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath release -Filter 'Quantum-Hamiltonian-Lab-Setup-*.exe' -File)
+          if ($installers.Count -ne 1) { throw "Expected one installer; found $($installers.Count)" }
+          $installRoot = Join-Path $env:RUNNER_TEMP ('qi40-installed-lab-' + [guid]::NewGuid().ToString('N'))
+          "QI40_INSTALL_ROOT=$installRoot" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          & ./scripts/probe-qi40-installed-lab.ps1 -Installer $installers[0].FullName -PackagedRoot 'release/win-unpacked' -InstallRoot $installRoot -EvidencePath 'test-results/qi40-installed-lab/probe.json'
+      - name: Accept installed QWZ producer
+        shell: pwsh
+        run: |
+          $installers = @(Get-ChildItem -LiteralPath release -Filter 'Quantum-Hamiltonian-Lab-Setup-*.exe' -File)
+          node scripts/accept-qi40-installed-lab.mjs test-results/qi40-installed-lab/probe.json $installers[0].FullName release/win-unpacked $env:QI40_INSTALL_ROOT test-results/qi40-installed-lab/acceptance
+          if ($LASTEXITCODE -ne 0) { throw 'Installed QWZ producer acceptance failed' }
+      - name: Archive installed producer evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: qi40-installed-lab-${{ github.sha }}
+          path: test-results/qi40-installed-lab/
+          compression-level: 0
+          if-no-files-found: ignore
