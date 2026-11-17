@@ -17,6 +17,8 @@ if (process.argv.length !== 8 || !labArg || !math3dArg || !retainedArg || !outpu
 if (process.platform !== "win32") throw new Error("The direct launch acceptance requires Windows");
 const lab = resolve(labArg);
 const math3d = resolve(math3dArg);
+const math3dProcessName = basename(math3d);
+assert.match(math3dProcessName, /^Math3D(?: Dev)?\.exe$/, "Unsupported Math3D executable name");
 const retained = resolve(retainedArg);
 const output = resolve(outputArg);
 async function shaFile(path) {
@@ -122,7 +124,7 @@ try {
 
 function math3dProcesses() {
   const raw = execFileSync("powershell.exe", ["-NoProfile", "-Command",
-    "@(Get-CimInstance Win32_Process -Filter \"Name = 'Math3D.exe'\" | Select-Object ProcessId,ParentProcessId,CommandLine) | ConvertTo-Json -Compress"],
+    `@(Get-CimInstance Win32_Process -Filter "Name = '${math3dProcessName}'" | Select-Object ProcessId,ParentProcessId,CommandLine) | ConvertTo-Json -Compress`],
   { encoding: "utf8", timeout: 15_000 });
   const value = JSON.parse(raw || "[]");
   return Array.isArray(value) ? value : value ? [value] : [];
