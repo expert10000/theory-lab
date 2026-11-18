@@ -4,7 +4,7 @@ import { boseHubbardJob } from "../../../packages/models/bose-hubbard";
 import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
 
 /** Bounded experimental pane; the Atlas entry remains reference-only. */
-export function BoseHubbardLab({ ready, onViewScene }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void }) {
+export function BoseHubbardLab({ ready, onViewScene, preferredRun }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void; preferredRun?: {runId?: string; nonce: number} | null }) {
   const [particles, setParticles] = useState("2");
   const [interaction, setInteraction] = useState("2");
   const [saved, setSaved] = useState<BoseHubbardRunSummary[]>([]);
@@ -43,6 +43,9 @@ export function BoseHubbardLab({ ready, onViewScene }: { ready: boolean; onViewS
     } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)); }
     finally { setBusy(false); }
   }
+  useEffect(() => {
+    if (preferredRun?.runId) void open(preferredRun.runId);
+  }, [preferredRun?.nonce]);
   const state = result?.states[stateIndex];
   const pinned = saved.find(item => item.runId === result?.runId);
   return <section className="atlas-binding" data-testid="bose-hubbard-lab">

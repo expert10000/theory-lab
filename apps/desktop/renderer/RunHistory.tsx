@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import {canonicalAtlasOrigin} from "../../../packages/atlas/deep-link";
 import type { QuantumBridge, RunComparisonPins, RunExportFormat, RunSummary, SavedRunInspection, VerifiedSavedRun } from "../../../packages/contracts";
+import type { BoseHubbardBridge, BoseHubbardResult, BoseHubbardRunSummary } from "../../../packages/contracts/bose-hubbard";
 import { MODEL_REGISTRY, type EvolutionModelId } from "../../../packages/models";
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import {supportsScene} from "../../../packages/quantum-scene/from-result";
@@ -13,8 +14,11 @@ function evolutionLabel(model:string){return evolutionModels.includes(model as E
 const cavityModels:readonly CavityModelId[]=["jaynes_cummings","quantum_rabi"];
 function cavityLabel(model:string){return cavityModels.includes(model as CavityModelId)?CAVITY_REGISTRY[model as CavityModelId].label:null;}
 
-export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze,onViewScene,onFigure,onOpenAtlas }: { bridge: QuantumBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void;onViewScene?:(runId:string,view:SceneView)=>void;onFigure?:(runId:string)=>void;onOpenAtlas?:(id:string)=>void }) {
+export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,onOpenCavity,onOpenLindblad,onOpenCircuit,onOpenManyBody,onOpenSweep,onOpenTopology,onOpenOrbital,onOpenOscillator,onAnalyze,onViewScene,onFigure,onOpenAtlas,onOpenDimer,onViewDimerScene }: { bridge: QuantumBridge & BoseHubbardBridge;onOpenSpectrum?:(runId:string)=>Promise<void>;onOpenRabi?:(runId:string)=>Promise<void>;onOpenEvolution?:(runId:string)=>Promise<void>;onOpenCavity?:(runId:string)=>Promise<void>;onOpenLindblad?:(runId:string)=>Promise<void>;onOpenCircuit?:(runId:string)=>Promise<void>;onOpenManyBody?:(runId:string)=>Promise<void>;onOpenSweep?:(runId:string)=>Promise<void>;onOpenTopology?:(runId:string)=>Promise<void>;onOpenOrbital?:(runId:string)=>Promise<void>;onOpenOscillator?:(runId:string)=>Promise<void>;onAnalyze?:()=>void;onViewScene?:(runId:string,view:SceneView)=>void;onFigure?:(runId:string)=>void;onOpenAtlas?:(id:string)=>void;onOpenDimer?:(runId:string)=>void;onViewDimerScene?:(runId:string,stateIndex:number)=>void }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
+  const [dimerRuns,setDimerRuns]=useState<BoseHubbardRunSummary[]>([]);
+  const [dimerSelection,setDimerSelection]=useState<{summary:BoseHubbardRunSummary;result:BoseHubbardResult;stateIndex:number}|null>(null);
+  const [dimerOpening,setDimerOpening]=useState<string|null>(null);
   const [busy, setBusy] = useState(false);
   const [opening,setOpening]=useState<string|null>(null);
   const [message, setMessage] = useState("");
@@ -27,7 +31,8 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
   const [topologyScenes,setTopologyScenes]=useState<Record<string,{standard:boolean;bands:boolean;invariant:boolean;strip?:boolean}>>({});
   async function refresh() {
     setBusy(true);
-    try { const [saved,selected]=await Promise.all([bridge.listRuns(),bridge.getRunComparisonPins()]);setRuns(saved);setPins(selected);setMessage(""); }
+    setDimerSelection(null);
+    try { const [saved,selected,dimers]=await Promise.all([bridge.listRuns(),bridge.getRunComparisonPins(),bridge.listBoseHubbardRuns()]);setRuns(saved);setPins(selected);setDimerRuns(dimers);setMessage(""); }
     catch (error) { setMessage(error instanceof Error ? error.message : String(error)); }
     finally { setBusy(false); }
   }
@@ -113,6 +118,17 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
     catch(error){setMessage(error instanceof Error?error.message:String(error));}
     finally{setOpening(null);}
   }
+  async function inspectDimer(summary:BoseHubbardRunSummary){
+    if(dimerOpening)return;
+    setDimerOpening(summary.runId);setDimerSelection(null);setMessage("");
+    try{
+      const result=await bridge.getBoseHubbardRun(summary.runId);
+      const current=(await bridge.listBoseHubbardRuns()).find(item=>item.runId===summary.runId);
+      if(!current||current.resultSha256!==summary.resultSha256)throw new Error("Saved dimer source changed; refresh runs before inspecting it");
+      setDimerSelection({summary,result,stateIndex:0});
+    }catch(error){setMessage(`Dimer ${summary.runId}: ${error instanceof Error?error.message:String(error)}`);}
+    finally{setDimerOpening(null);}
+  }
   return <section className="runs-page" data-testid="runs-page">
     <div className="panel runs-intro"><div><p className="eyebrow">DURABLE RUNS / QLAB-016</p><h2>Every completed calculation, accounted for.</h2>
       <p>Jobs, results, engine versions and SHA-256-verified numerical artifacts survive an app restart. Reopen, inspect provenance, or rerun a verified job as a new saved run. Portable .qrun bundles preserve exact source identities and parent hashes.</p></div>
@@ -125,6 +141,24 @@ export function RunHistory({ bridge,onOpenSpectrum,onOpenRabi,onOpenEvolution,on
         <button type="button" onClick={()=>void pin("b",null)} disabled={!pins.b||pinning}>Clear B</button>
         <button type="button" className="run-open" onClick={onAnalyze} disabled={!pins.a||!pins.b||!onAnalyze} data-testid="open-comparison">Open A/B Analysis</button></div></div>
     {message && <p className="runs-message" role="status">{message}</p>}
+    <section className="panel" data-testid="dimer-runs"><p className="eyebrow">EXPERIMENTAL / SEPARATE VERIFIED RUN CONTRACT</p><h3>Saved Bose–Hubbard dimer runs</h3>
+      <p>Fixed-N, two-site results. Open a saved run to recheck its exact source before showing numerical values. These runs do not enter the standard A/B comparison.</p>
+      {dimerRuns.length===0?<p>{busy?"Loading saved dimer runs…":"No verified dimer runs yet. Open Bose–Hubbard in the Hamiltonian Atlas to create one."}</p>:
+        <div className="runs-list">{dimerRuns.map(item=><article className="run-row" key={item.runId} data-testid="saved-dimer-run">
+          <div><strong>N={item.particles}, U/J={item.interactionRatio}</strong><small>{new Date(item.computedAt).toLocaleString()}</small><code>{item.runId}</code><code>Result SHA-256 {item.resultSha256}</code></div>
+          <div className="run-exports"><button type="button" disabled={!!dimerOpening} onClick={()=>void inspectDimer(item)}>{dimerOpening===item.runId?"Verifying…":"Inspect saved dimer"}</button>
+            {onOpenDimer&&<button type="button" onClick={()=>onOpenDimer(item.runId)}>Open in Atlas ↗</button>}</div>
+        </article>)}</div>}
+      {dimerSelection&&<div className="run-provenance" data-testid="dimer-run-inspection"><h4>Verified saved dimer · {dimerSelection.result.runId}</h4>
+        <p>Result SHA-256 <code>{dimerSelection.summary.resultSha256}</code></p>
+        <label>Eigenstate <select aria-label="Saved dimer eigenstate" value={dimerSelection.stateIndex} onChange={event=>setDimerSelection(current=>current?{...current,stateIndex:Number(event.target.value)}:null)}>
+          {dimerSelection.result.states.map(state=><option key={state.index} value={state.index}>{state.index}</option>)}</select></label>
+        <p>Energy: {dimerSelection.result.spectrum.energies[dimerSelection.stateIndex].toFixed(6)} {dimerSelection.result.spectrum.energyUnits}; gap: {dimerSelection.result.spectrum.gap.toFixed(6)} {dimerSelection.result.spectrum.energyUnits}.</p>
+        <p>Occupations: {dimerSelection.result.states[dimerSelection.stateIndex].occupation.map(value=>value.toFixed(6)).join(" / ")} {dimerSelection.result.units.occupation}. Number variance: {dimerSelection.result.states[dimerSelection.stateIndex].numberVariance.map(value=>value.toFixed(6)).join(" / ")} {dimerSelection.result.units.numberVariance}.</p>
+        <p>One-body coherence: {dimerSelection.result.states[dimerSelection.stateIndex].oneBodyCoherence.toFixed(6)} {dimerSelection.result.units.oneBodyCoherence}.</p>
+        {onViewDimerScene&&<button type="button" onClick={()=>onViewDimerScene(dimerSelection.result.runId,dimerSelection.stateIndex)}>View selected state in Scenes ↗</button>}
+      </div>}
+    </section>
     {runs.length === 0 ? <div className="panel runs-empty">{busy ? "Loading saved runs…" : "No saved runs yet. Run any laboratory to create one."}</div> :
       <div className="runs-list">{runs.map(run => <article className="panel run-row" key={run.runId} data-testid="saved-run">
         <div><p className="eyebrow">{run.operation.toUpperCase()} / {run.model}</p><h3>{run.model.replaceAll("_", " ")}</h3>

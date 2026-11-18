@@ -13,8 +13,15 @@ async function openDimer() {
   const page = await desktop.firstWindow();
   await page.getByTestId("worker-status").filter({ hasText: "READY" }).waitFor({ timeout: 45000 });
   await page.getByTestId("open-atlas").click();
+  assert.equal(await page.getByTestId("open-atlas-binding").count(),0);
+  await page.getByTestId("atlas-open-model").click();
+  await page.getByTestId("open-atlas-binding").waitFor();
   await page.getByLabel("Search Atlas").fill("bose_hubbard");
   await page.getByRole("button", { name: /Bose-Hubbard model/ }).click();
+  await page.getByTestId("atlas-open-model").waitFor();
+  assert.equal(await page.getByTestId("bose-hubbard-lab").count(),0);
+  assert.match(await page.locator(".atlas-detail").textContent(),/Basis:|Parameters/);
+  await page.getByTestId("atlas-open-model").click();
   await page.getByTestId("bose-hubbard-lab").waitFor();
   assert.equal(await page.getByTestId("atlas-formula").locator("math").count(),1);
   const formulaStyle = await page.getByTestId("atlas-formula").locator("math").evaluate(node=>({
@@ -52,7 +59,12 @@ try {
   await desktop.close(); desktop = undefined;
 
   page = await openDimer();
-  await page.getByRole("button", { name: /Open N=3, U\/J=2/ }).click();
+  await page.getByRole("tab",{name:"Runs"}).click();
+  await page.getByTestId("saved-dimer-run").waitFor();
+  await page.getByTestId("saved-dimer-run").getByRole("button",{name:"Inspect saved dimer"}).click();
+  await page.getByTestId("dimer-run-inspection").waitFor();
+  assert.match(await page.getByTestId("dimer-run-inspection").textContent(),/bosons per site/);
+  await page.getByTestId("saved-dimer-run").getByRole("button",{name:/Open in Atlas/}).click();
   await page.getByTestId("bose-hubbard-result").waitFor();
   assert.match(await page.getByTestId("bose-hubbard-result").textContent(), new RegExp(runId));
   summaries = await page.evaluate(() => window.quantum.listBoseHubbardRuns());
@@ -77,6 +89,9 @@ try {
   await page.getByRole("status").filter({ hasText: "integrity check" }).waitFor();
   assert.equal(await page.getByTestId("scene-run-id").count(), 0);
   await assert.rejects(page.evaluate(id => window.quantum.getBoseHubbardScene(id,0),runId),/integrity check/);
+  await page.getByRole("tab",{name:"Runs"}).click();
+  await page.getByRole("button",{name:/Refresh runs/}).click();
+  assert.equal(await page.getByTestId("saved-dimer-run").count(),0);
   console.log(`Bose-Hubbard desktop restart verified: ${runId}`);
 } finally {
   if (desktop) await desktop.close();
