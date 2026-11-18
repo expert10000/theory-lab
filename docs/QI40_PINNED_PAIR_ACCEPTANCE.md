@@ -58,3 +58,28 @@ Application Error details when available.
 This adds one clean-runner installed Theory Lab producer check. Math3D is a
 launch capture stub in that check. The two-app installed scene and retained
 memory gates still require their own evidence.
+
+## Installed unsigned Dev pair diagnostic, 2026-11-18
+
+The [clean Windows pair run](https://github.com/expert10000/Math3D/actions/runs/44282845421)
+installed both setups and passed its candidate, installation, fresh producer,
+direct launch, and two-view checks. The archived `installed-pair.json` in
+artifact `qi40-unsigned-dev-pair-44097555120` records these exact inputs:
+
+| Installed application | Source commit | Setup SHA-256 | Installed executable SHA-256 | NSIS System.dll SHA-256 |
+| --- | --- | --- | --- | --- |
+| Math3D Dev 2.0.0 | `f53b14614f5f5598b949347af52ef133b2e04fdb` | `76fee0efde77174a55f151753ce450fa0f2add17d1d98a772fa541cd11d281ee` | `4081af0e1aa0cf2960cc7f2c65cc4cd5a280e62426843622dfc73a5be72632fd` | `3eb38ae99653a7dbc724132ee240f6e5c4af4bfe7c01d31d23faf373f9f2eaca` |
+| Theory Lab 0.1.0 | `34654af10ae070dd0cc02e5fb58a9f2197f49a4a` | `1f5e9a1f9944980c446b77edc7a320ac02f94f364fb3e41b9900a9e1b7135e2b` | `11a9744bda5a65229ec0e7b8e4e4f60ba9933fabeebb7daa11a11f79a5b0f1fb` | `1556ee1bf1cb477124e1269b534ed81653ba71994dab7903ee3782b75acc2810` |
+
+The installed Lab computed fresh run `run-ff37cdc374234d62bd1e78c20e7b1384`
+with result SHA-256 `352a397b0caadc3d83d83938341afd671afd8e37c347814e6a6a7b50ef324c2b`.
+The direct-launch and consumer reports match that run and result. The consumer
+opened the curvature and bands views and retained both screenshots.
+
+The same workflow's installed Math3D QWZ 80-cycle check reported 150,148 bytes
+of late heap growth against the provisional 2,097,152-byte target. This is a
+passing diagnostic for this unsigned Dev pair. Math3D Dev's embedded NSIS
+component is the earlier unpinned hash above; a signed stable 2.0 candidate
+was not produced because release signing configuration was absent. The signed
+exact-candidate pair, repeatable installation, and broader retained-memory
+release gates remain open.

@@ -65,6 +65,16 @@ packaged-producer workflow now includes a clean-runner installed Theory Lab
 probe and fresh QWZ producer check. Those checks do not close the installed
 two-app scene or Math3D retained-memory gates.
 
+**Update 2026-11-18.** A [clean-runner installed unsigned Dev pair](QI40_PINNED_PAIR_ACCEPTANCE.md#installed-unsigned-dev-pair-diagnostic-2026-11-18)
+passed fresh QWZ production, direct Theory Lab launch into Math3D, and both
+Math3D views with matching run and result hashes. Its installed 80-cycle QWZ
+memory diagnostic also met the provisional heap target. This establishes a
+working installed integration for those exact unsigned setups. Math3D Dev's
+NSIS component was not pinned to the release component, and the signed stable
+2.0 installer could not be built without release signing configuration. The
+exact signed release pair and broader memory and installation repeatability
+requirements remain open; the release decision above is unchanged.
+
 | Gate | Current evidence | Required before a full QI-40 claim |
 | --- | --- | --- |
 | QWZ source parity | Exact saved-run hash, deterministic curvature/band recipes, verified two-scene handoff, and cross-language golden checks are recorded in the [result descriptor](quantum-result-v2-qwz.md), [recipe record](qwz-scene-recipes.md), and [handoff record](qwz-study-math3d-fork.md). | Run the final two-app matrix against the exact 2.0.0 candidate binaries and record scene hashes and visual inspection. |
