@@ -83,3 +83,19 @@ component is the earlier unpinned hash above; a signed stable 2.0 candidate
 was not produced because release signing configuration was absent. The signed
 exact-candidate pair, repeatable installation, and broader retained-memory
 release gates remain open.
+
+## Retained source replay follow-up, 2026-11-18
+
+Math3D retained [41 byte-exact files from this pair](https://github.com/expert10000/Math3D/blob/b66c1b46/tests/fixtures/quantum-qi40-fresh-pair-artifact/README.md),
+including the fresh run, both complete scene bundles, study, acceptance
+reports, and screenshots. The installed-pair report SHA-256 is
+`f4c2c74ab1c87f398454bf9297d641e329550df04d583427125f661355d00a42`.
+The [clean Windows source replay](https://github.com/expert10000/Math3D/actions/runs/44298131950)
+used those exact bytes with `MATH3D_E2E=0` and passed the full QWZ Study and
+Graph journey through restart, source refusal, and independent Project
+transfer. Its [review receipt](https://github.com/expert10000/Math3D/blob/53e57585/docs/releases/2.0.0/evidence/qi40-production-runtime-source-ci-b66c1b46.json)
+records the grid and independent band-gap and curvature-integral checks.
+
+This is a reproducible source-Math3D replay of input from the installed Lab,
+not a new installed Math3D journey. The signed exact-candidate pair and
+mixed-route retained-memory gates remain open.

@@ -74,6 +74,10 @@ NSIS component was not pinned to the release component, and the signed stable
 2.0 installer could not be built without release signing configuration. The
 exact signed release pair and broader memory and installation repeatability
 requirements remain open; the release decision above is unchanged.
+Math3D subsequently retained the fresh scientific bytes and passed a
+[clean production-runtime source replay](https://github.com/expert10000/Math3D/actions/runs/44298131950)
+through its full QWZ Study and Graph journey. This supports source
+reproducibility and leaves the installed-candidate decision unchanged.
 
 | Gate | Current evidence | Required before a full QI-40 claim |
 | --- | --- | --- |
