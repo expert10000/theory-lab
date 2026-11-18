@@ -17,7 +17,11 @@ async function openDimer() {
   await page.getByRole("button", { name: /Bose-Hubbard model/ }).click();
   await page.getByTestId("bose-hubbard-lab").waitFor();
   assert.equal(await page.getByTestId("atlas-formula").locator("math").count(),1);
-  assert.equal(await page.getByTestId("atlas-formula").locator("math").evaluate(node=>getComputedStyle(node).color),"rgb(130, 217, 196)");
+  const formulaStyle = await page.getByTestId("atlas-formula").locator("math").evaluate(node=>({
+    color:getComputedStyle(node).color,size:parseFloat(getComputedStyle(node.parentElement).fontSize),
+  }));
+  assert.equal(formulaStyle.color,"rgb(220, 255, 243)");
+  assert.ok(formulaStyle.size>=24);
   await page.getByTestId("bose-hubbard-theory").waitFor();
   await page.getByTestId("open-companion-rb87-iii").waitFor();
   assert.equal(await page.getByTestId("open-companion-rb87-iii").isEnabled(),true);

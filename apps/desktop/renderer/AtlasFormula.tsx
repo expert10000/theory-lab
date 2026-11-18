@@ -11,5 +11,5 @@ export function AtlasFormula({ latex }: { latex: string }) {
   } catch {
     return <div className="atlas-formula" role="status" data-testid="atlas-formula">Formula unavailable in this viewer</div>;
   }
-  return <div className="atlas-formula" data-testid="atlas-formula" dangerouslySetInnerHTML={{ __html: markup }} />;
+  return <div className="atlas-formula" data-testid="atlas-formula" tabIndex={0} dangerouslySetInnerHTML={{ __html: markup }} />;
 }
