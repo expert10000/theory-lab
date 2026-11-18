@@ -12,6 +12,8 @@ import { boseHubbardJob, consistentBoseHubbardResult } from "../packages/models/
 import { BoseHubbardRunStore } from "../apps/desktop/main/bose-hubbard-runs";
 import { WorkerSupervisor } from "../apps/desktop/main/worker";
 import { BoseHubbardLab } from "../apps/desktop/renderer/BoseHubbardLab";
+import { decodeDataset } from "../packages/quantum-scene";
+import { readSceneBundle, writeSceneBundle } from "../packages/quantum-scene/bundle";
 
 const job = boseHubbardJob(2, 0, "bh-n2-test");
 const root2 = Math.SQRT1_2;
@@ -81,12 +83,38 @@ test("saved dimer reopens after store restart and withholds changed evidence", a
   } finally { await rm(temp, { recursive: true, force: true }); }
 });
 
+test("selected dimer state makes a portable scene with source-qualified units and tamper refusal", async () => {
+  const temp = await mkdtemp(join(tmpdir(), "qlab-bh-scene-"));
+  try {
+    const store = new BoseHubbardRunStore(join(temp,"runs"));
+    const summary = await store.record(job,result);
+    const reopened = new BoseHubbardRunStore(join(temp,"runs"));
+    const payload = await reopened.scene(result.runId,1);
+    assert.equal(payload.scene.provenance.resultSha256,summary.resultSha256);
+    assert.equal(payload.scene.provenance.parameters?.stateIndex,1);
+    assert.equal(payload.scene.coordinates.units[2],"bosons per site");
+    assert.equal(payload.scene.datasets.find(row=>row.id==="number-variance")?.unit,"bosons^2");
+    assert.deepEqual(Array.from(decodeDataset(payload.artifacts["number-variance.f64"])),[1,1]);
+    assert.match(payload.scene.annotations.find(row=>row.id==="coherence")!.text,/0\.000000 bosons/);
+    const directory = await writeSceneBundle(payload,temp);
+    const fromDisk = await readSceneBundle(directory);
+    assert.equal(fromDisk.scene.provenance.resultSha256,summary.resultSha256);
+    assert.deepEqual(Array.from(decodeDataset(fromDisk.artifacts["occupation.f64"])),[1,1]);
+    await assert.rejects(reopened.scene(result.runId,3),/eigenstate index/);
+    const sourceFile = join(temp,"runs",result.runId,"result.json");
+    const changed = JSON.parse(await readFile(sourceFile,"utf8"));
+    changed.states[1].oneBodyCoherence = .2;
+    await writeFile(sourceFile,JSON.stringify(changed,null,2)+"\n");
+    await assert.rejects(reopened.scene(result.runId,1),/integrity check/);
+  } finally { await rm(temp,{recursive:true,force:true}); }
+});
+
 test("Atlas dimer pane exposes bounded controls and an honest scene boundary", () => {
   const html = renderToStaticMarkup(React.createElement(BoseHubbardLab, { ready: false }));
   assert.match(html, /Dimer particles N/);
   assert.match(html, /Dimer interaction U over J/);
   assert.match(html, /Native worker unavailable/);
-  assert.match(html, /verified scene and Math3D handoff are the next milestone/i);
+  assert.match(html, /verified two-site scenes/i);
   assert.match(html, /Run and save dimer/);
 });
 

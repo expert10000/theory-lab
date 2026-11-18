@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { assertBoseHubbardJob, isBoseHubbardResult,
   type BoseHubbardJob, type BoseHubbardResult, type BoseHubbardRunSummary } from "../../../packages/contracts/bose-hubbard";
 import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
+import { boseHubbardScene } from "../../../packages/quantum-scene/bose-hubbard";
 
 const identifier = /^[A-Za-z0-9_-]{1,100}$/;
 const hash = (content: string) => createHash("sha256").update(content).digest("hex");
@@ -74,6 +75,12 @@ export class BoseHubbardRunStore {
 
   async get(runId: string): Promise<BoseHubbardResult> {
     return (await this.load(runId)).result;
+  }
+
+  async scene(runId: string, stateIndex: number) {
+    const { result, resultSha256 } = await this.load(runId);
+    return boseHubbardScene(result, resultSha256, stateIndex,
+      async bytes => createHash("sha256").update(bytes).digest("hex"));
   }
 
   async list(): Promise<BoseHubbardRunSummary[]> {

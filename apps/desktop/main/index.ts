@@ -122,6 +122,48 @@ app.whenReady().then(() => {
     if (typeof runId !== "string") throw new Error("Invalid dimer run ID");
     return boseHubbardRuns.get(runId);
   });
+  const checkedDimerScene = async (runId: unknown, stateIndex: unknown, expectedHash?: unknown) => {
+    if (typeof runId !== "string" || !Number.isInteger(stateIndex) ||
+        (stateIndex as number) < 0 || (stateIndex as number) > 8)
+      throw new Error("Invalid dimer scene selection");
+    if (expectedHash !== undefined && (typeof expectedHash !== "string" || !/^[a-f0-9]{64}$/.test(expectedHash)))
+      throw new Error("Invalid expected dimer source hash");
+    const payload = await boseHubbardRuns.scene(runId, stateIndex as number);
+    if (expectedHash !== undefined && payload.scene.provenance.resultSha256 !== expectedHash)
+      throw new Error("Dimer source changed after scene preview");
+    return payload;
+  };
+  ipcMain.handle("quantum:bose-hubbard-scene", (event, runId: unknown, stateIndex: unknown) => {
+    trusted(event); return checkedDimerScene(runId, stateIndex);
+  });
+  ipcMain.handle("quantum:export-bose-hubbard-scene", async (event, runId: unknown, stateIndex: unknown, expectedHash: unknown) => {
+    trusted(event);
+    if (typeof expectedHash !== "string") throw new Error("Expected dimer source hash is required");
+    const preview = await checkedDimerScene(runId, stateIndex, expectedHash);
+    const selection = await dialog.showOpenDialog({ title: "Choose parent folder for a verified dimer scene", properties: ["openDirectory"] });
+    if (selection.canceled || !selection.filePaths[0]) return null;
+    const payload = await checkedDimerScene(runId, stateIndex, preview.scene.provenance.resultSha256);
+    return writeSceneBundle(payload, selection.filePaths[0]);
+  });
+  ipcMain.handle("quantum:open-bose-hubbard-in-math3d", async (event, runId: unknown, stateIndex: unknown, expectedHash: unknown) => {
+    trusted(event);
+    if (typeof expectedHash !== "string") throw new Error("Expected dimer source hash is required");
+    const preview = await checkedDimerScene(runId, stateIndex, expectedHash);
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (!win || win.isDestroyed()) throw new Error("Scene window is unavailable");
+    const target = await chooseMath3DTarget(win);
+    if (!target) return null;
+    const payload = await checkedDimerScene(runId, stateIndex, preview.scene.provenance.resultSha256);
+    const parent = join(app.getPath("userData"), "math3d-handoffs", randomUUID());
+    await mkdir(parent, { recursive: true });
+    const directory = await writeSceneBundle(payload, parent);
+    const reopened = await readSceneBundle(directory);
+    if (reopened.scene.provenance.resultSha256 !== preview.scene.provenance.resultSha256)
+      throw new Error("Dimer handoff source changed");
+    await checkedDimerScene(runId, stateIndex, preview.scene.provenance.resultSha256);
+    await launchMath3D(target, directory);
+    return directory;
+  });
   const phaseDiagrams = new QwzPhaseDiagramStore(join(app.getPath("userData"), "qwz-phase-diagrams"), runs);
   ipcMain.handle("quantum:build-qwz-phase-diagram", async event => { trusted(event); return phaseDiagrams.build(); });
   ipcMain.handle("quantum:get-qwz-phase-diagram", async (event, id: unknown) => {

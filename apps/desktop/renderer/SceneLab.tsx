@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import type { QuantumBridge, RunSummary } from "../../../packages/contracts";
+import type { BoseHubbardBridge, BoseHubbardRunSummary } from "../../../packages/contracts/bose-hubbard";
 import type { ScenePayload } from "../../../packages/quantum-scene";
 import type { SceneHandoffReceipt } from "../../../packages/quantum-scene/handoff";
 import { supportsScene } from "../../../packages/quantum-scene/from-result";
@@ -14,12 +15,16 @@ import {StreamViewer,type SceneStreamSource} from "../../../packages/quantum-3d/
 import {sceneFocusForLaunch,type SceneLaunch} from "./scene-bridge";
 import "../../../packages/quantum-3d/scene.css";
 
-export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:SceneLaunch|null }) {
+export function SceneLab({ bridge,launch,onOpenDimer }: { bridge: QuantumBridge & BoseHubbardBridge;launch?:SceneLaunch|null;onOpenDimer?:()=>void }) {
   const [runs, setRuns] = useState<RunSummary[]>([]);
-  const [runId, setRunId] = useState(launch?.runId??"");
+  const [dimerRuns, setDimerRuns] = useState<BoseHubbardRunSummary[]>([]);
+  const [dimerRunId, setDimerRunId] = useState(launch?.source==="bose_hubbard"?launch.runId:"");
+  const [dimerStateIndex, setDimerStateIndex] = useState(launch?.stateIndex??0);
+  const [runId, setRunId] = useState(launch?.source==="bose_hubbard"?"":launch?.runId??"");
   const [savedPayload, setPayload] = useState<ScenePayload | null>(null);
+  const [dimerPayload, setDimerPayload] = useState<ScenePayload | null>(null);
   const [imported, setImported] = useState<ScenePayload | null>(null);
-  const [source, setSource] = useState<"saved" | "bundle" | "example"|"stream">("saved");
+  const [source, setSource] = useState<"saved" | "bose_hubbard" | "bundle" | "example"|"stream">(launch?.source??"saved");
   const [stream,setStream]=useState<(SceneStreamSource&{id:string})|null>(null);
   const [example, setExample] = useState<{
     request: SceneExampleRequest;
@@ -35,21 +40,25 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
       ? (example?.payload ?? null)
       : source === "bundle"
         ? imported
-        : savedPayload;
+        : source === "bose_hubbard" ? dimerPayload : savedPayload;
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [handoff,setHandoff]=useState<SceneHandoffReceipt|null>(null);
   const sequence = useRef(0);
+  const dimerSequence = useRef(0);
   async function refresh() {
     try {
       const values = (await bridge.listRuns()).filter((r) =>
         supportsScene(r.operation, r.model),
       );
       setRuns(values);
+      const dimers = await bridge.listBoseHubbardRuns();
+      setDimerRuns(dimers);
+      setDimerRunId(current => dimers.some(row=>row.runId===current)?current:dimers[0]?.runId??"");
       setRunId((current) =>
         values.some((r) => r.runId === current)
           ? current
-          : (current || values[0]?.runId || ""),
+          : (values[0]?.runId || ""),
       );
     } catch (error) {
       setMessage(error instanceof Error ? error.message : String(error));
@@ -60,7 +69,12 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
   }, [bridge]);
   useEffect(()=>{
     if(!launch)return;
-    setRunId(launch.runId);setSavedView(launch.view);setSource("saved");setIntent(launch);
+    if (launch.source==="bose_hubbard") {
+      setDimerRunId(launch.runId);setDimerStateIndex(launch.stateIndex??0);
+      setSource("bose_hubbard");setIntent(null);
+    } else {
+      setRunId(launch.runId);setSavedView(launch.view);setSource("saved");setIntent(launch);
+    }
   },[launch?.nonce]);
   const linked=source==="saved"&&payload?sceneFocusForLaunch(payload,intent):null;
   useEffect(() => {
@@ -90,6 +104,18 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
       sequence.current++;
     };
   }, [bridge, runId, source,savedView]);
+  useEffect(() => {
+    const request = ++dimerSequence.current;
+    if (source !== "bose_hubbard") return;
+    setDimerPayload(null); setHandoff(null); setMessage("");
+    if (!dimerRunId) { setBusy(false); return; }
+    setBusy(true);
+    void bridge.getBoseHubbardScene(dimerRunId,dimerStateIndex)
+      .then(value => { if (request===dimerSequence.current) setDimerPayload(value); })
+      .catch(error => { if (request===dimerSequence.current) setMessage(error instanceof Error?error.message:String(error)); })
+      .finally(() => { if (request===dimerSequence.current) setBusy(false); });
+    return () => { dimerSequence.current++; };
+  },[bridge,dimerRunId,dimerStateIndex,source]);
   async function importScene() {
     setBusy(true);
     setMessage("");
@@ -110,7 +136,9 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     const current = runId;
     setBusy(true);
     try {
-      const path =
+      const path = source === "bose_hubbard" && payload
+          ? await bridge.exportBoseHubbardScene(dimerRunId,dimerStateIndex,payload.scene.provenance.resultSha256)
+          :
         source === "example" && example
           ? await bridge.exportSceneExample(example.request)
           : await bridge.exportScene(current,savedView,format);
@@ -137,7 +165,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
     finally{setBusy(false);}
   }
   async function openInMath3D() {
-    if ((source !== "saved" && source !== "bundle") || !payload) return;
+    if ((source !== "saved" && source !== "bundle" && source !== "bose_hubbard") || !payload) return;
     const current = runId, selectedView = savedView, sourceHash = payload.scene.provenance.resultSha256;
     setHandoff(null); setBusy(true); setMessage("");
     try {
@@ -146,6 +174,11 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
         setMessage(directory
           ? "Math3D launched with the verified imported scene; it checks the bundle before displaying it."
           : "Math3D launch cancelled");
+        return;
+      }
+      if (source === "bose_hubbard") {
+        const directory = await bridge.openBoseHubbardInMath3D(dimerRunId,dimerStateIndex,sourceHash);
+        setMessage(directory ? "Math3D launched with the verified dimer scene." : "Math3D launch cancelled");
         return;
       }
       const receipt = await bridge.openInMath3D(current, selectedView, sourceHash);
@@ -236,11 +269,29 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
         <h2>One result. A portable scene.</h2>
         <p>
           Preview verified saved Bloch trajectories, SSH sublattices and bonds,
-          Ising magnetization, QWZ curvature, supplied SSH/QWZ bands and hydrogenic orbital fields.
+          Ising magnetization, QWZ curvature, supplied SSH/QWZ bands, hydrogenic orbital fields and finite Bose–Hubbard dimer states.
           Export the scene and binary datasets as a new .qscene folder. A
           saved run can open directly in a local Math3D checkout after its bundle
           is written and verified. Choose the Math3D checkout once.
         </p>
+        <div className="scene-run-controls">
+          <label>Saved Bose–Hubbard dimer
+            <select aria-label="Saved dimer run" value={dimerRunId} disabled={busy}
+              onChange={event=>{setDimerRunId(event.target.value);setDimerStateIndex(0);setSource("bose_hubbard");setIntent(null);}}>
+              {!dimerRuns.length&&<option value="">No saved dimer runs</option>}
+              {dimerRunId&&!dimerRuns.some(row=>row.runId===dimerRunId)&&<option value={dimerRunId}>Requested dimer · {dimerRunId.slice(-8)}</option>}
+              {dimerRuns.map(row=><option key={row.runId} value={row.runId}>N={row.particles}, U/J={row.interactionRatio} · {new Date(row.computedAt).toLocaleString()}</option>)}
+            </select>
+          </label>
+          <label>Dimer eigenstate
+            <select aria-label="Dimer eigenstate" value={dimerStateIndex} disabled={busy||!dimerRunId}
+              onChange={event=>{setDimerStateIndex(Number(event.target.value));setSource("bose_hubbard");setIntent(null);}}>
+              {Array.from({length:(dimerRuns.find(row=>row.runId===dimerRunId)?.particles??0)+1},(_,index)=><option key={index} value={index}>{index}</option>)}
+            </select>
+          </label>
+          <button type="button" disabled={busy||!dimerRunId} onClick={()=>{setSource("bose_hubbard");setIntent(null);}}>View dimer scene</button>
+          {source==="bose_hubbard"&&<button type="button" onClick={onOpenDimer}>Back to dimer lab ↗</button>}
+        </div>
         <div className="scene-run-controls">
           <label>
             Saved numerical run{" "}
@@ -287,7 +338,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
           <button data-testid="export-scene-stream" disabled={busy||source!=="saved"||!payload} onClick={()=>void exportScene("stream")}>Export chunked LOD bundle</button>
           <button data-testid="import-scene-stream" disabled={busy} onClick={()=>void importStream()}>Open chunked scene bundle</button>
           <button data-testid="prepare-scene-handoff" disabled={busy||source!=="saved"||!payload} onClick={()=>void prepareHandoff()}>Prepare verified external-viewer bundle</button>
-          <button data-testid="open-in-math3d" disabled={busy||!payload||(source!=="saved"&&source!=="bundle")} onClick={()=>void openInMath3D()}>Open in Math3D</button>
+          <button data-testid="open-in-math3d" disabled={busy||!payload||(source!=="saved"&&source!=="bundle"&&source!=="bose_hubbard")} onClick={()=>void openInMath3D()}>Open in Math3D</button>
           {source === "saved" && payload?.scene.provenance.model === "qwz" && <>
             <button data-testid="open-qwz-study-math3d" disabled={busy} onClick={() => void openQwzStudy("new")}>Open both QWZ views in new Math3D Project</button>
             <button data-testid="attach-qwz-study-math3d" disabled={busy} onClick={() => void openQwzStudy("attach")}>Attach both QWZ views to current Math3D Project</button>
@@ -366,7 +417,7 @@ export function SceneLab({ bridge,launch }: { bridge: QuantumBridge;launch?:Scen
             ? "GEOMETRY FIXTURE · NO WORKER RUN"
             : source === "bundle"
               ? "IMPORTED BUNDLE · READ-ONLY · hashes verify integrity, not publisher identity"
-              : "VERIFIED SAVED RUN · FINAL SCENE"}
+              : source === "bose_hubbard" ? "VERIFIED SAVED BOSE–HUBBARD DIMER · SCHEMATIC SITE POSITIONS" : "VERIFIED SAVED RUN · FINAL SCENE"}
         </p>
       </div>
       {message && (

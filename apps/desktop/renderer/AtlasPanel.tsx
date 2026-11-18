@@ -6,8 +6,8 @@ import { AtlasCapabilities } from "../../../packages/ui/AtlasCapabilities";
 import { QecSyndromeViewer } from "./QecSyndromeViewer";
 import { BoseHubbardLab } from "./BoseHubbardLab";
 
-export function AtlasPanel({ openLab,onRun,onSweep,runReady=false,availableOperations=[],running=false,message,focus }:
-  {openLab?:(id:string)=>void;onRun?:(id:string)=>void;onSweep?:(id:string)=>void;
+export function AtlasPanel({ openLab,onRun,onSweep,onViewBoseHubbardScene,runReady=false,availableOperations=[],running=false,message,focus }:
+  {openLab?:(id:string)=>void;onRun?:(id:string)=>void;onSweep?:(id:string)=>void;onViewBoseHubbardScene?:(runId:string,stateIndex:number)=>void;
     runReady?:boolean;availableOperations?:readonly string[];running?:boolean;message?:{id:string;text:string}|null;focus?:{id:string;nonce:number}|null}) {
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState("all");
@@ -35,7 +35,7 @@ export function AtlasPanel({ openLab,onRun,onSweep,runReady=false,availableOpera
           {selected.relations.length > 0 && <><h4>Related entries</h4><div className="atlas-relations">{selected.relations.map((relation, index) => <button key={index} onClick={() => { setSelectedId(relation.target); setFamily("all"); setQuery(""); }}>{relation.target} ↗</button>)}</div></>}
           <p><button className="text-button" data-testid="atlas-theory-reference" onClick={() => void window.quantum.openAtlasSource(selected.id)}>Open theory reference ↗</button> <small>({atlasUrl(selected)})</small></p>
           <AtlasCapabilities id={selected.id}/>
-          {selected.id==="bose_hubbard"&&<BoseHubbardLab ready={runReady}/>}
+          {selected.id==="bose_hubbard"&&<BoseHubbardLab ready={runReady} onViewScene={onViewBoseHubbardScene}/>}
           {binding ? <div className="atlas-binding"><p className="eyebrow">THEORY LAB BINDING / TESTED SUBSPACE</p><p>{binding.convention}</p>
             <div className="dynamics-actions"><button className="run-button" data-testid="open-atlas-binding" onClick={() => openLab?.(selectedId)}>Open in {binding.modelId.replaceAll("_", " ")} lab ↗</button>
               {actions.run&&<button type="button" data-testid="run-atlas-canonical" disabled={!canRun||running} onClick={()=>onRun?.(selectedId)}>{running?"Running…":"Run canonical example"}</button>}
@@ -44,7 +44,7 @@ export function AtlasPanel({ openLab,onRun,onSweep,runReady=false,availableOpera
             {actions.sweep&&<p className="scope-note">Sweep opens editable Lab study inputs. Point runs are ordinary Lab runs; they do not acquire canonical Atlas provenance.</p>}
             {message?.id===selectedId&&<p role="status" data-testid="atlas-action-message">{message.text}</p>}
           </div> : selected.id==="bose_hubbard"
-            ? <p className="scope-note">The finite dimer above is an experimental subset. The Atlas entry remains reference-only until its Theory, scene, and installed handoff gates pass.</p>
+            ? <p className="scope-note">The finite dimer above is an experimental subset. Its saved scene is available; the Atlas entry remains reference-only until its Theory and installed handoff gates pass.</p>
             : <p className="scope-note">No tested Theory Lab binding for this entry yet. This entry has no Load, Run or Sweep action.</p>}
         </article>}</div>
     </section>

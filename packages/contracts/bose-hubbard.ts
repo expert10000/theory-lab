@@ -1,6 +1,7 @@
 import Ajv from "ajv";
 import jobSchema from "./schemas/quantum-bose-hubbard-job.v1.json";
 import resultSchema from "./schemas/quantum-bose-hubbard-result.v1.json";
+import type { ScenePayload } from "../quantum-scene";
 
 /** Additive contract: the frozen quantum-job/result v1 schemas stay unchanged. */
 export interface BoseHubbardModel {
@@ -33,6 +34,9 @@ export interface BoseHubbardBridge {
   runBoseHubbard(job: BoseHubbardJob): Promise<BoseHubbardResult>;
   listBoseHubbardRuns(): Promise<BoseHubbardRunSummary[]>;
   getBoseHubbardRun(runId: string): Promise<BoseHubbardResult>;
+  getBoseHubbardScene(runId: string, stateIndex: number): Promise<ScenePayload>;
+  exportBoseHubbardScene(runId: string, stateIndex: number, expectedResultHash: string): Promise<string | null>;
+  openBoseHubbardInMath3D(runId: string, stateIndex: number, expectedResultHash: string): Promise<string | null>;
 }
 
 const ajv = new Ajv({ allErrors: true, strict: true });

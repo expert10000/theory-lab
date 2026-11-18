@@ -14,7 +14,7 @@ Planning companion to the [feature roadmap](RB87_COMPANION_ROADMAP.md). The [sup
 
 ## Decision 1: one executable Atlas → Lab → saved run → scene path (RbC-1)
 
-The first product milestone is a working finite Bose–Hubbard dimer, not a PDF reader. Its separate worker RPC and experimental Atlas pane now compute and save verified finite results. Existing Atlas, job transport, Runs, and QVIS scene infrastructure reduce remaining plumbing work, but the current `many_body` job is an Ising spin chain and `from-result.ts` has no Bose–Hubbard adapter. The canonical 68 Atlas definitions stay fixed; `bose_hubbard` remains reference-only until this entire path passes.
+The first product milestone is a working finite Bose–Hubbard dimer, not a PDF reader. Its separate worker RPC and experimental Atlas pane compute and save verified finite results; a separate scene adapter now exposes selected eigenstates through Scenes. The current shared `many_body` job remains an Ising spin chain. The canonical 68 Atlas definitions stay fixed; `bose_hubbard` remains reference-only until the full path passes.
 
 ### RbC-1A — Contract and independent physics engine
 
@@ -32,9 +32,9 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 
 ### RbC-1C — Verified scene and handoff
 
-- Extend `packages/quantum-scene/from-result.ts` with a Bose–Hubbard dimer adapter gated on a verified saved result. Draw two schematic sites and a hopping bond; encode site occupation and, if stored, one-body coherence as separate labelled quantities. Never imply atom positions or a measured microscope image.
+- Use a separate `packages/quantum-scene/bose-hubbard.ts` adapter gated on a verified saved result, since this result has its own contract. Draw two schematic sites and a hopping bond; encode site occupation and variance as datasets and one-body coherence as a labelled annotation. Never imply atom positions or a measured microscope image.
 - Carry basis, energy and site units, selected eigenstate index, result hash, and source run into the scene. Reuse Scenes, `.qscene` export, sample selection, and Math3D handoff without changing their contracts silently.
-- Test scene round trip, restart, tampered result refusal, unit labels, and an unpacked then installed two-app handoff. The scene is a view of recorded dimer data, not a new solver.
+- Local scene round trip, restart, tampered result refusal, and unit-label tests pass. Qualify an unpacked then installed two-app handoff before accepting this checkpoint. The scene is a view of recorded dimer data, not a new solver.
 
 **RbC-1 acceptance:** a user can start from Atlas, run the dimer, inspect an eigenstate, save/reopen its exact values, open its scene, and return to the run. Independent physics and end-to-end installed checks pass before advertising an Rb87-related working system. This bounded dimer is not yet a condensate, gas microscope, or full Rb87 atom model.
 

@@ -3,7 +3,7 @@ import type { BoseHubbardResult, BoseHubbardRunSummary } from "../../../packages
 import { boseHubbardJob } from "../../../packages/models/bose-hubbard";
 
 /** Bounded experimental pane; the Atlas entry remains reference-only. */
-export function BoseHubbardLab({ ready }: { ready: boolean }) {
+export function BoseHubbardLab({ ready, onViewScene }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void }) {
   const [particles, setParticles] = useState("2");
   const [interaction, setInteraction] = useState("2");
   const [saved, setSaved] = useState<BoseHubbardRunSummary[]>([]);
@@ -48,7 +48,7 @@ export function BoseHubbardLab({ ready }: { ready: boolean }) {
     <p className="eyebrow">EXPERIMENTAL LAB / FIXED-N TWO-SITE DIMER</p>
     <h4>Compute a finite Bose–Hubbard system</h4>
     <p>H/J = −(b†₁b₂ + b†₂b₁) + (U/2J) Σᵢ nᵢ(nᵢ−1). Fixed N, open bond, J=1, basis |n,N−n⟩. The chemical-potential term is constant in this fixed-N sector and is omitted. This is a generic boson dimer motivated by Chapters III–IV, not a full Rb87 gas or a phase-transition calculation.</p>
-    <p className="scope-note">A verified scene and Math3D handoff are the next milestone. This panel does not promote the Atlas entry to a tested binding.</p>
+    <p className="scope-note">Saved eigenstates can be inspected as verified two-site scenes. This panel does not promote the Atlas entry to a tested binding.</p>
     <div className="dynamics-actions">
       <label>Particles N <input aria-label="Dimer particles N" type="number" min="2" max="8" step="1" value={particles} onChange={event=>setParticles(event.target.value)}/></label>
       <label>U/J <input aria-label="Dimer interaction U over J" type="number" min="0" max="20" step="0.1" value={interaction} onChange={event=>setInteraction(event.target.value)}/></label>
@@ -63,7 +63,8 @@ export function BoseHubbardLab({ ready }: { ready: boolean }) {
       <p><strong>Selected eigenstate {state.index}:</strong> E = {result.spectrum.energies[stateIndex].toFixed(6)} J; gap E₁−E₀ = {result.spectrum.gap.toFixed(6)} J.</p>
       <p>Site occupations: {state.occupation.map(value=>value.toFixed(6)).join(" / ")} {result.units.occupation}; number variance: {state.numberVariance.map(value=>value.toFixed(6)).join(" / ")} {result.units.numberVariance}.</p>
       <p>⟨b†₁b₂⟩ = {state.oneBodyCoherence.toFixed(6)} {result.units.oneBodyCoherence}. Basis amplitudes: {state.amplitudes.map(value=>value.toFixed(5)).join(", ")}.</p>
-      <p className="scope-note">Values come from the saved eigenvector. A changed source is refused on reopen. A verified scene and Math3D handoff are the next milestone.</p>
+      <button type="button" data-testid="view-bose-hubbard-scene" disabled={!pinned||busy} onClick={()=>onViewScene?.(result.runId,stateIndex)}>View selected state in Scenes ↗</button>
+      <p className="scope-note">Values come from the saved eigenvector. A changed source is refused on reopen; the scene uses schematic site positions.</p>
     </div>}
     <h4>Saved dimer runs</h4>
     {saved.length===0?<p>No saved dimer runs yet.</p>:<div className="dynamics-actions">{saved.map(item=><button key={item.runId} type="button" disabled={busy} onClick={()=>void open(item.runId)}>

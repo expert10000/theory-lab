@@ -12,7 +12,8 @@ export type SceneSample=
   | {kind:"ising_site";index:number}
   | {kind:"orbital_voxel";x:number;y:number;z:number}
   | {kind:"unmapped";description:string};
-export interface SceneLaunch {nonce:number;runId:string;view:SceneView;sample?:SceneSample|null}
+export interface SceneLaunch {nonce:number;runId:string;view:SceneView;sample?:SceneSample|null;
+  source?:"bose_hubbard";stateIndex?:number}
 export type SceneFocus={kind:"object";objectId:string;index:number}|{kind:"voxel";grid:[number,number,number]};
 
 /** UI capability only; main still verifies the saved result and generated scene. */
