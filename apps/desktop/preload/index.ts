@@ -1,10 +1,13 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { QuantumBridge } from "../../../packages/contracts";
 import type { BoseHubbardBridge } from "../../../packages/contracts/bose-hubbard";
-const bridge: QuantumBridge & BoseHubbardBridge = {
+import type { CompanionBridge } from "../../../packages/contracts/companion";
+const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge = {
   runBoseHubbard: job => ipcRenderer.invoke("quantum:bose-hubbard-run", job),
   listBoseHubbardRuns: () => ipcRenderer.invoke("quantum:list-bose-hubbard-runs"),
   getBoseHubbardRun: runId => ipcRenderer.invoke("quantum:get-bose-hubbard-run", runId),
+  listCompanionChapters: () => ipcRenderer.invoke("quantum:list-companion-chapters"),
+  openCompanionChapter: id => ipcRenderer.invoke("quantum:open-companion-chapter", id),
   getBoseHubbardScene: (runId, stateIndex) => ipcRenderer.invoke("quantum:bose-hubbard-scene", runId, stateIndex),
   exportBoseHubbardScene: (runId, stateIndex, expectedResultHash) => ipcRenderer.invoke("quantum:export-bose-hubbard-scene", runId, stateIndex, expectedResultHash),
   openBoseHubbardInMath3D: (runId, stateIndex, expectedResultHash) => ipcRenderer.invoke("quantum:open-bose-hubbard-in-math3d", runId, stateIndex, expectedResultHash),

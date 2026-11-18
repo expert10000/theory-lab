@@ -29,6 +29,7 @@ import { IsingStateStore } from "./ising-state";
 import {IsingQuenchStore} from "./ising-quench";
 import { QecRepetitionRunStore } from "./qec-repetition-runs";
 import { BoseHubbardRunStore } from "./bose-hubbard-runs";
+import { listCompanionChapters, verifiedCompanionPath } from "./companion";
 import { assertBoseHubbardJob, isBoseHubbardResult } from "../../../packages/contracts/bose-hubbard";
 import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
@@ -46,6 +47,8 @@ import { assertJob, assertWorkspaceSnapshot, isQuantumResult,
   type RunExportFormat, type WorkspaceSnapshot } from "../../../packages/contracts";
 
 const worker = new WorkerSupervisor(app.isPackaged ? process.resourcesPath : join(__dirname, ".."));
+const companionRoot = app.isPackaged ? join(process.resourcesPath, "rb87-companion", "Chapters") :
+  join(__dirname, "..", "docs", "source-material", "rb87-companion", "Chapters");
 const sceneStreams=new Map<string,Awaited<ReturnType<typeof openStreamBundle>>>();
 let integrationBus: Awaited<ReturnType<typeof startLocalIntegrationBus>> | null = null;
 function trusted(event: IpcMainInvokeEvent) {
@@ -121,6 +124,16 @@ app.whenReady().then(() => {
     trusted(event);
     if (typeof runId !== "string") throw new Error("Invalid dimer run ID");
     return boseHubbardRuns.get(runId);
+  });
+  ipcMain.handle("quantum:list-companion-chapters", event => {
+    trusted(event); return listCompanionChapters(companionRoot);
+  });
+  ipcMain.handle("quantum:open-companion-chapter", async (event, id: unknown) => {
+    trusted(event);
+    if (typeof id !== "string") throw new Error("Invalid Companion chapter ID");
+    const path = await verifiedCompanionPath(companionRoot,id);
+    const error = await shell.openPath(path);
+    if (error) throw new Error(`Could not open Companion chapter: ${error}`);
   });
   const checkedDimerScene = async (runId: unknown, stateIndex: unknown, expectedHash?: unknown) => {
     if (typeof runId !== "string" || !Number.isInteger(stateIndex) ||

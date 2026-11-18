@@ -41,8 +41,8 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 ## Decision 2: chapter library supports the system (RbC-2)
 
 1. Add a curated chapter catalog with stable IDs `rb87-i`…`rb87-vii`, title, PDF filename, and expected SHA-256. Check it against the unchanged source files during build.
-2. Package seven PDFs and the manifest as desktop resources outside `app.asar`. Development and installer paths are allowlisted by main. Expose only `listCompanionChapters()` and `openCompanionChapter(id)` through the typed preload bridge; main verifies the hash before opening the system PDF viewer.
-3. Put the Companion index beside existing Library entries and link the dimer Theory/Study to Chapters III–IV. Existing hydrogenic, Ising, and Lindblad links must say `related theory`, `analogy`, or `not implemented`, as appropriate. Preserve the active model, draft, run, and scene when opening and closing the reader.
+2. The seven PDFs and manifest are configured as desktop resources outside `app.asar`. Development and installer paths are fixed by main. `listCompanionChapters()` and `openCompanionChapter(id)` use a typed preload bridge; main verifies the exact hash before opening the system PDF viewer. Build-time catalog/source verification and local missing/changed-source tests pass. Installed qualification remains pending.
+3. The dimer guide and seven-chapter index are available in Atlas, with Chapters III–IV linked by section. Next, put the Companion index beside existing Library entries and add links to other labs labelled `related theory`, `analogy`, or `not implemented`. Preserve the active model, draft, run, and scene when opening and closing the reader.
 
 **Acceptance:** seven PDFs open after packaging and restart; changed/missing assets are withheld; invalid IDs and paths are rejected; keyboard focus returns to the invoking card. The reader adds no new worker operation or scientific claim.
 

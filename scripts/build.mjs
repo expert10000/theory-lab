@@ -1,5 +1,6 @@
 import { build } from "esbuild";
 import { mkdir, copyFile } from "node:fs/promises";
+await import("./verify-companion.mjs");
 await mkdir("dist", { recursive: true });
 await mkdir("dist/web", { recursive: true });
 await Promise.all([

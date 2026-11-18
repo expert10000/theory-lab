@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { BoseHubbardResult, BoseHubbardRunSummary } from "../../../packages/contracts/bose-hubbard";
 import { boseHubbardJob } from "../../../packages/models/bose-hubbard";
+import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
 
 /** Bounded experimental pane; the Atlas entry remains reference-only. */
 export function BoseHubbardLab({ ready, onViewScene }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void }) {
@@ -49,6 +50,7 @@ export function BoseHubbardLab({ ready, onViewScene }: { ready: boolean; onViewS
     <h4>Compute a finite Bose–Hubbard system</h4>
     <p>H/J = −(b†₁b₂ + b†₂b₁) + (U/2J) Σᵢ nᵢ(nᵢ−1). Fixed N, open bond, J=1, basis |n,N−n⟩. The chemical-potential term is constant in this fixed-N sector and is omitted. This is a generic boson dimer motivated by Chapters III–IV, not a full Rb87 gas or a phase-transition calculation.</p>
     <p className="scope-note">Saved eigenstates can be inspected as verified two-site scenes. This panel does not promote the Atlas entry to a tested binding.</p>
+    <button type="button" onClick={()=>document.getElementById("bose-hubbard-theory")?.scrollIntoView({behavior:"smooth"})}>Read dimer theory and Companion chapters ↓</button>
     <div className="dynamics-actions">
       <label>Particles N <input aria-label="Dimer particles N" type="number" min="2" max="8" step="1" value={particles} onChange={event=>setParticles(event.target.value)}/></label>
       <label>U/J <input aria-label="Dimer interaction U over J" type="number" min="0" max="20" step="0.1" value={interaction} onChange={event=>setInteraction(event.target.value)}/></label>
@@ -70,5 +72,6 @@ export function BoseHubbardLab({ ready, onViewScene }: { ready: boolean; onViewS
     {saved.length===0?<p>No saved dimer runs yet.</p>:<div className="dynamics-actions">{saved.map(item=><button key={item.runId} type="button" disabled={busy} onClick={()=>void open(item.runId)}>
       Open N={item.particles}, U/J={item.interactionRatio} · {item.computedAt}
     </button>)}</div>}
+    <BoseHubbardCompanion />
   </section>;
 }

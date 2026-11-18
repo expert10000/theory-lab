@@ -99,7 +99,8 @@ import {
 } from "../../../packages/models";
 declare global {
   interface Window {
-    quantum: QuantumBridge & import("../../../packages/contracts/bose-hubbard").BoseHubbardBridge;
+    quantum: QuantumBridge & import("../../../packages/contracts/bose-hubbard").BoseHubbardBridge &
+      import("../../../packages/contracts/companion").CompanionBridge;
   }
 }
 type EngineMode = EngineName | "compare";

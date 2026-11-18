@@ -44,7 +44,7 @@ export function AtlasPanel({ openLab,onRun,onSweep,onViewBoseHubbardScene,runRea
             {actions.sweep&&<p className="scope-note">Sweep opens editable Lab study inputs. Point runs are ordinary Lab runs; they do not acquire canonical Atlas provenance.</p>}
             {message?.id===selectedId&&<p role="status" data-testid="atlas-action-message">{message.text}</p>}
           </div> : selected.id==="bose_hubbard"
-            ? <p className="scope-note">The finite dimer above is an experimental subset. Its saved scene is available; the Atlas entry remains reference-only until its Theory and installed handoff gates pass.</p>
+            ? <p className="scope-note">The finite dimer above is an experimental subset with a Theory guide and saved scene. The Atlas entry remains reference-only until its formal binding and installed handoff gates pass.</p>
             : <p className="scope-note">No tested Theory Lab binding for this entry yet. This entry has no Load, Run or Sweep action.</p>}
         </article>}</div>
     </section>

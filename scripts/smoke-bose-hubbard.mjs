@@ -16,6 +16,13 @@ async function openDimer() {
   await page.getByLabel("Search Atlas").fill("bose_hubbard");
   await page.getByRole("button", { name: /Bose-Hubbard model/ }).click();
   await page.getByTestId("bose-hubbard-lab").waitFor();
+  await page.getByTestId("bose-hubbard-theory").waitFor();
+  await page.getByTestId("open-companion-rb87-iii").waitFor();
+  assert.equal(await page.getByTestId("open-companion-rb87-iii").isEnabled(),true);
+  const chapters = await page.evaluate(() => window.quantum.listCompanionChapters());
+  assert.equal(chapters.length,7);
+  assert.equal(chapters.every(row=>row.available),true);
+  await assert.rejects(page.evaluate(() => window.quantum.openCompanionChapter("../../missing")),/Unknown Companion chapter/);
   return page;
 }
 try {

@@ -14,6 +14,8 @@ module.exports = {
     { from: "packages/contracts/schemas", to: "packages/contracts/schemas" },
     { from: "packages/quantum-scene/quantum-scene.v1.json", to: "packages/quantum-scene/quantum-scene.v1.json" },
     { from: "packages/quantum-scene/quantum-scene.v2.json", to: "packages/quantum-scene/quantum-scene.v2.json" },
+    { from: "docs/source-material/rb87-companion/Chapters", to: "rb87-companion/Chapters" },
+    { from: "docs/source-material/rb87-companion/SHA256_MANIFEST.txt", to: "rb87-companion/SHA256_MANIFEST.txt" },
   ],
   win: { target: "nsis" },
   nsis: { oneClick: false, perMachine: false, allowToChangeInstallationDirectory: true },
