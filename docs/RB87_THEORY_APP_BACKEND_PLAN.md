@@ -42,7 +42,7 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 
 1. Add a curated chapter catalog with stable IDs `rb87-i`…`rb87-vii`, title, PDF filename, and expected SHA-256. Check it against the unchanged source files during build.
 2. The seven PDFs and manifest are configured as desktop resources outside `app.asar`. Development and installer paths are fixed by main. `listCompanionChapters()` and `openCompanionChapter(id)` use a typed preload bridge; main verifies the exact hash before opening a sandboxed Lab PDF window. Build-time catalog/source verification, local missing/changed-source tests, and a desktop reader smoke pass. Installed open/restart and changed-source refusal passed in the isolated Lab candidate; see [installed acceptance](RB87_INSTALL_QUALIFICATION.md).
-3. The dimer guide and seven-chapter index are available in Atlas, with Chapters III–IV linked by section. Next, put the Companion index beside existing Library entries and add links to other labs labelled `related theory`, `analogy`, or `not implemented`. Preserve the active model, draft, run, and scene when opening and closing the reader.
+3. The Rb87 Companion Library page presents the implemented two-site Hamiltonian, units, saved observables, and limits, with direct routes to the runnable Atlas dimer and saved Runs. It reuses the Atlas dimer guide and seven-chapter index, with Chapters III–IV linked by section. Next, add links to other labs labelled `related theory`, `analogy`, or `not implemented`. Preserve the active model, draft, run, and scene when opening and closing the reader.
 
 **Acceptance:** seven PDFs open after packaging and restart; changed/missing assets are withheld; invalid IDs and paths are rejected; keyboard focus returns to the invoking card. The reader adds no new worker operation or scientific claim.
 
@@ -63,7 +63,7 @@ Split synthetic parity/number readout, correlation and entanglement, and lattice
 | RbC-1A | Separate dimer contract, worker RPC, independent engine (core implemented) | Matrix, limits, parity, and schema tests pass; desktop capability gate and UI remain RbC-1B. |
 | RbC-1B | Atlas model brief, experimental dimer pane, exact saved runs, and main Runs route implemented; a broader dedicated Theory page remains future work | Desktop smoke reopens from Runs after restart, opens the same result in Atlas and Scenes, and withholds a changed source. Keep reference-only Atlas status. |
 | RbC-1C | Result-backed dimer scene and Math3D handoff | Hash/units, selection, round trip, and installed two-app checks. |
-| RbC-2 | Packaged PDFs, restricted IPC, contextual theory links | Seven chapters open after restart; missing/changed source refused. |
+| RbC-2 | Library page for the working dimer, contextual Chapter III–IV links, packaged PDFs, restricted IPC | Library → Atlas → Runs navigation and seven chapters work after restart; missing/changed source refused. Broader reviewed reading paths remain future work. |
 | RbC-3 | Reviewed reading paths and separately bounded chain/quench | Editorial review plus per-model physics, saved-run, and scene gates. |
 | RbC-4 | Separately specified measurement/open-system jobs | Per-model scientific and installed gates. |
 

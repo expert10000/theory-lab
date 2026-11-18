@@ -1698,6 +1698,18 @@ h1 {
 .atlas-relations { display: flex; gap: 8px; flex-wrap: wrap; }
 .atlas-relations button { background: #1b3938; border: 1px solid #315f59; border-radius: 5px; padding: 7px 10px; color: #9fe7d5; cursor: pointer; }
 .atlas-binding { margin-top: 22px; padding: 16px; border: 1px solid #3c7268; background: #142c2c; border-radius: 6px; }
+.companion-page { display: grid; gap: 18px; max-width: 1120px; }
+.companion-page > .panel { padding: 24px; }
+.companion-page .companion-hero h2 { margin: 7px 0 12px; font-size: clamp(26px, 3vw, 36px); }
+.companion-page .companion-hero p { max-width: 780px; line-height: 1.6; }
+.companion-model h3 { margin: 6px 0 15px; font-size: 23px; }
+.companion-model > p { line-height: 1.6; }
+.companion-model-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16px; margin-top: 18px; }
+.companion-model-grid > div { border: 1px solid #31504d; border-radius: 6px; background: #102728; padding: 14px 17px; }
+.companion-model-grid h4 { margin: 0 0 8px; color: #a6d8ce; }
+.companion-model-grid p { margin: 0; line-height: 1.55; }
+.companion-page > .atlas-binding { margin-top: 0; padding: 20px 24px; }
+@media (max-width: 760px) { .companion-model-grid { grid-template-columns: 1fr; } }
 .topology-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
 .topology-density { display: flex; align-items: end; gap: 2px; height: 190px; border-bottom: 1px solid #6c8d95; padding: 0 12px; }
 .topology-density button { flex: 1; min-width: 2px; max-height: 180px; background: #79d9c1; border: 0; padding: 0; cursor: pointer; }

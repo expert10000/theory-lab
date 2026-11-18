@@ -4,7 +4,7 @@ import { boseHubbardJob } from "../../../packages/models/bose-hubbard";
 import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
 
 /** Bounded experimental pane; the Atlas entry remains reference-only. */
-export function BoseHubbardLab({ ready, onViewScene, preferredRun }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void; preferredRun?: {runId?: string; nonce: number} | null }) {
+export function BoseHubbardLab({ ready, onViewScene, onOpenCompanion, preferredRun }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void; onOpenCompanion?:()=>void; preferredRun?: {runId?: string; nonce: number} | null }) {
   const [particles, setParticles] = useState("2");
   const [interaction, setInteraction] = useState("2");
   const [saved, setSaved] = useState<BoseHubbardRunSummary[]>([]);
@@ -53,7 +53,8 @@ export function BoseHubbardLab({ ready, onViewScene, preferredRun }: { ready: bo
     <h4>Compute a finite Bose–Hubbard system</h4>
     <p>H/J = −(b†₁b₂ + b†₂b₁) + (U/2J) Σᵢ nᵢ(nᵢ−1). Fixed N, open bond, J=1, basis |n,N−n⟩. The chemical-potential term is constant in this fixed-N sector and is omitted. This is a generic boson dimer motivated by Chapters III–IV, not a full Rb87 gas or a phase-transition calculation.</p>
     <p className="scope-note">Saved eigenstates can be inspected as verified two-site scenes. This panel does not promote the Atlas entry to a tested binding.</p>
-    <button type="button" onClick={()=>document.getElementById("bose-hubbard-theory")?.scrollIntoView({behavior:"smooth"})}>Read dimer theory and Companion chapters ↓</button>
+    <div className="dynamics-actions"><button type="button" onClick={()=>document.getElementById("bose-hubbard-theory")?.scrollIntoView({behavior:"smooth"})}>Read dimer theory and Companion chapters ↓</button>
+      {onOpenCompanion&&<button type="button" data-testid="dimer-open-companion" onClick={onOpenCompanion}>Open Companion in Library ↗</button>}</div>
     <div className="dynamics-actions">
       <label>Particles N <input aria-label="Dimer particles N" type="number" min="2" max="8" step="1" value={particles} onChange={event=>setParticles(event.target.value)}/></label>
       <label>U/J <input aria-label="Dimer interaction U over J" type="number" min="0" max="20" step="0.1" value={interaction} onChange={event=>setInteraction(event.target.value)}/></label>

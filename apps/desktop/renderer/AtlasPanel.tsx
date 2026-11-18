@@ -7,8 +7,8 @@ import { QecSyndromeViewer } from "./QecSyndromeViewer";
 import { BoseHubbardLab } from "./BoseHubbardLab";
 import { AtlasFormula } from "./AtlasFormula";
 
-export function AtlasPanel({ openLab,onRun,onSweep,onViewBoseHubbardScene,runReady=false,availableOperations=[],running=false,message,focus }:
-  {openLab?:(id:string)=>void;onRun?:(id:string)=>void;onSweep?:(id:string)=>void;onViewBoseHubbardScene?:(runId:string,stateIndex:number)=>void;
+export function AtlasPanel({ openLab,onRun,onSweep,onViewBoseHubbardScene,onOpenCompanion,runReady=false,availableOperations=[],running=false,message,focus }:
+  {openLab?:(id:string)=>void;onRun?:(id:string)=>void;onSweep?:(id:string)=>void;onViewBoseHubbardScene?:(runId:string,stateIndex:number)=>void;onOpenCompanion?:()=>void;
     runReady?:boolean;availableOperations?:readonly string[];running?:boolean;message?:{id:string;text:string}|null;focus?:{id:string;nonce:number;open?:boolean;runId?:string}|null}) {
   const [query, setQuery] = useState("");
   const [family, setFamily] = useState("all");
@@ -40,7 +40,7 @@ export function AtlasPanel({ openLab,onRun,onSweep,onViewBoseHubbardScene,runRea
           {selected.relations.length > 0 && <><h4>Related entries</h4><div className="atlas-relations">{selected.relations.map((relation, index) => <button key={index} onClick={() => { setSelectedId(relation.target); setOpenedId(null); setFamily("all"); setQuery(""); }}>{relation.target} ↗</button>)}</div></>}
           <p><button className="text-button" data-testid="atlas-theory-reference" onClick={() => void window.quantum.openAtlasSource(selected.id)}>Open theory reference ↗</button> <small>({atlasUrl(selected)})</small></p>
           <AtlasCapabilities id={selected.id}/>
-          {selected.id==="bose_hubbard"&&<BoseHubbardLab ready={runReady} onViewScene={onViewBoseHubbardScene} preferredRun={focus?.id==="bose_hubbard"?focus:null}/>}
+          {selected.id==="bose_hubbard"&&<BoseHubbardLab ready={runReady} onViewScene={onViewBoseHubbardScene} onOpenCompanion={onOpenCompanion} preferredRun={focus?.id==="bose_hubbard"?focus:null}/>}
           {binding ? <div className="atlas-binding"><p className="eyebrow">THEORY LAB BINDING / TESTED SUBSPACE</p><p>{binding.convention}</p>
             <div className="dynamics-actions"><button className="run-button" data-testid="open-atlas-binding" onClick={() => openLab?.(selectedId)}>Open in {binding.modelId.replaceAll("_", " ")} lab ↗</button>
               {actions.run&&<button type="button" data-testid="run-atlas-canonical" disabled={!canRun||running} onClick={()=>onRun?.(selectedId)}>{running?"Running…":"Run canonical example"}</button>}

@@ -7,6 +7,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { listCompanionChapters, verifiedCompanionPath } from "../apps/desktop/main/companion";
 import { BoseHubbardCompanion } from "../apps/desktop/renderer/BoseHubbardCompanion";
+import { Rb87CompanionPage } from "../apps/desktop/renderer/Rb87CompanionPage";
 
 const source = join(process.cwd(),"docs","source-material","rb87-companion","Chapters");
 
@@ -36,6 +37,20 @@ test("dimer guide separates implemented two-site values from wider Companion top
   assert.match(markup,/FINITE DIMER \/ THEORY GUIDE/);
   assert.match(markup,/fixed particle number 2 ≤ N ≤ 8/);
   assert.match(markup,/chemical-potential term shifts every state equally/);
+  assert.match(markup,/not a thermodynamic superfluid–Mott transition/);
+  assert.match(markup,/Chapter III/);
+  assert.match(markup,/Chapter IV/);
+});
+
+test("Library page explains the executable dimer and links its checked sources", () => {
+  const markup=renderToStaticMarkup(React.createElement(Rb87CompanionPage,{
+    onOpenDimer:()=>{},onOpenRuns:()=>{},
+  }));
+  assert.match(markup,/LIBRARY \/ RB87 QUANTUM COMPANION/);
+  assert.match(markup,/Open runnable dimer in Atlas/);
+  assert.match(markup,/View saved dimer runs/);
+  assert.match(markup,/<math /);
+  assert.match(markup,/one open bond/);
   assert.match(markup,/not a thermodynamic superfluid–Mott transition/);
   assert.match(markup,/Chapter III/);
   assert.match(markup,/Chapter IV/);

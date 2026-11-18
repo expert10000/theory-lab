@@ -68,6 +68,7 @@ import {availableSceneViews,sceneSampleForSelection,type SceneLaunch,type SceneS
 import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/cavity";
 import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
+import { Rb87CompanionPage } from "./Rb87CompanionPage";
 import { TopologyLab } from "./TopologyLab";
 import type {TopologyRunContext} from "./topology-selection";
 import {TopologyRunInspector} from "./TopologyRunInspector";
@@ -593,7 +594,7 @@ export function App() {
     return () => { active = false; };
   }, []);
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
-    presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],
+    presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],companion:["LIBRARY","RB87 COMPANION"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
   };
   const utility=utilityLocation[tab];
@@ -648,7 +649,7 @@ export function App() {
           <span className="version">V0.1+ · QVIS-023 Lab</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
-          {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
+          {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "companion" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -663,12 +664,13 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "theory" || tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "ising_quench" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="ising_quench"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""} ${tab==="scenes"?"scene-workspace-layout":""}`}>
+      <div className={`layout ${tab === "theory" || tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "ising_quench" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "companion" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="ising_quench"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""} ${tab==="scenes"?"scene-workspace-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
               <button className="utility-link" onClick={() => setTab("presets")}>Volume VIII presets</button>
               <button className="utility-link" data-testid="open-atlas" onClick={() => setTab("atlas")}>Hamiltonian Atlas</button>
+              <button className="utility-link" data-testid="open-rb87-companion" onClick={() => setTab("companion")}>Rb87 Companion</button>
             </div>
             <div><p className="eyebrow">SYSTEM</p>
               <button className="utility-link" onClick={() => setTab("roadmap")}>Roadmap</button>
@@ -721,6 +723,7 @@ export function App() {
                 {tab==="theory"?"MODEL GUIDE / SELECTED SYSTEM":tab==="ising_quench"?"ISING QUENCH / QVIS-020":tab==="hamiltonian"&&activeModel!=="two_level"?"SAVED RUN ANALYSIS / QLAB-UI-6":tab === "oscillator" ? "STATIONARY / DRIVEN / OPEN OSCILLATOR · D1" : tab === "orbital" ? "ATOMIC ORBITALS / QVIS-004" : tab === "scenes" ? "PORTABLE VISUALIZATION / QVIS-001–004" : tab === "backend"
                   ? "ARCHITECTURE / 008–009"
                   : tab === "atlas" ? "PINNED THEORY REFERENCE / 025"
+                  : tab === "companion" ? "FINITE BOSON DIMER / RB87 COMPANION"
                   : tab === "dynamics"
                     ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : evolutionModel === "stuckelberg" ? "004" : "005"}`
                     : tab === "cavity"
@@ -744,6 +747,7 @@ export function App() {
                 {tab==="theory"?`Understanding ${modelLabel(activeModel)}.`:tab==="ising_quench"?"A finite chain in motion.":tab==="hamiltonian"&&activeModel!=="two_level"?"Compare what was actually saved.":tab === "oscillator" ? "A ladder meets a wavefunction." : tab === "orbital" ? "A wavefunction takes shape." : tab === "scenes" ? "A result becomes a scene." : tab === "backend"
                   ? "Under the hood."
                   : tab === "atlas" ? "The map of Hamiltonians."
+                  : tab === "companion" ? "A working lattice model, with its sources."
                   : tab === "dynamics"
                     ? "A system in motion."
                     : tab === "cavity"
@@ -767,6 +771,7 @@ export function App() {
                 {tab==="theory"?"Understand the Hamiltonian, basis, parameters, observables and limits of the selected system.":tab==="ising_quench"?"Evolve a verified finite-chain ground state after a bounded transverse-field change.":tab==="hamiltonian"&&activeModel!=="two_level"?"Inspect immutable A/B inputs, provenance and only aligned recorded observables.":tab === "oscillator" ? "Explore stationary, free and driven Fock/coherent states, Gaussian pulses and bounded thermal relaxation with verified density matrices." : tab === "orbital" ? "Explore normalized hydrogenic s, p and d states with explicit units and basis conventions." : tab === "scenes" ? "Inspect verified numerical data and export application-independent scene bundles." : tab === "backend"
                   ? "Independent numerical engines behind versioned, verified results."
                   : tab === "atlas" ? "Browse source-pinned definitions and explicit laboratory bindings."
+                  : tab === "companion" ? "Read the implemented two-site model, then run it in Atlas and inspect its saved evidence."
                   : tab === "dynamics"
                     ? MODEL_REGISTRY[evolutionModel].description
                     : tab === "cavity"
@@ -793,7 +798,7 @@ export function App() {
               {sceneResult&&sceneViews?.bands&&<button type="button" data-testid="view-bands-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"bands",sceneSample)}>View bands in Scenes</button>}
               {sceneResult&&sceneViews?.invariant&&<button type="button" data-testid="view-kitaev-invariant-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"invariant")}>View bulk invariant in Scenes</button>}
               {sceneResult&&sceneViews?.strip&&<button type="button" data-testid="view-hofstadter-strip-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"strip")}>View finite strip in Scenes</button>}
-              <span className="pill">{tab==="theory"?"MODEL REFERENCE · NO COMPUTE":tab==="ising_quench"?"2–8 SPINS · ℏ=1":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+              <span className="pill">{tab==="theory"?"MODEL REFERENCE · NO COMPUTE":tab==="ising_quench"?"2–8 SPINS · ℏ=1":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "companion" ? "TWO SITES · FIXED N · J=1" : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
             </div>
           </div>
           <div className="tabs workspace-modes" role="tablist" aria-label={`Workspace modes for ${modelLabel(activeModel)}`}>
@@ -843,7 +848,7 @@ export function App() {
           <div hidden={tab !== "orbital"}><OrbitalLab bridge={window.quantum} status={status} restored={restored?.snapshot.orbital} restoreEpoch={restored?.epoch} onSnapshot={collectOrbital} onOrbitalContext={collectOrbitalContext} reopenedRun={reopenedOrbital}/></div>
           <div hidden={tab !== "circuit"}><CircuitLab bridge={window.quantum} status={status} restored={restored?.snapshot.circuit} restoreEpoch={restored?.epoch} onSnapshot={collectCircuit} onCircuitContext={collectCircuitContext} reopenedCircuit={reopenedCircuit} /></div>
           <div hidden={tab !== "oscillator"}><OscillatorLab bridge={window.quantum} status={status} restored={restored?.snapshot.oscillator} restoreEpoch={restored?.epoch} atlasDraft={atlasOscillator?.draft} atlasEpoch={atlasOscillator?.epoch} onSnapshot={collectOscillator} restoredMotion={restored?.snapshot.oscillatorDynamics} onMotionSnapshot={collectOscillatorDynamics} restoredMode={restored?.snapshot.oscillatorMode} onModeSnapshot={collectOscillatorMode} restoredDriven={restored?.snapshot.oscillatorDriven} onDrivenSnapshot={collectOscillatorDriven} atlasDrivenDraft={atlasDriven?.draft} atlasDrivenEpoch={atlasDriven?.epoch} restoredPulse={restored?.snapshot.oscillatorPulse} onPulseSnapshot={collectOscillatorPulse} restoredDamped={restored?.snapshot.oscillatorDamped} onDampedSnapshot={collectOscillatorDamped} restoredParametric={restored?.snapshot.oscillatorParametric} onParametricSnapshot={collectOscillatorParametric} restoredAnharmonic={restored?.snapshot.oscillatorAnharmonic} onAnharmonicSnapshot={collectOscillatorAnharmonic} onOscillatorContext={collectOscillatorContext} reopenedRun={reopenedOscillator}/></div>
-          {tab === "theory" ? <TheoryPanel model={activeModel} /> : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} onOpenDimer={openDimerLab} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} onRun={id=>void runCanonicalAtlas(id)} onSweep={sweepAtlasParameter} onViewBoseHubbardScene={viewBoseHubbardScene} runReady={status.state==="READY"&&!!status.capabilities?.engines.native.available} availableOperations={status.capabilities?.operations} running={atlasRunning} message={atlasMessage} focus={atlasFocus} /> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onViewDimerScene={viewBoseHubbardScene} onOpenDimer={openSavedDimerInAtlas} onFigure={setFigureRunId} onOpenAtlas={openAtlasOrigin} /> : tab === "backend" ? (
+          {tab === "theory" ? <TheoryPanel model={activeModel} /> : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} onOpenDimer={openDimerLab} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} onRun={id=>void runCanonicalAtlas(id)} onSweep={sweepAtlasParameter} onViewBoseHubbardScene={viewBoseHubbardScene} onOpenCompanion={()=>setTab("companion")} runReady={status.state==="READY"&&!!status.capabilities?.engines.native.available} availableOperations={status.capabilities?.operations} running={atlasRunning} message={atlasMessage} focus={atlasFocus} /> : tab === "companion" ? <Rb87CompanionPage onOpenDimer={openDimerLab} onOpenRuns={()=>setTab("runs")}/> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onViewDimerScene={viewBoseHubbardScene} onOpenDimer={openSavedDimerInAtlas} onFigure={setFigureRunId} onOpenAtlas={openAtlasOrigin} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
