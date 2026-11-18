@@ -14,7 +14,7 @@ Planning companion to the [feature roadmap](RB87_COMPANION_ROADMAP.md). The [sup
 
 ## Decision 1: one executable Atlas → Lab → saved run → scene path (RbC-1)
 
-The first product milestone is a working finite Bose–Hubbard dimer, not a PDF reader. Existing Atlas, job transport, Runs, and QVIS scene infrastructure reduce plumbing work, but the current `many_body` job is an Ising spin chain and `from-result.ts` has no Bose–Hubbard adapter. The canonical 68 Atlas definitions stay fixed; `bose_hubbard` remains reference-only until this entire path passes.
+The first product milestone is a working finite Bose–Hubbard dimer, not a PDF reader. Its separate worker RPC and experimental Atlas pane now compute and save verified finite results. Existing Atlas, job transport, Runs, and QVIS scene infrastructure reduce remaining plumbing work, but the current `many_body` job is an Ising spin chain and `from-result.ts` has no Bose–Hubbard adapter. The canonical 68 Atlas definitions stay fixed; `bose_hubbard` remains reference-only until this entire path passes.
 
 ### RbC-1A — Contract and independent physics engine
 
@@ -61,7 +61,7 @@ Split synthetic parity/number readout, correlation and entanglement, and lattice
 | Checkpoint | Reviewable result | Gate |
 | --- | --- | --- |
 | RbC-1A | Separate dimer contract, worker RPC, independent engine (core implemented) | Matrix, limits, parity, and schema tests pass; desktop capability gate and UI remain RbC-1B. |
-| RbC-1B | Atlas-launched Theory, Lab, selected state, saved run | Exact values reopen after restart; tamper/missing-state refusal. |
+| RbC-1B | Experimental Atlas pane and exact saved runs implemented; dedicated Theory page and main Runs route pending | Desktop smoke reopens after restart and withholds changed values; complete navigation and theory gate before promotion. |
 | RbC-1C | Result-backed dimer scene and Math3D handoff | Hash/units, selection, round trip, and installed two-app checks. |
 | RbC-2 | Packaged PDFs, restricted IPC, contextual theory links | Seven chapters open after restart; missing/changed source refused. |
 | RbC-3 | Reviewed reading paths and separately bounded chain/quench | Editorial review plus per-model physics, saved-run, and scene gates. |

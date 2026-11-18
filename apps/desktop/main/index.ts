@@ -28,6 +28,9 @@ import {RiceMeleConvergenceStudyStore} from "./rice-mele-convergence-studies";
 import { IsingStateStore } from "./ising-state";
 import {IsingQuenchStore} from "./ising-quench";
 import { QecRepetitionRunStore } from "./qec-repetition-runs";
+import { BoseHubbardRunStore } from "./bose-hubbard-runs";
+import { assertBoseHubbardJob, isBoseHubbardResult } from "../../../packages/contracts/bose-hubbard";
+import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
 import {verifyQecRepetitionStudy, type QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -95,6 +98,30 @@ app.whenReady().then(() => {
   const runs = new RunStore(join(app.getPath("userData"), "runs"), artifactDir,
     (saved, resultSha256) => integrationBus?.publishRun(saved.runId, resultSha256, saved.model), sharedStore);
   const qecRuns = new QecRepetitionRunStore(join(app.getPath("userData"), "qec-repetition-runs"));
+  const boseHubbardRuns = new BoseHubbardRunStore(join(app.getPath("userData"), "bose-hubbard-runs"));
+  ipcMain.handle("quantum:bose-hubbard-run", async (event, value: unknown) => {
+    trusted(event);
+    assertBoseHubbardJob(value);
+    if (worker.status.state !== "READY" || !worker.status.capabilities?.engines.native.available)
+      throw new Error("Native worker is not ready");
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const output = await worker.request("quantum.boseHubbard", value, 60000);
+      if (!isBoseHubbardResult(output) || !consistentBoseHubbardResult(value, output))
+        throw new Error("Worker returned an invalid Bose-Hubbard result");
+      await boseHubbardRuns.record(value, output);
+      return output;
+    } finally { running = false; }
+  });
+  ipcMain.handle("quantum:list-bose-hubbard-runs", event => {
+    trusted(event); return boseHubbardRuns.list();
+  });
+  ipcMain.handle("quantum:get-bose-hubbard-run", (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string") throw new Error("Invalid dimer run ID");
+    return boseHubbardRuns.get(runId);
+  });
   const phaseDiagrams = new QwzPhaseDiagramStore(join(app.getPath("userData"), "qwz-phase-diagrams"), runs);
   ipcMain.handle("quantum:build-qwz-phase-diagram", async event => { trusted(event); return phaseDiagrams.build(); });
   ipcMain.handle("quantum:get-qwz-phase-diagram", async (event, id: unknown) => {

@@ -25,6 +25,15 @@ export interface BoseHubbardResult {
   provenance: { pythonVersion: string; workerVersion: string;
     computedAt: string; durationMs: number };
 }
+export interface BoseHubbardRunSummary {
+  runId: string; computedAt: string; particles: number;
+  interactionRatio: number; resultSha256: string;
+}
+export interface BoseHubbardBridge {
+  runBoseHubbard(job: BoseHubbardJob): Promise<BoseHubbardResult>;
+  listBoseHubbardRuns(): Promise<BoseHubbardRunSummary[]>;
+  getBoseHubbardRun(runId: string): Promise<BoseHubbardResult>;
+}
 
 const ajv = new Ajv({ allErrors: true, strict: true });
 export const isBoseHubbardJob = ajv.compile<BoseHubbardJob>(jobSchema);

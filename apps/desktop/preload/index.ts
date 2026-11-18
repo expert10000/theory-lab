@@ -1,6 +1,10 @@
 import { contextBridge, ipcRenderer } from "electron";
 import type { QuantumBridge } from "../../../packages/contracts";
-const bridge: QuantumBridge = {
+import type { BoseHubbardBridge } from "../../../packages/contracts/bose-hubbard";
+const bridge: QuantumBridge & BoseHubbardBridge = {
+  runBoseHubbard: job => ipcRenderer.invoke("quantum:bose-hubbard-run", job),
+  listBoseHubbardRuns: () => ipcRenderer.invoke("quantum:list-bose-hubbard-runs"),
+  getBoseHubbardRun: runId => ipcRenderer.invoke("quantum:get-bose-hubbard-run", runId),
   qecRepetition: (flips) => ipcRenderer.invoke("quantum:qec-repetition", flips),
   listQecRepetitionRuns: () => ipcRenderer.invoke("quantum:list-qec-repetition-runs"),
   getQecRepetitionRun: (runId) => ipcRenderer.invoke("quantum:get-qec-repetition-run", runId),
