@@ -1,14 +1,14 @@
 # Rb87 Quantum Companion: Theory Lab integration roadmap
 
-Status: source intake complete; app integration planned. This is a feature track for Theory Lab. It does not change Math3D's 2.0 release gates or the QI-40 paired-app qualification.
+Status: source intake complete; executable app integration planned. This is a feature track for Theory Lab. It does not change Math3D's 2.0 release gates or the QI-40 paired-app qualification.
 
 The [Theory UI and backend delivery plan](RB87_THEORY_APP_BACKEND_PLAN.md) assigns each slice to the existing renderer, Electron main process, contracts, and Python worker.
 
 ## Source and current product boundary
 
-The user-supplied [seven-chapter companion](source-material/rb87-companion/README.md) is stored as unchanged PDF and TeX files with its SHA-256 manifest. The manifest verifies file identity, not scientific correctness or external references. Before publishing chapter text in the app, review attribution, dated experimental claims, equations, units, and bibliography against the supplied PDFs and independent sources. Preserve chapter and section locators in any UI citation.
+The user-supplied [seven-chapter companion](source-material/rb87-companion/README.md) is stored as unchanged PDF and TeX files with its SHA-256 manifest. The manifest verifies file identity, not scientific correctness or external references. Before publishing chapter text in the app, review attribution, dated experimental claims, equations, units, and bibliography against the supplied PDFs and independent sources. Preserve chapter and section locators in any UI citation. The PDFs support the working system; they are not the product's only view.
 
-Theory Lab already has a Theory tab, the 68-entry Hamiltonian Atlas, verified saved runs, hydrogenic single-electron orbitals, an Ising many-body lab, and Lindblad atom–cavity and damped-oscillator labs. Those are useful navigation anchors, but they do not compute Rb87 condensates, Bose–Hubbard bosons, fluorescence microscopy, or their measurements. The Atlas classifies `bose_hubbard` as reference-only with no Lab binding ([reconciliation](ATLAS_RECONCILIATION_R2_R5.md)). QVIS open lattice fixtures show geometry; they are not an interacting Bose gas.
+Theory Lab already has a Theory tab, the 68-entry Hamiltonian Atlas, verified saved runs, scene export and Math3D handoff, hydrogenic single-electron orbitals, an Ising many-body lab, and Lindblad atom–cavity and damped-oscillator labs. That is substantial infrastructure, but it does not compute Rb87 condensates, Bose–Hubbard bosons, fluorescence microscopy, or their measurements. The Atlas classifies `bose_hubbard` as reference-only with no Lab binding ([reconciliation](ATLAS_RECONCILIATION_R2_R5.md)). The current `many_body` engine is Ising spin-½. QVIS open lattice fixtures show geometry; they are not an interacting Bose gas. Keep the canonical 68-entry Atlas unchanged; use its existing `bose_hubbard` entry and add an executable binding only after acceptance.
 
 | Chapters | Possible existing anchor | Gap that must remain explicit |
 | --- | --- | --- |
@@ -25,24 +25,26 @@ Theory Lab already has a Theory tab, the 68-entry Hamiltonian Atlas, verified sa
 - Record file identity, page counts, chapter subjects, and the coverage map here.
 - Treat chapter prose and equations as reference material until editorial and scientific review; do not derive new model claims from the archive alone.
 
-### RbC-1 — Read-only companion in the desktop Theory area (first app slice)
+### RbC-1 — First working system: finite Bose–Hubbard dimer
 
-Add a **Rb87 Companion** library entry that opens a chapter index and launches each hash-checked packaged PDF in the system viewer. The index should show chapter title, source revision/hash, and a clear "reference material" label. A Theory-tab link may point to a chapter for the active model, but must explain the relationship: existing computation, analogy, or no corresponding Lab model. Begin with Chapter VII ↔ existing Lindblad Theory and Chapters III–IV ↔ reference-only `bose_hubbard`; those links test both a related model and a missing model. Keep the current Theory page and run selection intact when opening and closing the companion. Section indexing and exact section return belong to RbC-2 after page locators are reviewed.
+Build one complete path from the existing Atlas `bose_hubbard` reference to a bounded two-site, fixed-particle-number job, saved result, Theory guide, and verified scene. Define the hopping sign, interaction, particle-number basis, energy units, boundary, and solver limits in a versioned contract. Independently compare small-N matrices/eigenpairs. Save energies, occupations, number variance and one-body coherence only with the state evidence needed to support them. Show finite-size crossover without claiming a thermodynamic phase transition.
 
-Acceptance: all seven chapters open after desktop packaging and restart; a missing or changed asset is reported and withheld; chapter navigation restores the exact chapter; the system viewer provides zoom and PDF keyboard navigation; no PDF load is required for model computation. The reader must not label a saved atom–cavity Lindblad run as an Rb87 fluorescence result. This slice needs no new worker job, result schema, or Math3D bridge.
+The UI should let a reader choose N and U/J, run the job, inspect a selected eigenstate and its source-qualified values, save/reopen it, and open a two-site scene. Scene sites and bond are schematic; occupations or coherence use recorded values and explicit units. The scene must be derived from the verified result, export as `.qscene`, and reopen through the existing scene/Math3D path. Keep the Atlas entry reference-only until the whole route passes. Chapters III–IV supply linked theory, with the PDF available from the Study.
 
-### RbC-2 — Guided reading with source-qualified references
+Acceptance: independent physics checks, worker capability gate, schema and run integrity, restart, tamper refusal, scene round trip, exact source hashes and units, and an unpacked then installed two-app handoff. See the [layer-by-layer plan](RB87_THEORY_APP_BACKEND_PLAN.md).
 
-Add short, independently reviewed reading paths for atomic versus condensate degrees of freedom, lattice Hamiltonians, measurements versus inferred quantities, and open-system channels. Pin each note to chapter/section and file hash. Where an existing Lab result is linked, show its exact model, units, basis, and saved-run hash. A changed source or unavailable result withholds linked values. Validate the chapter II dated experiment discussion and provenance before surfacing it as factual guidance.
+### RbC-2 — Companion library and guided theory
 
-### RbC-3 — First new numerical model: finite Bose–Hubbard dimer
+Add a **Rb87 Companion** library entry with a chapter index and hash-checked packaged PDFs. Link the dimer Theory page to Chapters III–IV; links to other current labs must say whether they are a related model, analogy, or unimplemented system. Add reviewed reading paths for atomic versus condensate degrees of freedom, lattice Hamiltonians, measurements versus inferred quantities, and open-system channels. Pin notes to chapter/section and file hash; changed sources withhold linked values. Review dated Chapter II claims and provenance before surfacing them as factual guidance.
 
-Only after RbC-1/2 review, implement a bounded two-site, fixed-particle-number Bose–Hubbard job under the Atlas `bose_hubbard` entry. Define hopping sign, on-site interaction, particle-number basis, energy units, boundary condition, and truncation in a versioned contract. Independently compare exact matrices/eigenpairs for small N; save source-qualified energies, occupations, number variance, and one-body coherence. Show finite-size crossover without claiming a thermodynamic phase transition. Add a quench only after static results, persistence, and restart pass.
+### RbC-3 — Broaden the working lattice study
+
+After the dimer's saved-state and scene path passes, add a separately bounded static chain or quench, then bosonic correlation/entanglement observables with explicit sector and operator conventions. A time-dependent scene must use recorded time samples, never interpolated or inferred states without a declared method. Each extension receives a new validation and restart gate.
 
 ### RbC-4 — Measurement and open-system extensions
 
-Consider bosonic correlation/entanglement examples, parity versus number-resolved synthetic microscopy, and lattice dephasing/loss as separate bounded models. Specify the measured operators, detector imperfections, particle-number sectors, and jump channels before any visualization. Require independent numerical checks and explicit omissions for unrecorded observables. General BEC dynamics, experimental inference, and a Math3D scene bridge remain distinct future decisions.
+Consider parity versus number-resolved synthetic microscopy and lattice dephasing/loss as separate bounded models. Specify measured operators, detector imperfections, particle-number sectors, and jump channels before visualization. Require independent numerical checks and explicit omissions for unrecorded observables. General BEC dynamics, experimental inference, and an Rb87 fluorescence model remain distinct future decisions.
 
 ## Release discipline
 
-RbC-0 and RbC-1 are documentation/reader features. They add no installed QI-40 evidence and do not expand the current 2.0 claims. Each later compute slice must have its own contract, independent physics validation, saved-run integrity, restart test, and provenance review before Atlas binding or release advertising.
+RbC-0 is source intake. RbC-1 is a new numerical feature and cannot be advertised before its independent physics, saved-run, scene, installed-app, and provenance gates pass. None of these steps supplies QI-40 evidence or expands the current Math3D 2.0 claims.

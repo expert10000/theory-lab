@@ -2,7 +2,7 @@
 
 The user-supplied Rb87 Quantum Companion chapters I–VII are preserved as
 [source material](source-material/rb87-companion/README.md). Their proposed
-read-only Theory library and later bounded physics steps are tracked in the
+first working Atlas-to-scene Bose–Hubbard slice and supporting Theory library are tracked in the
 [Rb87 Companion roadmap](RB87_COMPANION_ROADMAP.md). This feature track is
 separate from QI-40 and Math3D 2.0 release qualification.
 

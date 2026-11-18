@@ -6,47 +6,51 @@ Planning companion to the [feature roadmap](RB87_COMPANION_ROADMAP.md). The [sup
 
 | Layer | Current route | Use for this feature |
 | --- | --- | --- |
-| Theory UI | `apps/desktop/renderer/TheoryPanel.tsx` renders the selected `WorkspaceModel`; `App.tsx` owns the Theory tab | Add a separate Companion library route and optional contextual chapter links without replacing the active model or run. |
-| Navigation | `ModelNavigator.tsx`, the Library area, and Atlas navigation are separate | Place Companion beside existing library entries; keep `bose_hubbard` reference-only until a new job passes acceptance. |
-| Desktop bridge | `packages/contracts/index.ts` `QuantumBridge`, `apps/desktop/preload/index.ts`, trusted `ipcMain` handlers | Expose only chapter IDs and structured status. Never accept a renderer file path or arbitrary URL. |
+| Theory UI | `apps/desktop/renderer/TheoryPanel.tsx` renders the selected `WorkspaceModel`; `App.tsx` owns the Theory tab | Add the working Bose–Hubbard model, Theory guide, result view, and Companion references while preserving active runs. |
+| Navigation | `ModelNavigator.tsx`, the Library area, and Atlas navigation are separate | Use the existing `bose_hubbard` Atlas entry; enable its Lab binding only after the full compute, persistence, and scene path passes. |
+| Desktop bridge | `packages/contracts/index.ts` `QuantumBridge`, `apps/desktop/preload/index.ts`, trusted `ipcMain` handlers | Add a typed Bose–Hubbard job plus later allowlisted chapter actions; never accept an arbitrary renderer file path or URL. |
 | Packaging | `scripts/build.mjs` builds the renderer; `electron-builder.config.cjs` lists packaged resources | Copy PDFs and a pinned metadata manifest to `extraResources`; system PDF viewers need real files outside `app.asar`. |
-| Compute and saved runs | `packages/contracts` job/result schemas, `quantum_worker/main.py`, engine modules, main-process job handlers and run store | Add a new, bounded Bose–Hubbard operation later. Reuse the protocol and saved-run lifecycle, not the Ising or cavity physics. |
+| Compute and saved runs | `packages/contracts` job/result schemas, `quantum_worker/main.py`, engine modules, main-process job handlers and run store | Add a distinct bounded Bose–Hubbard operation now. Reuse the protocol and saved-run lifecycle, not the Ising or cavity physics. |
 
-## Decision 1: read-only chapter library (RbC-1)
+## Decision 1: one executable Atlas → Lab → saved run → scene path (RbC-1)
 
-1. Add a curated chapter catalog with stable IDs `rb87-i`…`rb87-vii`, title, PDF filename, expected SHA-256 from the supplied manifest, and relationship labels. Generate or check the catalog against the unchanged source files during build.
-2. Package the seven PDFs and manifest as desktop resources. In development resolve the same allowlisted source directory; in the installer resolve the packaged resource directory. Record the resolved catalog version in the UI, not a user-controlled path.
-3. Add `listCompanionChapters()` and `openCompanionChapter(id)` to the typed preload bridge. Main validates the ID against the catalog, verifies the PDF hash before opening, and returns a structured `opened / missing / changed / viewer-error` status. Use Electron's system PDF open action on the verified file; do not navigate the renderer to a `file://` URL.
-4. Add a Library **Rb87 Companion** route with seven chapter cards, short subject summaries, a PDF action, and source status. Preserve the selected Lab model, draft and run when opening and closing it. Show a model link only with an explicit relationship label: `related theory`, `analogy`, or `not implemented`.
-5. Include a direct route from Lindblad Theory to Chapter VII and a reference-only route from the Atlas Bose–Hubbard entry to Chapters III–IV. The existing hydrogenic orbital route may link Chapter I only as a distinction between a one-electron orbital and an Rb87/BEC system.
+The first product milestone is a working finite Bose–Hubbard dimer, not a PDF reader. Existing Atlas, job transport, Runs, and QVIS scene infrastructure reduce plumbing work, but the current `many_body` job is an Ising spin chain and `from-result.ts` has no Bose–Hubbard adapter. The canonical 68 Atlas definitions stay fixed; `bose_hubbard` remains reference-only until this entire path passes.
 
-**Acceptance:** source/packaged hash parity; all seven PDFs open from an unpacked app and the exact installer after restart; tampering or removing one PDF blocks that chapter without blocking the Lab; invalid IDs and arbitrary paths are rejected; keyboard focus returns to the invoking chapter card; current saved run and draft survive reader navigation. No Python worker, numerical schema, or QI-40 claim changes in this slice.
+### RbC-1A — Contract and independent physics engine
 
-## Decision 2: reviewed reading paths (RbC-2)
+- Add a versioned job/result contract for an unbiased, two-site, fixed-N Bose–Hubbard dimer. Proposed first bounds: `2 ≤ N ≤ 8`, `J = 1` energy unit, `0 ≤ U/J ≤ 20`, open dimer, and basis `|n, N-n⟩`; confirm bounds during scientific review before freezing the schema.
+- State `H = -J(a†₁a₂ + a†₂a₁) + (U/2)∑ᵢ nᵢ(nᵢ-1)` and exact matrix/basis order. Persist inputs, engine, eigenvalue order, normalization, units, tolerances, and source hashes.
+- Add a distinct worker operation and capability in `packages/contracts`, `quantum_worker/main.py`, and a new engine module. Do not relabel or reuse Ising `many_body` results.
+- Check a hand-derived N=2 matrix, independent N=2/3 eigenpairs, Hermiticity, particle-number conservation, residuals, ground-state symmetry, and `U=0`/large-`U/J` limits. Use a genuinely separate numerical implementation for parity where available.
+- Store low eigenpairs or a verified state sidecar if occupation, number variance, and one-body coherence are shown. Missing state data means those values are omitted.
 
-1. Review chapter/section titles and PDF page locators by hand. Store a versioned section catalog with chapter hash and a short, authored synopsis; do not render raw TeX as trusted HTML.
-2. Add guided routes for internal versus center-of-mass degrees of freedom (I), coherence versus time-of-flight inference (II), optical lattice versus electronic crystal (III–IV), measured versus inferred correlation (V–VI), and jump/dephasing/loss channels (VII).
-3. A link to a saved Lab result records the result ID, result hash, model, basis, units, and chapter/section source hash. On reopen, check both sides. If either changed or is absent, show citation metadata and an omission instead of values.
-4. Independently review dated experimental statements and bibliographic references, especially Chapter II, before using them in UI copy. The guide may quote only short, attributed excerpts and should otherwise paraphrase reviewed content.
+### RbC-1B — Working Theory and result UI
 
-**Acceptance:** section links restore after restart; a changed PDF invalidates its section link; a changed run withholds numerical values; a reader can see why a link is an analogy rather than a simulation. No derived physical values are calculated from the chapter text.
+- Use the existing Atlas `bose_hubbard` entry to navigate to a new dimer Lab form once the engine is ready. Expose N and U/J, a bounded Run action, progress/cancel, and explicit engine availability.
+- Add a model-specific Theory page with the fixed-N basis, units, finite-size limit, and a Chapter III/IV reference. The selected eigenstate inspector shows only saved or verified derived values; draft edits never rewrite a saved run.
+- Add trusted main-process handling, exact result validation, run persistence, Runs reopening, report/export metadata, and restart/tamper refusal. Promote the Atlas entry to an executable binding only when the path is qualified.
 
-## Decision 3: bounded Bose–Hubbard compute path (RbC-3)
+### RbC-1C — Verified scene and handoff
 
-### Contract and engine first
+- Extend `packages/quantum-scene/from-result.ts` with a Bose–Hubbard dimer adapter gated on a verified saved result. Draw two schematic sites and a hopping bond; encode site occupation and, if stored, one-body coherence as separate labelled quantities. Never imply atom positions or a measured microscope image.
+- Carry basis, energy and site units, selected eigenstate index, result hash, and source run into the scene. Reuse Scenes, `.qscene` export, sample selection, and Math3D handoff without changing their contracts silently.
+- Test scene round trip, restart, tampered result refusal, unit labels, and an unpacked then installed two-app handoff. The scene is a view of recorded dimer data, not a new solver.
 
-- Add a versioned job/result contract for an unbiased, two-site, fixed-N Bose–Hubbard dimer. Proposed first bounds: `2 ≤ N ≤ 8`, `J = 1` energy unit, `0 ≤ U/J ≤ 20`, open dimer, and a stated basis `|n, N-n⟩`. Confirm bounds in scientific review before freezing the schema.
-- State the Hamiltonian `H = -J(a†₁a₂ + a†₂a₁) + (U/2)∑ᵢ nᵢ(nᵢ-1)` and the exact matrix convention. Persist the requested inputs, basis order, engine, eigenvalue ordering, normalization, and tolerances.
-- Implement independent small-N references (hand-checked N=2 matrix and a second numerical route, such as QuTiP) before exposing a Lab button. Check Hermiticity, number conservation, residuals, ground-state symmetry, and limiting cases `U=0` and large `U/J`.
-- Save low eigenpairs or a separately hash-verified state sidecar only when needed for occupations, variance, and one-body coherence. A result without that state must omit those values rather than reconstructing them from energies.
+**RbC-1 acceptance:** a user can start from Atlas, run the dimer, inspect an eigenstate, save/reopen its exact values, open its scene, and return to the run. Independent physics and end-to-end installed checks pass before advertising an Rb87-related working system. This bounded dimer is not yet a condensate, gas microscope, or full Rb87 atom model.
 
-### Desktop integration second
+## Decision 2: chapter library supports the system (RbC-2)
 
-- Add a distinct capability/operation, trusted main-process job handler, cancellation/progress path, exact result validation, run persistence, Runs reopening, and report/export metadata. Do not reuse `many_body` merely because it is already a worker route.
-- Add a model entry and Theory page with the fixed-N basis, unit convention and finite-size limit. The result view selects stored eigenstates and reports only stored or verified derived observables. Keep chapter III/IV references visibly separate from run evidence.
-- Consider a quench in a separate slice after static eigenpairs, restart and cross-engine parity pass; do not call a finite dimer crossover a thermodynamic phase transition.
+1. Add a curated chapter catalog with stable IDs `rb87-i`…`rb87-vii`, title, PDF filename, and expected SHA-256. Check it against the unchanged source files during build.
+2. Package seven PDFs and the manifest as desktop resources outside `app.asar`. Development and installer paths are allowlisted by main. Expose only `listCompanionChapters()` and `openCompanionChapter(id)` through the typed preload bridge; main verifies the hash before opening the system PDF viewer.
+3. Put the Companion index beside existing Library entries and link the dimer Theory/Study to Chapters III–IV. Existing hydrogenic, Ising, and Lindblad links must say `related theory`, `analogy`, or `not implemented`, as appropriate. Preserve the active model, draft, run, and scene when opening and closing the reader.
 
-**Acceptance:** contract round trips; independent N=2/3 reference matrices and eigenpairs; native/second-route parity within specified tolerances; tamper refusal; saved-run reopen after restart; no Atlas executable binding until the complete path passes. Packaging must expose the operation only when its engine is available.
+**Acceptance:** seven PDFs open after packaging and restart; changed/missing assets are withheld; invalid IDs and paths are rejected; keyboard focus returns to the invoking card. The reader adds no new worker operation or scientific claim.
+
+## Decision 3: reviewed reading paths and broader working models (RbC-3)
+
+Review section/page locators and add source-qualified notes for atomic versus condensate degrees of freedom (I), coherence and time of flight (II), lattice many-body physics (III–IV), measurement and correlation limits (V–VI), and open-system channels (VII). Links to saved results retain chapter and result hashes, model, basis, units, and omissions; changed sources withhold current values. Review dated Chapter II statements before UI publication.
+
+After the dimer, specify a bounded chain or quench as a separate contract and job. Add time scenes only from recorded states. Bosonic correlation or entanglement views require explicit operators and saved state evidence. Neither Ising entropy nor the static dimer supplies a gas-microscopy observation.
 
 ## Decision 4: measurement and open-system follow-ons (RbC-4)
 
@@ -56,11 +60,11 @@ Split synthetic parity/number readout, correlation and entanglement, and lattice
 
 | Checkpoint | Reviewable result | Gate |
 | --- | --- | --- |
-| RbC-1A | Catalog, packaged assets, restricted IPC, chapter index | Seven PDFs and tamper/missing tests pass in dev and unpacked app. |
-| RbC-1B | Installed reader and navigation | Exact installer opens PDFs after restart; active model/run is preserved. |
-| RbC-2 | Section reading paths and source-qualified links | Editorial/source review plus restart/change tests. |
-| RbC-3A | Frozen dimer contract and independent engine | Matrix, limits, and parity tests pass before UI claims. |
-| RbC-3B | Saved dimer Study and Theory route | Verified state/observables reopen and tamper refusal pass. |
+| RbC-1A | Frozen dimer contract, worker capability, independent engine | Matrix, limits, parity, and schema tests pass before UI claims. |
+| RbC-1B | Atlas-launched Theory, Lab, selected state, saved run | Exact values reopen after restart; tamper/missing-state refusal. |
+| RbC-1C | Result-backed dimer scene and Math3D handoff | Hash/units, selection, round trip, and installed two-app checks. |
+| RbC-2 | Packaged PDFs, restricted IPC, contextual theory links | Seven chapters open after restart; missing/changed source refused. |
+| RbC-3 | Reviewed reading paths and separately bounded chain/quench | Editorial review plus per-model physics, saved-run, and scene gates. |
 | RbC-4 | Separately specified measurement/open-system jobs | Per-model scientific and installed gates. |
 
 Math3D 2.0 and the existing QI-40 installed pair keep their own gates. No RbC checkpoint is evidence that those gates passed.
