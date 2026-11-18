@@ -11,3 +11,9 @@ The script ran an N=3, U/J=2 dimer, restarted, reopened the exact result from **
 Reproduce the app-level check with `node scripts/accept-rb87-installed.mjs <installed Lab.exe> <Math3D checkout or installed Math3D.exe>`. The script uses isolated Lab and Math3D profiles and removes its generated profile after the run. The local restart/tamper desktop smoke is `npm run test:bose-hubbard-desktop`.
 
 The isolated test installation was silently uninstalled after acceptance. The Hamiltonian Atlas entry stays reference-only. The Rb87 dimer and Companion content do not expand Math3D 2.0 claims or satisfy QI-40's separate direct-launch gate.
+
+## Companion Library package check · 2026-11-19
+
+The updated Lab was rebuilt with the frozen worker and packaged as an isolated unsigned installer using the pinned NSIS 3.13 toolchain. Installer SHA-256: `3c1827fe57a293a3d866ac155dbe2b049fa7cd68e75a8df116665227b3cb1220`. The installed executable, `app.asar`, and frozen worker matched the packaged candidate by SHA-256. The installed acceptance opened the new **Library → Rb87 Companion** page, rendered its Hamiltonian as MathML, opened Chapter III in the checked PDF reader, ran the dimer through its Atlas link, restarted, reopened the Library and saved run, refused changed chapter bytes and a wrong result hash, and launched the exact `.qscene` into the `C:\Math3D` checkout. The isolated test installation was uninstalled after the check.
+
+The acceptance script now preflights the Lab package, distinguishes a Math3D checkout from an installed `Math3D.exe`, and checks the launched executable path and Lab parent process; run `npm run accept:rb87-installed -- <installed Lab.exe> <Math3D checkout or installed Math3D.exe>`. This check used a checkout target. A separate run with an installed Math3D executable is still required for the two-installed-app handoff; it is not a Math3D 2.0 or QI-40 release result.

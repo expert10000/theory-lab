@@ -4,7 +4,7 @@
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { execFileSync } from "node:child_process";
-import { mkdtemp, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import { _electron as electron } from "playwright";
@@ -12,11 +12,24 @@ import { _electron as electron } from "playwright";
 const [labArgument, math3dArgument] = process.argv.slice(2);
 if (!labArgument || !math3dArgument) throw new Error("Pass installed Lab executable and Math3D target");
 const lab = resolve(labArgument), math3d = resolve(math3dArgument);
-const math3dExecutable = math3d.toLowerCase().endsWith(".exe")?math3d:join(math3d,"node_modules","electron","dist","electron.exe");
+const installedMath3D = math3d.toLowerCase().endsWith(".exe");
+const math3dExecutable = installedMath3D?math3d:join(math3d,"node_modules","electron","dist","electron.exe");
+if (!(await stat(lab)).isFile() || !(await stat(join(dirname(lab),"resources","app.asar"))).isFile())
+  throw new Error("Lab target is not a packaged executable");
+if (installedMath3D) {
+  assert.match(basename(math3d),/^Math3D(?: Dev)?\.exe$/i,"Math3D target must be an installed Math3D executable");
+  if (!(await stat(math3d)).isFile() || !(await stat(join(dirname(math3d),"resources","app.asar"))).isFile())
+    throw new Error("Math3D target is not a complete installed application");
+} else {
+  const packageInfo=JSON.parse(await readFile(join(math3d,"package.json"),"utf8"));
+  assert.equal(packageInfo.name,"math3d","Math3D checkout package name changed");
+  for(const file of [math3dExecutable,join(math3d,"dist","main.js"),join(math3d,"renderer","dist","index.html")])
+    assert.ok((await stat(file)).isFile(),`Math3D checkout is not built: ${file}`);
+}
 const processName = basename(math3dExecutable);
 function targetProcesses(){
   const raw = execFileSync("powershell.exe",["-NoProfile","-Command",
-    `@(Get-CimInstance Win32_Process -Filter \"Name = '${processName}'\" | Select-Object ProcessId,ParentProcessId,CommandLine) | ConvertTo-Json -Compress`],
+    `@(Get-CimInstance Win32_Process -Filter \"Name = '${processName}'\" | Select-Object ProcessId,ParentProcessId,ExecutablePath,CommandLine) | ConvertTo-Json -Compress`],
   {encoding:"utf8",timeout:15000});
   const parsed=JSON.parse(raw||"[]");
   return Array.isArray(parsed)?parsed:parsed?[parsed]:[];
@@ -40,11 +53,10 @@ async function launch() {
 }
 try {
   let page = await launch();
-  await page.getByTestId("open-atlas").click();
-  await page.getByLabel("Search Atlas").fill("bose_hubbard");
-  await page.getByRole("button", { name: /Bose-Hubbard model/ }).click();
-  assert.equal(await page.getByTestId("bose-hubbard-lab").count(), 0);
-  await page.getByTestId("atlas-open-model").click();
+  await page.getByTestId("open-rb87-companion").click();
+  await page.getByTestId("rb87-companion-page").waitFor();
+  assert.match(page.url(),/#view\/companion\//);
+  assert.equal(await page.getByTestId("atlas-formula").locator("math").count(),1);
   const chapters = await page.evaluate(() => window.quantum.listCompanionChapters());
   assert.equal(chapters.length, 7);
   assert.ok(chapters.every(chapter => chapter.available));
@@ -55,6 +67,8 @@ try {
   assert.equal(await reader.evaluate(() => document.contentType), "application/pdf");
   assert.match(reader.url(), /Chapter_3_Expanded\.pdf$/);
   await reader.close();
+  await page.getByTestId("companion-open-dimer").click();
+  await page.getByTestId("bose-hubbard-lab").waitFor();
   await page.getByLabel("Dimer particles N").fill("3");
   await page.getByLabel("Dimer interaction U over J").fill("2");
   await page.getByTestId("run-bose-hubbard").click();
@@ -65,6 +79,8 @@ try {
   await desktop.close(); desktop = undefined;
 
   page = await launch();
+  await page.getByTestId("open-rb87-companion").click();
+  await page.getByTestId("rb87-companion-page").waitFor();
   assert.ok((await page.evaluate(() => window.quantum.listCompanionChapters())).every(chapter => chapter.available));
   const chapterFile=join(dirname(lab),"resources","rb87-companion","Chapters","Chapter_3_Expanded.pdf");
   const chapterBytes=await readFile(chapterFile);
@@ -91,6 +107,7 @@ try {
   assert.equal(scene.coordinates.units[2],"bosons per site");
   for(let attempt=0;attempt<40;attempt++){
     launchedProcess=targetProcesses().find(item=>!before.some(old=>old.ProcessId===item.ProcessId)&&
+      item.ExecutablePath?.toLowerCase()===math3dExecutable.toLowerCase()&&
       item.CommandLine?.includes("--quantum-scene")&&item.CommandLine?.includes(directory)&&
       !item.CommandLine?.includes(" --type="));
     if(launchedProcess)rendererProcess=targetProcesses().find(item=>item.ParentProcessId===launchedProcess.ProcessId&&item.CommandLine?.includes("--type=renderer"));
@@ -98,7 +115,12 @@ try {
     await new Promise(done=>setTimeout(done,250));
   }
   assert.ok(launchedProcess&&rendererProcess,"Math3D did not keep a renderer for the exact saved dimer scene");
-  console.log(JSON.stringify({ installedLab:lab, math3dTarget:math3d, pdfReader:"open-after-restart", dimerRun:runId, sceneDirectory:directory, sceneHash:bundle.scene.sha256, math3dPid:launchedProcess.ProcessId, rendererPid:rendererProcess.ProcessId },null,2));
+  const parentRaw=execFileSync("powershell.exe",["-NoProfile","-Command",
+    `Get-CimInstance Win32_Process -Filter 'ProcessId = ${Number(launchedProcess.ParentProcessId)}' | Select-Object ExecutablePath | ConvertTo-Json -Compress`],
+  {encoding:"utf8",timeout:15000});
+  const parent=JSON.parse(parentRaw);
+  assert.equal(parent?.ExecutablePath?.toLowerCase(),lab.toLowerCase(),"Math3D was not launched by the packaged Lab");
+  console.log(JSON.stringify({ installedLab:lab, math3dTarget:math3d, math3dTargetKind:installedMath3D?"installed":"checkout", library:"open-after-restart", pdfReader:"open-after-restart", dimerRun:runId, sceneDirectory:directory, sceneHash:bundle.scene.sha256, math3dPid:launchedProcess.ProcessId, math3dParentPid:launchedProcess.ParentProcessId, rendererPid:rendererProcess.ProcessId },null,2));
 } finally {
   if(launchedProcess){
     try{execFileSync("taskkill",["/PID",String(launchedProcess.ProcessId),"/T","/F"],{stdio:"ignore"});}
