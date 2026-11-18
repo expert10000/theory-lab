@@ -8,9 +8,9 @@ Planning companion to the [feature roadmap](RB87_COMPANION_ROADMAP.md). The [sup
 | --- | --- | --- |
 | Theory UI | `apps/desktop/renderer/TheoryPanel.tsx` renders the selected `WorkspaceModel`; `App.tsx` owns the Theory tab | Add the working Bose–Hubbard model, Theory guide, result view, and Companion references while preserving active runs. |
 | Navigation | `ModelNavigator.tsx`, the Library area, and Atlas navigation are separate | Use the existing `bose_hubbard` Atlas entry; enable its Lab binding only after the full compute, persistence, and scene path passes. |
-| Desktop bridge | `packages/contracts/index.ts` `QuantumBridge`, `apps/desktop/preload/index.ts`, trusted `ipcMain` handlers | Add a typed Bose–Hubbard job plus later allowlisted chapter actions; never accept an arbitrary renderer file path or URL. |
+| Desktop bridge | `packages/contracts/index.ts` `QuantumBridge`, `apps/desktop/preload/index.ts`, trusted `ipcMain` handlers | Add a dedicated typed Bose–Hubbard bridge and saved-run store, then allowlisted chapter actions; never accept an arbitrary renderer file path or URL. |
 | Packaging | `scripts/build.mjs` builds the renderer; `electron-builder.config.cjs` lists packaged resources | Copy PDFs and a pinned metadata manifest to `extraResources`; system PDF viewers need real files outside `app.asar`. |
-| Compute and saved runs | `packages/contracts` job/result schemas, `quantum_worker/main.py`, engine modules, main-process job handlers and run store | Add a distinct bounded Bose–Hubbard operation now. Reuse the protocol and saved-run lifecycle, not the Ising or cavity physics. |
+| Compute and saved runs | `packages/contracts` job/result schemas, `quantum_worker/main.py`, engine modules, main-process job handlers and run store | Use the separate `quantum-bose-hubbard-*` contracts and `quantum.boseHubbard` worker RPC. Extend the saved-run lifecycle with its own verified record type; keep frozen v1 schemas and Ising/cavity physics unchanged. |
 
 ## Decision 1: one executable Atlas → Lab → saved run → scene path (RbC-1)
 
@@ -20,7 +20,7 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 
 - Add a versioned job/result contract for an unbiased, two-site, fixed-N Bose–Hubbard dimer. Proposed first bounds: `2 ≤ N ≤ 8`, `J = 1` energy unit, `0 ≤ U/J ≤ 20`, open dimer, and basis `|n, N-n⟩`; confirm bounds during scientific review before freezing the schema.
 - State `H = -J(a†₁a₂ + a†₂a₁) + (U/2)∑ᵢ nᵢ(nᵢ-1)` and exact matrix/basis order. Persist inputs, engine, eigenvalue order, normalization, units, tolerances, and source hashes.
-- Add a distinct worker operation and capability in `packages/contracts`, `quantum_worker/main.py`, and a new engine module. Do not relabel or reuse Ising `many_body` results.
+- Use the separate `packages/contracts/bose-hubbard.ts` job/result schemas and `quantum.boseHubbard` worker method. The frozen shared worker capabilities schema cannot advertise a new operation; the desktop bridge will gate this method on the native engine and its own versioned contract. Do not relabel or reuse Ising `many_body` results.
 - Check a hand-derived N=2 matrix, independent N=2/3 eigenpairs, Hermiticity, particle-number conservation, residuals, ground-state symmetry, and `U=0`/large-`U/J` limits. Use a genuinely separate numerical implementation for parity where available.
 - Store low eigenpairs or a verified state sidecar if occupation, number variance, and one-body coherence are shown. Missing state data means those values are omitted.
 
@@ -28,7 +28,7 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 
 - Use the existing Atlas `bose_hubbard` entry to navigate to a new dimer Lab form once the engine is ready. Expose N and U/J, a bounded Run action, progress/cancel, and explicit engine availability.
 - Add a model-specific Theory page with the fixed-N basis, units, finite-size limit, and a Chapter III/IV reference. The selected eigenstate inspector shows only saved or verified derived values; draft edits never rewrite a saved run.
-- Add trusted main-process handling, exact result validation, run persistence, Runs reopening, report/export metadata, and restart/tamper refusal. Promote the Atlas entry to an executable binding only when the path is qualified.
+- Add trusted main-process handling, exact result validation, a separately versioned saved-run record, Runs reopening, report/export metadata, and restart/tamper refusal. Promote the Atlas entry to an executable binding only when the path is qualified.
 
 ### RbC-1C — Verified scene and handoff
 
@@ -60,7 +60,7 @@ Split synthetic parity/number readout, correlation and entanglement, and lattice
 
 | Checkpoint | Reviewable result | Gate |
 | --- | --- | --- |
-| RbC-1A | Frozen dimer contract, worker capability, independent engine | Matrix, limits, parity, and schema tests pass before UI claims. |
+| RbC-1A | Separate dimer contract, worker RPC, independent engine (core implemented) | Matrix, limits, parity, and schema tests pass; desktop capability gate and UI remain RbC-1B. |
 | RbC-1B | Atlas-launched Theory, Lab, selected state, saved run | Exact values reopen after restart; tamper/missing-state refusal. |
 | RbC-1C | Result-backed dimer scene and Math3D handoff | Hash/units, selection, round trip, and installed two-app checks. |
 | RbC-2 | Packaged PDFs, restricted IPC, contextual theory links | Seven chapters open after restart; missing/changed source refused. |

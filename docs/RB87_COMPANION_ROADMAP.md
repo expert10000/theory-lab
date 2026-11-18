@@ -1,6 +1,6 @@
 # Rb87 Quantum Companion: Theory Lab integration roadmap
 
-Status: source intake complete; executable app integration planned. This is a feature track for Theory Lab. It does not change Math3D's 2.0 release gates or the QI-40 paired-app qualification.
+Status: source intake complete; bounded dimer core started on this feature branch. The separate dimer contract, worker solver, and independent checks exist; the desktop Lab, saved-run path, scene, and installed handoff remain planned. This is a feature track for Theory Lab. It does not change Math3D's 2.0 release gates or the QI-40 paired-app qualification.
 
 The [Theory UI and backend delivery plan](RB87_THEORY_APP_BACKEND_PLAN.md) assigns each slice to the existing renderer, Electron main process, contracts, and Python worker.
 
@@ -27,7 +27,7 @@ Theory Lab already has a Theory tab, the 68-entry Hamiltonian Atlas, verified sa
 
 ### RbC-1 — First working system: finite Bose–Hubbard dimer
 
-Build one complete path from the existing Atlas `bose_hubbard` reference to a bounded two-site, fixed-particle-number job, saved result, Theory guide, and verified scene. Define the hopping sign, interaction, particle-number basis, energy units, boundary, and solver limits in a versioned contract. Independently compare small-N matrices/eigenpairs. Save energies, occupations, number variance and one-body coherence only with the state evidence needed to support them. Show finite-size crossover without claiming a thermodynamic phase transition.
+Build one complete path from the existing Atlas `bose_hubbard` reference to a bounded two-site, fixed-particle-number job, saved result, Theory guide, and verified scene. Define the hopping sign, interaction, particle-number basis, energy units, boundary, and solver limits in a versioned contract. Independently compare small-N matrices/eigenpairs. Save energies, occupations, number variance and one-body coherence only with the state evidence needed to support them. Show finite-size crossover without claiming a thermodynamic phase transition. The first core commit uses separate `quantum-bose-hubbard-job/v1` and result schemas and a dedicated worker RPC; the frozen shared `quantum-job/v1`, `quantum-result/v1`, capabilities, and 68-entry Atlas remain unchanged.
 
 The UI should let a reader choose N and U/J, run the job, inspect a selected eigenstate and its source-qualified values, save/reopen it, and open a two-site scene. Scene sites and bond are schematic; occupations or coherence use recorded values and explicit units. The scene must be derived from the verified result, export as `.qscene`, and reopen through the existing scene/Math3D path. Keep the Atlas entry reference-only until the whole route passes. Chapters III–IV supply linked theory, with the PDF available from the Study.
 

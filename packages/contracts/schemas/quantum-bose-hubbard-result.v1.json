@@ -1,0 +1,266 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/quantum-bose-hubbard-result.v1.json",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "jobId",
+    "runId",
+    "status",
+    "model",
+    "engine",
+    "basis",
+    "spectrum",
+    "states",
+    "units",
+    "provenance"
+  ],
+  "properties": {
+    "schema": {
+      "const": "quantum-bose-hubbard-result/v1"
+    },
+    "jobId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "runId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[A-Za-z0-9_-]+$"
+    },
+    "status": {
+      "const": "completed"
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "type",
+        "parameters"
+      ],
+      "properties": {
+        "type": {
+          "const": "bose_hubbard_dimer"
+        },
+        "parameters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "particles",
+            "interactionRatio",
+            "hopping",
+            "boundary"
+          ],
+          "properties": {
+            "particles": {
+              "type": "integer",
+              "minimum": 2,
+              "maximum": 8
+            },
+            "interactionRatio": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 20
+            },
+            "hopping": {
+              "const": 1
+            },
+            "boundary": {
+              "const": "open"
+            }
+          }
+        }
+      }
+    },
+    "engine": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "name",
+        "version"
+      ],
+      "properties": {
+        "name": {
+          "const": "native"
+        },
+        "version": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "basis": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "leftOccupations",
+        "ordering"
+      ],
+      "properties": {
+        "leftOccupations": {
+          "type": "array",
+          "items": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "minItems": 3,
+          "maxItems": 9
+        },
+        "ordering": {
+          "const": "|n,N-n> ascending n"
+        }
+      }
+    },
+    "spectrum": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "energies",
+        "gap",
+        "energyUnits"
+      ],
+      "properties": {
+        "energies": {
+          "type": "array",
+          "items": {
+            "type": "number",
+            "minimum": -10,
+            "maximum": 600
+          },
+          "minItems": 3,
+          "maxItems": 9
+        },
+        "gap": {
+          "type": "number",
+          "minimum": 0
+        },
+        "energyUnits": {
+          "const": "J"
+        }
+      }
+    },
+    "states": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "index",
+          "amplitudes",
+          "occupation",
+          "numberVariance",
+          "oneBodyCoherence",
+          "residual",
+          "normalizationError"
+        ],
+        "properties": {
+          "index": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8
+          },
+          "amplitudes": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": -1.000001,
+              "maximum": 1.000001
+            },
+            "minItems": 3,
+            "maxItems": 9
+          },
+          "occupation": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 8
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "numberVariance": {
+            "type": "array",
+            "items": {
+              "type": "number",
+              "minimum": 0,
+              "maximum": 16
+            },
+            "minItems": 2,
+            "maxItems": 2
+          },
+          "oneBodyCoherence": {
+            "type": "number",
+            "minimum": -8,
+            "maximum": 8
+          },
+          "residual": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1e-07
+          },
+          "normalizationError": {
+            "type": "number",
+            "minimum": 0,
+            "maximum": 1e-07
+          }
+        }
+      },
+      "minItems": 3,
+      "maxItems": 9
+    },
+    "units": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "occupation",
+        "numberVariance",
+        "oneBodyCoherence"
+      ],
+      "properties": {
+        "occupation": {
+          "const": "bosons per site"
+        },
+        "numberVariance": {
+          "const": "bosons^2"
+        },
+        "oneBodyCoherence": {
+          "const": "bosons"
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "pythonVersion",
+        "workerVersion",
+        "computedAt",
+        "durationMs"
+      ],
+      "properties": {
+        "pythonVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "workerVersion": {
+          "type": "string",
+          "minLength": 1
+        },
+        "computedAt": {
+          "type": "string",
+          "minLength": 20
+        },
+        "durationMs": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    }
+  }
+}
