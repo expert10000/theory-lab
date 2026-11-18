@@ -16,6 +16,8 @@ async function openDimer() {
   await page.getByLabel("Search Atlas").fill("bose_hubbard");
   await page.getByRole("button", { name: /Bose-Hubbard model/ }).click();
   await page.getByTestId("bose-hubbard-lab").waitFor();
+  assert.equal(await page.getByTestId("atlas-formula").locator("math").count(),1);
+  assert.equal(await page.getByTestId("atlas-formula").locator("math").evaluate(node=>getComputedStyle(node).color),"rgb(130, 217, 196)");
   await page.getByTestId("bose-hubbard-theory").waitFor();
   await page.getByTestId("open-companion-rb87-iii").waitFor();
   assert.equal(await page.getByTestId("open-companion-rb87-iii").isEnabled(),true);
@@ -27,6 +29,14 @@ async function openDimer() {
 }
 try {
   let page = await openDimer();
+  const readerOpened = desktop.waitForEvent("window");
+  await page.getByTestId("open-companion-rb87-iii").click();
+  const reader = await readerOpened;
+  await reader.waitForLoadState();
+  assert.equal(await reader.evaluate(() => document.contentType),"application/pdf");
+  assert.match(reader.url(),/Chapter_3_Expanded\.pdf$/);
+  await reader.close();
+  await page.getByTestId("bose-hubbard-theory").waitFor();
   await page.getByLabel("Dimer particles N").fill("3");
   await page.getByLabel("Dimer interaction U over J").fill("2");
   await page.getByTestId("run-bose-hubbard").click();

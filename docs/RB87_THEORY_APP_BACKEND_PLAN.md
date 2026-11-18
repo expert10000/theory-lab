@@ -9,7 +9,7 @@ Planning companion to the [feature roadmap](RB87_COMPANION_ROADMAP.md). The [sup
 | Theory UI | `apps/desktop/renderer/TheoryPanel.tsx` renders the selected `WorkspaceModel`; `App.tsx` owns the Theory tab | Add the working Bose–Hubbard model, Theory guide, result view, and Companion references while preserving active runs. |
 | Navigation | `ModelNavigator.tsx`, the Library area, and Atlas navigation are separate | Use the existing `bose_hubbard` Atlas entry; enable its Lab binding only after the full compute, persistence, and scene path passes. |
 | Desktop bridge | `packages/contracts/index.ts` `QuantumBridge`, `apps/desktop/preload/index.ts`, trusted `ipcMain` handlers | Add a dedicated typed Bose–Hubbard bridge and saved-run store, then allowlisted chapter actions; never accept an arbitrary renderer file path or URL. |
-| Packaging | `scripts/build.mjs` builds the renderer; `electron-builder.config.cjs` lists packaged resources | Copy PDFs and a pinned metadata manifest to `extraResources`; system PDF viewers need real files outside `app.asar`. |
+| Packaging | `scripts/build.mjs` builds the renderer; `electron-builder.config.cjs` lists packaged resources | Copy PDFs and a pinned metadata manifest to `extraResources`; the Lab reader needs real files outside `app.asar`. |
 | Compute and saved runs | `packages/contracts` job/result schemas, `quantum_worker/main.py`, engine modules, main-process job handlers and run store | Use the separate `quantum-bose-hubbard-*` contracts and `quantum.boseHubbard` worker RPC. Extend the saved-run lifecycle with its own verified record type; keep frozen v1 schemas and Ising/cavity physics unchanged. |
 
 ## Decision 1: one executable Atlas → Lab → saved run → scene path (RbC-1)
@@ -41,7 +41,7 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 ## Decision 2: chapter library supports the system (RbC-2)
 
 1. Add a curated chapter catalog with stable IDs `rb87-i`…`rb87-vii`, title, PDF filename, and expected SHA-256. Check it against the unchanged source files during build.
-2. The seven PDFs and manifest are configured as desktop resources outside `app.asar`. Development and installer paths are fixed by main. `listCompanionChapters()` and `openCompanionChapter(id)` use a typed preload bridge; main verifies the exact hash before opening the system PDF viewer. Build-time catalog/source verification and local missing/changed-source tests pass. Installed qualification remains pending.
+2. The seven PDFs and manifest are configured as desktop resources outside `app.asar`. Development and installer paths are fixed by main. `listCompanionChapters()` and `openCompanionChapter(id)` use a typed preload bridge; main verifies the exact hash before opening a sandboxed Lab PDF window. Build-time catalog/source verification, local missing/changed-source tests, and a desktop reader smoke pass. Installed qualification remains pending.
 3. The dimer guide and seven-chapter index are available in Atlas, with Chapters III–IV linked by section. Next, put the Companion index beside existing Library entries and add links to other labs labelled `related theory`, `analogy`, or `not implemented`. Preserve the active model, draft, run, and scene when opening and closing the reader.
 
 **Acceptance:** seven PDFs open after packaging and restart; changed/missing assets are withheld; invalid IDs and paths are rejected; keyboard focus returns to the invoking card. The reader adds no new worker operation or scientific claim.

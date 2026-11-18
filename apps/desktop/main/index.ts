@@ -132,8 +132,26 @@ app.whenReady().then(() => {
     trusted(event);
     if (typeof id !== "string") throw new Error("Invalid Companion chapter ID");
     const path = await verifiedCompanionPath(companionRoot,id);
-    const error = await shell.openPath(path);
-    if (error) throw new Error(`Could not open Companion chapter: ${error}`);
+    const parent = BrowserWindow.fromWebContents(event.sender);
+    if (!parent || parent.isDestroyed()) throw new Error("Companion reader parent is unavailable");
+    const url = pathToFileURL(path).href;
+    const reader = new BrowserWindow({ parent, width: 1050, height: 850, minWidth: 700, minHeight: 550,
+      show: false, autoHideMenuBar: true, backgroundColor: "#10151d",
+      webPreferences: { nodeIntegration: false, contextIsolation: true, sandbox: true, webSecurity: true } });
+    reader.webContents.setWindowOpenHandler(() => ({ action: "deny" }));
+    reader.webContents.on("will-navigate", (navigation, destination) => {
+      if (destination !== url) navigation.preventDefault();
+    });
+    reader.on("closed", () => { if (!parent.isDestroyed()) parent.focus(); });
+    try {
+      await reader.loadURL(url);
+      await verifiedCompanionPath(companionRoot,id);
+      reader.setTitle(`Rb87 Companion · Chapter ${id.slice(5).toUpperCase()}`);
+      reader.show();
+    } catch (error) {
+      if (!reader.isDestroyed()) reader.destroy();
+      throw error;
+    }
   });
   const checkedDimerScene = async (runId: unknown, stateIndex: unknown, expectedHash?: unknown) => {
     if (typeof runId !== "string" || !Number.isInteger(stateIndex) ||

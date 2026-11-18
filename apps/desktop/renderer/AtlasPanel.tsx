@@ -5,6 +5,7 @@ import {atlasDeepLinkCapabilities} from "../../../packages/atlas/deep-link";
 import { AtlasCapabilities } from "../../../packages/ui/AtlasCapabilities";
 import { QecSyndromeViewer } from "./QecSyndromeViewer";
 import { BoseHubbardLab } from "./BoseHubbardLab";
+import { AtlasFormula } from "./AtlasFormula";
 
 export function AtlasPanel({ openLab,onRun,onSweep,onViewBoseHubbardScene,runReady=false,availableOperations=[],running=false,message,focus }:
   {openLab?:(id:string)=>void;onRun?:(id:string)=>void;onSweep?:(id:string)=>void;onViewBoseHubbardScene?:(runId:string,stateIndex:number)=>void;
@@ -28,7 +29,7 @@ export function AtlasPanel({ openLab,onRun,onSweep,onViewBoseHubbardScene,runRea
         <select aria-label="Atlas family" value={family} onChange={event => setFamily(event.target.value)}><option value="all">All families</option>{[...new Set(ATLAS_ENTRIES.map(entry => entry.family))].sort().map(name => <option key={name} value={name}>{name}</option>)}</select></div>
       <div className="atlas-browser"><div className="atlas-list" role="list" aria-label="Atlas entries">{filtered.map(entry => <button key={entry.id} className={selectedId === entry.id ? "atlas-active" : ""} onClick={() => setSelectedId(entry.id)}><strong>{entry.name}</strong><small>{entry.id} · {entry.family}</small></button>)}</div>
         {selected && <article className="atlas-detail"><p className="eyebrow">{selected.family.toUpperCase()} / REFERENCE ONLY</p><h3>{selected.name}</h3><p>{selected.presentation.summary}</p>
-          <code className="atlas-formula">{selected.formula.latex}</code><p><strong>Basis:</strong> {selected.basis.description}</p>
+          <AtlasFormula latex={selected.formula.latex}/><p><strong>Basis:</strong> {selected.basis.description}</p>
           <h4>Parameters</h4><div className="atlas-parameters">{selected.parameters.map(parameter => <div key={parameter.symbol}><code>{parameter.symbol}</code><span>{parameter.name} · {parameter.unit_convention}</span><small>default {String(parameter.default)}</small></div>)}</div>
           <h4>Assumptions & limits</h4><p>{selected.assumptions.join(" · ") || "Not specified"}</p>{selected.important_limits.map((limit, index) => <p key={index}><strong>{limit.condition}</strong> → {limit.result}</p>)}
           <h4>Observables</h4><p>{selected.observables.join(" · ")}</p>

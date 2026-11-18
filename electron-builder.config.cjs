@@ -7,7 +7,7 @@ module.exports = {
   productName: "Quantum Hamiltonian Lab",
   artifactName: "Quantum-Hamiltonian-Lab-Setup-${version}.${ext}",
   directories: { output: "release" },
-  files: ["dist/main.cjs", "dist/preload.cjs", "dist/index.html", "dist/renderer.js", "package.json"],
+  files: ["dist/main.cjs", "dist/preload.cjs", "dist/index.html", "dist/renderer.js", "dist/renderer.css", "package.json"],
   asar: true,
   extraResources: [
     { from: "build/packaged-worker/quantum-worker", to: "quantum-worker" },
