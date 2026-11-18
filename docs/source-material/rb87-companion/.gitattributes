@@ -1,0 +1,3 @@
+Chapters/*.tex -text
+Chapters/*.pdf -text
+SHA256_MANIFEST.txt -text
