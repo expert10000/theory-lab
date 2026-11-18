@@ -2,6 +2,8 @@
 
 Status: source intake complete; app integration planned. This is a feature track for Theory Lab. It does not change Math3D's 2.0 release gates or the QI-40 paired-app qualification.
 
+The [Theory UI and backend delivery plan](RB87_THEORY_APP_BACKEND_PLAN.md) assigns each slice to the existing renderer, Electron main process, contracts, and Python worker.
+
 ## Source and current product boundary
 
 The user-supplied [seven-chapter companion](source-material/rb87-companion/README.md) is stored as unchanged PDF and TeX files with its SHA-256 manifest. The manifest verifies file identity, not scientific correctness or external references. Before publishing chapter text in the app, review attribution, dated experimental claims, equations, units, and bibliography against the supplied PDFs and independent sources. Preserve chapter and section locators in any UI citation.
@@ -25,9 +27,9 @@ Theory Lab already has a Theory tab, the 68-entry Hamiltonian Atlas, verified sa
 
 ### RbC-1 — Read-only companion in the desktop Theory area (first app slice)
 
-Add a **Rb87 Companion** library entry that opens a chapter index and a bounded PDF reader or an external PDF action from the packaged assets. The index should show chapter title, section list, source revision/hash, and a clear "reference material" label. A Theory-tab link may point to the relevant chapter section for the active model, but must explain the relationship: existing computation, analogy, or no corresponding Lab model. Begin with Chapter VII ↔ existing Lindblad Theory and Chapters III–IV ↔ reference-only `bose_hubbard`; those links test both a related model and a missing model. Keep the current Theory page and run selection intact when opening and closing the companion.
+Add a **Rb87 Companion** library entry that opens a chapter index and launches each hash-checked packaged PDF in the system viewer. The index should show chapter title, source revision/hash, and a clear "reference material" label. A Theory-tab link may point to a chapter for the active model, but must explain the relationship: existing computation, analogy, or no corresponding Lab model. Begin with Chapter VII ↔ existing Lindblad Theory and Chapters III–IV ↔ reference-only `bose_hubbard`; those links test both a related model and a missing model. Keep the current Theory page and run selection intact when opening and closing the companion. Section indexing and exact section return belong to RbC-2 after page locators are reviewed.
 
-Acceptance: all seven chapters open after desktop packaging and restart; a missing or changed asset is reported and withheld; links restore the exact chapter/section; keyboard navigation and zoom work; no PDF load is required for model computation. The reader must not label a saved atom–cavity Lindblad run as an Rb87 fluorescence result. This slice needs no new worker job, result schema, or Math3D bridge.
+Acceptance: all seven chapters open after desktop packaging and restart; a missing or changed asset is reported and withheld; chapter navigation restores the exact chapter; the system viewer provides zoom and PDF keyboard navigation; no PDF load is required for model computation. The reader must not label a saved atom–cavity Lindblad run as an Rb87 fluorescence result. This slice needs no new worker job, result schema, or Math3D bridge.
 
 ### RbC-2 — Guided reading with source-qualified references
 
