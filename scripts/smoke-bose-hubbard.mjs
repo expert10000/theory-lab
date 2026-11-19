@@ -24,6 +24,14 @@ async function openDimer() {
   assert.match(chapterTwoText,/source SHA-256 a0cec6732edda05bf6ef0f7a15fb968622734fcf9760f83e10fb74447b1d794b/);
   assert.match(chapterTwoText,/equivalent expansion temperature/);
   assert.match(chapterTwoText,/not condensate fraction/);
+  await page.getByTestId("lattice-path-reading").waitFor();
+  const latticeText=await page.getByTestId("lattice-path-reading").textContent();
+  assert.match(latticeText,/d7923dd6bfe78171b0d1f9331502ef0ef5bfe6e59f16080005e3acf83d5f6fee/);
+  assert.match(latticeText,/6ba34d37b401267511684d7c24bd55588b955688a74f7769be5da50721af1547/);
+  await page.getByTestId("companion-lattice-visual").getByRole("button",{name:"|2,0⟩"}).click();
+  assert.match(await page.getByTestId("companion-lattice-visual").textContent(),/Onsite energy: U/);
+  await page.getByTestId("lattice-inspect-run").click();
+  await page.getByTestId("companion-saved-energy").waitFor();
   await page.getByTestId("companion-atom-visual").waitFor();
   await page.getByTestId("companion-image-visual").waitFor();
   const tofVisual=page.getByTestId("companion-tof-visual");
@@ -44,6 +52,13 @@ async function openDimer() {
   assert.equal(await chapterTwoReader.evaluate(()=>document.contentType),"application/pdf");
   assert.match(chapterTwoReader.url(),/Chapter_2_Expanded\.pdf$/);
   await chapterTwoReader.close();
+  const chapterFourReaderOpened=desktop.waitForEvent("window");
+  await page.getByTestId("lattice-open-rb87-iv").click();
+  const chapterFourReader=await chapterFourReaderOpened;
+  await chapterFourReader.waitForLoadState();
+  assert.equal(await chapterFourReader.evaluate(()=>document.contentType),"application/pdf");
+  assert.match(chapterFourReader.url(),/Chapter_4_Expanded\.pdf$/);
+  await chapterFourReader.close();
   const chapterOneReaderOpened=desktop.waitForEvent("window");
   await page.getByTestId("open-companion-rb87-i").click();
   const chapterOneReader=await chapterOneReaderOpened;

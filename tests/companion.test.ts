@@ -30,6 +30,12 @@ test("missing and changed chapter bytes are withheld", async () => {
     const bytes = await readFile(target); bytes[100] ^= 1; await writeFile(target,bytes);
     await assert.rejects(verifiedCompanionPath(root,"rb87-iii"),/source hash changed/);
     assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-iii")?.available,false);
+    const fourth="Chapter_4_Expanded.pdf", fourthTarget=join(root,fourth);
+    await copyFile(join(source,fourth),fourthTarget);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-iv")?.available,true);
+    const fourthBytes=await readFile(fourthTarget); fourthBytes[100] ^= 1; await writeFile(fourthTarget,fourthBytes);
+    await assert.rejects(verifiedCompanionPath(root,"rb87-iv"),/source hash changed/);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-iv")?.available,false);
     const first="Chapter_1_Expanded.pdf", firstTarget=join(root,first);
     await copyFile(join(source,first),firstTarget);
     assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-i")?.available,true);
@@ -77,6 +83,7 @@ test("Library page explains the executable dimer and links its checked sources",
   assert.match(markup,/Read dimer Theory/);
   assert.match(markup,/From an electron orbital to a condensate/);
   assert.match(markup,/From coherence to a camera image/);
+  assert.match(markup,/From optical lattice to a finite dimer/);
   assert.match(markup,/Two atoms, two sites: energy levels/);
   assert.match(markup,/View saved dimer runs/);
   assert.match(markup,/<math /);

@@ -1,0 +1,13 @@
+# Rb87 Companion Chapters III–IV: reviewed lattice-to-dimer path
+
+Scope: the Library's three lattice-to-dimer notes and the two-boson basis visual. This review does not validate every numerical example, experimental comparison, quench formula, or extended-lattice claim in the chapters.
+
+The supplied `Chapter_3_Expanded.pdf` has 7 pages and SHA-256 `d7923dd6bfe78171b0d1f9331502ef0ef5bfe6e59f16080005e3acf83d5f6fee`. `Chapter_4_Expanded.pdf` has 10 pages and SHA-256 `6ba34d37b401267511684d7c24bd55588b955688a74f7769be5da50721af1547`. Section positions were checked against PDF text and rendered pages on 2026-11-20. The original PDFs remain unchanged. The Library withholds this path unless **both** pinned PDFs are available; the reader verifies each file again before opening.
+
+| Stop | Verified locator | Review boundary |
+| --- | --- | --- |
+| Laser-made lattice | Chapter III §§1–3, p. 2; §4, p. 3 | The off-resonant standing wave provides a periodic *external* potential for the center of mass of neutral atoms. The chapter distinguishes this from a solid's ionic cores and from an Rb87 valence-electron orbital. The Library does not assign a real wavelength, recoil energy, or trap depth to the runnable dimer. |
+| Modes become J and U | Chapter III §5, p. 3; §6, p. 4; supplement III-C, p. 7 | A lowest-band Wannier expansion, nearest-neighbor hopping, and onsite contact interaction give the bounded Bose–Hubbard terms. The chapter defines U as the onsite energy for a pair, so two atoms at one site contribute U, and one per site contributes zero. The [original Bose–Hubbard transition theory](https://doi.org/10.1103/PhysRevB.40.546) concerns an extended bosonic system; the Library diagram displays only the two-site truncation. |
+| Diagonalize two sites | Chapter III §9, p. 5; Chapter IV §§1–2, p. 2; §3, p. 3 | At fixed N=2, the three basis states are `|2,0⟩`, `|1,1⟩`, `|0,2⟩`; Chapter IV's matrix has onsite diagonal entries `(U,0,U)` and adjacent hopping entries `−√2J`. The visual labels these as **basis** terms, then links to the Lab's verified saved eigenstates. Its wells and atoms have schematic positions and sizes. The finite crossover is not the many-site superfluid–Mott transition observed in [Greiner et al. (2002)](https://doi.org/10.1038/415039a). |
+
+The current Lab diagonalizes a generic fixed-N dimer (N=2…8, U/J=0…20, J=1) with no Rb87-specific parameter conversion. The path does not claim to implement Bloch bands, Wannier integrals, an extended lattice, time of flight, or quenches. Saved eigenstate numbers appear only after the host rechecks the result hash and scientific consistency.

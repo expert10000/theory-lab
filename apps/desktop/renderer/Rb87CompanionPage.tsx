@@ -4,6 +4,7 @@ import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
 import { Rb87ChapterOnePath } from "./Rb87ChapterOnePath";
 import { Rb87ChapterTwoPath } from "./Rb87ChapterTwoPath";
 import { DimerEnergyFigure } from "./CompanionVisuals";
+import { Rb87LatticePath } from "./Rb87LatticePath";
 
 /** Library entry for the bounded dimer already implemented in the Lab. */
 export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory, onOpenOrbitals }: {
@@ -22,6 +23,7 @@ export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory, onOpe
     </section>
     <Rb87ChapterOnePath onOpenOrbitals={onOpenOrbitals} />
     <Rb87ChapterTwoPath />
+    <Rb87LatticePath onInspectRun={() => document.getElementById("companion-saved-energy")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
     <section className="panel companion-model" aria-labelledby="companion-model-heading">
       <p className="eyebrow">IMPLEMENTED MODEL / TWO SITES</p>
       <h3 id="companion-model-heading">Hamiltonian and basis</h3>

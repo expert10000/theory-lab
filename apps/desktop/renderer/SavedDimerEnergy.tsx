@@ -55,7 +55,7 @@ export function SavedDimerEnergy() {
   const low=energies[0]??0,span=Math.max(1e-9,(energies.at(-1)??0)-low);
   const particles=verified?.result.model.parameters.particles??1;
 
-  return <div className="companion-saved-energy" data-testid="companion-saved-energy">
+  return <div id="companion-saved-energy" className="companion-saved-energy" data-testid="companion-saved-energy">
     <div className="companion-saved-heading"><div><p className="eyebrow">SAVED RESULT / VERIFIED ON SELECTION</p><h4>Inspect an eigenstate from a computed dimer run</h4></div>
       <button type="button" disabled={busy} onClick={()=>void refresh()}>Refresh saved runs</button></div>
     <div className="companion-saved-picker"><label>Saved dimer run <select data-testid="companion-saved-run" aria-label="Companion saved dimer run" value={verified?.summary.runId??""} disabled={busy} onChange={event=>{ if(event.target.value) void open(event.target.value); else {request.current++;current.current=null;setVerified(null);} }}>
