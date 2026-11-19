@@ -44,10 +44,11 @@ test("dimer guide separates implemented two-site values from wider Companion top
 
 test("Library page explains the executable dimer and links its checked sources", () => {
   const markup=renderToStaticMarkup(React.createElement(Rb87CompanionPage,{
-    onOpenDimer:()=>{},onOpenRuns:()=>{},
+    onOpenDimer:()=>{},onOpenRuns:()=>{},onOpenTheory:()=>{},
   }));
   assert.match(markup,/LIBRARY \/ RB87 QUANTUM COMPANION/);
   assert.match(markup,/Open runnable dimer in Atlas/);
+  assert.match(markup,/Read dimer Theory/);
   assert.match(markup,/View saved dimer runs/);
   assert.match(markup,/<math /);
   assert.match(markup,/one open bond/);

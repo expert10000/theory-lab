@@ -46,6 +46,8 @@ test("A/B Analysis model context extends workspace v1 without changing legacy sn
 });
 test("selected-model Theory restores from an additive workspace context",()=>{
   assert.ok(isWorkspaceSnapshot({...workspace,tab:"theory",theoryModel:"quantum_rabi"}));
+  assert.ok(isWorkspaceSnapshot({...workspace,tab:"theory",theorySubject:"bose_hubbard"}));
+  assert.equal(isWorkspaceSnapshot({...workspace,tab:"theory",theorySubject:"other"}),false);
   assert.equal(isWorkspaceSnapshot({...workspace,tab:"theory",theoryModel:"unknown"}),false);
 });
 test("Ising quench workspace restores only bounded draft controls, not a numerical artifact",()=>{

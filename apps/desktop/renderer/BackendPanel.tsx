@@ -3,6 +3,7 @@ import type { WorkerResources, WorkerStatus } from "../../../packages/contracts"
 import type {QecRepetitionStudy,QecRepetitionRunSummary} from "../../../packages/contracts/qec-repetition";
 import { runtimeNegotiation } from "../../../packages/contracts/runtime-negotiation";
 import { ATLAS_ENTRIES,ATLAS_REVISION } from "../../../packages/atlas";
+import { QecSyndromeViewer } from "./QecSyndromeViewer";
 
 const columns = [
   "time",
@@ -105,6 +106,7 @@ export function BackendPanel({ status }: { status: WorkerStatus }) {
             <ul>{savedQec.slice(0,10).map(row=><li key={row.runId}><button type="button" onClick={()=>void reopenQec(row.runId)}>
               Reopen {row.runId}</button> · {row.rounds} rounds · {row.computedAt}</li>)}</ul></div>}
         </article>
+        <QecSyndromeViewer />
         <article className="panel backend-card" data-testid="runtime-negotiation">
           <p className="eyebrow">RUNTIME CAPABILITIES / QI-22</p>
           <h2>Available on this worker</h2>

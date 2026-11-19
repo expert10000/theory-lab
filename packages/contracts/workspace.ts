@@ -14,6 +14,8 @@ export interface WorkspaceSnapshot {
   analysisModel?: "two_level"|"driven_two_level"|"landau_zener"|"stuckelberg"|"strong_drive"|"jaynes_cummings"|"quantum_rabi"|"lindblad"|"ising_chain"|"topology"|"hydrogenic"|"oscillator"|"transmon";
   /** Selected model when the informational Theory view is saved. */
   theoryModel?: WorkspaceSnapshot["analysisModel"];
+  /** Additive Theory route for the experimental finite dimer. */
+  theorySubject?: "bose_hubbard";
   selectedPresetId: string | null;
   spectrum: { parameters: Record<string, string>; engine: WorkspaceEngine };
   dynamics: { modelId: "driven_two_level" | "landau_zener" | "stuckelberg" | "strong_drive";
@@ -88,6 +90,7 @@ const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "
   tab: { enum: ["spectrum", "hamiltonian", "theory", "dynamics", "ising_quench", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "companion", "topology", "scenes", "orbital", "oscillator"] },
   analysisModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
   theoryModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
+  theorySubject:{const:"bose_hubbard"},
   selectedPresetId: { anyOf: [{ type: "string", maxLength: 100 }, { type: "null" }] },
   spectrum: block(["parameters", "engine"], { parameters: values, engine: { enum: ["qutip", "native", "compare"] } }),
   dynamics: block(["modelId", "parameters", "start", "stop", "samples", "basis", "engine"], {

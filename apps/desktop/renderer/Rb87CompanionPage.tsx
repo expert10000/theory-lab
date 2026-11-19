@@ -3,8 +3,8 @@ import { AtlasFormula } from "./AtlasFormula";
 import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
 
 /** Library entry for the bounded dimer already implemented in the Lab. */
-export function Rb87CompanionPage({ onOpenDimer, onOpenRuns }: {
-  onOpenDimer: () => void; onOpenRuns: () => void;
+export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory }: {
+  onOpenDimer: () => void; onOpenRuns: () => void; onOpenTheory: () => void;
 }) {
   return <div className="companion-page" data-testid="rb87-companion-page">
     <section className="panel companion-hero">
@@ -13,6 +13,7 @@ export function Rb87CompanionPage({ onOpenDimer, onOpenRuns }: {
       <p>The working example is a fixed-particle-number Bose–Hubbard dimer. Theory Lab diagonalizes its finite Hamiltonian, saves the result, and opens a selected eigenstate as a verified scene. The supplied chapters support the explanation below; the calculation happens in the Lab.</p>
       <div className="dynamics-actions">
         <button type="button" className="run-button" data-testid="companion-open-dimer" onClick={onOpenDimer}>Open runnable dimer in Atlas ↗</button>
+        <button type="button" data-testid="companion-open-theory" onClick={onOpenTheory}>Read dimer Theory ↗</button>
         <button type="button" data-testid="companion-open-runs" onClick={onOpenRuns}>View saved dimer runs ↗</button>
       </div>
     </section>

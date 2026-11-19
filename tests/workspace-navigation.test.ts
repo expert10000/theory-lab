@@ -55,6 +55,7 @@ test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
     {model:"topology",tab:"companion"},
     {model:"oscillator",tab:"hamiltonian"},
     {model:"quantum_rabi",tab:"theory"},
+    {model:"two_level",tab:"theory",theorySubject:"bose_hubbard"},
     {model:"ising_chain",tab:"ising_quench"},
   ] as const)assert.deepEqual(locationFromHash(workspaceHash(location)),location);
   assert.deepEqual(locationFromHash("#sweep"),{model:"driven_two_level",tab:"sweep"});
@@ -62,4 +63,5 @@ test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
   assert.deepEqual(locationFromHash("#lab/two_level/sweep"),{model:"two_level",tab:"sweep"});
   assert.equal(locationFromHash("#lab/unknown/spectrum"),null);
   assert.equal(locationFromHash("#view/backend/../../spectrum"),null);
+  assert.equal(locationFromHash("#lab/two_level/theory/other"),null);
 });

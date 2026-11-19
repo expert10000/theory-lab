@@ -5,7 +5,7 @@ import type {CavityModelId} from "../../../packages/models/cavity";
 export type WorkspaceMode="explore"|"dynamics"|"sweeps"|"analysis"|"theory"|"scenes"|"runs";
 export type WorkspaceModel="two_level"|EvolutionModelId|CavityModelId|
   "lindblad"|"ising_chain"|"topology"|"hydrogenic"|"oscillator"|"transmon";
-export type WorkspaceLocation={model:WorkspaceModel;tab:WorkspaceTab};
+export type WorkspaceLocation={model:WorkspaceModel;tab:WorkspaceTab;theorySubject?:"bose_hubbard"};
 
 export const MODEL_GROUPS:readonly {id:string;label:string;models:readonly WorkspaceModel[]}[]=[
   {id:"two-level",label:"Two-level",models:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive"]},
@@ -20,12 +20,15 @@ const MODELS=new Set<WorkspaceModel>(MODEL_GROUPS.flatMap(group=>group.models));
 const TABS=new Set<WorkspaceTab>(["spectrum","hamiltonian","theory","dynamics","ising_quench","cavity","open","sweep","many_body","circuit","presets","runs","roadmap","backend","atlas","companion","topology","scenes","orbital","oscillator"]);
 const UTILITIES=new Set<WorkspaceTab>(["presets","roadmap","backend","atlas","companion"]);
 
-export function workspaceHash({model,tab}:WorkspaceLocation):string{
+export function workspaceHash({model,tab,theorySubject}:WorkspaceLocation):string{
+  if(tab==="theory"&&theorySubject==="bose_hubbard")return `#lab/${model}/theory/bose_hubbard`;
   return UTILITIES.has(tab)?`#view/${tab}/${model}`:`#lab/${model}/${tab}`;
 }
 
 export function locationFromHash(hash:string):WorkspaceLocation|null{
   const parts=hash.replace(/^#/,"").split("/");
+  if(parts[0]==="lab"&&parts.length===4&&MODELS.has(parts[1] as WorkspaceModel)&&parts[2]==="theory"&&parts[3]==="bose_hubbard")
+    return {model:parts[1] as WorkspaceModel,tab:"theory",theorySubject:"bose_hubbard"};
   if(parts[0]==="lab"&&parts.length===3&&MODELS.has(parts[1] as WorkspaceModel)&&TABS.has(parts[2] as WorkspaceTab)){
     const model=parts[1] as WorkspaceModel,tab=parts[2] as WorkspaceTab;
     const mode=modeForTab(tab);

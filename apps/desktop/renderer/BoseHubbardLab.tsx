@@ -2,9 +2,10 @@ import React, { useEffect, useState } from "react";
 import type { BoseHubbardResult, BoseHubbardRunSummary } from "../../../packages/contracts/bose-hubbard";
 import { boseHubbardJob } from "../../../packages/models/bose-hubbard";
 import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
+import { DimerSchematic } from "./DimerSchematic";
 
 /** Bounded experimental pane; the Atlas entry remains reference-only. */
-export function BoseHubbardLab({ ready, onViewScene, onOpenCompanion, preferredRun }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void; onOpenCompanion?:()=>void; preferredRun?: {runId?: string; nonce: number} | null }) {
+export function BoseHubbardLab({ ready, onViewScene, onOpenCompanion, onOpenTheory, preferredRun }: { ready: boolean; onViewScene?: (runId: string, stateIndex: number) => void; onOpenCompanion?:()=>void; onOpenTheory?:(runId?:string)=>void; preferredRun?: {runId?: string; nonce: number} | null }) {
   const [particles, setParticles] = useState("2");
   const [interaction, setInteraction] = useState("2");
   const [saved, setSaved] = useState<BoseHubbardRunSummary[]>([]);
@@ -48,12 +49,18 @@ export function BoseHubbardLab({ ready, onViewScene, onOpenCompanion, preferredR
   }, [preferredRun?.nonce]);
   const state = result?.states[stateIndex];
   const pinned = saved.find(item => item.runId === result?.runId);
-  return <section className="atlas-binding" data-testid="bose-hubbard-lab">
-    <p className="eyebrow">EXPERIMENTAL LAB / FIXED-N TWO-SITE DIMER</p>
-    <h4>Compute a finite Bose–Hubbard system</h4>
-    <p>H/J = −(b†₁b₂ + b†₂b₁) + (U/2J) Σᵢ nᵢ(nᵢ−1). Fixed N, open bond, J=1, basis |n,N−n⟩. The chemical-potential term is constant in this fixed-N sector and is omitted. This is a generic boson dimer motivated by Chapters III–IV, not a full Rb87 gas or a phase-transition calculation.</p>
+  return <section className="atlas-binding dimer-lab" data-testid="bose-hubbard-lab">
+    <div className="dimer-lab-header">
+      <div><p className="eyebrow">EXPERIMENTAL LAB / FIXED-N TWO-SITE DIMER</p>
+        <h4>Compute a finite Bose–Hubbard system</h4>
+        <p>Hopping J and onsite interaction U compete across one open bond. Choose N and U/J, then diagonalize the fixed-N sector.</p>
+        <div className="dimer-facts"><span>2 sites</span><span>J = 1</span><span>Static eigenstates</span></div>
+      </div>
+      <DimerSchematic compact />
+    </div>
+    <p>H/J = −(b†₁b₂ + b†₂b₁) + (U/2J) Σᵢ nᵢ(nᵢ−1). Basis |n,N−n⟩. The fixed-N chemical-potential term is constant and omitted. This is a generic boson dimer motivated by Chapters III–IV, not a full Rb87 gas or a phase-transition calculation.</p>
     <p className="scope-note">Saved eigenstates can be inspected as verified two-site scenes. This panel does not promote the Atlas entry to a tested binding.</p>
-    <div className="dynamics-actions"><button type="button" onClick={()=>document.getElementById("bose-hubbard-theory")?.scrollIntoView({behavior:"smooth"})}>Read dimer theory and Companion chapters ↓</button>
+    <div className="dynamics-actions">{onOpenTheory&&<button type="button" data-testid="dimer-open-theory" onClick={()=>onOpenTheory(result?.runId)}>Read dimer Theory ↗</button>}
       {onOpenCompanion&&<button type="button" data-testid="dimer-open-companion" onClick={onOpenCompanion}>Open Companion in Library ↗</button>}</div>
     <div className="dynamics-actions">
       <label>Particles N <input aria-label="Dimer particles N" type="number" min="2" max="8" step="1" value={particles} onChange={event=>setParticles(event.target.value)}/></label>
