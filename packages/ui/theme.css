@@ -1710,6 +1710,26 @@ h1 {
 .companion-model-grid p { margin: 0; line-height: 1.55; }
 .companion-page > .atlas-binding { margin-top: 0; padding: 20px 24px; }
 @media (max-width: 760px) { .companion-model-grid { grid-template-columns: 1fr; } }
+.companion-reading-path { border-color: #526b73; background: linear-gradient(150deg, #1c2a34, #17282d 62%, #182b2a); }
+.companion-path-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 22px; }
+.companion-path-heading h3 { margin: 6px 0 9px; font-size: clamp(23px, 2.5vw, 30px); font-weight: 560; letter-spacing: -.025em; }
+.companion-path-heading p:not(.eyebrow) { max-width: 72ch; margin: 0; color: #bdced3; line-height: 1.6; }
+.companion-path-mark { display: grid; place-items: center; flex: 0 0 60px; width: 60px; height: 60px; border: 1px solid #829b9b; border-radius: 50%; color: #d0e8de; background: #28403f; font: 32px Georgia, serif; }
+.companion-path-steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.companion-path-steps article { min-width: 0; padding: 17px 18px; border: 1px solid #3e5b61; border-radius: 7px; background: #14252d; }
+.companion-path-number { color: #e3c18f; font: 12px Consolas, monospace; letter-spacing: .12em; }
+.companion-path-steps h4 { margin: 11px 0 8px; color: #d8eee8; font-size: 15px; }
+.companion-path-steps p { margin-bottom: 13px; color: #b9cbd0; line-height: 1.55; }
+.companion-path-steps small { color: #9fc5bd; font-size: 10px; }
+.companion-path-boundary { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; margin-top: 12px; }
+.companion-path-boundary > div { min-width: 0; padding: 18px; border: 1px solid #6c694e; border-radius: 7px; background: #252f2e; }
+.companion-path-boundary > div + div { border-color: #426765; background: #183034; }
+.companion-path-boundary h4 { margin: 8px 0; color: #f0d4a2; font-size: 15px; }
+.companion-path-boundary p:not(.eyebrow) { color: #c2d0d1; line-height: 1.55; }
+.companion-path-boundary button { padding: 9px 12px; border: 1px solid #82b8a8; border-radius: 6px; color: #d9f6e9; background: #244b48; }
+.companion-path-boundary button:hover:enabled { background: #31645a; }
+.companion-path-boundary small { display: block; margin-top: 12px; overflow-wrap: anywhere; line-height: 1.5; }
+@media (max-width: 900px) { .companion-path-steps, .companion-path-boundary { grid-template-columns: 1fr; } }
 .topology-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
 .topology-density { display: flex; align-items: end; gap: 2px; height: 190px; border-bottom: 1px solid #6c8d95; padding: 0 12px; }
 .topology-density button { flex: 1; min-width: 2px; max-height: 180px; background: #79d9c1; border: 0; padding: 0; cursor: pointer; }

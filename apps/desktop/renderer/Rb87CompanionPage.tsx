@@ -1,10 +1,11 @@
 import React from "react";
 import { AtlasFormula } from "./AtlasFormula";
 import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
+import { Rb87ChapterOnePath } from "./Rb87ChapterOnePath";
 
 /** Library entry for the bounded dimer already implemented in the Lab. */
-export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory }: {
-  onOpenDimer: () => void; onOpenRuns: () => void; onOpenTheory: () => void;
+export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory, onOpenOrbitals }: {
+  onOpenDimer: () => void; onOpenRuns: () => void; onOpenTheory: () => void; onOpenOrbitals: () => void;
 }) {
   return <div className="companion-page" data-testid="rb87-companion-page">
     <section className="panel companion-hero">
@@ -17,6 +18,7 @@ export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory }: {
         <button type="button" data-testid="companion-open-runs" onClick={onOpenRuns}>View saved dimer runs ↗</button>
       </div>
     </section>
+    <Rb87ChapterOnePath onOpenOrbitals={onOpenOrbitals} />
     <section className="panel companion-model" aria-labelledby="companion-model-heading">
       <p className="eyebrow">IMPLEMENTED MODEL / TWO SITES</p>
       <h3 id="companion-model-heading">Hamiltonian and basis</h3>

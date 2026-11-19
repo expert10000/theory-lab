@@ -29,6 +29,12 @@ test("missing and changed chapter bytes are withheld", async () => {
     const bytes = await readFile(target); bytes[100] ^= 1; await writeFile(target,bytes);
     await assert.rejects(verifiedCompanionPath(root,"rb87-iii"),/source hash changed/);
     assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-iii")?.available,false);
+    const first="Chapter_1_Expanded.pdf", firstTarget=join(root,first);
+    await copyFile(join(source,first),firstTarget);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-i")?.available,true);
+    const firstBytes=await readFile(firstTarget); firstBytes[100] ^= 1; await writeFile(firstTarget,firstBytes);
+    await assert.rejects(verifiedCompanionPath(root,"rb87-i"),/source hash changed/);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-i")?.available,false);
   } finally { await rm(root,{recursive:true,force:true}); }
 });
 
@@ -44,11 +50,12 @@ test("dimer guide separates implemented two-site values from wider Companion top
 
 test("Library page explains the executable dimer and links its checked sources", () => {
   const markup=renderToStaticMarkup(React.createElement(Rb87CompanionPage,{
-    onOpenDimer:()=>{},onOpenRuns:()=>{},onOpenTheory:()=>{},
+    onOpenDimer:()=>{},onOpenRuns:()=>{},onOpenTheory:()=>{},onOpenOrbitals:()=>{},
   }));
   assert.match(markup,/LIBRARY \/ RB87 QUANTUM COMPANION/);
   assert.match(markup,/Open runnable dimer in Atlas/);
   assert.match(markup,/Read dimer Theory/);
+  assert.match(markup,/From an electron orbital to a condensate/);
   assert.match(markup,/View saved dimer runs/);
   assert.match(markup,/<math /);
   assert.match(markup,/one open bond/);
