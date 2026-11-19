@@ -26,6 +26,11 @@ async function openDimer() {
   assert.match(chapterTwoText,/not condensate fraction/);
   await page.getByTestId("companion-atom-visual").waitFor();
   await page.getByTestId("companion-image-visual").waitFor();
+  const tofVisual=page.getByTestId("companion-tof-visual");
+  await tofVisual.waitFor();
+  assert.match(await tofVisual.textContent(),/MODEL INFERENCE BEGINS HERE/);
+  await page.getByTestId("companion-tof-slider").fill("3");
+  assert.match(await tofVisual.textContent(),/Middle image time t = 3\.0/);
   const energyVisual=page.getByTestId("companion-energy-visual");
   await energyVisual.waitFor();
   await page.getByTestId("companion-energy-slider").fill("0");

@@ -52,6 +52,41 @@ export function ImageInferenceFigure() {
   </figure>;
 }
 
+/** Illustrative ballistic width in arbitrary image and time units. */
+export function illustrativeTofWidth(time: number) {
+  return Math.hypot(0.55, 0.3 * time);
+}
+
+function CloudFrame({ time }: { time: number }) {
+  const width = illustrativeTofWidth(time);
+  return <div className="companion-tof-frame">
+    <span className="companion-visual-tag">SIMULATED IMAGE · t = {time.toFixed(1)}</span>
+    <div className="companion-tof-pixels" aria-hidden="true">{Array.from({length:77},(_,index) => {
+      const column=index%11-5, row=Math.floor(index/11)-3;
+      const distance=(column*column)/(width*width*8)+(row*row)/(width*width*5);
+      return <span key={index} style={{opacity:Math.max(.07,.9*Math.exp(-distance/2))}}/>;
+    })}</div>
+    <small>Illustrative width <strong>σ = {width.toFixed(2)}</strong> arb. units</small>
+  </div>;
+}
+
+export function TimeOfFlightFigure() {
+  const [time,setTime] = useState(2);
+  return <figure className="companion-visual companion-tof-visual" data-testid="companion-tof-visual">
+    <div className="companion-visual-heading"><span>03 / TIME OF FLIGHT</span><strong>From a sequence of images to an expansion model</strong></div>
+    <div className="companion-tof-frames"><CloudFrame time={0}/><CloudFrame time={time}/><CloudFrame time={4}/></div>
+    <label className="companion-tof-control" htmlFor="companion-tof-time">Middle image time <strong>t = {time.toFixed(1)}</strong>
+      <input id="companion-tof-time" data-testid="companion-tof-slider" type="range" min="0.5" max="3.5" step="0.5" value={time} onChange={event=>setTime(Number(event.target.value))}/>
+    </label>
+    <div className="companion-tof-inference">
+      <div><span className="companion-visual-tag">FROM IMAGES</span><strong>Spatial cloud width at each time</strong><p>Real experiments fit calibrated camera images to estimate widths. These pixels and times are illustrative.</p></div>
+      <span aria-hidden="true">→</span>
+      <div><span className="companion-visual-tag">MODEL INFERENCE BEGINS HERE</span><strong>σ²(t) = σ₀² + v²t²</strong><p>This simple fit assumes free ballistic motion, negligible interactions, and zero initial position–momentum covariance. Only then does the slope give an initial velocity spread.</p></div>
+    </div>
+    <figcaption>The chapter's exact free-particle variance includes a covariance term. An expansion-derived equivalent temperature needs additional assumptions; none of these panels is an experimental image.</figcaption>
+  </figure>;
+}
+
 const chart = {left: 48, right: 536, top: 20, bottom: 216};
 const x = (u:number) => chart.left + (u/20)*(chart.right-chart.left);
 const y = (energy:number) => chart.bottom - ((energy+3)/25)*(chart.bottom-chart.top);

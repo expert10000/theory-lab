@@ -1749,6 +1749,22 @@ h1 {
 .companion-pixel-frame span { min-width: 0; min-height: 0; background: #b8e0d5; }
 .companion-image-flow .companion-derived { align-content: center; min-height: 150px; border-color: #7c7051; background: #2b302d; }
 .companion-derived b { color: #efd6a5; font-size: 15px; overflow-wrap: anywhere; }
+.companion-tof-frames { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; }
+.companion-tof-frame { min-width: 0; padding: 11px; border: 1px solid #426573; border-radius: 6px; background: #152b35; }
+.companion-tof-frame small { display: block; margin-top: 9px; color: #b5cbd0; font-size: 11px; }
+.companion-tof-frame small strong { color: #f1d6a3; }
+.companion-tof-pixels { display: grid; grid-template-columns: repeat(11,minmax(0,1fr)); gap: 2px; height: 92px; margin-top: 10px; padding: 7px; border: 1px solid #496a78; border-radius: 4px; background: #0e1e2b; }
+.companion-tof-pixels span { min-width: 0; min-height: 0; background: #acd9d8; }
+.companion-tof-control { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin: 18px 0; color: #bfd2d2; font-size: 12px; }
+.companion-tof-control strong { color: #f1d6a3; }
+.companion-tof-control input { flex: 0 0 100%; width: 100%; accent-color: #e7ba7a; }
+.companion-tof-inference { display: grid; grid-template-columns: minmax(0,1fr) 26px minmax(0,1.15fr); gap: 10px; align-items: stretch; }
+.companion-tof-inference > div { min-width: 0; display: grid; align-content: start; gap: 7px; padding: 13px; border: 1px solid #41606a; border-radius: 6px; background: #192d34; }
+.companion-tof-inference > div:last-child { border-color: #806e4f; background: #302f2b; }
+.companion-tof-inference > div strong { color: #e6eee7; font-size: 13px; }
+.companion-tof-inference > div:last-child strong { color: #f1d6a3; }
+.companion-tof-inference p { margin: 0; color: #b5c8c9; font-size: 11px; line-height: 1.5; }
+.companion-tof-inference > span { align-self: center; text-align: center; color: #e9bc7b; font-size: 22px; }
 .companion-energy-visual { border-color: #5b695d; background: #13272a; }
 .companion-energy-layout { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(220px,.8fr); gap: 20px; align-items: center; }
 .companion-energy-layout svg { display: block; width: 100%; height: auto; }
@@ -1767,6 +1783,7 @@ h1 {
 @media (max-width: 900px) { .companion-path-steps, .companion-path-boundary { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .companion-energy-layout { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .companion-image-flow { grid-template-columns: 1fr; } .companion-flow-arrow { transform: rotate(90deg); } }
+@media (max-width: 620px) { .companion-tof-frames, .companion-tof-inference { grid-template-columns: 1fr; } .companion-tof-inference > span { transform: rotate(90deg); } }
 .topology-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
 .topology-density { display: flex; align-items: end; gap: 2px; height: 190px; border-bottom: 1px solid #6c8d95; padding: 0 12px; }
 .topology-density button { flex: 1; min-width: 2px; max-height: 180px; background: #79d9c1; border: 0; padding: 0; cursor: pointer; }

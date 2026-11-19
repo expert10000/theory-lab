@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { CompanionChapter } from "../../../packages/contracts/companion";
-import { ImageInferenceFigure } from "./CompanionVisuals";
+import { ImageInferenceFigure, TimeOfFlightFigure } from "./CompanionVisuals";
 
 /** Source-qualified Chapter II notes; a changed PDF cannot retain these locators. */
 export function Rb87ChapterTwoPath() {
@@ -55,6 +55,7 @@ export function Rb87ChapterTwoPath() {
           <small>Chapter II §8 · PDF pp. 7–8; supplement II-D · p. 11</small></article>
       </div>
       <ImageInferenceFigure />
+      <TimeOfFlightFigure />
       <div className="companion-path-boundary">
         <div><p className="eyebrow">DATED CASE STUDY / 5 NOVEMBER 2026</p>
           <h4>Space-station expansion is not an interferometer result.</h4>

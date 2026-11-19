@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { listCompanionChapters, verifiedCompanionPath } from "../apps/desktop/main/companion";
 import { BoseHubbardCompanion } from "../apps/desktop/renderer/BoseHubbardCompanion";
 import { Rb87CompanionPage } from "../apps/desktop/renderer/Rb87CompanionPage";
-import { twoBosonDimerLevels } from "../apps/desktop/renderer/CompanionVisuals";
+import { illustrativeTofWidth, twoBosonDimerLevels } from "../apps/desktop/renderer/CompanionVisuals";
 
 const source = join(process.cwd(),"docs","source-material","rb87-companion","Chapters");
 
@@ -61,6 +61,11 @@ test("visual energy curve matches the exact two-boson dimer limits", () => {
   assert.ok(Math.abs(ground-(2-Math.sqrt(8)))<1e-12);
   assert.equal(middle,4);
   assert.ok(Math.abs(upper-(2+Math.sqrt(8)))<1e-12);
+});
+
+test("illustrative time-of-flight width follows its stated ballistic model", () => {
+  assert.equal(illustrativeTofWidth(0),0.55);
+  assert.ok(Math.abs(illustrativeTofWidth(4)**2-(0.55**2+(0.3*4)**2))<1e-12);
 });
 
 test("Library page explains the executable dimer and links its checked sources", () => {
