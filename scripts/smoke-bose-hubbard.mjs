@@ -135,9 +135,26 @@ try {
   assert.equal(summaries.length, 1);
   assert.equal(summaries[0].particles, 3);
   const runId = summaries[0].runId;
+  const resultFile = join(profile, "bose-hubbard-runs", runId, "result.json");
   await desktop.close(); desktop = undefined;
 
   page = await openDimer();
+  await page.getByTestId("open-rb87-companion").click();
+  await page.getByTestId("companion-saved-run").selectOption(runId);
+  await page.getByTestId("companion-verified-dimer").waitFor();
+  assert.match(await page.getByTestId("companion-verified-dimer").textContent(),new RegExp(summaries[0].resultSha256));
+  assert.match(await page.getByTestId("companion-verified-dimer").textContent(),/bosons per site/);
+  await page.getByTestId("companion-saved-level-1").click();
+  await page.getByTestId("companion-verified-dimer").waitFor();
+  assert.equal(await page.getByTestId("companion-saved-level-1").getAttribute("aria-pressed"),"true");
+  const visualOriginal = await readFile(resultFile);
+  const visualChanged = JSON.parse(visualOriginal.toString("utf8"));
+  visualChanged.states[0].oneBodyCoherence = .5;
+  await writeFile(resultFile,JSON.stringify(visualChanged,null,2)+"\n");
+  await page.getByTestId("companion-saved-level-0").click();
+  await page.getByRole("alert").filter({hasText:"integrity check"}).waitFor();
+  assert.equal(await page.getByTestId("companion-verified-dimer").count(),0);
+  await writeFile(resultFile,visualOriginal);
   await page.getByRole("tab",{name:"Runs"}).click();
   await page.getByTestId("saved-dimer-run").waitFor();
   await page.getByTestId("saved-dimer-run").getByRole("button",{name:"Inspect saved dimer"}).click();
@@ -147,7 +164,6 @@ try {
   await page.getByTestId("dimer-theory-result").waitFor();
   assert.match(await page.getByTestId("dimer-theory-result").textContent(),new RegExp(runId));
   assert.match(await page.getByTestId("dimer-theory-result").textContent(),/bosons per site/);
-  const resultFile = join(profile, "bose-hubbard-runs", runId, "result.json");
   const originalResult = await readFile(resultFile);
   const changedResult = JSON.parse(originalResult.toString("utf8"));
   changedResult.states[0].oneBodyCoherence = .5;

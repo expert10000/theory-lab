@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { SavedDimerEnergy } from "./SavedDimerEnergy";
 
 /** Exact eigenvalues of the N=2, two-site Bose–Hubbard matrix, with J=1. */
 export function twoBosonDimerLevels(interactionRatio: number): [number, number, number] {
@@ -122,5 +123,6 @@ export function DimerEnergyFigure({ onOpenDimer }: { onOpenDimer: () => void }) 
       </div>
     </div>
     <figcaption>J sets the energy unit. The interaction shifts this finite three-level spectrum smoothly; the plot does not represent an extended lattice phase transition.</figcaption>
+    <SavedDimerEnergy />
   </figure>;
 }

@@ -1780,8 +1780,36 @@ h1 {
 .companion-energy-controls p { margin: 17px 0 13px; color: #b2c8c5; font-size: 11px; line-height: 1.55; }
 .companion-energy-controls button { padding: 8px 11px; border: 1px solid #7eaa9c; border-radius: 6px; color: #d9f6e9; background: #244b48; }
 .companion-energy-controls button:hover { background: #31645a; }
+.companion-saved-energy { margin-top: 18px; padding-top: 17px; border-top: 1px solid #547067; }
+.companion-saved-heading { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 12px; align-items: center; }
+.companion-saved-heading .eyebrow { margin: 0 0 5px; }
+.companion-saved-heading h4 { margin: 0; color: #e5efe7; font-size: 15px; }
+.companion-saved-heading button { padding: 7px 10px; border: 1px solid #688f85; border-radius: 5px; color: #d8ede5; background: #23423f; }
+.companion-saved-picker { margin: 16px 0; }
+.companion-saved-picker label { display: grid; gap: 6px; max-width: 480px; color: #bed0cd; font-size: 12px; }
+.companion-saved-picker select { width: 100%; min-width: 0; padding: 8px 10px; border: 1px solid #64857d; border-radius: 5px; color: #e2f0e8; background: #193336; }
+.companion-saved-provenance { color: #b6c9c6; font-size: 11px; line-height: 1.65; overflow-wrap: anywhere; }
+.companion-saved-grid { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 12px; }
+.companion-saved-grid > div { min-width: 0; padding: 14px; border: 1px solid #4b6768; border-radius: 6px; background: #142a30; }
+.companion-saved-grid h5 { margin: 0 0 12px; color: #dcebe4; font-size: 12px; }
+.companion-saved-spectrum { max-height: 350px; overflow-y: auto; }
+.companion-saved-spectrum button { display: grid; grid-template-columns: 55px minmax(40px,1fr) 90px; gap: 8px; align-items: center; width: 100%; margin: 5px 0; padding: 7px; border: 1px solid #38545a; border-radius: 4px; color: #bfd5d1; background: #1b343b; text-align: left; font-size: 10px; }
+.companion-saved-spectrum button[aria-pressed="true"] { border-color: #e1bd82; color: #f1dfbb; background: #373c36; }
+.companion-saved-spectrum button strong { text-align: right; font: 10px Consolas, monospace; }
+.companion-level-track { position: relative; display: block; height: 2px; background: #66877f; }
+.companion-level-track i { position: absolute; top: -4px; display: block; width: 10px; height: 10px; border-radius: 50%; background: #9bdbc8; }
+.companion-saved-spectrum button[aria-pressed="true"] .companion-level-track i { background: #edc587; }
+.companion-site-pair { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+.companion-site { display: grid; justify-items: center; gap: 5px; min-width: 0; padding: 12px 5px; border: 1px solid #3e6265; border-radius: 6px; background: #1b373a; text-align: center; }
+.companion-site-disc { display: block; width: 38px; height: 38px; border: 2px solid #f3d4a1; border-radius: 50%; background: #bd9a6b; }
+.companion-site strong { color: #e8e5d4; font-size: 12px; }
+.companion-site span:not(.companion-site-disc), .companion-site small { color: #b8ccca; font-size: 10px; overflow-wrap: anywhere; }
+.companion-saved-sites > p { color: #b9d0ca; font-size: 11px; line-height: 1.5; }
+.companion-saved-sites > p strong { display: block; margin-top: 3px; color: #f0d6a3; }
+.companion-saved-boundary { color: #abc5bc; font-size: 11px; line-height: 1.5; }
 @media (max-width: 900px) { .companion-path-steps, .companion-path-boundary { grid-template-columns: 1fr; } }
 @media (max-width: 900px) { .companion-energy-layout { grid-template-columns: 1fr; } }
+@media (max-width: 720px) { .companion-saved-grid { grid-template-columns: 1fr; } }
 @media (max-width: 620px) { .companion-image-flow { grid-template-columns: 1fr; } .companion-flow-arrow { transform: rotate(90deg); } }
 @media (max-width: 620px) { .companion-tof-frames, .companion-tof-inference { grid-template-columns: 1fr; } .companion-tof-inference > span { transform: rotate(90deg); } }
 .topology-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
