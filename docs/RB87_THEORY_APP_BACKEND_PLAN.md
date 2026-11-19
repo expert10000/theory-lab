@@ -48,7 +48,7 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 
 ## Decision 3: reviewed reading paths and broader working models (RbC-3)
 
-Chapters I–IV now have reviewed section/page locators and source-qualified Library paths for atomic versus condensate degrees of freedom, coherence, time of flight, imaging, and the lattice-to-dimer derivation. Next review measurement and correlation limits (V–VI) and open-system channels (VII). Links to saved results retain chapter and result hashes, model, basis, units, and omissions; changed sources withhold current values.
+Chapters I–VI now have reviewed section/page locators and source-qualified Library paths for atomic versus condensate degrees of freedom, coherence, imaging, the lattice-to-dimer derivation, and measurement versus inferred correlations. Next review open-system channels (VII). Links to saved results retain chapter and result hashes, model, basis, units, and omissions; changed sources withhold current values.
 
 After the dimer, specify a bounded chain or quench as a separate contract and job. Add time scenes only from recorded states. Bosonic correlation or entanglement views require explicit operators and saved state evidence. Neither Ising entropy nor the static dimer supplies a gas-microscopy observation.
 
@@ -63,7 +63,7 @@ Split synthetic parity/number readout, correlation and entanglement, and lattice
 | RbC-1A | Separate dimer contract, worker RPC, independent engine (core implemented) | Matrix, limits, parity, and schema tests pass; desktop capability gate and UI remain RbC-1B. |
 | RbC-1B | Atlas model brief, experimental dimer pane, exact saved runs, main Runs route, and dedicated dimer Theory view implemented | Desktop smoke reopens from Runs after restart, opens the same result in Theory, Atlas, and Scenes, and withholds a changed source. Keep reference-only Atlas status. |
 | RbC-1C | Result-backed dimer scene and Math3D handoff | Hash/units, selection, round trip, and installed two-app checks. |
-| RbC-2 | Library page for the working dimer, reviewed Chapter I–IV paths, packaged PDFs, restricted IPC | Library → Atlas → Runs navigation and seven chapters work after restart; missing/changed source refused. Further reviewed paths remain future work. |
+| RbC-2 | Library page for the working dimer, reviewed Chapter I–VI paths, packaged PDFs, restricted IPC | Library → Atlas → Runs navigation and seven chapters work after restart; missing/changed source refused. Further reviewed paths remain future work. |
 | RbC-3 | Reviewed reading paths and separately bounded chain/quench | Editorial review plus per-model physics, saved-run, and scene gates. |
 | RbC-4 | Separately specified measurement/open-system jobs | Per-model scientific and installed gates. |
 

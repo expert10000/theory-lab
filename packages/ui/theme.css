@@ -1734,6 +1734,22 @@ h1 {
 .companion-lattice-wells strong { font-size: 11px; }
 .companion-lattice-source + .companion-lattice-source { margin-top: 12px; }
 .companion-lattice-source small { overflow-wrap: anywhere; }
+.companion-measurement-path { border-color: #596f72; background: linear-gradient(150deg,#203036,#1a2930 65%,#263038); }
+.companion-measurement-path .companion-path-mark { flex-basis: 70px; width: 70px; height: 70px; border-color: #89a5a7; color: #dcf0ed; background: #32474b; font-size: 19px; }
+.companion-measurement-controls { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.companion-measurement-controls > div { display: flex; flex-wrap: wrap; gap: 6px; }
+.companion-measurement-controls button { padding: 7px 11px; border: 1px solid #58767a; border-radius: 5px; color: #d1e4e2; background: #244047; }
+.companion-measurement-controls button[aria-pressed="true"] { border-color: #e2c28f; color: #f5dfb4; background: #514635; }
+.companion-measurement-flow { display: grid; grid-template-columns: minmax(0,1fr) 30px minmax(0,1fr); gap: 12px; align-items: stretch; }
+.companion-measurement-flow > div { display: grid; align-content: start; gap: 11px; min-width: 0; padding: 15px; border: 1px solid #45686e; border-radius: 6px; background: #172d35; }
+.companion-measurement-flow > span { align-self: center; text-align: center; color: #e5c38f; font-size: 24px; }
+.companion-measurement-flow small { color: #afc9c8; font-size: 11px; line-height: 1.5; }
+.companion-measurement-pixels, .companion-measurement-readout { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; min-height: 84px; }
+.companion-measurement-pixels > span { border: 1px solid #42626d; border-radius: 6px; background: radial-gradient(circle,#385663,#13232c 65%); }
+.companion-measurement-pixels > span.lit { background: radial-gradient(circle,#d3dfb6,#639d9e 25%,#19333f 70%); }
+.companion-measurement-readout > span { display: grid; place-items: center; padding: 8px; border: 1px solid #608081; border-radius: 6px; color: #bad1ce; background: #244246; font-size: 11px; }
+.companion-measurement-readout strong { display: block; color: #f3d49e; font-size: 26px; }
+@media (max-width: 620px) { .companion-measurement-flow { grid-template-columns: 1fr; } .companion-measurement-flow > span { transform: rotate(90deg); } }
 .companion-path-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 22px; }
 .companion-path-heading > div { min-width: 0; }
 .companion-path-heading h3 { margin: 6px 0 9px; font-size: clamp(23px, 2.5vw, 30px); font-weight: 560; letter-spacing: -.025em; }

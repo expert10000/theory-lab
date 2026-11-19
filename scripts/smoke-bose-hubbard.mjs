@@ -32,6 +32,16 @@ async function openDimer() {
   assert.match(await page.getByTestId("companion-lattice-visual").textContent(),/Onsite energy: U/);
   await page.getByTestId("lattice-inspect-run").click();
   await page.getByTestId("companion-saved-energy").waitFor();
+  await page.getByTestId("measurement-path-reading").waitFor();
+  const measurementText=await page.getByTestId("measurement-path-reading").textContent();
+  assert.match(measurementText,/4b8762888c17f8e75975481923330dfa0afc40ae85a5142c8deb29645cd6a90c/);
+  assert.match(measurementText,/48765f2196f1d604b88cd32b6e20a9f6f39dafd2d7e25bfd4dae42ee5c9633c1/);
+  const measurementVisual=page.getByTestId("companion-measurement-visual");
+  assert.match(await measurementVisual.textContent(),/Sites with 0 and 2 atoms both report 0/);
+  await measurementVisual.getByRole("button",{name:"Number resolved"}).click();
+  assert.match(await measurementVisual.textContent(),/Ideal number-resolved channel reports the occupation count/);
+  await page.getByTestId("measurement-inspect-run").click();
+  await page.getByTestId("companion-saved-energy").waitFor();
   await page.getByTestId("companion-atom-visual").waitFor();
   await page.getByTestId("companion-image-visual").waitFor();
   const tofVisual=page.getByTestId("companion-tof-visual");
