@@ -1,6 +1,6 @@
 # Rb87 Companion Chapter II: reviewed Library reading path
 
-Scope: the Library notes on coherence, interference, time of flight, imaging, and the dated space-station case study. This is a review of those claims and locators, not a validation of every derivation or exercise in the chapter.
+Scope: the Library notes on coherence, interference, time of flight, imaging, and the dated space-station case study, plus the absorption-imaging diagram. Its pixels are illustrative; only the probe reference and atom-image intensities are marked as recorded, while optical depth is derived from their ratio. This is a review of those claims and locators, not a validation of every derivation or exercise in the chapter.
 
 The supplied `Chapter_2_Expanded.pdf` has 12 pages and SHA-256 `a0cec6732edda05bf6ef0f7a15fb968622734fcf9760f83e10fb74447b1d794b`. The source TeX and PDF remain unchanged. Section positions were checked against the PDF text and rendered pages on 2026-11-19. Main verifies the PDF bytes against the pinned catalog before its reader opens; the Library withholds the path if that source is missing or changes.
 

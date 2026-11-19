@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { CompanionChapter } from "../../../packages/contracts/companion";
+import { AtomToModeFigure } from "./CompanionVisuals";
 
 /** Source-qualified Chapter I path; withhold its notes if the supplied PDF changes. */
 export function Rb87ChapterOnePath({ onOpenOrbitals }: { onOpenOrbitals: () => void }) {
@@ -50,6 +51,7 @@ export function Rb87ChapterOnePath({ onOpenOrbitals }: { onOpenOrbitals: () => v
           <p>A macroscopically occupied natural orbital is identified through the one-body density matrix. An interacting condensate need not put every atom in one exact product state.</p>
           <small>Chapter I §5 · PDF p. 5</small></article>
       </div>
+      <AtomToModeFigure />
       <div className="companion-path-boundary">
         <div><p className="eyebrow">RELATED THEORY / ONE-ELECTRON MODEL</p>
           <h4>Explore orbital shape, then keep the models separate.</h4>

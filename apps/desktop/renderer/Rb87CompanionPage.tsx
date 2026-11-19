@@ -3,6 +3,7 @@ import { AtlasFormula } from "./AtlasFormula";
 import { BoseHubbardCompanion } from "./BoseHubbardCompanion";
 import { Rb87ChapterOnePath } from "./Rb87ChapterOnePath";
 import { Rb87ChapterTwoPath } from "./Rb87ChapterTwoPath";
+import { DimerEnergyFigure } from "./CompanionVisuals";
 
 /** Library entry for the bounded dimer already implemented in the Lab. */
 export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory, onOpenOrbitals }: {
@@ -30,6 +31,7 @@ export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory, onOpe
         <div><h4>Computed and saved</h4><p>Energy levels and the gap in J; for a selected eigenstate, site occupations in bosons per site, number variances in bosons², and one-body coherence in bosons. Saved values are checked again when reopened.</p></div>
         <div><h4>Interpretation boundary</h4><p>The two-site crossover is finite and static. The scene positions are schematic. This job does not calculate an extended gas, a thermodynamic phase transition, a quench, fluorescence, or an Rb87-specific parameter conversion.</p></div>
       </div>
+      <DimerEnergyFigure onOpenDimer={onOpenDimer} />
     </section>
     <BoseHubbardCompanion />
   </div>;

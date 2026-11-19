@@ -1698,7 +1698,8 @@ h1 {
 .atlas-relations { display: flex; gap: 8px; flex-wrap: wrap; }
 .atlas-relations button { background: #1b3938; border: 1px solid #315f59; border-radius: 5px; padding: 7px 10px; color: #9fe7d5; cursor: pointer; }
 .atlas-binding { margin-top: 22px; padding: 16px; border: 1px solid #3c7268; background: #142c2c; border-radius: 6px; }
-.companion-page { display: grid; gap: 18px; max-width: 1120px; }
+.companion-page { display: grid; grid-template-columns: minmax(0,1fr); gap: 18px; max-width: 1120px; }
+.companion-page > * { min-width: 0; }
 .companion-page > .panel { padding: 24px; }
 .companion-page .companion-hero h2 { margin: 7px 0 12px; font-size: clamp(26px, 3vw, 36px); }
 .companion-page .companion-hero p { max-width: 780px; line-height: 1.6; }
@@ -1714,6 +1715,7 @@ h1 {
 .companion-chapter-two { border-color: #576473; background: linear-gradient(150deg, #202b38, #172630 62%, #1b2931); }
 .companion-chapter-two .companion-path-mark { border-color: #9c947b; color: #f0dcaf; background: #3d3b38; font-size: 25px; }
 .companion-path-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 22px; }
+.companion-path-heading > div { min-width: 0; }
 .companion-path-heading h3 { margin: 6px 0 9px; font-size: clamp(23px, 2.5vw, 30px); font-weight: 560; letter-spacing: -.025em; }
 .companion-path-heading p:not(.eyebrow) { max-width: 72ch; margin: 0; color: #bdced3; line-height: 1.6; }
 .companion-path-mark { display: grid; place-items: center; flex: 0 0 60px; width: 60px; height: 60px; border: 1px solid #829b9b; border-radius: 50%; color: #d0e8de; background: #28403f; font: 32px Georgia, serif; }
@@ -1731,7 +1733,40 @@ h1 {
 .companion-path-boundary button { padding: 9px 12px; border: 1px solid #82b8a8; border-radius: 6px; color: #d9f6e9; background: #244b48; }
 .companion-path-boundary button:hover:enabled { background: #31645a; }
 .companion-path-boundary small { display: block; margin-top: 12px; overflow-wrap: anywhere; line-height: 1.5; }
+.companion-visual { margin: 14px 0 0; padding: 18px; border: 1px solid #486269; border-radius: 8px; background: #11232b; }
+.companion-visual-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 18px; align-items: baseline; margin-bottom: 12px; }
+.companion-visual-heading span, .companion-visual-tag { color: #a8b9bc; font: 10px Consolas, monospace; letter-spacing: .12em; }
+.companion-visual-heading strong { color: #e3eee8; font-size: 15px; font-weight: 600; }
+.companion-visual figcaption { margin-top: 9px; color: #aabfc2; font-size: 11px; line-height: 1.55; }
+.companion-atom-visual svg { display: block; width: 100%; max-height: 190px; }
+.companion-atom-visual svg text, .companion-energy-visual svg text { fill: #b9cecf; font: 11px Consolas, monospace; }
+.companion-image-flow { display: grid; grid-template-columns: minmax(0,1fr) 20px minmax(0,1fr) 25px minmax(0,1.15fr); align-items: center; gap: 10px; }
+.companion-image-flow > div { min-width: 0; display: grid; gap: 5px; justify-items: start; padding: 12px; border: 1px solid #3d5b63; border-radius: 6px; background: #172d35; }
+.companion-image-flow strong { color: #d9eee7; font-size: 13px; }
+.companion-image-flow small { color: #a9c5c4; font-size: 11px; }
+.companion-flow-symbol { text-align: center; color: #e9bc7b; font-size: 20px; }
+.companion-pixel-frame { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; width: 100%; height: 88px; padding: 8px; border: 1px solid #51747a; border-radius: 4px; background: #101e27; }
+.companion-pixel-frame span { min-width: 0; min-height: 0; background: #b8e0d5; }
+.companion-image-flow .companion-derived { align-content: center; min-height: 150px; border-color: #7c7051; background: #2b302d; }
+.companion-derived b { color: #efd6a5; font-size: 15px; overflow-wrap: anywhere; }
+.companion-energy-visual { border-color: #5b695d; background: #13272a; }
+.companion-energy-layout { display: grid; grid-template-columns: minmax(0,1.5fr) minmax(220px,.8fr); gap: 20px; align-items: center; }
+.companion-energy-layout svg { display: block; width: 100%; height: auto; }
+.companion-energy-controls { min-width: 0; }
+.companion-energy-controls label { display: flex; justify-content: space-between; gap: 12px; color: #bdd0ce; font-size: 12px; }
+.companion-energy-controls label strong { color: #f1d7a6; }
+.companion-energy-controls input { width: 100%; margin: 12px 0 17px; accent-color: #e7ba7a; }
+.companion-energy-values { display: grid; gap: 8px; }
+.companion-energy-values > div { display: grid; grid-template-columns: 9px 1fr auto; align-items: center; gap: 8px; }
+.companion-energy-values span { width: 9px; height: 9px; border-radius: 50%; }
+.companion-energy-values small { color: #b8cbca; }
+.companion-energy-values strong { color: #e7eee7; font: 12px Consolas, monospace; }
+.companion-energy-controls p { margin: 17px 0 13px; color: #b2c8c5; font-size: 11px; line-height: 1.55; }
+.companion-energy-controls button { padding: 8px 11px; border: 1px solid #7eaa9c; border-radius: 6px; color: #d9f6e9; background: #244b48; }
+.companion-energy-controls button:hover { background: #31645a; }
 @media (max-width: 900px) { .companion-path-steps, .companion-path-boundary { grid-template-columns: 1fr; } }
+@media (max-width: 900px) { .companion-energy-layout { grid-template-columns: 1fr; } }
+@media (max-width: 620px) { .companion-image-flow { grid-template-columns: 1fr; } .companion-flow-arrow { transform: rotate(90deg); } }
 .topology-figures { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-top: 20px; }
 .topology-density { display: flex; align-items: end; gap: 2px; height: 190px; border-bottom: 1px solid #6c8d95; padding: 0 12px; }
 .topology-density button { flex: 1; min-width: 2px; max-height: 180px; background: #79d9c1; border: 0; padding: 0; cursor: pointer; }

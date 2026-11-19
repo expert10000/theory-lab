@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { listCompanionChapters, verifiedCompanionPath } from "../apps/desktop/main/companion";
 import { BoseHubbardCompanion } from "../apps/desktop/renderer/BoseHubbardCompanion";
 import { Rb87CompanionPage } from "../apps/desktop/renderer/Rb87CompanionPage";
+import { twoBosonDimerLevels } from "../apps/desktop/renderer/CompanionVisuals";
 
 const source = join(process.cwd(),"docs","source-material","rb87-companion","Chapters");
 
@@ -54,6 +55,14 @@ test("dimer guide separates implemented two-site values from wider Companion top
   assert.match(markup,/Chapter IV/);
 });
 
+test("visual energy curve matches the exact two-boson dimer limits", () => {
+  assert.deepEqual(twoBosonDimerLevels(0),[-2,0,2]);
+  const [ground,middle,upper]=twoBosonDimerLevels(4);
+  assert.ok(Math.abs(ground-(2-Math.sqrt(8)))<1e-12);
+  assert.equal(middle,4);
+  assert.ok(Math.abs(upper-(2+Math.sqrt(8)))<1e-12);
+});
+
 test("Library page explains the executable dimer and links its checked sources", () => {
   const markup=renderToStaticMarkup(React.createElement(Rb87CompanionPage,{
     onOpenDimer:()=>{},onOpenRuns:()=>{},onOpenTheory:()=>{},onOpenOrbitals:()=>{},
@@ -63,6 +72,7 @@ test("Library page explains the executable dimer and links its checked sources",
   assert.match(markup,/Read dimer Theory/);
   assert.match(markup,/From an electron orbital to a condensate/);
   assert.match(markup,/From coherence to a camera image/);
+  assert.match(markup,/Two atoms, two sites: energy levels/);
   assert.match(markup,/View saved dimer runs/);
   assert.match(markup,/<math /);
   assert.match(markup,/one open bond/);

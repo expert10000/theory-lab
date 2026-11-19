@@ -1,6 +1,6 @@
 # Rb87 Companion Chapter I: reviewed Library reading path
 
-Scope: the three Library notes on atomic structure, Bose occupation, and condensate basics. This review does not validate every statement, calculation, reference, or dated experiment in Chapter I.
+Scope: the three Library notes on atomic structure, Bose occupation, and condensate basics, plus the schematic atom-to-mode diagram. The diagram changes coordinates from internal electron structure to whole-atom motion; neither cloud is a calculated Rb87 electronic orbital or trap wavefunction. This review does not validate every statement, calculation, reference, or dated experiment in Chapter I.
 
 The supplied `Chapter_1_Expanded.pdf` has 11 pages and SHA-256 `89092287019a7c55c2459a022021a2d873908a4e77a7c32e36bc4fd2a624522e`. The source TeX and PDF remain unchanged. Page numbers below are PDF page numbers, checked against the rendered PDF on 2026-11-19. Main verifies the PDF bytes against the pinned chapter catalog before the reader opens; the Library withholds the path notes when the chapter is unavailable.
 

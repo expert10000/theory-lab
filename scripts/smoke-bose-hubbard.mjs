@@ -24,6 +24,14 @@ async function openDimer() {
   assert.match(chapterTwoText,/source SHA-256 a0cec6732edda05bf6ef0f7a15fb968622734fcf9760f83e10fb74447b1d794b/);
   assert.match(chapterTwoText,/equivalent expansion temperature/);
   assert.match(chapterTwoText,/not condensate fraction/);
+  await page.getByTestId("companion-atom-visual").waitFor();
+  await page.getByTestId("companion-image-visual").waitFor();
+  const energyVisual=page.getByTestId("companion-energy-visual");
+  await energyVisual.waitFor();
+  await page.getByTestId("companion-energy-slider").fill("0");
+  assert.match(await energyVisual.textContent(),/Ground-2\.000 J/);
+  await page.getByTestId("companion-energy-slider").fill("4");
+  assert.match(await energyVisual.textContent(),/Middle4\.000 J/);
   const chapterTwoReaderOpened=desktop.waitForEvent("window");
   await page.getByTestId("open-companion-rb87-ii").click();
   const chapterTwoReader=await chapterTwoReaderOpened;

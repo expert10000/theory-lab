@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import type { CompanionChapter } from "../../../packages/contracts/companion";
+import { ImageInferenceFigure } from "./CompanionVisuals";
 
 /** Source-qualified Chapter II notes; a changed PDF cannot retain these locators. */
 export function Rb87ChapterTwoPath() {
@@ -53,6 +54,7 @@ export function Rb87ChapterTwoPath() {
           <p>The camera records probe and atom-image intensities. Their calibrated ratio gives optical depth, then an inferred line-of-sight column density. One image does not directly show a three-dimensional wavefunction, phase field, or momentum distribution.</p>
           <small>Chapter II §8 · PDF pp. 7–8; supplement II-D · p. 11</small></article>
       </div>
+      <ImageInferenceFigure />
       <div className="companion-path-boundary">
         <div><p className="eyebrow">DATED CASE STUDY / 5 NOVEMBER 2026</p>
           <h4>Space-station expansion is not an interferometer result.</h4>
