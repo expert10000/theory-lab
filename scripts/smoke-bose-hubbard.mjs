@@ -19,6 +19,18 @@ async function openDimer() {
   await page.getByTestId("chapter-one-reading").waitFor();
   assert.match(await page.getByTestId("chapter-one-reading").textContent(),/source SHA-256 89092287019a7c55c2459a022021a2d873908a4e77a7c32e36bc4fd2a624522e/);
   assert.match(await page.getByTestId("chapter-one-reading").textContent(),/not calculate Rb87's many-electron 5s state/);
+  await page.getByTestId("chapter-two-reading").waitFor();
+  const chapterTwoText=await page.getByTestId("chapter-two-reading").textContent();
+  assert.match(chapterTwoText,/source SHA-256 a0cec6732edda05bf6ef0f7a15fb968622734fcf9760f83e10fb74447b1d794b/);
+  assert.match(chapterTwoText,/equivalent expansion temperature/);
+  assert.match(chapterTwoText,/not condensate fraction/);
+  const chapterTwoReaderOpened=desktop.waitForEvent("window");
+  await page.getByTestId("open-companion-rb87-ii").click();
+  const chapterTwoReader=await chapterTwoReaderOpened;
+  await chapterTwoReader.waitForLoadState();
+  assert.equal(await chapterTwoReader.evaluate(()=>document.contentType),"application/pdf");
+  assert.match(chapterTwoReader.url(),/Chapter_2_Expanded\.pdf$/);
+  await chapterTwoReader.close();
   const chapterOneReaderOpened=desktop.waitForEvent("window");
   await page.getByTestId("open-companion-rb87-i").click();
   const chapterOneReader=await chapterOneReaderOpened;

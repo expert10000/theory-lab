@@ -35,6 +35,12 @@ test("missing and changed chapter bytes are withheld", async () => {
     const firstBytes=await readFile(firstTarget); firstBytes[100] ^= 1; await writeFile(firstTarget,firstBytes);
     await assert.rejects(verifiedCompanionPath(root,"rb87-i"),/source hash changed/);
     assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-i")?.available,false);
+    const second="Chapter_2_Expanded.pdf", secondTarget=join(root,second);
+    await copyFile(join(source,second),secondTarget);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-ii")?.available,true);
+    const secondBytes=await readFile(secondTarget); secondBytes[100] ^= 1; await writeFile(secondTarget,secondBytes);
+    await assert.rejects(verifiedCompanionPath(root,"rb87-ii"),/source hash changed/);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-ii")?.available,false);
   } finally { await rm(root,{recursive:true,force:true}); }
 });
 
@@ -56,6 +62,7 @@ test("Library page explains the executable dimer and links its checked sources",
   assert.match(markup,/Open runnable dimer in Atlas/);
   assert.match(markup,/Read dimer Theory/);
   assert.match(markup,/From an electron orbital to a condensate/);
+  assert.match(markup,/From coherence to a camera image/);
   assert.match(markup,/View saved dimer runs/);
   assert.match(markup,/<math /);
   assert.match(markup,/one open bond/);

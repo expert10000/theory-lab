@@ -1711,6 +1711,8 @@ h1 {
 .companion-page > .atlas-binding { margin-top: 0; padding: 20px 24px; }
 @media (max-width: 760px) { .companion-model-grid { grid-template-columns: 1fr; } }
 .companion-reading-path { border-color: #526b73; background: linear-gradient(150deg, #1c2a34, #17282d 62%, #182b2a); }
+.companion-chapter-two { border-color: #576473; background: linear-gradient(150deg, #202b38, #172630 62%, #1b2931); }
+.companion-chapter-two .companion-path-mark { border-color: #9c947b; color: #f0dcaf; background: #3d3b38; font-size: 25px; }
 .companion-path-heading { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 22px; }
 .companion-path-heading h3 { margin: 6px 0 9px; font-size: clamp(23px, 2.5vw, 30px); font-weight: 560; letter-spacing: -.025em; }
 .companion-path-heading p:not(.eyebrow) { max-width: 72ch; margin: 0; color: #bdced3; line-height: 1.6; }
