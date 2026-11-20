@@ -137,7 +137,7 @@ async function openDimer() {
   await page.getByTestId("open-companion-rb87-iii").waitFor();
   assert.equal(await page.getByTestId("open-companion-rb87-iii").isEnabled(),true);
   const chapters = await page.evaluate(() => window.quantum.listCompanionChapters());
-  assert.equal(chapters.length,7);
+  assert.equal(chapters.length,8);
   assert.equal(chapters.every(row=>row.available),true);
   await assert.rejects(page.evaluate(() => window.quantum.openCompanionChapter("../../missing")),/Unknown Companion chapter/);
   return page;
@@ -151,6 +151,14 @@ try {
   assert.equal(await reader.evaluate(() => document.contentType),"application/pdf");
   assert.match(reader.url(),/Chapter_3_Expanded\.pdf$/);
   await reader.close();
+  await page.getByText("All eight Companion chapters").click();
+  const eighthOpened = desktop.waitForEvent("window");
+  await page.getByRole("button",{name:"Open Measurement, feedback, and correction"}).click();
+  const eighthReader = await eighthOpened;
+  await eighthReader.waitForLoadState();
+  assert.equal(await eighthReader.evaluate(() => document.contentType),"application/pdf");
+  assert.match(eighthReader.url(),/Chapter_8_Measurement_Feedback_QEC\.pdf$/);
+  await eighthReader.close();
   await page.getByTestId("bose-hubbard-theory").waitFor();
   await page.getByLabel("Dimer particles N").fill("3");
   await page.getByLabel("Dimer interaction U over J").fill("2");

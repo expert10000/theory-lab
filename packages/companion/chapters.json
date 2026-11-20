@@ -5,5 +5,6 @@
   {"id":"rb87-iv","title":"Finite Bose–Hubbard calculations","subject":"Two-site diagonalization, coherence, and quenches","file":"Chapter_4_Expanded.pdf","pages":10,"sha256":"6ba34d37b401267511684d7c24bd55588b955688a74f7769be5da50721af1547"},
   {"id":"rb87-v","title":"Entanglement and correlations","subject":"Many-body correlations and reduced states","file":"Chapter_5_Entanglement_Correlations.pdf","pages":6,"sha256":"4b8762888c17f8e75975481923330dfa0afc40ae85a5142c8deb29645cd6a90c"},
   {"id":"rb87-vi","title":"Quantum gas microscopy","subject":"Site-resolved measurement and its limits","file":"Chapter_6_Quantum_Gas_Microscopy.pdf","pages":10,"sha256":"48765f2196f1d604b88cd32b6e20a9f6f39dafd2d7e25bfd4dae42ee5c9633c1"},
-  {"id":"rb87-vii","title":"Open quantum systems","subject":"Fluorescence, loss, and measurement","file":"Chapter_7_Open_Quantum_Systems.pdf","pages":9,"sha256":"bd3587629480236bde7235598fd2495b70e1494429fee20ce251e3f0cdcaa5dd"}
+  {"id":"rb87-vii","title":"Open quantum systems","subject":"Fluorescence, loss, and measurement","file":"Chapter_7_Open_Quantum_Systems.pdf","pages":9,"sha256":"bd3587629480236bde7235598fd2495b70e1494429fee20ce251e3f0cdcaa5dd"},
+  {"id":"rb87-viii","title":"Measurement, feedback, and correction","subject":"Monitored trajectories, feedback, and error-correction boundaries","file":"Chapter_8_Measurement_Feedback_QEC.pdf","pages":11,"sha256":"376e1adf84021f558a33899f4b37019e088f58ef0ecee2dbc2774fda7d58709c"}
 ]

@@ -36,7 +36,7 @@ export function BoseHubbardCompanion() {
     </button>)}</div>}
     {related.map(row=><p key={row.id}><strong>{row.title}</strong> · {row.pages} pages · source SHA-256 <code>{row.sha256}</code>{!row.available&&" · changed or missing source withheld"}</p>)}
     {message&&<p role="status">{message}</p>}
-    <details><summary>All seven Companion chapters</summary>
+    <details><summary>All eight Companion chapters</summary>
       <p>The complete supplied chapter index is reference material. A chapter opens in a Lab reading window only after its local PDF passes the recorded hash check.</p>
       {chapters.map(row=><div key={row.id}>
         <button type="button" disabled={busy||!row.available} onClick={()=>void open(row.id)}>{row.available?"Open":"Unavailable"} {row.title}</button>

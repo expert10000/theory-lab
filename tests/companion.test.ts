@@ -12,11 +12,12 @@ import { illustrativeTofWidth, twoBosonDimerLevels } from "../apps/desktop/rende
 
 const source = join(process.cwd(),"docs","source-material","rb87-companion","Chapters");
 
-test("Companion catalog lists seven immutable PDFs and rejects unknown IDs", async () => {
+test("Companion catalog lists eight immutable PDFs and rejects unknown IDs", async () => {
   const rows = await listCompanionChapters(source);
-  assert.deepEqual(rows.map(row=>row.id),["rb87-i","rb87-ii","rb87-iii","rb87-iv","rb87-v","rb87-vi","rb87-vii"]);
+  assert.deepEqual(rows.map(row=>row.id),["rb87-i","rb87-ii","rb87-iii","rb87-iv","rb87-v","rb87-vi","rb87-vii","rb87-viii"]);
   assert.ok(rows.every(row=>row.available && /^[a-f0-9]{64}$/.test(row.sha256)));
   assert.match(await verifiedCompanionPath(source,"rb87-iii"),/Chapter_3_Expanded\.pdf$/);
+  assert.match(await verifiedCompanionPath(source,"rb87-viii"),/Chapter_8_Measurement_Feedback_QEC\.pdf$/);
   await assert.rejects(verifiedCompanionPath(source,"../../secret"),/Unknown Companion chapter/);
 });
 
@@ -34,6 +35,12 @@ test("missing and changed chapter bytes are withheld", async () => {
       await assert.rejects(verifiedCompanionPath(root,id),/source hash changed/);
       assert.equal((await listCompanionChapters(root)).find(row=>row.id===id)?.available,false);
     }
+    const eighth="Chapter_8_Measurement_Feedback_QEC.pdf", eighthTarget=join(root,eighth);
+    await copyFile(join(source,eighth),eighthTarget);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-viii")?.available,true);
+    const eighthBytes=await readFile(eighthTarget); eighthBytes[100]^=1; await writeFile(eighthTarget,eighthBytes);
+    await assert.rejects(verifiedCompanionPath(root,"rb87-viii"),/source hash changed/);
+    assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-viii")?.available,false);
     const bytes = await readFile(target); bytes[100] ^= 1; await writeFile(target,bytes);
     await assert.rejects(verifiedCompanionPath(root,"rb87-iii"),/source hash changed/);
     assert.equal((await listCompanionChapters(root)).find(row=>row.id==="rb87-iii")?.available,false);

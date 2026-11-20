@@ -1,3 +1,4 @@
 Chapters/*.tex -text
 Chapters/*.pdf -text
+Chapter_VIII/* -text -diff
 SHA256_MANIFEST.txt -text
