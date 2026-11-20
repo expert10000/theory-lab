@@ -1770,6 +1770,23 @@ h1 {
 .companion-path-boundary button:hover:enabled { background: #31645a; }
 .companion-path-boundary small { display: block; margin-top: 12px; overflow-wrap: anywhere; line-height: 1.5; }
 .companion-visual { margin: 14px 0 0; padding: 18px; border: 1px solid #486269; border-radius: 8px; background: #11232b; }
+.companion-seven-controls { display: grid; gap: 13px; margin: 16px 0; }
+.companion-seven-controls > div { display: flex; flex-wrap: wrap; gap: 7px; }
+.companion-seven-controls button { padding: 8px 11px; border: 1px solid #59787b; border-radius: 5px; color: #d8e8e4; background: #1c333a; cursor: pointer; }
+.companion-seven-controls button[aria-pressed="true"] { border-color: #a6dbc8; color: #f0fff5; background: #315a57; }
+.companion-seven-controls label { display: grid; gap: 6px; max-width: 540px; color: #c9dcda; font-size: 12px; }
+.companion-seven-controls input { width: 100%; accent-color: #78d8bc; }
+.companion-seven-model { padding: 14px 17px; border-left: 3px solid #e1ba7c; background: #233437; }
+.companion-seven-model strong { color: #f3d9a4; font: 15px Consolas, monospace; }
+.companion-seven-model p { margin: 8px 0; line-height: 1.55; }
+.companion-seven-model small { color: #b3cbc4; }
+.companion-seven-bars { display: grid; gap: 11px; }
+.companion-seven-bar { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(80px, 2fr) 54px; gap: 12px; align-items: center; color: #d4e7df; font-size: 12px; }
+.companion-seven-bar > div { height: 17px; border: 1px solid #4a6a6d; border-radius: 4px; background: #0e2027; overflow: hidden; }
+.companion-seven-bar i { display: block; height: 100%; background: #78d8bc; }
+.companion-seven-bar strong { text-align: right; font: 12px Consolas, monospace; }
+.companion-seven-path .companion-path-boundary { margin-top: 16px; }
+@media (max-width: 560px) { .companion-seven-bar { grid-template-columns: 1fr 2fr 45px; gap: 6px; font-size: 10px; } }
 .companion-monitoring-controls { display: grid; gap: 10px; margin: 16px 0; }
 .companion-monitoring-controls > div { display: flex; flex-wrap: wrap; gap: 7px; }
 .companion-monitoring-controls button { padding: 7px 10px; border: 1px solid #547278; border-radius: 5px; color: #d8e8e4; background: #1c333a; cursor: pointer; }

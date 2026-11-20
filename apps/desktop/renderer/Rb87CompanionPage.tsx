@@ -8,6 +8,7 @@ import { Rb87LatticePath } from "./Rb87LatticePath";
 import { Rb87MeasurementPath } from "./Rb87MeasurementPath";
 import { Rb87MonitoringVisual } from "./Rb87MonitoringVisual";
 import { Rb87PreparationVisual } from "./Rb87PreparationVisual";
+import { Rb87ChapterSevenPath } from "./Rb87ChapterSevenPath";
 
 /** Library entry for the bounded dimer already implemented in the Lab. */
 export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory, onOpenOrbitals }: {
@@ -28,6 +29,7 @@ export function Rb87CompanionPage({ onOpenDimer, onOpenRuns, onOpenTheory, onOpe
     <Rb87ChapterTwoPath />
     <Rb87LatticePath onInspectRun={() => document.getElementById("companion-saved-energy")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
     <Rb87MeasurementPath onInspectRun={() => document.getElementById("companion-saved-energy")?.scrollIntoView({ behavior: "smooth", block: "start" })} />
+    <Rb87ChapterSevenPath />
     <Rb87MonitoringVisual />
     <Rb87PreparationVisual />
     <section className="panel companion-model" aria-labelledby="companion-model-heading">

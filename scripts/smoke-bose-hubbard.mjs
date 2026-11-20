@@ -145,6 +145,23 @@ async function openDimer() {
 try {
   let page = await openDimer();
   await page.getByTestId("open-rb87-companion").click();
+  await page.getByTestId("chapter-seven-reading").waitFor();
+  const sevenChannels=page.getByRole("group",{name:"Open-system channel"});
+  assert.match(await page.getByTestId("chapter-seven-figure").textContent(),/Normalized coherence0\.368/);
+  await sevenChannels.getByRole("button",{name:"Atom loss"}).click();
+  assert.match(await page.getByTestId("chapter-seven-figure").textContent(),/Zero-atom sector0\.632/);
+  await sevenChannels.getByRole("button",{name:"Fluorescence readout"}).click();
+  assert.match(await page.getByTestId("chapter-seven-figure").textContent(),/Photon detected0\.316/);
+  await page.getByTestId("chapter-seven-efficiency").fill("1");
+  assert.match(await page.getByTestId("chapter-seven-figure").textContent(),/Photon detected0\.632/);
+  await page.getByTestId("chapter-seven-open-monitoring").click();
+  const seventhReaderOpened=desktop.waitForEvent("window");
+  await page.getByTestId("chapter-seven-open-pdf").click();
+  const seventhReader=await seventhReaderOpened;
+  await seventhReader.waitForLoadState();
+  assert.equal(await seventhReader.evaluate(()=>document.contentType),"application/pdf");
+  assert.match(seventhReader.url(),/Chapter_7_Open_Quantum_Systems\.pdf$/);
+  await seventhReader.close();
   await page.getByTestId("monitoring-values").waitFor();
   assert.match(await page.getByTestId("monitoring-selected-values").textContent(),/P₁₁ exact 0\.535 · trajectory estimate 0\.533/);
   await page.getByRole("group",{name:"Monitoring strength"}).getByRole("button",{name:"γ/J = 2"}).click();
@@ -157,6 +174,17 @@ try {
   await page.getByTestId("preparation-time").press("End");
   assert.match(await page.getByTestId("preparation-selected-values").textContent(),/Exact fidelity 0\.994947/);
   assert.match(await page.getByTestId("preparation-selected-values").textContent(),/estimate 0\.997000/);
+  const seventhSource = join(process.cwd(),"docs","source-material","rb87-companion","Chapters","Chapter_7_Open_Quantum_Systems.pdf");
+  const seventhOriginal = await readFile(seventhSource);
+  try {
+    const seventhChanged=Buffer.from(seventhOriginal); seventhChanged[100]^=1;
+    await writeFile(seventhSource,seventhChanged);
+    await page.reload();
+    await page.getByTestId("chapter-seven-withheld").waitFor();
+    assert.equal(await page.getByTestId("chapter-seven-reading").count(),0);
+  } finally { await writeFile(seventhSource,seventhOriginal); }
+  await page.reload();
+  await page.getByTestId("chapter-seven-reading").waitFor();
   const eighthSource = join(process.cwd(),"docs","source-material","rb87-companion","Chapters","Chapter_8_Measurement_Feedback_QEC.pdf");
   const eighthOriginal = await readFile(eighthSource);
   try {

@@ -48,7 +48,7 @@ The first product milestone is a working finite Bose–Hubbard dimer, not a PDF 
 
 ## Decision 3: reviewed reading paths and broader working models (RbC-3)
 
-Chapters I–VI now have reviewed section/page locators and source-qualified Library paths for atomic versus condensate degrees of freedom, coherence, imaging, the lattice-to-dimer derivation, and measurement versus inferred correlations. Next review open-system channels (VII). Links to saved results retain chapter and result hashes, model, basis, units, and omissions; changed sources withhold current values.
+Chapters I–VI now have reviewed section/page locators and source-qualified Library paths for atomic versus condensate degrees of freedom, coherence, imaging, the lattice-to-dimer derivation, and measurement versus inferred correlations. A reviewed Chapter VII Library path now compares ideal dephasing, one-body loss, and fluorescence readout; these are source-gated illustrations, not new worker jobs. Links to saved results retain chapter and result hashes, model, basis, units, and omissions; changed sources withhold current values.
 
 After the dimer, specify a bounded chain or quench as a separate contract and job. Add time scenes only from recorded states. Bosonic correlation or entanglement views require explicit operators and saved state evidence. Neither Ising entropy nor the static dimer supplies a gas-microscopy observation.
 

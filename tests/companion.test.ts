@@ -8,6 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { listCompanionChapters, verifiedCompanionPath } from "../apps/desktop/main/companion";
 import { BoseHubbardCompanion } from "../apps/desktop/renderer/BoseHubbardCompanion";
 import { Rb87CompanionPage } from "../apps/desktop/renderer/Rb87CompanionPage";
+import { chapterSevenExample } from "../apps/desktop/renderer/Rb87ChapterSevenPath";
 import { illustrativeTofWidth, twoBosonDimerLevels } from "../apps/desktop/renderer/CompanionVisuals";
 
 const source = join(process.cwd(),"docs","source-material","rb87-companion","Chapters");
@@ -88,6 +89,17 @@ test("illustrative time-of-flight width follows its stated ballistic model", () 
   assert.ok(Math.abs(illustrativeTofWidth(4)**2-(0.55**2+(0.3*4)**2))<1e-12);
 });
 
+test("Chapter VII channel examples preserve their distinct quantities", () => {
+  const dephasing=chapterSevenExample("dephasing",1,.5);
+  assert.ok(Math.abs(dephasing.primary-Math.exp(-1))<1e-12);
+  const loss=chapterSevenExample("loss",1,.5);
+  assert.ok(Math.abs(loss.primary-Math.exp(-1))<1e-12);
+  assert.ok(Math.abs(loss.primary+loss.secondary-1)<1e-12);
+  const emission=chapterSevenExample("fluorescence",1,.5);
+  assert.ok(Math.abs(emission.tertiary-.5*(1-Math.exp(-1)))<1e-12);
+  assert.equal(chapterSevenExample("fluorescence",1,0).tertiary,0);
+});
+
 test("Library page explains the executable dimer and links its checked sources", () => {
   const markup=renderToStaticMarkup(React.createElement(Rb87CompanionPage,{
     onOpenDimer:()=>{},onOpenRuns:()=>{},onOpenTheory:()=>{},onOpenOrbitals:()=>{},
@@ -99,6 +111,7 @@ test("Library page explains the executable dimer and links its checked sources",
   assert.match(markup,/From coherence to a camera image/);
   assert.match(markup,/From optical lattice to a finite dimer/);
   assert.match(markup,/From site images to correlations/);
+  assert.match(markup,/Different channels, different evidence/);
   assert.match(markup,/Two atoms, two sites: energy levels/);
   assert.match(markup,/View saved dimer runs/);
   assert.match(markup,/<math /);
