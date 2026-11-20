@@ -1,0 +1,152 @@
+[
+  {
+    "gamma": 0,
+    "t": 0,
+    "p11_mc": 0.4999999999999999,
+    "p11_exact": 0.4999999999999999,
+    "mean_trajectory_entropy": 1.039720770839918,
+    "master_purity": 0.9999999999999999,
+    "frobenius_error": 8.899114524108741e-16,
+    "mc_trace": 1
+  },
+  {
+    "gamma": 0,
+    "t": 0.5,
+    "p11_mc": 0.987840782031462,
+    "p11_exact": 0.9878407820314619,
+    "mean_trajectory_entropy": 0.0741312318104631,
+    "master_purity": 1.0000000000000002,
+    "frobenius_error": 3.2951484811276796e-15,
+    "mc_trace": 0.9999999999999967
+  },
+  {
+    "gamma": 0,
+    "t": 1,
+    "p11_mc": 0.5474540992213024,
+    "p11_exact": 0.5474540992213011,
+    "mean_trajectory_entropy": 1.002317526859327,
+    "master_purity": 0.9999999999999998,
+    "frobenius_error": 1.69824882295278e-15,
+    "mc_trace": 1.0000000000000007
+  },
+  {
+    "gamma": 0,
+    "t": 2,
+    "p11_mc": 0.6718012646219654,
+    "p11_exact": 0.6718012646219637,
+    "mean_trajectory_entropy": 0.8603856910097933,
+    "master_purity": 0.9999999999999992,
+    "frobenius_error": 2.6460428066991955e-15,
+    "mc_trace": 0.9999999999999973
+  },
+  {
+    "gamma": 0,
+    "t": 3,
+    "p11_mc": 0.825835234403505,
+    "p11_exact": 0.8258352344035034,
+    "mean_trajectory_entropy": 0.5831507247167722,
+    "master_purity": 0.9999999999999989,
+    "frobenius_error": 4.312157860033956e-15,
+    "mc_trace": 0.9999999999999981
+  },
+  {
+    "gamma": 0.5,
+    "t": 0,
+    "p11_mc": 0.4999999999999999,
+    "p11_exact": 0.4999999999999999,
+    "mean_trajectory_entropy": 1.039720770839918,
+    "master_purity": 0.9999999999999999,
+    "frobenius_error": 8.899114524108741e-16,
+    "mc_trace": 1
+  },
+  {
+    "gamma": 0.5,
+    "t": 0.5,
+    "p11_mc": 0.8819874289290491,
+    "p11_exact": 0.8842854922570764,
+    "mean_trajectory_entropy": 0.2975277125672151,
+    "master_purity": 0.7987758122819731,
+    "frobenius_error": 0.01413989226126406,
+    "mc_trace": 1.000000000000002
+  },
+  {
+    "gamma": 0.5,
+    "t": 1,
+    "p11_mc": 0.5334525750065173,
+    "p11_exact": 0.5353557068924053,
+    "mean_trajectory_entropy": 0.8494391707399965,
+    "master_purity": 0.7044844225983149,
+    "frobenius_error": 0.0197740379688874,
+    "mc_trace": 1
+  },
+  {
+    "gamma": 0.5,
+    "t": 2,
+    "p11_mc": 0.5709214813598513,
+    "p11_exact": 0.5696568758338526,
+    "mean_trajectory_entropy": 0.7369852754971492,
+    "master_purity": 0.5532800057543831,
+    "frobenius_error": 0.01973315108366125,
+    "mc_trace": 1
+  },
+  {
+    "gamma": 0.5,
+    "t": 3,
+    "p11_mc": 0.5654887073167598,
+    "p11_exact": 0.5663011789674866,
+    "mean_trajectory_entropy": 0.6848196463033753,
+    "master_purity": 0.4658197009995126,
+    "frobenius_error": 0.026873188528216803,
+    "mc_trace": 1.0000000000000002
+  },
+  {
+    "gamma": 2,
+    "t": 0,
+    "p11_mc": 0.4999999999999999,
+    "p11_exact": 0.4999999999999999,
+    "mean_trajectory_entropy": 1.039720770839918,
+    "master_purity": 0.9999999999999999,
+    "frobenius_error": 8.899114524108741e-16,
+    "mc_trace": 1
+  },
+  {
+    "gamma": 2,
+    "t": 0.5,
+    "p11_mc": 0.689119077899208,
+    "p11_exact": 0.7025594064480033,
+    "mean_trajectory_entropy": 0.433627544728883,
+    "master_purity": 0.5498840484760844,
+    "frobenius_error": 0.02399252978312164,
+    "mc_trace": 0.9999999999999999
+  },
+  {
+    "gamma": 2,
+    "t": 1,
+    "p11_mc": 0.4884171775802527,
+    "p11_exact": 0.49183073881960154,
+    "mean_trajectory_entropy": 0.5489215754187682,
+    "master_purity": 0.43370920545283004,
+    "frobenius_error": 0.01879417951828574,
+    "mc_trace": 1
+  },
+  {
+    "gamma": 2,
+    "t": 2,
+    "p11_mc": 0.40584513103481235,
+    "p11_exact": 0.4184607868138914,
+    "mean_trajectory_entropy": 0.4839927525957621,
+    "master_purity": 0.3517933327954944,
+    "frobenius_error": 0.022245004354995435,
+    "mc_trace": 1
+  },
+  {
+    "gamma": 2,
+    "t": 3,
+    "p11_mc": 0.350566761751696,
+    "p11_exact": 0.3718110845501816,
+    "mean_trajectory_entropy": 0.46238146847352596,
+    "master_purity": 0.33683328167582494,
+    "frobenius_error": 0.033114568082279194,
+    "mc_trace": 1
+  }
+]

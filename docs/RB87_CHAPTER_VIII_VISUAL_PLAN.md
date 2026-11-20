@@ -1,6 +1,6 @@
 # Next feature: monitored dimer evidence visual
 
-**Time box:** 3–4 focused hours. **Status:** prepared, not implemented. This follows the Chapter VIII source intake and independent exact-value check.
+**Time box:** 3–4 focused hours. **Status:** implemented on the feature branch; see the [quantity review](RB87_CHAPTER_VIII_REVIEW.md). This follows the Chapter VIII source intake and independent exact-value check.
 
 ## Reader outcome
 

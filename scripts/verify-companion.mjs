@@ -28,3 +28,12 @@ for (const line of manifest.split(/\r?\n/)) {
   checked++;
 }
 if (checked !== 23) throw new Error(`Expected 23 source manifest rows, found ${checked}`);
+const csv = await readFile(join(root,"Chapter_VIII","trajectory_results.csv"));
+const csvHash = "e711c5217e9c89146ce162cff5842e330bb0ae61894d07348e90d86429ac4f4d";
+if (createHash("sha256").update(csv).digest("hex") !== csvHash) throw new Error("Chapter VIII CSV source changed");
+const [header,...lines] = csv.toString("utf8").trim().split(/\r?\n/);
+const keys = header.split(",");
+const sourceRows = lines.map(line => Object.fromEntries(line.split(",").map((value,index) => [keys[index],Number(value)])));
+const snapshot = JSON.parse(await readFile("packages/companion/monitoring-viii.json","utf8"));
+if (sourceRows.length !== 15 || JSON.stringify(sourceRows) !== JSON.stringify(snapshot))
+  throw new Error("Chapter VIII visual data differs from pinned CSV");

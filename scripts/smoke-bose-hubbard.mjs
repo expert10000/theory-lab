@@ -144,6 +144,25 @@ async function openDimer() {
 }
 try {
   let page = await openDimer();
+  await page.getByTestId("open-rb87-companion").click();
+  await page.getByTestId("monitoring-values").waitFor();
+  assert.match(await page.getByTestId("monitoring-selected-values").textContent(),/P₁₁ exact 0\.535 · trajectory estimate 0\.533/);
+  await page.getByRole("group",{name:"Monitoring strength"}).getByRole("button",{name:"γ/J = 2"}).click();
+  await page.getByRole("group",{name:"Recorded time"}).getByRole("button",{name:"t = 3"}).click();
+  assert.match(await page.getByTestId("monitoring-selected-values").textContent(),/P₁₁ exact 0\.372 · trajectory estimate 0\.351/);
+  assert.match(await page.getByTestId("monitoring-selected-values").textContent(),/Mean conditioned entropy 0\.462 nats/);
+  const eighthSource = join(process.cwd(),"docs","source-material","rb87-companion","Chapters","Chapter_8_Measurement_Feedback_QEC.pdf");
+  const eighthOriginal = await readFile(eighthSource);
+  try {
+    const eighthChanged = Buffer.from(eighthOriginal); eighthChanged[100] ^= 1;
+    await writeFile(eighthSource,eighthChanged);
+    await page.reload();
+    await page.getByTestId("monitoring-withheld").waitFor();
+    assert.equal(await page.getByTestId("monitoring-selected-values").count(),0);
+  } finally { await writeFile(eighthSource,eighthOriginal); }
+  await page.reload();
+  await page.getByTestId("monitoring-values").waitFor();
+  await page.getByTestId("companion-open-dimer").click();
   const readerOpened = desktop.waitForEvent("window");
   await page.getByTestId("open-companion-rb87-iii").click();
   const reader = await readerOpened;
