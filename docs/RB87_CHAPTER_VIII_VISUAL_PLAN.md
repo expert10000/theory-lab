@@ -24,4 +24,4 @@ The screen names the idealized model: two bosons, two sites, `U/J = 4`, initial 
 
 **Done when:** the reader can compare monitoring strengths and times; each plotted value traces to the archived row; exact and sampled values are visibly distinct; conditional entropy and unconditional purity are never conflated; a changed PDF withholds the visual; the existing static dimer route still works after restart.
 
-**After this slice:** review the preparation and correction sections separately before considering another visual. A runnable monitored dimer would require its own versioned model, stochastic validation, saved-run provenance, and capability gate.
+**Follow-on:** the preparation example and its boundary with error correction were reviewed separately in [Chapter VIII visual review](RB87_CHAPTER_VIII_REVIEW.md) and added as an archived-data visual. A runnable monitored dimer or reservoir model would require its own versioned model, stochastic validation, saved-run provenance, and capability gate.

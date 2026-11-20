@@ -1,0 +1,107 @@
+[
+  {
+    "kappa_t": 0,
+    "exact_target_fidelity": 0.25,
+    "3000_trajectory_fidelity": 0.246
+  },
+  {
+    "kappa_t": 0.25,
+    "exact_target_fidelity": 0.41589941269644637,
+    "3000_trajectory_fidelity": 0.423
+  },
+  {
+    "kappa_t": 0.5,
+    "exact_target_fidelity": 0.5451020052155249,
+    "3000_trajectory_fidelity": 0.5626666666666666
+  },
+  {
+    "kappa_t": 0.75,
+    "exact_target_fidelity": 0.645725085444239,
+    "3000_trajectory_fidelity": 0.652
+  },
+  {
+    "kappa_t": 1,
+    "exact_target_fidelity": 0.7240904191214182,
+    "3000_trajectory_fidelity": 0.732
+  },
+  {
+    "kappa_t": 1.25,
+    "exact_target_fidelity": 0.7851214023548574,
+    "3000_trajectory_fidelity": 0.7983333333333333
+  },
+  {
+    "kappa_t": 1.5,
+    "exact_target_fidelity": 0.8326523798886776,
+    "3000_trajectory_fidelity": 0.8376666666666667
+  },
+  {
+    "kappa_t": 1.75,
+    "exact_target_fidelity": 0.8696695424121661,
+    "3000_trajectory_fidelity": 0.8736666666666667
+  },
+  {
+    "kappa_t": 2,
+    "exact_target_fidelity": 0.8984985375725405,
+    "3000_trajectory_fidelity": 0.9033333333333333
+  },
+  {
+    "kappa_t": 2.25,
+    "exact_target_fidelity": 0.9209505815786018,
+    "3000_trajectory_fidelity": 0.9243333333333333
+  },
+  {
+    "kappa_t": 2.5,
+    "exact_target_fidelity": 0.9384362510320758,
+    "3000_trajectory_fidelity": 0.9426666666666667
+  },
+  {
+    "kappa_t": 2.75,
+    "exact_target_fidelity": 0.9520541040949693,
+    "3000_trajectory_fidelity": 0.957
+  },
+  {
+    "kappa_t": 3,
+    "exact_target_fidelity": 0.9626596987241021,
+    "3000_trajectory_fidelity": 0.967
+  },
+  {
+    "kappa_t": 3.25,
+    "exact_target_fidelity": 0.9709193441262085,
+    "3000_trajectory_fidelity": 0.973
+  },
+  {
+    "kappa_t": 3.5,
+    "exact_target_fidelity": 0.9773519624332612,
+    "3000_trajectory_fidelity": 0.9793333333333333
+  },
+  {
+    "kappa_t": 3.75,
+    "exact_target_fidelity": 0.9823616906079932,
+    "3000_trajectory_fidelity": 0.9843333333333333
+  },
+  {
+    "kappa_t": 4,
+    "exact_target_fidelity": 0.9862632708334493,
+    "3000_trajectory_fidelity": 0.987
+  },
+  {
+    "kappa_t": 4.25,
+    "exact_target_fidelity": 0.9893018245682506,
+    "3000_trajectory_fidelity": 0.991
+  },
+  {
+    "kappa_t": 4.5,
+    "exact_target_fidelity": 0.9916682525963183,
+    "3000_trajectory_fidelity": 0.9936666666666667
+  },
+  {
+    "kappa_t": 4.75,
+    "exact_target_fidelity": 0.9935112285976595,
+    "3000_trajectory_fidelity": 0.995
+  },
+  {
+    "kappa_t": 5,
+    "exact_target_fidelity": 0.9949465397506859,
+    "3000_trajectory_fidelity": 0.997
+  }
+]

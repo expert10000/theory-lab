@@ -37,3 +37,14 @@ const sourceRows = lines.map(line => Object.fromEntries(line.split(",").map((val
 const snapshot = JSON.parse(await readFile("packages/companion/monitoring-viii.json","utf8"));
 if (sourceRows.length !== 15 || JSON.stringify(sourceRows) !== JSON.stringify(snapshot))
   throw new Error("Chapter VIII visual data differs from pinned CSV");
+const preparation = await readFile(join(root,"Chapter_VIII","dissipative_preparation.csv"));
+const preparationHash = "f42b578f78a5a38f36476f8f4e6e3c0d1b003ad6014beb8877ff44d854367cb9";
+if (createHash("sha256").update(preparation).digest("hex") !== preparationHash)
+  throw new Error("Chapter VIII preparation CSV source changed");
+const [preparationHeader,...preparationLines] = preparation.toString("utf8").trim().split(/\r?\n/);
+const preparationKeys = preparationHeader.split(",");
+const preparationRows = preparationLines.map(line => Object.fromEntries(line.split(",").map((value,index) => [preparationKeys[index],Number(value)])));
+const preparationSnapshot = JSON.parse(await readFile("packages/companion/preparation-viii.json","utf8"));
+if (preparationRows.length !== 21 || JSON.stringify(preparationRows) !== JSON.stringify(preparationSnapshot) ||
+    preparationRows.some(row => Math.abs(row.exact_target_fidelity - (1 - .75 * Math.exp(-row.kappa_t))) > 1e-12))
+  throw new Error("Chapter VIII preparation visual data differs from pinned CSV or exact formula");

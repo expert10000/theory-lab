@@ -151,6 +151,12 @@ try {
   await page.getByRole("group",{name:"Recorded time"}).getByRole("button",{name:"t = 3"}).click();
   assert.match(await page.getByTestId("monitoring-selected-values").textContent(),/P₁₁ exact 0\.372 · trajectory estimate 0\.351/);
   assert.match(await page.getByTestId("monitoring-selected-values").textContent(),/Mean conditioned entropy 0\.462 nats/);
+  await page.getByTestId("preparation-values").waitFor();
+  assert.match(await page.getByTestId("preparation-selected-values").textContent(),/Exact fidelity 0\.898499/);
+  await page.getByTestId("preparation-time").focus();
+  await page.getByTestId("preparation-time").press("End");
+  assert.match(await page.getByTestId("preparation-selected-values").textContent(),/Exact fidelity 0\.994947/);
+  assert.match(await page.getByTestId("preparation-selected-values").textContent(),/estimate 0\.997000/);
   const eighthSource = join(process.cwd(),"docs","source-material","rb87-companion","Chapters","Chapter_8_Measurement_Feedback_QEC.pdf");
   const eighthOriginal = await readFile(eighthSource);
   try {
@@ -158,10 +164,13 @@ try {
     await writeFile(eighthSource,eighthChanged);
     await page.reload();
     await page.getByTestId("monitoring-withheld").waitFor();
+    await page.getByTestId("preparation-withheld").waitFor();
     assert.equal(await page.getByTestId("monitoring-selected-values").count(),0);
+    assert.equal(await page.getByTestId("preparation-selected-values").count(),0);
   } finally { await writeFile(eighthSource,eighthOriginal); }
   await page.reload();
   await page.getByTestId("monitoring-values").waitFor();
+  await page.getByTestId("preparation-values").waitFor();
   await page.getByTestId("companion-open-dimer").click();
   const readerOpened = desktop.waitForEvent("window");
   await page.getByTestId("open-companion-rb87-iii").click();

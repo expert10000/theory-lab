@@ -1784,7 +1784,17 @@ h1 {
 .companion-monitoring-readout { display: flex; flex-wrap: wrap; gap: 9px 20px; margin: 14px 0; padding: 13px; border-left: 3px solid #77d8bd; color: #dbeee7; background: #1b3538; font-size: 12px; }
 .companion-monitoring p { line-height: 1.55; }
 .companion-monitoring small { overflow-wrap: anywhere; }
+.companion-preparation-chart { max-width: 900px; }
+.companion-preparation-chart svg { display: block; width: 100%; }
+.companion-preparation-chart svg text { fill: #b8c9c8; font: 11px Consolas, monospace; }
+.companion-preparation-slider { display: grid; gap: 8px; max-width: 900px; margin: 17px 0; color: #d8e9e4; }
+.companion-preparation-slider input { width: 100%; accent-color: #78d8bc; }
+.companion-preparation-boundary { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 12px; margin: 16px 0; }
+.companion-preparation-boundary > div { padding: 14px; border: 1px solid #4c6b68; border-radius: 7px; background: #1b3336; }
+.companion-preparation-boundary > div + div { border-color: #75664e; background: #322e29; }
+.companion-preparation-boundary p { margin-bottom: 0; }
 @media (max-width: 850px) { .companion-monitoring-plots { grid-template-columns: 1fr; } }
+@media (max-width: 650px) { .companion-preparation-boundary { grid-template-columns: 1fr; } }
 .companion-visual-heading { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 18px; align-items: baseline; margin-bottom: 12px; }
 .companion-visual-heading span, .companion-visual-tag { color: #a8b9bc; font: 10px Consolas, monospace; letter-spacing: .12em; }
 .companion-visual-heading strong { color: #e3eee8; font-size: 15px; font-weight: 600; }
