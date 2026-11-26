@@ -1,5 +1,11 @@
 # Quantum Hamiltonian Lab
 
+The [UTe2 Hamiltonian journey](UTE2_JOURNEY_ROADMAP.md) is a new Theory Lab to
+Math3D feature track. Its first step pins the user-supplied chapter and checks
+its pedagogical BdG and Landau worked examples; the runnable two-order model
+and cross-app scenes follow in separately qualified steps. It does not expand
+the frozen Math3D 2.0 release claims.
+
 The user-supplied Rb87 Quantum Companion chapters I–VIII are preserved as
 [source material](source-material/rb87-companion/README.md). Their proposed
 first working Atlas-to-scene Bose–Hubbard slice and supporting Theory library are tracked in the

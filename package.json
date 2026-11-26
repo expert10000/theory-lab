@@ -25,6 +25,7 @@
     "test:scenes": "tsx scripts/smoke-scenes.ts",
     "test:qi40-source": "tsx scripts/verify-qi40-source.ts",
     "verify:qi40-retained": "node scripts/verify-qi40-retained.mjs",
+    "verify:ute2-source": "node scripts/verify-ute2-source.mjs",
     "accept:qi40-math3d": "node scripts/accept-qi40-math3d.mjs",
     "extract:qi40-candidate": "node scripts/extract-qi40-candidate.mjs",
     "stage:qi40-pair": "node scripts/stage-qi40-pair.mjs",

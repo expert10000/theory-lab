@@ -1,0 +1,24 @@
+{
+  "id": "ute2-quantum-hamiltonians-2026-11-25",
+  "title": "Quantum Hamiltonians of Uranium Ditelluride (UTe2)",
+  "edition": "Scientific study edition, 25 November 2026",
+  "fileName": "UTe2_Quantum_Hamiltonians_Chapter.pdf",
+  "pages": 9,
+  "bytes": 253092,
+  "sha256": "05d500acf97f23ddc2f29cac2893078302b6224e0907ba67200484e5c728e218",
+  "sections": [
+    { "number": "1", "title": "What experiments established in 2026", "page": 2, "kind": "reported evidence" },
+    { "number": "5", "title": "Bogoliubov-de Gennes Hamiltonian", "page": 4, "kind": "model formalism" },
+    { "number": "6", "title": "Two superconducting order parameters", "page": 4, "kind": "model formalism" },
+    { "number": "8", "title": "Landau free energy and tetracriticality", "page": 6, "kind": "phenomenological model" },
+    { "number": "9", "title": "Ultrasound couples to electronic order", "page": 7, "kind": "measurement interpretation" },
+    { "number": "10", "title": "Quantum phase stiffness and strong fluctuations", "page": 7, "kind": "model limitation" },
+    { "number": "11", "title": "Topological superconductivity: a separate theoretical test", "page": 7, "kind": "conditional toy model" },
+    { "number": "12", "title": "Worked numerical examples", "page": 8, "kind": "reference calculations" },
+    { "number": "13", "title": "What would establish a topological UTe2 phase?", "page": 9, "kind": "evidence boundary" }
+  ],
+  "references": [
+    { "doi": "10.1038/s41567-026-03504-z", "role": "tetracriticality and multicomponent thermodynamics" },
+    { "doi": "10.1103/qjt6-hj2k", "role": "phase stiffness and fluctuation regime" }
+  ]
+}
