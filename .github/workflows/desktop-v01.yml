@@ -55,6 +55,9 @@ jobs:
       - name: UTe2 BdG saved-run smoke (Windows)
         if: runner.os == 'Windows'
         run: node scripts/smoke-bdg-sector.mjs
+      - name: UTe2 lattice pairing saved-run smoke (Windows)
+        if: runner.os == 'Windows'
+        run: node scripts/smoke-lattice-pairing.mjs
       - name: Installed-style Math3D target handoff (Windows)
         if: runner.os == 'Windows'
         run: npm run test:math3d-installed-target
@@ -69,3 +72,6 @@ jobs:
       - name: UTe2 BdG saved-run smoke (Linux/Xvfb)
         if: runner.os == 'Linux'
         run: xvfb-run -a -s '-screen 0 1600x1000x24' node scripts/smoke-bdg-sector.mjs
+      - name: UTe2 lattice pairing saved-run smoke (Linux/Xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s '-screen 0 1600x1000x24' node scripts/smoke-lattice-pairing.mjs

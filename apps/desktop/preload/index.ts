@@ -4,7 +4,11 @@ import type { BoseHubbardBridge } from "../../../packages/contracts/bose-hubbard
 import type { CompanionBridge } from "../../../packages/contracts/companion";
 import type { LandauBridge } from "../../../packages/contracts/landau";
 import type { BdGSectorBridge } from "../../../packages/contracts/bdg-sector";
-const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge & BdGSectorBridge = {
+import type { LatticePairingBridge } from "../../../packages/contracts/lattice-pairing";
+const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge & BdGSectorBridge & LatticePairingBridge = {
+  runLatticePairing: job => ipcRenderer.invoke("quantum:lattice-pairing-run", job),
+  listLatticePairingRuns: () => ipcRenderer.invoke("quantum:list-lattice-pairing-runs"),
+  getLatticePairingRun: runId => ipcRenderer.invoke("quantum:get-lattice-pairing-run", runId),
   runBdGSector: job => ipcRenderer.invoke("quantum:bdg-sector-run", job),
   listBdGSectorRuns: () => ipcRenderer.invoke("quantum:list-bdg-sector-runs"),
   getBdGSectorRun: runId => ipcRenderer.invoke("quantum:get-bdg-sector-run", runId),
