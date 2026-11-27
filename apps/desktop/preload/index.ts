@@ -3,7 +3,11 @@ import type { QuantumBridge } from "../../../packages/contracts";
 import type { BoseHubbardBridge } from "../../../packages/contracts/bose-hubbard";
 import type { CompanionBridge } from "../../../packages/contracts/companion";
 import type { LandauBridge } from "../../../packages/contracts/landau";
-const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge = {
+import type { BdGSectorBridge } from "../../../packages/contracts/bdg-sector";
+const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge & BdGSectorBridge = {
+  runBdGSector: job => ipcRenderer.invoke("quantum:bdg-sector-run", job),
+  listBdGSectorRuns: () => ipcRenderer.invoke("quantum:list-bdg-sector-runs"),
+  getBdGSectorRun: runId => ipcRenderer.invoke("quantum:get-bdg-sector-run", runId),
   runLandau: job => ipcRenderer.invoke("quantum:landau-run", job),
   listLandauRuns: () => ipcRenderer.invoke("quantum:list-landau-runs"),
   getLandauRun: runId => ipcRenderer.invoke("quantum:get-landau-run", runId),

@@ -15,10 +15,13 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
               for name in ("quantum-job", "quantum-result", "quantum-ising-state", "quantum-ising-quench",
                            "quantum-bose-hubbard-job", "quantum-bose-hubbard-result",
                            "quantum-landau-job", "quantum-landau-result",
+                           "quantum-bdg-sector-job", "quantum-bdg-sector-result",
                            "worker-capabilities", "worker-resources")}
 
 def validate(name, value):
     VALIDATORS[name].validate(value)
+    if name == "quantum-bdg-sector-job" and value["model"]["parameters"]["points"] % 2 != 1:
+        raise ValueError("BdG sector grid must have an odd point count")
     if name == "quantum-job" and value["operation"] == "oscillator_anharmonic":
         p = value["model"]["parameters"]
         if p["levels"] > p["cutoff"] - 2:

@@ -1,0 +1,22 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#", "$id": "schemas/quantum-bdg-sector-job.v1.json",
+  "type": "object", "additionalProperties": false, "required": ["schema", "jobId", "model"],
+  "properties": {
+    "schema": { "const": "quantum-bdg-sector-job/v1" },
+    "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+    "model": { "type": "object", "additionalProperties": false, "required": ["type", "parameters"],
+      "properties": {
+        "type": { "const": "reduced_bdg_2x2" },
+        "parameters": { "type": "object", "additionalProperties": false,
+          "required": ["extent", "delta", "phaseRad", "points"],
+          "properties": {
+            "extent": { "type": "number", "minimum": 0.5, "maximum": 4 },
+            "delta": { "type": "number", "minimum": 0, "maximum": 2 },
+            "phaseRad": { "type": "number", "minimum": -3.141592653589793, "maximum": 3.141592653589793 },
+            "points": { "type": "integer", "minimum": 51, "maximum": 201 }
+          }
+        }
+      }
+    }
+  }
+}

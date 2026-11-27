@@ -30,11 +30,14 @@ import {IsingQuenchStore} from "./ising-quench";
 import { QecRepetitionRunStore } from "./qec-repetition-runs";
 import { BoseHubbardRunStore } from "./bose-hubbard-runs";
 import { LandauRunStore } from "./landau-runs";
+import { BdGSectorRunStore } from "./bdg-sector-runs";
 import { listCompanionChapters, verifiedCompanionPath } from "./companion";
 import { assertBoseHubbardJob, isBoseHubbardResult } from "../../../packages/contracts/bose-hubbard";
 import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
 import { assertLandauJob, isLandauResult } from "../../../packages/contracts/landau";
 import { consistentLandauResult } from "../../../packages/models/landau";
+import { assertBdGSectorJob, isBdGSectorResult } from "../../../packages/contracts/bdg-sector";
+import { consistentBdGSectorResult } from "../../../packages/models/bdg-sector";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
 import {verifyQecRepetitionStudy, type QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -106,6 +109,29 @@ app.whenReady().then(() => {
   const qecRuns = new QecRepetitionRunStore(join(app.getPath("userData"), "qec-repetition-runs"));
   const boseHubbardRuns = new BoseHubbardRunStore(join(app.getPath("userData"), "bose-hubbard-runs"));
   const landauRuns = new LandauRunStore(join(app.getPath("userData"), "landau-runs"));
+  const bdgSectorRuns = new BdGSectorRunStore(join(app.getPath("userData"), "bdg-sector-runs"));
+  ipcMain.handle("quantum:bdg-sector-run", async (event, value: unknown) => {
+    trusted(event);
+    assertBdGSectorJob(value);
+    if (worker.status.state !== "READY") throw new Error("Worker is not ready");
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const result = await worker.request("quantum.bdgSector", value, 30000);
+      if (!isBdGSectorResult(result) || !consistentBdGSectorResult(value, result))
+        throw new Error("Worker returned an invalid BdG sector result");
+      await bdgSectorRuns.record(value, result);
+      return result;
+    } finally { running = false; }
+  });
+  ipcMain.handle("quantum:list-bdg-sector-runs", event => {
+    trusted(event); return bdgSectorRuns.list();
+  });
+  ipcMain.handle("quantum:get-bdg-sector-run", (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string") throw new Error("Invalid BdG sector run ID");
+    return bdgSectorRuns.get(runId);
+  });
   ipcMain.handle("quantum:landau-run", async (event, value: unknown) => {
     trusted(event);
     assertLandauJob(value);
