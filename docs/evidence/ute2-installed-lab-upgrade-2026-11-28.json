@@ -1,0 +1,31 @@
+{
+  "schema": "theory-lab/ute2-installed-lab-upgrade-summary/v1",
+  "status": "passed",
+  "scope": "published 0.1.0 to unsigned UTe2 0.1.0 same-product, same-directory replacement; rollback by reinstall plus exact pre-upgrade profile backup",
+  "oldSourceCommit": "3c883fa4a69da2ee9f59b1425ac181094a25c276",
+  "newSourceCommit": "83dceca479bb718cf3c7905ec633f5bb0997387d",
+  "oldInstallerSha256": "8dba3c573ca4f820ab372f13395fab8d8799aff86a6458766bf66830680ab7a2",
+  "newInstallerSha256": "bf859b7ae2f3b061ee9111f2de283ac1dde19cf3578368d3e3dba4fc1eacdd47",
+  "oldExecutableSha256": "a8a0c9c1ea032f2242cefe85ebc035a6d5a6194f707c6d4d65c7759147eff737",
+  "newExecutableSha256": "ae3c39805e66d06ad2103fe2a7c20eaf787a75354c0159b7bda83ccff8a84ebe",
+  "oldAndNewSignatureStatus": "NotSigned",
+  "legacySpectrum": {
+    "runId": "run-ad56726fab264118905b53b4f64f9e72",
+    "resultSha256": "806c86adb550e7a6150f31505b68c80ed10125ae27d513b8519b871bcbb7a03f",
+    "reopenedWithNewInstall": true,
+    "reopenedAfterRollback": true
+  },
+  "newTopologyToy": {
+    "runId": "run-b3b281a7e9c241bb95f35f921d2fd4c5",
+    "resultSha256": "7aee58fc3cc6d12d6aafbf75d585d237be21972d31938531bf876c40c9c6335a",
+    "chern": -1,
+    "bulkGap": 1.6
+  },
+  "registrationRestoredToPriorTestInstall": true,
+  "localFullEvidenceSha256": "c4f30dd24dd486f4cf9a039f292e02b8ad76251d0357afd803c8bc8256fbd7ee",
+  "limits": [
+    "Both installers report version 0.1.0, so this tests replacement rather than a version-number upgrade.",
+    "The old build reopened its own run from the exact pre-upgrade backup; it was not asked to read the new topology run.",
+    "This does not qualify Math3D rollback, signing, retained memory, or a UTe2 material claim."
+  ]
+}
