@@ -168,6 +168,7 @@ try {
       "exportRunBundle",
       "exportScene",
       "exportSceneExample",
+      "exportUte2Scene",
       "getBdGSectorRun",
       "getBoseHubbardRun",
       "getBoseHubbardScene",

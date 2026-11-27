@@ -7,7 +7,9 @@ import type { BdGSectorBridge } from "../../../packages/contracts/bdg-sector";
 import type { LatticePairingBridge } from "../../../packages/contracts/lattice-pairing";
 import type { Ute2TopologyBridge } from "../../../packages/contracts/ute2-topology";
 import type { Ute2EdgeBridge } from "../../../packages/contracts/ute2-edge";
-const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge & BdGSectorBridge & LatticePairingBridge & Ute2TopologyBridge & Ute2EdgeBridge = {
+import type { Ute2SceneBridge } from "../../../packages/quantum-scene/ute2";
+const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge & BdGSectorBridge & LatticePairingBridge & Ute2TopologyBridge & Ute2EdgeBridge & Ute2SceneBridge = {
+  exportUte2Scene: (kind,runId) => ipcRenderer.invoke("quantum:export-ute2-scene",kind,runId),
   runUte2Edge: request => ipcRenderer.invoke("quantum:ute2-edge-run", request),
   listUte2EdgeRuns: () => ipcRenderer.invoke("quantum:list-ute2-edge-runs"),
   getUte2EdgeRun: runId => ipcRenderer.invoke("quantum:get-ute2-edge-run", runId),

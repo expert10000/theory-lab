@@ -72,6 +72,8 @@ export class LatticePairingRunStore {
 
   async get(runId: string): Promise<LatticePairingResult> { return (await this.load(runId)).result; }
 
+  async getVerified(runId: string): Promise<{result: LatticePairingResult; resultSha256: string}> { return this.load(runId); }
+
   async list(): Promise<LatticePairingRunSummary[]> {
     await mkdir(this.root, { recursive: true });
     const rows: LatticePairingRunSummary[] = [];

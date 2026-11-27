@@ -82,6 +82,8 @@ export class Ute2EdgeRunStore {
 
   async get(runId: string): Promise<Ute2EdgeResult> { return (await this.load(runId)).result; }
 
+  async getVerified(runId: string): Promise<{result: Ute2EdgeResult; resultSha256: string}> { return this.load(runId); }
+
   async list(): Promise<Ute2EdgeRunSummary[]> {
     await mkdir(this.root, { recursive: true });
     const rows: Ute2EdgeRunSummary[] = [];

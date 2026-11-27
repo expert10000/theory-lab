@@ -72,6 +72,8 @@ export class BdGSectorRunStore {
 
   async get(runId: string): Promise<BdGSectorResult> { return (await this.load(runId)).result; }
 
+  async getVerified(runId: string): Promise<{result: BdGSectorResult; resultSha256: string}> { return this.load(runId); }
+
   async list(): Promise<BdGSectorRunSummary[]> {
     await mkdir(this.root, { recursive: true });
     const rows: BdGSectorRunSummary[] = [];

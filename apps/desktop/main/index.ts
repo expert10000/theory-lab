@@ -34,6 +34,8 @@ import { BdGSectorRunStore } from "./bdg-sector-runs";
 import { LatticePairingRunStore } from "./lattice-pairing-runs";
 import { Ute2TopologyRunStore } from "./ute2-topology-runs";
 import { Ute2EdgeRunStore } from "./ute2-edge-runs";
+import { Ute2SceneProducer } from "./ute2-scenes";
+import type { Ute2SceneKind } from "../../../packages/quantum-scene/ute2";
 import { listCompanionChapters, verifiedCompanionPath } from "./companion";
 import { assertBoseHubbardJob, isBoseHubbardResult } from "../../../packages/contracts/bose-hubbard";
 import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
@@ -122,6 +124,16 @@ app.whenReady().then(() => {
   const latticePairingRuns = new LatticePairingRunStore(join(app.getPath("userData"), "lattice-pairing-runs"));
   const ute2TopologyRuns = new Ute2TopologyRunStore(join(app.getPath("userData"), "ute2-topology-runs"));
   const ute2EdgeRuns = new Ute2EdgeRunStore(join(app.getPath("userData"), "ute2-edge-runs"), ute2TopologyRuns);
+  const ute2Scenes = new Ute2SceneProducer(landauRuns,bdgSectorRuns,latticePairingRuns,ute2EdgeRuns);
+  ipcMain.handle("quantum:export-ute2-scene", async(event,kind:unknown,runId:unknown)=>{
+    trusted(event);
+    if(!["landau","bdg","lattice","edge"].includes(kind as string)||typeof runId!=="string")
+      throw new Error("Invalid UTe2 scene source");
+    await ute2Scenes.build(kind as Ute2SceneKind,runId);
+    const selection=await dialog.showOpenDialog({title:"Choose parent folder for a verified UTe2 scene bundle",properties:["openDirectory"]});
+    if(selection.canceled||!selection.filePaths[0])return null;
+    return ute2Scenes.export(kind as Ute2SceneKind,runId,selection.filePaths[0]);
+  });
   ipcMain.handle("quantum:ute2-edge-run", async (event, value: unknown) => {
     trusted(event);
     if (!value || typeof value !== "object") throw new Error("Invalid class-D edge request");

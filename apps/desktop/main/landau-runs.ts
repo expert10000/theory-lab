@@ -72,6 +72,8 @@ export class LandauRunStore {
 
   async get(runId: string): Promise<LandauResult> { return (await this.load(runId)).result; }
 
+  async getVerified(runId: string): Promise<{result: LandauResult; resultSha256: string}> { return this.load(runId); }
+
   async list(): Promise<LandauRunSummary[]> {
     await mkdir(this.root, { recursive: true });
     const rows: LandauRunSummary[] = [];

@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import {Ute2SceneExport} from "./Ute2SceneExport";
 import type { BdGSectorParameters, BdGSectorResult, BdGSectorRunSummary } from "../../../packages/contracts/bdg-sector";
 import { bdgSectorJob } from "../../../packages/models/bdg-sector";
 
@@ -64,6 +65,7 @@ export function Ute2BdGSectorPage({ready}: {ready: boolean}) {
       {!valid && <p role="status">Use ξ extent 0.5…4, |Δ| 0…2, phase −π…π, and 51…201 odd grid points.</p>}
       {error && <p role="alert">{error}</p>}
       {result && <div data-testid="ute2-bdg-result">
+        <Ute2SceneExport key={result.runId} kind="bdg" runId={result.runId}/>
         <p><strong>Verified saved run:</strong> {result.runId} · {result.provenance.computedAt}</p>
         <p><strong>Result SHA-256:</strong> <code>{pinned?.resultSha256 ?? "saved source unavailable"}</code></p>
         <p><strong>Minimum E+:</strong> {result.minimumPositiveEnergy.toFixed(4)} · {result.gapClosed ? "gap closed on this grid" : "gap open on this grid"}</p>

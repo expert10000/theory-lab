@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import {Ute2SceneExport} from "./Ute2SceneExport";
 import type { LatticePairingParameters, LatticePairingResult, LatticePairingRunSummary } from "../../../packages/contracts/lattice-pairing";
 import { latticePairingJob } from "../../../packages/models/lattice-pairing";
 
@@ -69,6 +70,7 @@ export function Ute2LatticePairingPage({ready}: {ready:boolean}) {
       {!valid&&<p role="status">Use μ −5…5, A/B 0…2, φ −π…π, and a listed grid size.</p>}
       {error&&<p role="alert">{error}</p>}
       {result&&<div data-testid="ute2-lattice-result">
+        <Ute2SceneExport key={result.runId} kind="lattice" runId={result.runId}/>
         <p><strong>Verified saved run:</strong> {result.runId} · {result.provenance.computedAt}</p>
         <p><strong>Result SHA-256:</strong> <code>{summary?.resultSha256??"saved source unavailable"}</code></p>
         <p><strong>Minimum sampled E+:</strong> {result.sampledMinimumEnergy.toFixed(4)} · {result.sampledGapClosed?"zero-energy node sampled":"no zero-energy node sampled"}</p>

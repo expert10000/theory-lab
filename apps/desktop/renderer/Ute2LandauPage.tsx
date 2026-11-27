@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import type { LandauParameters, LandauResult, LandauRunSummary } from "../../../packages/contracts/landau";
 import { landauJob } from "../../../packages/models/landau";
+import {Ute2SceneExport} from "./Ute2SceneExport";
 
 const defaults: Record<keyof LandauParameters, string> = {
   a1: "-0.7", a2: "-0.5", b1: "1", b2: "1", g: "0.4",
@@ -68,6 +69,7 @@ export function Ute2LandauPage({ ready }: { ready: boolean }) {
       {!valid&&<p role="status">Use −2…2 for a₁/a₂, 0.2…4 for b₁/b₂, and 0…4 for g.</p>}
       {error&&<p role="alert">{error}</p>}
       {result&&<div data-testid="ute2-landau-result">
+        <Ute2SceneExport key={result.runId} kind="landau" runId={result.runId}/>
         <p><strong>Verified saved run:</strong> {result.runId} · {result.provenance.computedAt}</p>
         <p><strong>Result SHA-256:</strong> <code>{pinned?.resultSha256 ?? "saved source unavailable"}</code></p>
         <p><strong>Global minimum:</strong> {result.globalMinima.map(phase=>labels[phase]).join(" / ")}. D = b₁b₂ − g² = {result.quarticDeterminant.toFixed(6)}.</p>

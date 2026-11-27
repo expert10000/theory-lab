@@ -108,7 +108,8 @@ declare global {
       import("../../../packages/contracts/bdg-sector").BdGSectorBridge &
       import("../../../packages/contracts/lattice-pairing").LatticePairingBridge &
       import("../../../packages/contracts/ute2-topology").Ute2TopologyBridge &
-      import("../../../packages/contracts/ute2-edge").Ute2EdgeBridge;
+      import("../../../packages/contracts/ute2-edge").Ute2EdgeBridge &
+      import("../../../packages/quantum-scene/ute2").Ute2SceneBridge;
   }
 }
 type EngineMode = EngineName | "compare";

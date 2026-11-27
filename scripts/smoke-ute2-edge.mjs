@@ -1,6 +1,6 @@
 import {_electron as electron} from "playwright";
 import assert from "node:assert/strict";
-import {mkdtemp,readFile,rm,writeFile} from "node:fs/promises";
+import {mkdir,mkdtemp,readFile,rm,writeFile} from "node:fs/promises";
 import {tmpdir} from "node:os";
 import {join} from "node:path";
 
@@ -32,6 +32,14 @@ try{
   assert.equal(bulkRows.length,1);assert.equal(edgeRows.length,1);
   assert.equal(edgeRows[0].source.resultSha256,bulkRows[0].resultSha256);
   const edgeId=edgeRows[0].runId,bulkId=bulkRows[0].runId;
+  const exportRoot=join(profile,"exports");await mkdir(exportRoot);
+  await desktop.evaluate(({dialog},folder)=>{dialog.showOpenDialog=async()=>({canceled:false,filePaths:[folder]});},exportRoot);
+  await page.getByTestId("export-ute2-edge-scene").click();
+  await page.getByRole("status").filter({hasText:"Exported verified scene bundle"}).waitFor();
+  const scene=JSON.parse(await readFile(join(exportRoot,`ute2-edge-${edgeRows[0].resultSha256.slice(0,24)}.qscene`,"scene.json"),"utf8"));
+  assert.equal(scene.provenance.resultSha256,edgeRows[0].resultSha256);
+  assert.equal(scene.provenance.parameters.bulkResultSha256,bulkRows[0].resultSha256);
+  assert.equal(scene.objects.filter(row=>row.kind==="polyline").length,2);
   await desktop.close();desktop=null;
   page=await open();
   await page.getByRole("button",{name:/Open μ=-2, Δ=0\.8, width 12\/24/}).click();
@@ -40,6 +48,7 @@ try{
   const sourceFile=join(profile,"ute2-topology-runs",bulkId,"result.json");
   const changed=JSON.parse(await readFile(sourceFile,"utf8"));changed.bulkGap+=.1;
   await writeFile(sourceFile,JSON.stringify(changed,null,2)+"\n");
+  await assert.rejects(page.evaluate(id=>window.quantum.exportUte2Scene("edge",id),edgeId),/integrity check/);
   await page.getByRole("button",{name:/Open μ=-2, Δ=0\.8, width 12\/24/}).click();
   await page.getByRole("alert").filter({hasText:"integrity check"}).waitFor();
   assert.equal(await page.getByTestId("ute2-edge-result").count(),0);

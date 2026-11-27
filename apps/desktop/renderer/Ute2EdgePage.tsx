@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from "react";
 import type {Ute2TopologyRunSummary} from "../../../packages/contracts/ute2-topology";
 import type {Ute2EdgeResult,Ute2EdgeRunSummary} from "../../../packages/contracts/ute2-edge";
+import {Ute2SceneExport} from "./Ute2SceneExport";
 
 export function Ute2EdgePage({ready}:{ready:boolean}){
   const [bulkRuns,setBulkRuns]=useState<Ute2TopologyRunSummary[]>([]);
@@ -67,6 +68,7 @@ export function Ute2EdgePage({ready}:{ready:boolean}){
       {!source&&<p role="status">Run and save a qualified bulk toy first; closed-gap and unresolved runs cannot source a strip study.</p>}
       {error&&<p role="alert">{error}</p>}
       {result&&<div data-testid="ute2-edge-result">
+        <Ute2SceneExport key={result.runId} kind="edge" runId={result.runId}/>
         <p><strong>Verified saved edge run:</strong> {result.runId} · {result.provenance.computedAt}</p>
         <p><strong>Source bulk run:</strong> {result.source.runId} · SHA-256 <code>{result.source.resultSha256}</code></p>
         <p><strong>Edge result SHA-256:</strong> <code>{pinned?.resultSha256??"saved source unavailable"}</code></p>
