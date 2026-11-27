@@ -14,6 +14,7 @@ FiniteValidator = validators.extend(Draft7Validator, type_checker=Draft7Validato
 VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").read_text(encoding="utf-8")))
               for name in ("quantum-job", "quantum-result", "quantum-ising-state", "quantum-ising-quench",
                            "quantum-bose-hubbard-job", "quantum-bose-hubbard-result",
+                           "quantum-landau-job", "quantum-landau-result",
                            "worker-capabilities", "worker-resources")}
 
 def validate(name, value):

@@ -12,6 +12,7 @@ from quantum_worker.engines.native_engine import availability as native_availabi
 from quantum_worker.engines.dynamiqs_engine import availability as dynamiqs_availability
 from quantum_worker.engines.many_body import quspin_availability, solve as many_body_solve
 from quantum_worker.engines.bose_hubbard import solve as bose_hubbard_solve
+from quantum_worker.engines.landau import solve as landau_solve
 from quantum_worker.engines.ising_state import solve as ising_state_solve
 from quantum_worker.engines.ising_quench import solve as ising_quench_solve
 from quantum_worker.engines.qec_repetition import solve as qec_repetition_solve
@@ -74,6 +75,8 @@ def resources():
     return result
 
 def dispatch(method, params):
+    if method == "quantum.landau":
+        return landau_solve(params)
     if method == "quantum.boseHubbard":
         return bose_hubbard_solve(params)
     if method == "quantum.qecRepetition":

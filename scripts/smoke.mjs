@@ -157,6 +157,7 @@ try {
       "circuit",
       "consumeSourceRun",
       "evolve",
+      "exportBoseHubbardScene",
       "exportFigure",
       "exportHofstadterButterfly",
       "exportHofstadterEdgeScene",
@@ -167,6 +168,8 @@ try {
       "exportRunBundle",
       "exportScene",
       "exportSceneExample",
+      "getBoseHubbardRun",
+      "getBoseHubbardScene",
       "getCapabilities",
       "getCavityRun",
       "getCircuitRun",
@@ -177,6 +180,7 @@ try {
       "getIsingQuench",
       "getIsingState",
       "getIsingStudy",
+      "getLandauRun",
       "getLindbladRun",
       "getManyBodyRun",
       "getOrbitalRun",
@@ -200,9 +204,12 @@ try {
       "importSceneStream",
       "inspectSavedRun",
       "lindblad",
+      "listBoseHubbardRuns",
+      "listCompanionChapters",
       "listHofstadterEdgeStudies",
       "listHofstadterFluxStudies",
       "listIsingStudies",
+      "listLandauRuns",
       "listQecRepetitionRuns",
       "listQwzPhaseDiagrams",
       "listRiceMeleConvergenceStudies",
@@ -212,6 +219,8 @@ try {
       "manyBody",
       "onProgress",
       "openAtlasSource",
+      "openBoseHubbardInMath3D",
+      "openCompanionChapter",
       "openHofstadterStudyInMath3D",
       "openImportedInMath3D",
       "openInMath3D",
@@ -233,6 +242,8 @@ try {
       "rerunSaved",
       "restart",
       "run",
+      "runBoseHubbard",
+      "runLandau",
       "saveHofstadterEdgeStudy",
       "saveHofstadterFluxStudy",
       "saveIsingStudy",
@@ -461,6 +472,7 @@ try {
   await page.getByTestId("open-atlas").click();
   await page.getByLabel("Search Atlas").fill("harmonic_oscillator");
   await page.getByRole("button",{name:/^Quantum harmonic oscillator harmonic_oscillator/}).click();
+  await page.getByTestId("atlas-open-model").click();
   await page.getByTestId("open-atlas-binding").click();
   assert.ok(await page.getByTestId("oscillator-lab").isVisible());
   assert.equal(await page.getByLabel("Oscillator omega",{exact:true}).inputValue(),"1");
@@ -540,6 +552,7 @@ try {
   await page.getByTestId("open-atlas").click();
   await page.getByLabel("Search Atlas").fill("driven_harmonic_oscillator");
   await page.getByRole("button",{name:/^Linearly driven harmonic oscillator driven_harmonic_oscillator/}).click();
+  await page.getByTestId("atlas-open-model").click();
   await page.getByTestId("open-atlas-binding").click();
   await page.getByRole("tab",{name:"Driven dynamics",exact:true}).and(page.locator('[aria-selected="true"]')).waitFor();
   assert.equal(await page.getByRole("tab",{name:"Driven dynamics",exact:true}).getAttribute("aria-selected"),"true");
@@ -791,6 +804,7 @@ try {
   for(const [id,kind] of [["surface_code_planar","reference_lab"],["dispersive_jc","direct"],["hofstadter","not declared"],["coulomb_one_body","not declared"]]) {
     await page.getByLabel("Search Atlas").fill(id);
     await page.getByRole("button",{name:new RegExp(id)}).click();
+    await page.getByTestId("atlas-open-model").click();
     assert.match(await page.getByTestId("atlas-capability-status").innerText(),new RegExp(`Theory example: ${kind}.*Lab executable binding: none`));
     assert.equal(await page.getByTestId("open-atlas-binding").count(),0);
     assert.equal(await page.getByTestId("run-atlas-canonical").count(),0);
@@ -815,6 +829,7 @@ try {
   await page.screenshot({ path: "artifacts/desktop-atlas.png", fullPage: true });
   await page.getByLabel("Search Atlas").fill("two_level_pauli");
   await page.getByRole("button",{name:/two_level_pauli/}).click();
+  await page.getByTestId("atlas-open-model").click();
   assert.ok(await page.getByTestId("run-atlas-canonical").isEnabled());
   await page.getByTestId("run-atlas-canonical").click();
   await page.getByTestId("workspace-run-id").waitFor();
@@ -828,6 +843,7 @@ try {
   assert.match(await page.getByTestId("run-atlas-origin").innerText(),/two.level|Two-level/i);
   await page.getByRole("button",{name:"Open Atlas entry"}).click();
   assert.match(await page.getByTestId("atlas-panel").innerText(),/two_level_pauli/);
+  await page.getByTestId("atlas-open-model").click();
   await page.getByTestId("sweep-atlas-parameter").click();
   await page.getByTestId("spectrum-study-lab").waitFor();
   await page.getByTestId("spectrum-study-status").filter({hasText:"ordinary Lab provenance"}).waitFor();
@@ -835,6 +851,7 @@ try {
   for(const [id,expectedOperation] of [["semiclassical_rabi_drive","evolve"],["jaynes_cummings","cavity"],["ssh","topology"]]){
     await page.getByLabel("Search Atlas").fill(id);
     await page.getByRole("button",{name:new RegExp(id)}).click();
+    await page.getByTestId("atlas-open-model").click();
     await page.getByTestId("run-atlas-canonical").click();
     await page.getByTestId("atlas-panel").waitFor({state:"hidden"});
     const runId=await page.getByTestId("workspace-run-id").innerText();
@@ -845,6 +862,7 @@ try {
   }
   await page.getByLabel("Search Atlas").fill("Su-Schrieffer-Heeger");
   await page.getByRole("button", { name: /Su-Schrieffer-Heeger model/ }).click();
+  await page.getByTestId("atlas-open-model").click();
   assert.match(await page.getByTestId("atlas-panel").innerText(), /Atlas t₁\/t₂/);
   await page.getByTestId("open-atlas-binding").click();
   assert.ok(await page.getByTestId("topology-lab").isVisible());

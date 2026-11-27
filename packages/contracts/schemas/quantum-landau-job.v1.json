@@ -1,0 +1,27 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "schemas/quantum-landau-job.v1.json",
+  "type": "object", "additionalProperties": false,
+  "required": ["schema", "jobId", "model"],
+  "properties": {
+    "schema": { "const": "quantum-landau-job/v1" },
+    "jobId": { "type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[A-Za-z0-9_-]+$" },
+    "model": {
+      "type": "object", "additionalProperties": false, "required": ["type", "parameters"],
+      "properties": {
+        "type": { "const": "two_order_landau" },
+        "parameters": {
+          "type": "object", "additionalProperties": false,
+          "required": ["a1", "a2", "b1", "b2", "g"],
+          "properties": {
+            "a1": { "type": "number", "minimum": -2, "maximum": 2 },
+            "a2": { "type": "number", "minimum": -2, "maximum": 2 },
+            "b1": { "type": "number", "minimum": 0.2, "maximum": 4 },
+            "b2": { "type": "number", "minimum": 0.2, "maximum": 4 },
+            "g": { "type": "number", "minimum": 0, "maximum": 4 }
+          }
+        }
+      }
+    }
+  }
+}

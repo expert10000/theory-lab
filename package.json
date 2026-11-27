@@ -20,6 +20,7 @@
     "test:worker": "node scripts/python.mjs -m unittest discover -s workers/quantum-python/tests -v",
     "test:desktop": "npm run build && node scripts/smoke.mjs",
     "test:bose-hubbard-desktop": "npm run build && node scripts/smoke-bose-hubbard.mjs",
+    "test:landau-desktop": "npm run build && node scripts/smoke-landau.mjs",
     "accept:rb87-installed": "node scripts/accept-rb87-installed.mjs",
     "test:web": "npm run build && tsx scripts/smoke-web.ts",
     "test:scenes": "tsx scripts/smoke-scenes.ts",

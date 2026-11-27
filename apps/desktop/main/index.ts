@@ -29,9 +29,12 @@ import { IsingStateStore } from "./ising-state";
 import {IsingQuenchStore} from "./ising-quench";
 import { QecRepetitionRunStore } from "./qec-repetition-runs";
 import { BoseHubbardRunStore } from "./bose-hubbard-runs";
+import { LandauRunStore } from "./landau-runs";
 import { listCompanionChapters, verifiedCompanionPath } from "./companion";
 import { assertBoseHubbardJob, isBoseHubbardResult } from "../../../packages/contracts/bose-hubbard";
 import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
+import { assertLandauJob, isLandauResult } from "../../../packages/contracts/landau";
+import { consistentLandauResult } from "../../../packages/models/landau";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
 import {verifyQecRepetitionStudy, type QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -102,6 +105,29 @@ app.whenReady().then(() => {
     (saved, resultSha256) => integrationBus?.publishRun(saved.runId, resultSha256, saved.model), sharedStore);
   const qecRuns = new QecRepetitionRunStore(join(app.getPath("userData"), "qec-repetition-runs"));
   const boseHubbardRuns = new BoseHubbardRunStore(join(app.getPath("userData"), "bose-hubbard-runs"));
+  const landauRuns = new LandauRunStore(join(app.getPath("userData"), "landau-runs"));
+  ipcMain.handle("quantum:landau-run", async (event, value: unknown) => {
+    trusted(event);
+    assertLandauJob(value);
+    if (worker.status.state !== "READY") throw new Error("Worker is not ready");
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const result = await worker.request("quantum.landau", value, 30000);
+      if (!isLandauResult(result) || !consistentLandauResult(value, result))
+        throw new Error("Worker returned an invalid Landau result");
+      await landauRuns.record(value, result);
+      return result;
+    } finally { running = false; }
+  });
+  ipcMain.handle("quantum:list-landau-runs", event => {
+    trusted(event); return landauRuns.list();
+  });
+  ipcMain.handle("quantum:get-landau-run", (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string") throw new Error("Invalid Landau run ID");
+    return landauRuns.get(runId);
+  });
   ipcMain.handle("quantum:bose-hubbard-run", async (event, value: unknown) => {
     trusted(event);
     assertBoseHubbardJob(value);

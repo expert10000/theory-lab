@@ -1,7 +1,7 @@
 import Ajv from "ajv";
 import type { CavityModel, EngineName, EvolutionEngineName, ManyBodyEngineName, SweepEngineName, SweepAxis } from "./index";
 
-export type WorkspaceTab = "spectrum" | "hamiltonian" | "theory" | "dynamics" | "ising_quench" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas" | "companion" | "topology" | "scenes" | "orbital" | "oscillator";
+export type WorkspaceTab = "spectrum" | "hamiltonian" | "theory" | "dynamics" | "ising_quench" | "cavity" | "open" | "sweep" | "many_body" | "circuit" | "presets" | "runs" | "roadmap" | "backend" | "atlas" | "companion" | "ute2" | "topology" | "scenes" | "orbital" | "oscillator";
 export type ManyBodyWorkspaceEngine = ManyBodyEngineName | "compare";
 export type CircuitWorkspaceEngine = import("./index").CircuitEngineName | "compare";
 export type WorkspaceEngine = EngineName | "compare";
@@ -87,7 +87,7 @@ const axis = block(["parameter", "start", "stop", "points"], {
 const workspaceSchema = block(["schema", "savedAt", "tab", "selectedPresetId", "spectrum", "dynamics", "cavity", "open", "sweep"], {
   schema: { const: "quantum-workspace/v1" },
   savedAt: { type: "string", minLength: 1, maxLength: 50 },
-  tab: { enum: ["spectrum", "hamiltonian", "theory", "dynamics", "ising_quench", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "companion", "topology", "scenes", "orbital", "oscillator"] },
+  tab: { enum: ["spectrum", "hamiltonian", "theory", "dynamics", "ising_quench", "cavity", "open", "sweep", "many_body", "circuit", "presets", "runs", "roadmap", "backend", "atlas", "companion", "ute2", "topology", "scenes", "orbital", "oscillator"] },
   analysisModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
   theoryModel:{enum:["two_level","driven_two_level","landau_zener","stuckelberg","strong_drive","jaynes_cummings","quantum_rabi","lindblad","ising_chain","topology","hydrogenic","oscillator","transmon"]},
   theorySubject:{const:"bose_hubbard"},

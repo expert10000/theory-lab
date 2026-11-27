@@ -108,6 +108,7 @@ test("topology draft is additive to workspace v1", () => {
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "topology", topology: TOPOLOGY_DEFAULTS }));
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "atlas" }));
   assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "companion" }));
+  assert.ok(isWorkspaceSnapshot({ ...workspace, tab: "ute2" }));
   assert.equal(isWorkspaceSnapshot({ ...workspace, topology: { ...TOPOLOGY_DEFAULTS, modelId: "weyl" } }), false);
 });
 test("orbital draft is additive and retains basis/box/grid settings", () => {

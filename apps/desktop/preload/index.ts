@@ -2,7 +2,11 @@ import { contextBridge, ipcRenderer } from "electron";
 import type { QuantumBridge } from "../../../packages/contracts";
 import type { BoseHubbardBridge } from "../../../packages/contracts/bose-hubbard";
 import type { CompanionBridge } from "../../../packages/contracts/companion";
-const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge = {
+import type { LandauBridge } from "../../../packages/contracts/landau";
+const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge = {
+  runLandau: job => ipcRenderer.invoke("quantum:landau-run", job),
+  listLandauRuns: () => ipcRenderer.invoke("quantum:list-landau-runs"),
+  getLandauRun: runId => ipcRenderer.invoke("quantum:get-landau-run", runId),
   runBoseHubbard: job => ipcRenderer.invoke("quantum:bose-hubbard-run", job),
   listBoseHubbardRuns: () => ipcRenderer.invoke("quantum:list-bose-hubbard-runs"),
   getBoseHubbardRun: runId => ipcRenderer.invoke("quantum:get-bose-hubbard-run", runId),

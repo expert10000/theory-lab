@@ -17,8 +17,8 @@ export const MODEL_GROUPS:readonly {id:string;label:string;models:readonly Works
   {id:"circuits",label:"Circuits",models:["transmon"]},
 ];
 const MODELS=new Set<WorkspaceModel>(MODEL_GROUPS.flatMap(group=>group.models));
-const TABS=new Set<WorkspaceTab>(["spectrum","hamiltonian","theory","dynamics","ising_quench","cavity","open","sweep","many_body","circuit","presets","runs","roadmap","backend","atlas","companion","topology","scenes","orbital","oscillator"]);
-const UTILITIES=new Set<WorkspaceTab>(["presets","roadmap","backend","atlas","companion"]);
+const TABS=new Set<WorkspaceTab>(["spectrum","hamiltonian","theory","dynamics","ising_quench","cavity","open","sweep","many_body","circuit","presets","runs","roadmap","backend","atlas","companion","ute2","topology","scenes","orbital","oscillator"]);
+const UTILITIES=new Set<WorkspaceTab>(["presets","roadmap","backend","atlas","companion","ute2"]);
 
 export function workspaceHash({model,tab,theorySubject}:WorkspaceLocation):string{
   if(tab==="theory"&&theorySubject==="bose_hubbard")return `#lab/${model}/theory/bose_hubbard`;

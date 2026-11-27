@@ -5,7 +5,7 @@ import type {WorkspaceSnapshot,WorkspaceTab} from "../packages/contracts";
 
 test("workspace exposes selected-model Theory without turning utilities into experiments",()=>{
   assert.deepEqual(WORKSPACE_MODES.map(mode=>mode.label),["Explore","Dynamics","Sweeps","Analysis","Theory","Scenes","Runs"]);
-  assert.deepEqual(["atlas","companion","presets","roadmap","backend"].map(tab=>modeForTab(tab as WorkspaceTab)),[null,null,null,null,null]);
+  assert.deepEqual(["atlas","companion","ute2","presets","roadmap","backend"].map(tab=>modeForTab(tab as WorkspaceTab)),[null,null,null,null,null,null]);
   assert.equal(modeForTab("spectrum"),"explore");
   assert.equal(modeForTab("hamiltonian"),"analysis");
   assert.equal(modeForTab("theory"),"theory");
@@ -64,4 +64,6 @@ test("QLAB-UI-1 groups every model exactly once and keeps safe deep links",()=>{
   assert.equal(locationFromHash("#lab/unknown/spectrum"),null);
   assert.equal(locationFromHash("#view/backend/../../spectrum"),null);
   assert.equal(locationFromHash("#lab/two_level/theory/other"),null);
+  assert.equal(workspaceHash({model:"two_level",tab:"ute2"}),"#view/ute2/two_level");
+  assert.deepEqual(locationFromHash("#view/ute2/two_level"),{model:"two_level",tab:"ute2"});
 });

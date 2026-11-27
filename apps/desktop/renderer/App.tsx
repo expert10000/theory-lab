@@ -69,6 +69,7 @@ import { CAVITY_REGISTRY, type CavityModelId } from "../../../packages/models/ca
 import { BackendPanel } from "./BackendPanel";
 import { AtlasPanel } from "./AtlasPanel";
 import { Rb87CompanionPage } from "./Rb87CompanionPage";
+import { Ute2LandauPage } from "./Ute2LandauPage";
 import { BoseHubbardTheoryPage } from "./BoseHubbardTheoryPage";
 import { TopologyLab } from "./TopologyLab";
 import type {TopologyRunContext} from "./topology-selection";
@@ -102,7 +103,8 @@ import {
 declare global {
   interface Window {
     quantum: QuantumBridge & import("../../../packages/contracts/bose-hubbard").BoseHubbardBridge &
-      import("../../../packages/contracts/companion").CompanionBridge;
+      import("../../../packages/contracts/companion").CompanionBridge &
+      import("../../../packages/contracts/landau").LandauBridge;
   }
 }
 type EngineMode = EngineName | "compare";
@@ -608,7 +610,7 @@ export function App() {
     return () => { active = false; };
   }, []);
   const utilityLocation:Partial<Record<WorkspaceTab,[string,string]>>={
-    presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],companion:["LIBRARY","RB87 COMPANION"],
+    presets:["LIBRARY","VOLUME VIII PRESETS"],atlas:["LIBRARY","HAMILTONIAN ATLAS"],companion:["LIBRARY","RB87 COMPANION"],ute2:["LIBRARY","UTE₂ LANDAU JOURNEY"],
     roadmap:["SYSTEM","ROADMAP"],backend:["SYSTEM","BACKEND"],
   };
   const utility=utilityLocation[tab];
@@ -663,7 +665,7 @@ export function App() {
           <span className="version">V0.1+ · QVIS-023 Lab</span>
           <button className="workspace-button" data-testid="save-workspace" disabled={!workspaceReady} onClick={() => void saveWorkspace()}>Save workspace</button>
           <button className="workspace-button" data-testid="restore-workspace" onClick={() => void restoreWorkspace()}>Restore</button>
-          {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "companion" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
+          {activeModel==="two_level" && tab !== "theory" && tab !== "oscillator" && tab !== "orbital" && tab !== "scenes" && tab !== "dynamics" && tab !== "cavity" && tab !== "open" && tab !== "sweep" && tab !== "many_body" && tab !== "circuit" && tab !== "topology" && tab !== "atlas" && tab !== "companion" && tab !== "ute2" && tab !== "presets" && tab !== "runs" && tab !== "backend" && tab !== "roadmap" && (
             <button
               className="run-button"
               onClick={() => void run()}
@@ -678,13 +680,14 @@ export function App() {
           )}
         </div>
       </header>
-      <div className={`layout ${tab === "theory" || tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "ising_quench" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "companion" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="ising_quench"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""} ${tab==="scenes"?"scene-workspace-layout":""}`}>
+      <div className={`layout ${tab === "theory" || tab === "oscillator" || tab === "orbital" || tab === "scenes" || tab === "dynamics" || tab === "ising_quench" || tab === "cavity" || tab === "open" || tab === "sweep" || tab === "many_body" || tab === "circuit" || tab === "topology" || tab === "atlas" || tab === "companion" || tab === "ute2" || tab === "presets" || tab === "runs" || tab==="hamiltonian"&&activeModel!=="two_level" ? "dynamics-layout" : ""} ${tab==="dynamics"||tab==="ising_quench"||tab==="cavity"||tab==="open"||tab==="circuit"||tab==="many_body"||tab==="topology"||tab==="orbital"||tab==="oscillator"||(tab==="sweep"&&activeModel!=="two_level")?"evolution-layout":""} ${tab==="scenes"?"scene-workspace-layout":""}`}>
         <aside className="sidebar">
           <div className="sidebar-utilities" aria-label="Library and system">
             <div><p className="eyebrow">LIBRARY</p>
               <button className="utility-link" onClick={() => setTab("presets")}>Volume VIII presets</button>
               <button className="utility-link" data-testid="open-atlas" onClick={() => setTab("atlas")}>Hamiltonian Atlas</button>
               <button className="utility-link" data-testid="open-rb87-companion" onClick={() => setTab("companion")}>Rb87 Companion</button>
+              <button className="utility-link" data-testid="open-ute2-landau" onClick={() => setTab("ute2")}>UTe₂ Landau journey</button>
             </div>
             <div><p className="eyebrow">SYSTEM</p>
               <button className="utility-link" onClick={() => setTab("roadmap")}>Roadmap</button>
@@ -738,6 +741,7 @@ export function App() {
                   ? "ARCHITECTURE / 008–009"
                   : tab === "atlas" ? "PINNED THEORY REFERENCE / 025"
                   : tab === "companion" ? "FINITE BOSON DIMER / RB87 COMPANION"
+                  : tab === "ute2" ? "TWO-ORDER LANDAU / PEDAGOGICAL MODEL"
                   : tab === "dynamics"
                     ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : evolutionModel === "stuckelberg" ? "004" : "005"}`
                     : tab === "cavity"
@@ -762,6 +766,7 @@ export function App() {
                   ? "Under the hood."
                   : tab === "atlas" ? "The map of Hamiltonians."
                   : tab === "companion" ? "A working lattice model, with its sources."
+                  : tab === "ute2" ? "Two orders can compete and coexist."
                   : tab === "dynamics"
                     ? "A system in motion."
                     : tab === "cavity"
@@ -786,6 +791,7 @@ export function App() {
                   ? "Independent numerical engines behind versioned, verified results."
                   : tab === "atlas" ? "Browse source-pinned definitions and explicit laboratory bindings."
                   : tab === "companion" ? "Read the implemented two-site model, then run it in Atlas and inspect its saved evidence."
+                  : tab === "ute2" ? "Calculate a bounded dimensionless free-energy example; no UTe₂ material fit is implied."
                   : tab === "dynamics"
                     ? MODEL_REGISTRY[evolutionModel].description
                     : tab === "cavity"
@@ -812,7 +818,7 @@ export function App() {
               {sceneResult&&sceneViews?.bands&&<button type="button" data-testid="view-bands-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"bands",sceneSample)}>View bands in Scenes</button>}
               {sceneResult&&sceneViews?.invariant&&<button type="button" data-testid="view-kitaev-invariant-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"invariant")}>View bulk invariant in Scenes</button>}
               {sceneResult&&sceneViews?.strip&&<button type="button" data-testid="view-hofstadter-strip-in-scenes" onClick={()=>viewSavedScene(sceneResult.runId,"strip")}>View finite strip in Scenes</button>}
-              <span className="pill">{tab==="theory"?(theorySubject==="bose_hubbard"?"TWO SITES · FIXED N · J=1":"MODEL REFERENCE · NO COMPUTE"):tab==="ising_quench"?"2–8 SPINS · ℏ=1":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "companion" ? "TWO SITES · FIXED N · J=1" : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
+              <span className="pill">{tab==="theory"?(theorySubject==="bose_hubbard"?"TWO SITES · FIXED N · J=1":"MODEL REFERENCE · NO COMPUTE"):tab==="ising_quench"?"2–8 SPINS · ℏ=1":tab==="hamiltonian"&&activeModel!=="two_level"?"VERIFIED A/B RUNS":tab === "oscillator" ? "1D / FOCK BASIS · ℏ=1" : tab === "orbital" ? "a₀ / HARTREE" : tab === "scenes" ? "QUANTUM-SCENE / V1" : tab === "atlas" ? `${ATLAS_ENTRIES.length} SOURCE ENTRIES` : tab === "companion" ? "TWO SITES · FIXED N · J=1" : tab === "ute2" ? "DIMENSIONLESS · UNIFORM" : tab === "topology" ? "1D / 2D BLOCH BANDS" : tab === "presets" ? "6 PINNED PRESETS" : tab === "runs" ? "PERSISTENT HISTORY" : tab === "circuit" ? "2 NCUT + 1 CHARGE STATES" : tab === "many_body" ? "2ᴺ HILBERT SPACE" : tab === "cavity" || tab === "open" ? "2 × N HILBERT SPACE" : "2 × 2 HILBERT SPACE"}</span>
             </div>
           </div>
           <div className="tabs workspace-modes" role="tablist" aria-label={`Workspace modes for ${modelLabel(activeModel)}`}>
@@ -865,7 +871,7 @@ export function App() {
           {tab === "theory" ? theorySubject === "bose_hubbard"
             ? <BoseHubbardTheoryPage preferredRun={theoryRun} onOpenDimer={runId=>runId?openSavedDimerInAtlas(runId):openDimerLab()} onOpenRuns={()=>setTab("runs")} onOpenCompanion={()=>setTab("companion")}/>
             : <TheoryPanel model={activeModel} />
-          : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} onOpenDimer={openDimerLab} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} onRun={id=>void runCanonicalAtlas(id)} onSweep={sweepAtlasParameter} onViewBoseHubbardScene={viewBoseHubbardScene} onOpenCompanion={()=>setTab("companion")} onOpenDimerTheory={openDimerTheory} runReady={status.state==="READY"&&!!status.capabilities?.engines.native.available} availableOperations={status.capabilities?.operations} running={atlasRunning} message={atlasMessage} focus={atlasFocus} /> : tab === "companion" ? <Rb87CompanionPage onOpenDimer={openDimerLab} onOpenRuns={()=>setTab("runs")} onOpenTheory={()=>openDimerTheory()} onOpenOrbitals={()=>selectModel("hydrogenic","orbital")}/> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onViewDimerScene={viewBoseHubbardScene} onOpenDimer={openSavedDimerInAtlas} onOpenDimerTheory={openDimerTheory} onFigure={setFigureRunId} onOpenAtlas={openAtlasOrigin} /> : tab === "backend" ? (
+          : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} onOpenDimer={openDimerLab} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} onRun={id=>void runCanonicalAtlas(id)} onSweep={sweepAtlasParameter} onViewBoseHubbardScene={viewBoseHubbardScene} onOpenCompanion={()=>setTab("companion")} onOpenDimerTheory={openDimerTheory} runReady={status.state==="READY"&&!!status.capabilities?.engines.native.available} availableOperations={status.capabilities?.operations} running={atlasRunning} message={atlasMessage} focus={atlasFocus} /> : tab === "companion" ? <Rb87CompanionPage onOpenDimer={openDimerLab} onOpenRuns={()=>setTab("runs")} onOpenTheory={()=>openDimerTheory()} onOpenOrbitals={()=>selectModel("hydrogenic","orbital")}/> : tab === "ute2" ? <Ute2LandauPage ready={status.state==="READY"}/> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onViewDimerScene={viewBoseHubbardScene} onOpenDimer={openSavedDimerInAtlas} onOpenDimerTheory={openDimerTheory} onFigure={setFigureRunId} onOpenAtlas={openAtlasOrigin} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">
