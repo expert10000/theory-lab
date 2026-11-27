@@ -73,6 +73,10 @@ export class Ute2TopologyRunStore {
 
   async get(runId: string): Promise<Ute2TopologyResult> { return (await this.load(runId)).result; }
 
+  async getVerified(runId: string): Promise<{result: Ute2TopologyResult; resultSha256: string}> {
+    return this.load(runId);
+  }
+
   async list(): Promise<Ute2TopologyRunSummary[]> {
     await mkdir(this.root, { recursive: true });
     const rows: Ute2TopologyRunSummary[] = [];

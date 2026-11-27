@@ -27,6 +27,7 @@ export function Ute2TopologyPage({ready}:{ready:boolean}){
       const output=await window.quantum.runUte2Topology(ute2TopologyJob(p,`classd-${crypto.randomUUID()}`));
       setResult(await window.quantum.getUte2TopologyRun(output.runId));
       setSaved(await window.quantum.listUte2TopologyRuns());
+      window.dispatchEvent(new Event("ute2-bulk-saved"));
     }catch(cause){setError(cause instanceof Error?cause.message:String(cause));}
     finally{setBusy(false);}
   }
@@ -45,7 +46,7 @@ export function Ute2TopologyPage({ready}:{ready:boolean}){
       <p className="eyebrow">UTe₂ JOURNEY / STEP 3A · CONDITIONAL CLASS-D TOY</p>
       <h2>Qualify the bulk gap before topology.</h2>
       <p>For the separate spinless toy H(k)=Δₚ sin(kₓa)τₓ−Δₚ sin(kᵧa)τᵧ+[−2(cos kₓa+cos kᵧa)−μ]τᶻ, with t=a=1, the worker minimizes the energy over the continuous Brillouin zone. It reports an occupied-band Chern number only when the gap is open and two link meshes agree with a separate Berry-curvature integral.</p>
-      <p className="scope-note">Source: supplied chapter §11, Eqs. 25–27 (PDF pp. 7–8). Orientation: occupied band; kₓ then kᵧ; x-major half-open torus. The chapter PDF remains local. This is not a UTe₂ band structure, spinful symmetry assignment, observed phase, edge-state calculation, or installed-app result.</p>
+      <p className="scope-note">Source: supplied chapter §11, Eqs. 25–27 (PDF pp. 7–8). Orientation: occupied band; kₓ then kᵧ; x-major half-open torus. The chapter PDF remains local. This bulk panel does not calculate edge states; the separate finite-strip study below uses a qualified saved bulk run. No UTe₂ band structure, spinful symmetry assignment, observed phase, or installed-app result is implied.</p>
       <div className="dynamics-actions">
         <label>μ / t <input aria-label="Class-D mu" type="number" min="-5" max="5" step="0.1" value={inputs.mu}
           onChange={event=>{setInputs(current=>({...current,mu:event.target.value}));setResult(null);}}/></label>

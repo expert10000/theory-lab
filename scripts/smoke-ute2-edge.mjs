@@ -1,0 +1,51 @@
+import {_electron as electron} from "playwright";
+import assert from "node:assert/strict";
+import {mkdtemp,readFile,rm,writeFile} from "node:fs/promises";
+import {tmpdir} from "node:os";
+import {join} from "node:path";
+
+const profile=await mkdtemp(join(tmpdir(),"qlab-classd-edge-desktop-"));
+const env={...process.env,QLAB_TEST_PROFILE:profile};
+delete env.ELECTRON_RUN_AS_NODE;
+let desktop;
+async function open(){
+  desktop=await electron.launch({args:["."],env});
+  const page=await desktop.firstWindow();
+  await page.getByTestId("worker-status").filter({hasText:"READY"}).waitFor({timeout:45000});
+  await page.getByTestId("open-ute2-landau").click();
+  await page.getByTestId("ute2-edge-page").waitFor();
+  return page;
+}
+try{
+  let page=await open();
+  assert.equal(await page.getByRole("navigation",{name:"UTe₂ journey sections"}).getByRole("button").count(),5);
+  assert.equal(await page.getByTestId("run-ute2-edge").isDisabled(),true);
+  await page.getByTestId("run-ute2-topology").click();
+  await page.getByTestId("ute2-topology-status").filter({hasText:"defined for this toy"}).waitFor();
+  await page.getByTestId("run-ute2-edge").waitFor({state:"visible"});
+  assert.equal(await page.getByTestId("run-ute2-edge").isEnabled(),true);
+  await page.getByTestId("run-ute2-edge").click();
+  await page.getByTestId("ute2-edge-status").filter({hasText:"localized in-gap pair"}).waitFor();
+  assert.match(await page.getByTestId("ute2-edge-result").textContent(),/12 cells.*24 cells/s);
+  const bulkRows=await page.evaluate(()=>window.quantum.listUte2TopologyRuns());
+  const edgeRows=await page.evaluate(()=>window.quantum.listUte2EdgeRuns());
+  assert.equal(bulkRows.length,1);assert.equal(edgeRows.length,1);
+  assert.equal(edgeRows[0].source.resultSha256,bulkRows[0].resultSha256);
+  const edgeId=edgeRows[0].runId,bulkId=bulkRows[0].runId;
+  await desktop.close();desktop=null;
+  page=await open();
+  await page.getByRole("button",{name:/Open μ=-2, Δ=0\.8, width 12\/24/}).click();
+  await page.getByTestId("ute2-edge-result").waitFor();
+  assert.match(await page.getByTestId("ute2-edge-result").textContent(),new RegExp(edgeId));
+  const sourceFile=join(profile,"ute2-topology-runs",bulkId,"result.json");
+  const changed=JSON.parse(await readFile(sourceFile,"utf8"));changed.bulkGap+=.1;
+  await writeFile(sourceFile,JSON.stringify(changed,null,2)+"\n");
+  await page.getByRole("button",{name:/Open μ=-2, Δ=0\.8, width 12\/24/}).click();
+  await page.getByRole("alert").filter({hasText:"integrity check"}).waitFor();
+  assert.equal(await page.getByTestId("ute2-edge-result").count(),0);
+  await desktop.close();desktop=null;
+  page=await open();
+  assert.equal(await page.getByRole("button",{name:/Open μ=-2, Δ=0\.8, width 12\/24/}).count(),0);
+  assert.equal(await page.getByTestId("run-ute2-edge").isDisabled(),true);
+  console.log(`Class-D edge desktop source binding and restart verified: ${edgeId}`);
+}finally{if(desktop)await desktop.close();await rm(profile,{recursive:true,force:true});}

@@ -1,0 +1,47 @@
+{
+  "$schema":"http://json-schema.org/draft-07/schema#","$id":"schemas/quantum-ute2-edge-result.v1.json",
+  "type":"object","additionalProperties":false,
+  "required":["schema","jobId","runId","status","source","model","bulkChern","boundary","ky","bulkMinimumEnergy","widths","edgeStatus","units","provenance"],
+  "properties":{
+    "schema":{"const":"quantum-ute2-edge-result/v1"},
+    "jobId":{"type":"string","minLength":1,"maxLength":100,"pattern":"^[A-Za-z0-9_-]+$"},
+    "runId":{"type":"string","minLength":1,"maxLength":100,"pattern":"^[A-Za-z0-9_-]+$"},
+    "status":{"const":"completed"},
+    "source":{"type":"object","additionalProperties":false,"required":["runId","resultSha256"],
+      "properties":{"runId":{"type":"string","minLength":1,"maxLength":100,"pattern":"^[A-Za-z0-9_-]+$"},
+        "resultSha256":{"type":"string","pattern":"^[a-f0-9]{64}$"}}},
+    "model":{"type":"object","additionalProperties":false,"required":["type","parameters"],
+      "properties":{"type":{"const":"square_lattice_class_d"},
+        "parameters":{"type":"object","additionalProperties":false,"required":["mu","delta","mesh"],
+          "properties":{"mu":{"type":"number","minimum":-5,"maximum":5},
+            "delta":{"type":"number","minimum":0,"maximum":2},
+            "mesh":{"type":"integer","enum":[12,16,20]}}}}},
+    "bulkChern":{"type":"integer","enum":[-1,0,1]},
+    "boundary":{"const":"open x; periodic y; t=a=1"},
+    "ky":{"type":"number","minimum":-3.141592653589793,"maximum":0},
+    "bulkMinimumEnergy":{"type":"number","exclusiveMinimum":0,"maximum":10},
+    "widths":{"type":"array","minItems":2,"maxItems":2,"items":{"$ref":"#/definitions/width"}},
+    "edgeStatus":{"enum":["localized_in_gap","not_resolved"]},
+    "units":{"type":"object","additionalProperties":false,"required":["momentum","energy","density"],
+      "properties":{"momentum":{"const":"rad/a"},"energy":{"const":"t=1"},"density":{"const":"probability per x cell"}}},
+    "provenance":{"type":"object","additionalProperties":false,"required":["pythonVersion","workerVersion","computedAt","durationMs"],
+      "properties":{"pythonVersion":{"type":"string","minLength":1},"workerVersion":{"type":"string","minLength":1},
+        "computedAt":{"type":"string","minLength":1},"durationMs":{"type":"number","minimum":0}}}
+  },
+  "definitions":{
+    "state":{"type":"object","additionalProperties":false,"required":["re","im"],
+      "properties":{"re":{"type":"array","minItems":24,"maxItems":80,"items":{"type":"number","minimum":-1,"maximum":1}},
+        "im":{"type":"array","minItems":24,"maxItems":80,"items":{"type":"number","minimum":-1,"maximum":1}}}},
+    "width":{"type":"object","additionalProperties":false,
+      "required":["width","energies","pairStates","pairDensity","boundaryWeight","maxResidual","maxNormError","particleHoleOverlap"],
+      "properties":{"width":{"type":"integer","enum":[12,16,20,24,32,40]},
+        "energies":{"type":"array","minItems":24,"maxItems":80,"items":{"type":"number","minimum":-10,"maximum":10}},
+        "pairStates":{"type":"array","minItems":2,"maxItems":2,"items":{"$ref":"#/definitions/state"}},
+        "pairDensity":{"type":"array","minItems":12,"maxItems":40,"items":{"type":"number","minimum":0,"maximum":1.000001}},
+        "boundaryWeight":{"type":"number","minimum":0,"maximum":1.000001},
+        "maxResidual":{"type":"number","minimum":0,"maximum":0.000001},
+        "maxNormError":{"type":"number","minimum":0,"maximum":0.000001},
+        "particleHoleOverlap":{"type":"number","minimum":0,"maximum":1.000001}}
+    }
+  }
+}

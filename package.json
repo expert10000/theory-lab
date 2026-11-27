@@ -24,6 +24,7 @@
     "test:bdg-sector-desktop": "npm run build && node scripts/smoke-bdg-sector.mjs",
     "test:lattice-pairing-desktop": "npm run build && node scripts/smoke-lattice-pairing.mjs",
     "test:ute2-topology-desktop": "npm run build && node scripts/smoke-ute2-topology.mjs",
+    "test:ute2-edge-desktop": "npm run build && node scripts/smoke-ute2-edge.mjs",
     "accept:rb87-installed": "node scripts/accept-rb87-installed.mjs",
     "test:web": "npm run build && tsx scripts/smoke-web.ts",
     "test:scenes": "tsx scripts/smoke-scenes.ts",

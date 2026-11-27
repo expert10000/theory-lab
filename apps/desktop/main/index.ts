@@ -33,6 +33,7 @@ import { LandauRunStore } from "./landau-runs";
 import { BdGSectorRunStore } from "./bdg-sector-runs";
 import { LatticePairingRunStore } from "./lattice-pairing-runs";
 import { Ute2TopologyRunStore } from "./ute2-topology-runs";
+import { Ute2EdgeRunStore } from "./ute2-edge-runs";
 import { listCompanionChapters, verifiedCompanionPath } from "./companion";
 import { assertBoseHubbardJob, isBoseHubbardResult } from "../../../packages/contracts/bose-hubbard";
 import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
@@ -44,6 +45,8 @@ import { assertLatticePairingJob, isLatticePairingResult } from "../../../packag
 import { consistentLatticePairingResult } from "../../../packages/models/lattice-pairing";
 import { assertUte2TopologyJob, isUte2TopologyResult } from "../../../packages/contracts/ute2-topology";
 import { consistentUte2TopologyResult } from "../../../packages/models/ute2-topology";
+import { assertUte2EdgeJob, isUte2EdgeResult, type Ute2EdgeRequest } from "../../../packages/contracts/ute2-edge";
+import { consistentUte2EdgeResult, ute2EdgeJob } from "../../../packages/models/ute2-edge";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
 import {verifyQecRepetitionStudy, type QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -118,6 +121,39 @@ app.whenReady().then(() => {
   const bdgSectorRuns = new BdGSectorRunStore(join(app.getPath("userData"), "bdg-sector-runs"));
   const latticePairingRuns = new LatticePairingRunStore(join(app.getPath("userData"), "lattice-pairing-runs"));
   const ute2TopologyRuns = new Ute2TopologyRunStore(join(app.getPath("userData"), "ute2-topology-runs"));
+  const ute2EdgeRuns = new Ute2EdgeRunStore(join(app.getPath("userData"), "ute2-edge-runs"), ute2TopologyRuns);
+  ipcMain.handle("quantum:ute2-edge-run", async (event, value: unknown) => {
+    trusted(event);
+    if (!value || typeof value !== "object") throw new Error("Invalid class-D edge request");
+    const request = value as Partial<Ute2EdgeRequest>;
+    if (typeof request.sourceRunId !== "string" ||
+        typeof request.sourceResultSha256 !== "string" ||
+        !/^[a-f0-9]{64}$/.test(request.sourceResultSha256) ||
+        ![12,16,20].includes(request.width as number)) throw new Error("Invalid class-D edge request");
+    const {result: bulk, resultSha256} = await ute2TopologyRuns.getVerified(request.sourceRunId);
+    if (resultSha256 !== request.sourceResultSha256 || bulk.invariantStatus !== "defined" || bulk.chern === null)
+      throw new Error("Qualified class-D bulk source is unavailable or changed");
+    const job = ute2EdgeJob({runId:request.sourceRunId,resultSha256},bulk,request.width!,`edge-${randomUUID()}`);
+    assertUte2EdgeJob(job);
+    if (worker.status.state !== "READY") throw new Error("Worker is not ready");
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const result = await worker.request("quantum.ute2Edge", job, 30000);
+      if (!isUte2EdgeResult(result) || !consistentUte2EdgeResult(job,result))
+        throw new Error("Worker returned an invalid class-D edge result");
+      await ute2EdgeRuns.record(job,result);
+      return result;
+    } finally { running = false; }
+  });
+  ipcMain.handle("quantum:list-ute2-edge-runs", event => {
+    trusted(event); return ute2EdgeRuns.list();
+  });
+  ipcMain.handle("quantum:get-ute2-edge-run", (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string") throw new Error("Invalid class-D edge run ID");
+    return ute2EdgeRuns.get(runId);
+  });
   ipcMain.handle("quantum:ute2-topology-run", async (event, value: unknown) => {
     trusted(event);
     assertUte2TopologyJob(value);

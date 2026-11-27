@@ -18,6 +18,7 @@ VALIDATORS = {name: FiniteValidator(json.loads((SCHEMA_DIR / f"{name}.v1.json").
                            "quantum-bdg-sector-job", "quantum-bdg-sector-result",
                            "quantum-lattice-pairing-job", "quantum-lattice-pairing-result",
                            "quantum-ute2-topology-job", "quantum-ute2-topology-result",
+                           "quantum-ute2-edge-job", "quantum-ute2-edge-result",
                            "worker-capabilities", "worker-resources")}
 
 def validate(name, value):
