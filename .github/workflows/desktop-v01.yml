@@ -49,6 +49,9 @@ jobs:
       - name: Electron desktop smoke (Windows)
         if: runner.os == 'Windows'
         run: npm run test:desktop
+      - name: UTe2 Landau saved-run smoke (Windows)
+        if: runner.os == 'Windows'
+        run: node scripts/smoke-landau.mjs
       - name: Installed-style Math3D target handoff (Windows)
         if: runner.os == 'Windows'
         run: npm run test:math3d-installed-target
@@ -57,3 +60,6 @@ jobs:
         env:
           QLAB_SKIP_SCREENSHOTS: '1'
         run: xvfb-run -a -s '-screen 0 1600x1000x24' npm run test:desktop
+      - name: UTe2 Landau saved-run smoke (Linux/Xvfb)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a -s '-screen 0 1600x1000x24' node scripts/smoke-landau.mjs
