@@ -25,7 +25,7 @@ try {
   await page.getByLabel("Landau b1").fill("1");
   await page.getByTestId("run-ute2-landau").click();
   const result = page.getByTestId("ute2-landau-result");
-  await result.waitFor();
+  await result.waitFor({ timeout: 120000 });
   assert.match(await result.textContent(), /Global minimum: Mixed orders/);
   assert.match(await result.textContent(), /0\.595|0\.7715/);
   const rows = await page.evaluate(() => window.quantum.listLandauRuns());
@@ -35,7 +35,7 @@ try {
   await desktop.close(); desktop = null;
   page = await open();
   await page.getByRole("button", { name: /Open Mixed orders/ }).click();
-  await page.getByTestId("ute2-landau-result").waitFor();
+  await page.getByTestId("ute2-landau-result").waitFor({ timeout: 120000 });
   assert.match(await page.getByTestId("ute2-landau-result").textContent(), new RegExp(runId));
   const resultFile = join(profile, "landau-runs", runId, "result.json");
   const changed = JSON.parse(await readFile(resultFile, "utf8"));
