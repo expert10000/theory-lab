@@ -72,6 +72,7 @@ import { Rb87CompanionPage } from "./Rb87CompanionPage";
 import { Ute2LandauPage } from "./Ute2LandauPage";
 import { Ute2BdGSectorPage } from "./Ute2BdGSectorPage";
 import { Ute2LatticePairingPage } from "./Ute2LatticePairingPage";
+import { Ute2TopologyPage } from "./Ute2TopologyPage";
 import { BoseHubbardTheoryPage } from "./BoseHubbardTheoryPage";
 import { TopologyLab } from "./TopologyLab";
 import type {TopologyRunContext} from "./topology-selection";
@@ -108,7 +109,8 @@ declare global {
       import("../../../packages/contracts/companion").CompanionBridge &
       import("../../../packages/contracts/landau").LandauBridge &
       import("../../../packages/contracts/bdg-sector").BdGSectorBridge &
-      import("../../../packages/contracts/lattice-pairing").LatticePairingBridge;
+      import("../../../packages/contracts/lattice-pairing").LatticePairingBridge &
+      import("../../../packages/contracts/ute2-topology").Ute2TopologyBridge;
   }
 }
 type EngineMode = EngineName | "compare";
@@ -745,7 +747,7 @@ export function App() {
                   ? "ARCHITECTURE / 008–009"
                   : tab === "atlas" ? "PINNED THEORY REFERENCE / 025"
                   : tab === "companion" ? "FINITE BOSON DIMER / RB87 COMPANION"
-                  : tab === "ute2" ? "LANDAU + BdG + LATTICE PAIRING / TOY MODELS"
+                  : tab === "ute2" ? "LANDAU + BdG + CLASS-D TOYS"
                   : tab === "dynamics"
                     ? `EVOLUTION LABORATORY / ${evolutionModel === "driven_two_level" ? "002" : evolutionModel === "landau_zener" ? "003" : evolutionModel === "stuckelberg" ? "004" : "005"}`
                     : tab === "cavity"
@@ -795,7 +797,7 @@ export function App() {
                   ? "Independent numerical engines behind versioned, verified results."
                   : tab === "atlas" ? "Browse source-pinned definitions and explicit laboratory bindings."
                   : tab === "companion" ? "Read the implemented two-site model, then run it in Atlas and inspect its saved evidence."
-                  : tab === "ute2" ? "Calculate two-order equilibrium, a reduced spectrum, or a lattice pairing toy; no UTe₂ material fit is implied."
+                  : tab === "ute2" ? "Explore bounded equilibrium, pairing and conditional topology toys; no UTe₂ material fit is implied."
                   : tab === "dynamics"
                     ? MODEL_REGISTRY[evolutionModel].description
                     : tab === "cavity"
@@ -875,7 +877,7 @@ export function App() {
           {tab === "theory" ? theorySubject === "bose_hubbard"
             ? <BoseHubbardTheoryPage preferredRun={theoryRun} onOpenDimer={runId=>runId?openSavedDimerInAtlas(runId):openDimerLab()} onOpenRuns={()=>setTab("runs")} onOpenCompanion={()=>setTab("companion")}/>
             : <TheoryPanel model={activeModel} />
-          : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} onOpenDimer={openDimerLab} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} onRun={id=>void runCanonicalAtlas(id)} onSweep={sweepAtlasParameter} onViewBoseHubbardScene={viewBoseHubbardScene} onOpenCompanion={()=>setTab("companion")} onOpenDimerTheory={openDimerTheory} runReady={status.state==="READY"&&!!status.capabilities?.engines.native.available} availableOperations={status.capabilities?.operations} running={atlasRunning} message={atlasMessage} focus={atlasFocus} /> : tab === "companion" ? <Rb87CompanionPage onOpenDimer={openDimerLab} onOpenRuns={()=>setTab("runs")} onOpenTheory={()=>openDimerTheory()} onOpenOrbitals={()=>selectModel("hydrogenic","orbital")}/> : tab === "ute2" ? <div><Ute2LandauPage ready={status.state==="READY"}/><Ute2BdGSectorPage ready={status.state==="READY"}/><Ute2LatticePairingPage ready={status.state==="READY"}/></div> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onViewDimerScene={viewBoseHubbardScene} onOpenDimer={openSavedDimerInAtlas} onOpenDimerTheory={openDimerTheory} onFigure={setFigureRunId} onOpenAtlas={openAtlasOrigin} /> : tab === "backend" ? (
+          : tab === "scenes" ? <SceneLab bridge={window.quantum} launch={sceneLaunch} onOpenDimer={openDimerLab} /> : tab === "atlas" ? <AtlasPanel openLab={openAtlasBinding} onRun={id=>void runCanonicalAtlas(id)} onSweep={sweepAtlasParameter} onViewBoseHubbardScene={viewBoseHubbardScene} onOpenCompanion={()=>setTab("companion")} onOpenDimerTheory={openDimerTheory} runReady={status.state==="READY"&&!!status.capabilities?.engines.native.available} availableOperations={status.capabilities?.operations} running={atlasRunning} message={atlasMessage} focus={atlasFocus} /> : tab === "companion" ? <Rb87CompanionPage onOpenDimer={openDimerLab} onOpenRuns={()=>setTab("runs")} onOpenTheory={()=>openDimerTheory()} onOpenOrbitals={()=>selectModel("hydrogenic","orbital")}/> : tab === "ute2" ? <div><Ute2LandauPage ready={status.state==="READY"}/><Ute2BdGSectorPage ready={status.state==="READY"}/><Ute2LatticePairingPage ready={status.state==="READY"}/><Ute2TopologyPage ready={status.state==="READY"}/></div> : tab === "presets" ? <PresetPanel open={openPreset} /> : tab === "runs" ? <RunHistory bridge={window.quantum} onOpenSpectrum={openSavedSpectrum} onOpenEvolution={openSavedEvolution} onOpenCavity={openSavedCavity} onOpenLindblad={openSavedLindblad} onOpenCircuit={openSavedCircuit} onOpenManyBody={openSavedManyBody} onOpenSweep={openSavedSweep} onOpenTopology={openSavedTopology} onOpenOrbital={openSavedOrbital} onOpenOscillator={openSavedOscillator} onAnalyze={()=>setTab("hamiltonian")} onViewScene={viewSavedScene} onViewDimerScene={viewBoseHubbardScene} onOpenDimer={openSavedDimerInAtlas} onOpenDimerTheory={openDimerTheory} onFigure={setFigureRunId} onOpenAtlas={openAtlasOrigin} /> : tab === "backend" ? (
             <BackendPanel status={status} />
           ) : tab === "roadmap" ? (
             <section className="panel roadmap">

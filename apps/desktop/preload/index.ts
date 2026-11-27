@@ -5,7 +5,11 @@ import type { CompanionBridge } from "../../../packages/contracts/companion";
 import type { LandauBridge } from "../../../packages/contracts/landau";
 import type { BdGSectorBridge } from "../../../packages/contracts/bdg-sector";
 import type { LatticePairingBridge } from "../../../packages/contracts/lattice-pairing";
-const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge & BdGSectorBridge & LatticePairingBridge = {
+import type { Ute2TopologyBridge } from "../../../packages/contracts/ute2-topology";
+const bridge: QuantumBridge & BoseHubbardBridge & CompanionBridge & LandauBridge & BdGSectorBridge & LatticePairingBridge & Ute2TopologyBridge = {
+  runUte2Topology: job => ipcRenderer.invoke("quantum:ute2-topology-run", job),
+  listUte2TopologyRuns: () => ipcRenderer.invoke("quantum:list-ute2-topology-runs"),
+  getUte2TopologyRun: runId => ipcRenderer.invoke("quantum:get-ute2-topology-run", runId),
   runLatticePairing: job => ipcRenderer.invoke("quantum:lattice-pairing-run", job),
   listLatticePairingRuns: () => ipcRenderer.invoke("quantum:list-lattice-pairing-runs"),
   getLatticePairingRun: runId => ipcRenderer.invoke("quantum:get-lattice-pairing-run", runId),

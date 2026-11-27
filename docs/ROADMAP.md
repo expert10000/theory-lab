@@ -3,8 +3,9 @@
 The [UTe2 Hamiltonian journey](UTE2_JOURNEY_ROADMAP.md) is a new Theory Lab to
 Math3D feature track. Source intake pins the user-supplied chapter. A bounded,
   dimensionless two-order Landau calculation, a reduced 2×2 BdG sector, and a
-  separate square-lattice pairing toy now save verified results in the Lab Library;
-  topology, cross-app scenes, and installed qualification follow
+  separate square-lattice pairing toy and conditional class-D bulk invariant now
+  save verified results in the Lab Library; finite-edge work, cross-app scenes,
+  and installed qualification follow
 in separate steps. It does not expand the frozen Math3D 2.0 release claims.
 
 The user-supplied Rb87 Quantum Companion chapters I–VIII are preserved as

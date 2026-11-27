@@ -32,6 +32,7 @@ import { BoseHubbardRunStore } from "./bose-hubbard-runs";
 import { LandauRunStore } from "./landau-runs";
 import { BdGSectorRunStore } from "./bdg-sector-runs";
 import { LatticePairingRunStore } from "./lattice-pairing-runs";
+import { Ute2TopologyRunStore } from "./ute2-topology-runs";
 import { listCompanionChapters, verifiedCompanionPath } from "./companion";
 import { assertBoseHubbardJob, isBoseHubbardResult } from "../../../packages/contracts/bose-hubbard";
 import { consistentBoseHubbardResult } from "../../../packages/models/bose-hubbard";
@@ -41,6 +42,8 @@ import { assertBdGSectorJob, isBdGSectorResult } from "../../../packages/contrac
 import { consistentBdGSectorResult } from "../../../packages/models/bdg-sector";
 import { assertLatticePairingJob, isLatticePairingResult } from "../../../packages/contracts/lattice-pairing";
 import { consistentLatticePairingResult } from "../../../packages/models/lattice-pairing";
+import { assertUte2TopologyJob, isUte2TopologyResult } from "../../../packages/contracts/ute2-topology";
+import { consistentUte2TopologyResult } from "../../../packages/models/ute2-topology";
 import {isIsingQuenchRequest} from "../../../packages/contracts/ising-quench";
 import {verifyQecRepetitionStudy, type QecRepetitionStudy} from "../../../packages/contracts/qec-repetition";
 import { readSceneBundle, writeSceneBundle } from "../../../packages/quantum-scene/bundle";
@@ -114,6 +117,29 @@ app.whenReady().then(() => {
   const landauRuns = new LandauRunStore(join(app.getPath("userData"), "landau-runs"));
   const bdgSectorRuns = new BdGSectorRunStore(join(app.getPath("userData"), "bdg-sector-runs"));
   const latticePairingRuns = new LatticePairingRunStore(join(app.getPath("userData"), "lattice-pairing-runs"));
+  const ute2TopologyRuns = new Ute2TopologyRunStore(join(app.getPath("userData"), "ute2-topology-runs"));
+  ipcMain.handle("quantum:ute2-topology-run", async (event, value: unknown) => {
+    trusted(event);
+    assertUte2TopologyJob(value);
+    if (worker.status.state !== "READY") throw new Error("Worker is not ready");
+    if (running || evolution.isRunning) throw new Error("A calculation is already running");
+    running = true;
+    try {
+      const result = await worker.request("quantum.ute2Topology", value, 30000);
+      if (!isUte2TopologyResult(result) || !consistentUte2TopologyResult(value, result))
+        throw new Error("Worker returned an invalid class-D toy result");
+      await ute2TopologyRuns.record(value, result);
+      return result;
+    } finally { running = false; }
+  });
+  ipcMain.handle("quantum:list-ute2-topology-runs", event => {
+    trusted(event); return ute2TopologyRuns.list();
+  });
+  ipcMain.handle("quantum:get-ute2-topology-run", (event, runId: unknown) => {
+    trusted(event);
+    if (typeof runId !== "string") throw new Error("Invalid class-D toy run ID");
+    return ute2TopologyRuns.get(runId);
+  });
   ipcMain.handle("quantum:lattice-pairing-run", async (event, value: unknown) => {
     trusted(event);
     assertLatticePairingJob(value);
