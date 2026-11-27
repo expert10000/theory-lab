@@ -1,22 +1,33 @@
 import type { LandauResult } from "../contracts/landau";
 import type { BdGSectorResult } from "../contracts/bdg-sector";
 import type { LatticePairingResult } from "../contracts/lattice-pairing";
+import type { Ute2TopologyResult } from "../contracts/ute2-topology";
 import type { Ute2EdgeResult } from "../contracts/ute2-edge";
 import { SceneBuilder, type SceneDigest } from "./builder";
 import type { QuantumScene, ScenePayload } from "./index";
 
-export type Ute2SceneKind = "landau" | "bdg" | "lattice" | "edge";
+export type Ute2SceneKind = "landau" | "bdg" | "lattice" | "topology" | "edge";
 export interface Ute2SceneBridge { exportUte2Scene(kind:Ute2SceneKind,runId:string):Promise<string|null> }
 export type Ute2SceneInput =
   | {kind:"landau"; result:LandauResult; resultSha256:string}
   | {kind:"bdg"; result:BdGSectorResult; resultSha256:string}
   | {kind:"lattice"; result:LatticePairingResult; resultSha256:string}
+  | {kind:"topology"; result:Ute2TopologyResult; resultSha256:string}
   | {kind:"edge"; result:Ute2EdgeResult; resultSha256:string};
 
 /** Only saved, host-verified results enter this adapter. Every displayed sample is copied from that result. */
 export async function ute2SceneFromResult(input:Ute2SceneInput,digest:SceneDigest):Promise<ScenePayload> {
   const {kind,result,resultSha256}=input;
   const parameters:Record<string,number|string>={...result.model.parameters};
+  if(kind==="topology") {
+    const r=input.result;
+    Object.assign(parameters,{bulkMinimumEnergy:r.bulkMinimumEnergy,bulkGap:r.bulkGap,
+      sampledMinimumEnergy:r.sampledMinimumEnergy,coarseMesh:r.coarseMesh,fineMesh:r.fineMesh,
+      invariantStatus:r.invariantStatus,orientation:r.orientation,gapClosed:String(r.gapClosed)});
+    for(const key of ["coarseLinkChern","fineLinkChern","coarseMinimumLink","fineMinimumLink",
+      "curvatureIntegralCoarse","curvatureIntegralFine","analyticExpectedChern"] as const)
+      if(r[key]!==null)parameters[key]=r[key]!;
+  }
   if(kind==="edge") {
     parameters.bulkRunId=result.source.runId;
     parameters.bulkResultSha256=result.source.resultSha256;
@@ -27,7 +38,8 @@ export async function ute2SceneFromResult(input:Ute2SceneInput,digest:SceneDiges
   const scene:QuantumScene={
     schema:"quantum-scene/v1",id:`ute2-${kind}-${resultSha256.slice(0,24)}`,
     title:kind==="landau"?"Two-order Landau stationary points":kind==="bdg"?"Reduced BdG saved samples":
-      kind==="lattice"?"Square-lattice pairing saved samples":"Class-D finite-strip saved density",
+      kind==="lattice"?"Square-lattice pairing saved samples":kind==="topology"?
+        "Conditional class-D toy bulk receipt":"Class-D finite-strip saved density",
     provenance:{kind:"numerical-result",runId:result.runId,jobId:result.jobId,model:result.model.type,
       engine:"quantum-python",engineVersion:result.provenance.workerVersion,
       computedAt:result.provenance.computedAt,resultSha256,adapter:"qvis/1",parameters},
@@ -107,6 +119,22 @@ export async function ute2SceneFromResult(input:Ute2SceneInput,digest:SceneDiges
       "kx, ky, display plane","#ff8f8f");
     scene.annotations.push({id:"scope",text:"Exact saved kx-major, ky-minor half-open grid samples. Points have no interpolation or periodic seam. A missing sampled node does not establish a continuous bulk gap.",position:[0,0,0]});
     scene.annotations.push({id:"mask",text:"Binary masks mark undefined phase/weights and sampled zero energy. Masked weight values are stored as zero and must not be interpreted. Spinless lattice toy, not a UTe2 material model.",position:[0,0,-1]});
+  } else if(input.kind==="topology") {
+    const r=input.result;
+    scene.coordinates={handedness:"right",axes:["mu/t","pairing amplitude delta/t","continuous bulk gap"],
+      units:["t=1","t=1","t=1"]};
+    await points("bulk-receipt","Exact saved bulk qualification point",
+      [r.model.parameters.mu,r.model.parameters.delta,r.bulkGap],"mu/t, delta/t, bulk gap","#79d9c1",
+      {values:[r.bulkGap],unit:"t=1"});
+    scene.topology={quantities:[],invariants:[{id:"occupied-chern",label:"Conditional occupied-band toy Chern",
+      value:r.chern,status:r.invariantStatus==="defined"?"verified":r.invariantStatus==="gap_closed"?"undefined":"unresolved",
+      method:"continuous bulk gap; coarse/fine link meshes; independent curvature and geometric degree"}],
+      limitations:["One parameter-space receipt point, not a momentum grid or Berry-curvature surface.",
+        "Toy spinless class-D Hamiltonian, not a UTe2 material phase or Majorana observation."]};
+    scene.annotations.push({id:"gap",text:`Exact continuous-BZ gap ${r.bulkGap}; sampled E+ minimum ${r.sampledMinimumEnergy}. ${r.invariantStatus}.`,
+      position:[r.model.parameters.mu,r.model.parameters.delta,r.bulkGap]});
+    scene.annotations.push({id:"convergence",text:`Link meshes ${r.coarseMesh}/${r.fineMesh}; Chern ${r.coarseLinkChern??"withheld"}/${r.fineLinkChern??"withheld"}; curvature ${r.curvatureIntegralCoarse??"withheld"}/${r.curvatureIntegralFine??"withheld"}.`,
+      position:[r.model.parameters.mu,r.model.parameters.delta,r.bulkGap+1]});
   } else {
     const r=input.result;
     scene.coordinates={handedness:"right",axes:["open-x cell index","display width row","central-pair density"],

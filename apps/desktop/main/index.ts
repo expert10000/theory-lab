@@ -124,10 +124,10 @@ app.whenReady().then(() => {
   const latticePairingRuns = new LatticePairingRunStore(join(app.getPath("userData"), "lattice-pairing-runs"));
   const ute2TopologyRuns = new Ute2TopologyRunStore(join(app.getPath("userData"), "ute2-topology-runs"));
   const ute2EdgeRuns = new Ute2EdgeRunStore(join(app.getPath("userData"), "ute2-edge-runs"), ute2TopologyRuns);
-  const ute2Scenes = new Ute2SceneProducer(landauRuns,bdgSectorRuns,latticePairingRuns,ute2EdgeRuns);
+  const ute2Scenes = new Ute2SceneProducer(landauRuns,bdgSectorRuns,latticePairingRuns,ute2TopologyRuns,ute2EdgeRuns);
   ipcMain.handle("quantum:export-ute2-scene", async(event,kind:unknown,runId:unknown)=>{
     trusted(event);
-    if(!["landau","bdg","lattice","edge"].includes(kind as string)||typeof runId!=="string")
+    if(!["landau","bdg","lattice","topology","edge"].includes(kind as string)||typeof runId!=="string")
       throw new Error("Invalid UTe2 scene source");
     await ute2Scenes.build(kind as Ute2SceneKind,runId);
     const selection=await dialog.showOpenDialog({title:"Choose parent folder for a verified UTe2 scene bundle",properties:["openDirectory"]});

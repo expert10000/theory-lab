@@ -35,7 +35,7 @@ test("UTe2 saved results export exact portable scenes and changed sources refuse
     const lattice=new LatticePairingRunStore(join(root,"lattice"));
     const bulk=new Ute2TopologyRunStore(join(root,"bulk"));
     const edge=new Ute2EdgeRunStore(join(root,"edge"),bulk);
-    const producer=new Ute2SceneProducer(landau,bdg,lattice,edge);
+    const producer=new Ute2SceneProducer(landau,bdg,lattice,bulk,edge);
     const glJob=landauJob({a1:-.7,a2:-.5,b1:1,b2:1,g:.4},"gl-scene");
     const gl=await worker.request("quantum.landau",glJob);
     assert.ok(isLandauResult(gl));
@@ -60,6 +60,7 @@ test("UTe2 saved results export exact portable scenes and changed sources refuse
       {kind:"landau" as const,result:gl,hash:glHash,object:"stationary"},
       {kind:"bdg" as const,result:bdgResult,hash:bdgHash,object:"positive"},
       {kind:"lattice" as const,result:latticeResult,hash:latticeHash,object:"positive-energy"},
+      {kind:"topology" as const,result:bulkResult,hash:bulkHash,object:"bulk-receipt"},
       {kind:"edge" as const,result:edgeResult,hash:edgeHash,object:"density-24"},
     ];
     for(const item of fixtures){
@@ -85,6 +86,14 @@ test("UTe2 saved results export exact portable scenes and changed sources refuse
       latticeResult.samples.map(s=>s.phaseRad===null?0:1));
     assert.deepEqual([...decodeDataset(latticeScene.artifacts["node-mask-scalars.f64"])],
       latticeResult.samples.map(s=>s.node?1:0));
+    const topologyScene=await readSceneBundle(join(exportRoot,`ute2-topology-${bulkHash.slice(0,24)}.qscene`));
+    assert.equal(topologyScene.scene.topology?.invariants[0]?.value,bulkResult.chern);
+    assert.equal(topologyScene.scene.topology?.invariants[0]?.status,"verified");
+    assert.equal(topologyScene.scene.provenance.parameters?.bulkGap,bulkResult.bulkGap);
+    assert.equal(topologyScene.scene.provenance.parameters?.fineMesh,bulkResult.fineMesh);
+    assert.deepEqual(topologyScene.scene.objects.map(o=>o.id),["bulk-receipt"]);
+    assert.deepEqual([...decodeDataset(topologyScene.artifacts["bulk-receipt-positions.f64"])],
+      [bulkResult.model.parameters.mu,bulkResult.model.parameters.delta,bulkResult.bulkGap]);
     const latticeArtifact=join(exportRoot,`ute2-lattice-${latticeHash.slice(0,24)}.qscene`,"node-mask-scalars.f64");
     const changedArtifact=await readFile(latticeArtifact);changedArtifact[0]^=1;
     await writeFile(latticeArtifact,changedArtifact);

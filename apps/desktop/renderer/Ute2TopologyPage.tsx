@@ -1,6 +1,7 @@
 import React,{useEffect,useState} from "react";
 import type {Ute2TopologyParameters,Ute2TopologyResult,Ute2TopologyRunSummary} from "../../../packages/contracts/ute2-topology";
 import {ute2TopologyJob} from "../../../packages/models/ute2-topology";
+import {Ute2SceneExport} from "./Ute2SceneExport";
 
 const defaults={mu:"-2",delta:"0.8",mesh:"16"};
 const fmt=(value:number|null)=>value===null?"withheld":value.toFixed(5);
@@ -62,6 +63,7 @@ export function Ute2TopologyPage({ready}:{ready:boolean}){
       {!valid&&<p role="status">Use μ −5…5, Δₚ 0…2, and a listed mesh size.</p>}
       {error&&<p role="alert">{error}</p>}
       {result&&<div data-testid="ute2-topology-result">
+        <Ute2SceneExport key={result.runId} kind="topology" runId={result.runId}/>
         <p><strong>Verified saved run:</strong> {result.runId} · {result.provenance.computedAt}</p>
         <p><strong>Result SHA-256:</strong> <code>{pinned?.resultSha256??"saved source unavailable"}</code></p>
         <p><strong>Continuous-BZ minimum E+:</strong> {result.bulkMinimumEnergy.toFixed(5)} · <strong>bulk band separation:</strong> {result.bulkGap.toFixed(5)} · <strong>fine-mesh sampled E+:</strong> {result.sampledMinimumEnergy.toFixed(5)}</p>
