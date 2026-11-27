@@ -18,7 +18,7 @@ async function open(){
 }
 try{
   let page=await open();
-  assert.match(await page.getByTestId("ute2-topology-page").textContent(),/not a UTe₂ band structure/);
+  assert.match(await page.getByTestId("ute2-topology-page").textContent(),/No UTe₂ band structure/);
   await page.getByLabel("Class-D delta").fill("-1");
   assert.equal(await page.getByTestId("run-ute2-topology").isDisabled(),true);
   await page.getByLabel("Class-D delta").fill("0.8");
